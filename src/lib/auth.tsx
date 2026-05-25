@@ -1,0 +1,72 @@
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import type { Session, User } from "@supabase/supabase-js";
+
+type AuthCtx = {
+  session: Session | null;
+  user: User | null;
+  loading: boolean;
+};
+const Ctx = createContext<AuthCtx>({ session: null, user: null, loading: true });
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_evt, s) => {
+      setSession(s);
+      setLoading(false);
+    });
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+      setLoading(false);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  return <Ctx.Provider value={{ session, user: session?.user ?? null, loading }}>{children}</Ctx.Provider>;
+}
+
+export const useAuth = () => useContext(Ctx);
+
+// Username-only auth: map username -> synthetic email
+export const usernameToEmail = (u: string) =>
+  `${u.trim().toLowerCase().replace(/[^a-z0-9_]/g, "")}@giant.app`;
+
+export async function signUpWithUsername(username: string, password: string) {
+  const clean = username.trim();
+  if (!/^[a-zA-Z0-9_]{3,20}$/.test(clean)) {
+    return { error: "اسم المستخدم: 3-20 حرف، أحرف إنجليزية وأرقام و _ فقط" };
+  }
+  if (password.length < 6) return { error: "كلمة المرور 6 أحرف على الأقل" };
+
+  // check unique username
+  const { data: existing } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("username", clean)
+    .maybeSingle();
+  if (existing) return { error: "اسم المستخدم مستخدم بالفعل" };
+
+  const { error } = await supabase.auth.signUp({
+    email: usernameToEmail(clean),
+    password,
+    options: { data: { username: clean } },
+  });
+  if (error) return { error: error.message };
+  return { error: null };
+}
+
+export async function signInWithUsername(username: string, password: string) {
+  const { error } = await supabase.auth.signInWithPassword({
+    email: usernameToEmail(username),
+    password,
+  });
+  if (error) return { error: "اسم المستخدم أو كلمة المرور غير صحيحة" };
+  return { error: null };
+}
+
+export async function signOut() {
+  await supabase.auth.signOut();
+}
