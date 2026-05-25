@@ -9,9 +9,9 @@ export const Route = createFileRoute("/app")({
 
 const tabs = [
   { to: "/app", label: "الغرف", icon: Home, exact: true },
-  { to: "/app/chats", label: "المحادثات", icon: MessageSquare },
-  { to: "/app/profile", label: "حسابي", icon: User },
-  { to: "/app/settings", label: "الإعدادات", icon: Settings },
+  { to: "/app/chats", label: "المحادثات", icon: MessageSquare, exact: false },
+  { to: "/app/profile", label: "حسابي", icon: User, exact: false },
+  { to: "/app/settings", label: "الإعدادات", icon: Settings, exact: false },
 ] as const;
 
 function AppLayout() {
