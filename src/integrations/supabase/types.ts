@@ -14,16 +14,141 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string
+          id: string
+          last_seen_at: string
+          username: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          id: string
+          last_seen_at?: string
+          username: string
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          id?: string
+          last_seen_at?: string
+          username?: string
+        }
+        Relationships: []
+      }
+      room_members: {
+        Row: {
+          joined_at: string
+          muted: boolean
+          rank: Database["public"]["Enums"]["room_rank"]
+          room_id: string
+          user_id: string
+        }
+        Insert: {
+          joined_at?: string
+          muted?: boolean
+          rank?: Database["public"]["Enums"]["room_rank"]
+          room_id: string
+          user_id: string
+        }
+        Update: {
+          joined_at?: string
+          muted?: boolean
+          rank?: Database["public"]["Enums"]["room_rank"]
+          room_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_members_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      room_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          room_id: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          room_id: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          room_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_messages_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rooms: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          owner_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          owner_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          owner_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_room_member: {
+        Args: { _room: string; _user: string }
+        Returns: boolean
+      }
+      room_joined_at: {
+        Args: { _room: string; _user: string }
+        Returns: string
+      }
+      room_rank_of: {
+        Args: { _room: string; _user: string }
+        Returns: Database["public"]["Enums"]["room_rank"]
+      }
     }
     Enums: {
-      [_ in never]: never
+      room_rank: "owner" | "admin" | "member"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +275,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      room_rank: ["owner", "admin", "member"],
+    },
   },
 } as const
