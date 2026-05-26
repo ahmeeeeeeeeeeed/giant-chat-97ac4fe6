@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { Plus, Users, Hash, Loader2, X } from "lucide-react";
@@ -19,6 +20,7 @@ type Room = {
 
 function RoomsPage() {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -53,13 +55,13 @@ function RoomsPage() {
       <header className="sticky top-0 z-10 border-b border-border bg-background/90 px-5 py-4 backdrop-blur">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-extrabold">Giant</h1>
-            <p className="text-xs text-muted-foreground">جميع الغرف</p>
+            <h1 className="text-2xl font-extrabold">{t("app.name")}</h1>
+            <p className="text-xs text-muted-foreground">{t("rooms.title")}</p>
           </div>
           <button
             onClick={() => setShowCreate(true)}
             className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground"
-            aria-label="غرفة جديدة"
+            aria-label={t("rooms.create")}
           >
             <Plus className="h-5 w-5" />
           </button>
@@ -110,21 +112,23 @@ function RoomsPage() {
 }
 
 function EmptyState({ onCreate }: { onCreate: () => void }) {
+  const { t } = useTranslation();
   return (
     <div className="mt-20 flex flex-col items-center text-center">
       <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-secondary">
         <Hash className="h-7 w-7 text-muted-foreground" />
       </div>
-      <h3 className="mt-4 text-lg font-semibold">لا توجد غرف بعد</h3>
-      <p className="mt-1 max-w-xs text-sm text-muted-foreground">كن أول من ينشئ غرفة دردشة لمجتمعك.</p>
+      <h3 className="mt-4 text-lg font-semibold">{t("rooms.empty")}</h3>
+      <p className="mt-1 max-w-xs text-sm text-muted-foreground">{t("rooms.subtitle")}</p>
       <button onClick={onCreate} className="mt-5 rounded-2xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground">
-        إنشاء غرفة
+        {t("rooms.create")}
       </button>
     </div>
   );
 }
 
 function CreateRoomSheet({ ownerId, onClose, onCreated }: { ownerId: string; onClose: () => void; onCreated: () => void }) {
+  const { t } = useTranslation();
   const [name, setName] = useState("");
   const [desc, setDesc] = useState("");
   const [busy, setBusy] = useState(false);
@@ -135,40 +139,24 @@ function CreateRoomSheet({ ownerId, onClose, onCreated }: { ownerId: string; onC
     setBusy(true);
     const { error } = await supabase.from("rooms").insert({ name: name.trim(), description: desc.trim() || null, owner_id: ownerId });
     setBusy(false);
-    if (error) { toast.error("تعذّر إنشاء الغرفة"); return; }
-    toast.success("تم إنشاء الغرفة");
+    if (error) { toast.error(t("common.error")); return; }
     onCreated();
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-end bg-black/60" onClick={onClose}>
-      <form
-        onSubmit={submit}
-        onClick={(e) => e.stopPropagation()}
-        className="w-full rounded-t-3xl border-t border-border bg-card p-6 pb-8"
-      >
+      <form onSubmit={submit} onClick={(e) => e.stopPropagation()} className="w-full rounded-t-3xl border-t border-border bg-card p-6 pb-8">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-bold">غرفة جديدة</h2>
+          <h2 className="text-lg font-bold">{t("rooms.create_title")}</h2>
           <button type="button" onClick={onClose} className="text-muted-foreground"><X className="h-5 w-5" /></button>
         </div>
         <div className="flex flex-col gap-3">
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="اسم الغرفة"
-            className="h-12 rounded-2xl border border-input bg-background px-4 outline-none focus:border-foreground"
-            maxLength={50}
-            required
-          />
-          <textarea
-            value={desc}
-            onChange={(e) => setDesc(e.target.value)}
-            placeholder="وصف مختصر (اختياري)"
-            className="min-h-[80px] rounded-2xl border border-input bg-background p-4 outline-none focus:border-foreground"
-            maxLength={200}
-          />
+          <input value={name} onChange={(e) => setName(e.target.value)} placeholder={t("rooms.name")}
+            className="h-12 rounded-2xl border border-input bg-background px-4 outline-none focus:border-foreground" maxLength={50} required />
+          <textarea value={desc} onChange={(e) => setDesc(e.target.value)} placeholder={t("rooms.description")}
+            className="min-h-[80px] rounded-2xl border border-input bg-background p-4 outline-none focus:border-foreground" maxLength={200} />
           <button disabled={busy} className="mt-2 flex h-12 items-center justify-center rounded-2xl bg-primary font-semibold text-primary-foreground disabled:opacity-60">
-            {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : "إنشاء"}
+            {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : t("rooms.create")}
           </button>
         </div>
       </form>
