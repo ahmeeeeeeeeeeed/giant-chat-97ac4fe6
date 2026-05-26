@@ -7,27 +7,28 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
+import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { ThemeProvider } from "@/lib/theme";
 import { AuthProvider } from "@/lib/auth";
 import { Toaster } from "@/components/ui/sonner";
+import i18n, { applyLanguageDir } from "@/lib/i18n";
 
 import appCss from "../styles.css?url";
 
 function NotFoundComponent() {
+  const { t } = useTranslation();
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold">الصفحة غير موجودة</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          الرابط الذي تبحث عنه غير موجود أو تم نقله.
-        </p>
+        <h2 className="mt-4 text-xl font-semibold">404</h2>
         <div className="mt-6">
           <Link
             to="/"
             className="inline-flex items-center justify-center rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground"
           >
-            العودة إلى الرئيسية
+            {t("common.back")}
           </Link>
         </div>
       </div>
@@ -38,21 +39,18 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
+  const { t } = useTranslation();
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
-        <h1 className="text-xl font-semibold">حدث خطأ ما</h1>
-        <p className="mt-2 text-sm text-muted-foreground">حاول مرة أخرى أو ارجع للرئيسية.</p>
+        <h1 className="text-xl font-semibold">{t("common.error")}</h1>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
             onClick={() => { router.invalidate(); reset(); }}
             className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
           >
-            إعادة المحاولة
+            {t("common.back")}
           </button>
-          <a href="/" className="rounded-lg border border-input bg-background px-4 py-2 text-sm font-medium">
-            الرئيسية
-          </a>
         </div>
       </div>
     </div>
@@ -70,11 +68,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:title", content: "Giant — دردشة مجتمعات وغرف" },
       { property: "og:description", content: "Giant: غرف دردشة مجتمعات ومحادثات خاصة فورية." },
       { property: "og:type", content: "website" },
-      { name: "twitter:title", content: "Giant — دردشة مجتمعات وغرف" },
-      { name: "twitter:description", content: "Giant: غرف دردشة مجتمعات ومحادثات خاصة فورية." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/9766a076-6197-4f82-b22f-b299130b2c03/id-preview-6e0d53a9--2b1e88f7-0a17-4a29-8551-9d6dac0e0821.lovable.app-1779741464848.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/9766a076-6197-4f82-b22f-b299130b2c03/id-preview-6e0d53a9--2b1e88f7-0a17-4a29-8551-9d6dac0e0821.lovable.app-1779741464848.png" },
-      { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
@@ -82,7 +75,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap",
       },
     ],
   }),
@@ -106,12 +99,23 @@ function RootShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+function LanguageSync() {
+  useEffect(() => {
+    applyLanguageDir(i18n.language);
+    const onChange = (lng: string) => applyLanguageDir(lng);
+    i18n.on("languageChanged", onChange);
+    return () => { i18n.off("languageChanged", onChange); };
+  }, []);
+  return null;
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <AuthProvider>
+          <LanguageSync />
           <Outlet />
           <Toaster position="top-center" richColors />
         </AuthProvider>

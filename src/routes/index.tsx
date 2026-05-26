@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useAuth } from "@/lib/auth";
+import { useTranslation } from "react-i18next";
 import { MessageCircle } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -10,6 +11,7 @@ export const Route = createFileRoute("/")({
 function Splash() {
   const { session, loading } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (!loading && session) navigate({ to: "/app" });
@@ -17,7 +19,6 @@ function Splash() {
 
   return (
     <main className="relative flex min-h-screen flex-col items-center justify-between overflow-hidden bg-background px-6 py-12">
-      {/* subtle gradient halo */}
       <div className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute left-1/2 top-1/3 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-foreground/5 blur-3xl" />
       </div>
@@ -26,9 +27,9 @@ function Splash() {
         <div className="mb-8 flex h-28 w-28 items-center justify-center rounded-3xl bg-primary text-primary-foreground shadow-2xl shadow-black/40">
           <MessageCircle className="h-14 w-14" strokeWidth={2.25} />
         </div>
-        <h1 className="text-6xl font-extrabold tracking-tight">Giant</h1>
+        <h1 className="text-6xl font-extrabold tracking-tight">{t("app.name")}</h1>
         <p className="mt-4 max-w-xs text-base text-muted-foreground">
-          غرف دردشة، مجتمعات، ومحادثات خاصة. فوريّة وآمنة.
+          {t("app.tagline")}
         </p>
       </div>
 
@@ -37,13 +38,13 @@ function Splash() {
           to="/login"
           className="flex h-12 items-center justify-center rounded-2xl bg-primary text-base font-semibold text-primary-foreground transition active:scale-[0.98]"
         >
-          تسجيل الدخول
+          {t("auth.login")}
         </Link>
         <Link
           to="/register"
           className="flex h-12 items-center justify-center rounded-2xl border border-border bg-card text-base font-semibold text-foreground transition active:scale-[0.98]"
         >
-          إنشاء حساب
+          {t("auth.register")}
         </Link>
       </div>
     </main>

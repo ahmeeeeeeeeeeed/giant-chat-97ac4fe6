@@ -1,5 +1,6 @@
 import { createFileRoute, Link, Outlet, useNavigate, useLocation } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/lib/auth";
 import { Home, MessageSquare, User, Settings } from "lucide-react";
 
@@ -7,24 +8,25 @@ export const Route = createFileRoute("/app")({
   component: AppLayout,
 });
 
-const tabs = [
-  { to: "/app", label: "الغرف", icon: Home, exact: true },
-  { to: "/app/chats", label: "المحادثات", icon: MessageSquare, exact: false },
-  { to: "/app/profile", label: "حسابي", icon: User, exact: false },
-  { to: "/app/settings", label: "الإعدادات", icon: Settings, exact: false },
-] as const;
-
 function AppLayout() {
   const { session, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useTranslation();
+
+  const tabs = [
+    { to: "/app", label: t("nav.rooms"), icon: Home, exact: true },
+    { to: "/app/chats", label: t("nav.chats"), icon: MessageSquare, exact: false },
+    { to: "/app/profile", label: t("nav.profile"), icon: User, exact: false },
+    { to: "/app/settings", label: t("nav.settings"), icon: Settings, exact: false },
+  ] as const;
 
   useEffect(() => {
     if (!loading && !session) navigate({ to: "/" });
   }, [loading, session, navigate]);
 
   if (loading || !session) {
-    return <div className="flex min-h-screen items-center justify-center bg-background text-muted-foreground">جاري التحميل…</div>;
+    return <div className="flex min-h-screen items-center justify-center bg-background text-muted-foreground">{t("auth.loading")}</div>;
   }
 
   // Hide bottom nav inside individual room/chat screens
