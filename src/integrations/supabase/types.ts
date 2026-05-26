@@ -75,23 +75,32 @@ export type Database = {
       }
       room_messages: {
         Row: {
-          content: string
+          content: string | null
           created_at: string
           id: string
+          media_duration_ms: number | null
+          media_url: string | null
+          message_type: Database["public"]["Enums"]["message_type"]
           room_id: string
           user_id: string
         }
         Insert: {
-          content: string
+          content?: string | null
           created_at?: string
           id?: string
+          media_duration_ms?: number | null
+          media_url?: string | null
+          message_type?: Database["public"]["Enums"]["message_type"]
           room_id: string
           user_id: string
         }
         Update: {
-          content?: string
+          content?: string | null
           created_at?: string
           id?: string
+          media_duration_ms?: number | null
+          media_url?: string | null
+          message_type?: Database["public"]["Enums"]["message_type"]
           room_id?: string
           user_id?: string
         }
@@ -148,6 +157,7 @@ export type Database = {
       }
     }
     Enums: {
+      message_type: "text" | "image" | "voice"
       room_rank: "owner" | "admin" | "member"
     }
     CompositeTypes: {
@@ -276,6 +286,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      message_type: ["text", "image", "voice"],
       room_rank: ["owner", "admin", "member"],
     },
   },
