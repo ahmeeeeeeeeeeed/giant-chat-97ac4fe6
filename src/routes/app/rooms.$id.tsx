@@ -253,7 +253,7 @@ function RoomPage() {
     setActionTarget(null);
   };
   const ban = async (uid: string) => {
-    const { error } = await supabase.rpc("ban_room_member", { _room: id, _user: uid, _reason: null });
+    const { error } = await supabase.rpc("ban_room_member", { _room: id, _user: uid, _reason: undefined });
     if (error) toast.error(error.message); else toast.success(t("room.action_done"));
     setActionTarget(null);
   };
