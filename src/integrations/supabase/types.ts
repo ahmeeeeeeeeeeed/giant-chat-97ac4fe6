@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      friendships: {
+        Row: {
+          addressee_id: string
+          created_at: string
+          id: string
+          requester_id: string
+          status: Database["public"]["Enums"]["friendship_status"]
+          updated_at: string
+        }
+        Insert: {
+          addressee_id: string
+          created_at?: string
+          id?: string
+          requester_id: string
+          status?: Database["public"]["Enums"]["friendship_status"]
+          updated_at?: string
+        }
+        Update: {
+          addressee_id?: string
+          created_at?: string
+          id?: string
+          requester_id?: string
+          status?: Database["public"]["Enums"]["friendship_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -38,6 +65,60 @@ export type Database = {
           id?: string
           last_seen_at?: string
           username?: string
+        }
+        Relationships: []
+      }
+      room_bans: {
+        Row: {
+          banned_by: string
+          created_at: string
+          reason: string | null
+          room_id: string
+          user_id: string
+        }
+        Insert: {
+          banned_by: string
+          created_at?: string
+          reason?: string | null
+          room_id: string
+          user_id: string
+        }
+        Update: {
+          banned_by?: string
+          created_at?: string
+          reason?: string | null
+          room_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      room_logs: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          event: Database["public"]["Enums"]["room_log_event"]
+          id: string
+          meta: Json | null
+          room_id: string
+          target_id: string | null
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          event: Database["public"]["Enums"]["room_log_event"]
+          id?: string
+          meta?: Json | null
+          room_id: string
+          target_id?: string | null
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          event?: Database["public"]["Enums"]["room_log_event"]
+          id?: string
+          meta?: Json | null
+          room_id?: string
+          target_id?: string | null
         }
         Relationships: []
       }
@@ -143,9 +224,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      ban_room_member: {
+        Args: { _reason?: string; _room: string; _user: string }
+        Returns: undefined
+      }
       is_room_member: {
         Args: { _room: string; _user: string }
         Returns: boolean
+      }
+      kick_room_member: {
+        Args: { _room: string; _user: string }
+        Returns: undefined
       }
       room_joined_at: {
         Args: { _room: string; _user: string }
@@ -155,9 +244,33 @@ export type Database = {
         Args: { _room: string; _user: string }
         Returns: Database["public"]["Enums"]["room_rank"]
       }
+      set_member_rank: {
+        Args: {
+          _new_rank: Database["public"]["Enums"]["room_rank"]
+          _room: string
+          _user: string
+        }
+        Returns: undefined
+      }
+      transfer_room_ownership: {
+        Args: { _new_owner: string; _room: string }
+        Returns: undefined
+      }
     }
     Enums: {
+      friendship_status: "pending" | "accepted" | "blocked"
       message_type: "text" | "image" | "voice"
+      room_log_event:
+        | "join"
+        | "leave"
+        | "kick"
+        | "ban"
+        | "unban"
+        | "promote"
+        | "demote"
+        | "transfer"
+        | "mute"
+        | "unmute"
       room_rank: "owner" | "admin" | "member"
     }
     CompositeTypes: {
@@ -286,7 +399,20 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      friendship_status: ["pending", "accepted", "blocked"],
       message_type: ["text", "image", "voice"],
+      room_log_event: [
+        "join",
+        "leave",
+        "kick",
+        "ban",
+        "unban",
+        "promote",
+        "demote",
+        "transfer",
+        "mute",
+        "unmute",
+      ],
       room_rank: ["owner", "admin", "member"],
     },
   },
