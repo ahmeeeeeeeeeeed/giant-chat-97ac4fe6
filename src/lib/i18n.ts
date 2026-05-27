@@ -3,47 +3,39 @@ import { initReactI18next } from "react-i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
 
 // 22 languages. Keys are stable; values are short UI strings only.
-const K = [
-  "app.name","app.tagline",
-  "auth.login","auth.register","auth.username","auth.password","auth.confirm",
-  "auth.have_account","auth.no_account","auth.loading","auth.logout",
-  "nav.rooms","nav.chats","nav.profile","nav.settings",
-  "rooms.title","rooms.subtitle","rooms.create","rooms.create_title","rooms.name","rooms.description","rooms.empty","rooms.members",
-  "room.placeholder","room.send","room.leave","room.leave_confirm","room.no_messages","room.online",
-  "room.attach_image","room.record_voice","room.recording","room.stop","room.image","room.voice","room.uploading",
-  "chats.title","chats.subtitle","chats.soon",
-  "profile.title","profile.bio","profile.bio_placeholder","profile.save","profile.saved","profile.avatar","profile.change_photo",
-  "settings.title","settings.theme","settings.dark","settings.light","settings.language",
-  "common.cancel","common.error","common.back",
-] as const;
-type Key = typeof K[number];
-type Dict = Record<Key, string>;
+type Dict = Record<string, string>;
 
 const ar: Dict = {
   "app.name":"Giant","app.tagline":"دردشة مجتمعات وغرف ومحادثات خاصة",
   "auth.login":"تسجيل الدخول","auth.register":"إنشاء حساب","auth.username":"اسم المستخدم","auth.password":"كلمة المرور","auth.confirm":"تأكيد كلمة المرور",
   "auth.have_account":"لديك حساب؟","auth.no_account":"ليس لديك حساب؟","auth.loading":"جاري التحميل…","auth.logout":"تسجيل الخروج",
-  "nav.rooms":"الغرف","nav.chats":"المحادثات","nav.profile":"حسابي","nav.settings":"الإعدادات",
-  "rooms.title":"غرف الدردشة","rooms.subtitle":"انضم لمجتمع أو ابدأ غرفتك","rooms.create":"إنشاء غرفة","rooms.create_title":"غرفة جديدة","rooms.name":"اسم الغرفة","rooms.description":"وصف الغرفة","rooms.empty":"لا توجد غرف بعد","rooms.members":"عضو",
+  "nav.rooms":"الغرف","nav.chats":"المحادثات","nav.profile":"حسابي","nav.settings":"الإعدادات","nav.friends":"الأصدقاء",
+  "rooms.title":"غرف الدردشة","rooms.subtitle":"انضم لمجتمع أو ابدأ غرفتك","rooms.create":"إنشاء غرفة","rooms.create_title":"غرفة جديدة","rooms.name":"اسم الغرفة","rooms.description":"وصف الغرفة","rooms.empty":"لا توجد غرف بعد","rooms.members":"عضو","rooms.search":"ابحث عن غرفة…","rooms.no_results":"لا توجد نتائج",
   "room.placeholder":"اكتب رسالة…","room.send":"إرسال","room.leave":"الخروج من الغرفة","room.leave_confirm":"سيتم مسح رسائل الغرفة عند خروج آخر عضو","room.no_messages":"لا توجد رسائل بعد. كن أول من يكتب!","room.online":"متصل",
   "room.attach_image":"إرفاق صورة","room.record_voice":"تسجيل صوتي","room.recording":"جاري التسجيل…","room.stop":"إيقاف","room.image":"صورة","room.voice":"رسالة صوتية","room.uploading":"جاري الرفع…",
+  "room.members_title":"الأعضاء","room.logs_title":"سجل الغرفة","room.kick":"طرد","room.ban":"حظر","room.unban":"إلغاء الحظر","room.promote":"ترقية لمشرف","room.demote":"إزالة الإشراف","room.transfer":"نقل الملكية","room.transfer_confirm":"هل تريد نقل ملكية الغرفة؟ لا يمكن التراجع.","room.owner":"المالك","room.admin":"مشرف","room.member":"عضو","room.banned":"محظور","room.action_done":"تم التنفيذ","room.banned_list":"المحظورون","room.no_bans":"لا يوجد محظورون","room.no_logs":"لا توجد أحداث بعد",
+  "log.join":"انضم للغرفة","log.leave":"غادر الغرفة","log.kick":"تم طرده","log.ban":"تم حظره","log.unban":"تم رفع الحظر","log.promote":"تمت ترقيته","log.demote":"تم إزالة إشرافه","log.transfer":"أصبح المالك الجديد",
   "chats.title":"المحادثات","chats.subtitle":"محادثاتك الخاصة","chats.soon":"المحادثات الخاصة قريبًا",
-  "profile.title":"حسابي","profile.bio":"النبذة التعريفية","profile.bio_placeholder":"اكتب نبذة عنك…","profile.save":"حفظ","profile.saved":"تم الحفظ","profile.avatar":"الصورة الشخصية","profile.change_photo":"تغيير الصورة",
-  "settings.title":"الإعدادات","settings.theme":"المظهر","settings.dark":"ليلي","settings.light":"فاتح","settings.language":"اللغة",
-  "common.cancel":"إلغاء","common.error":"حدث خطأ","common.back":"رجوع",
+  "profile.title":"حسابي","profile.bio":"النبذة التعريفية","profile.bio_placeholder":"اكتب نبذة عنك…","profile.save":"حفظ","profile.saved":"تم الحفظ","profile.avatar":"الصورة الشخصية","profile.change_photo":"تغيير الصورة","profile.username":"اسم المستخدم","profile.notifications":"الإشعارات","profile.account":"الحساب","profile.security":"الأمان","profile.about":"حول التطبيق",
+  "friends.title":"الأصدقاء","friends.search":"ابحث باسم المستخدم…","friends.requests":"طلبات الصداقة","friends.my_friends":"أصدقائي","friends.add":"إضافة","friends.accept":"قبول","friends.reject":"رفض","friends.remove":"إزالة","friends.pending":"بانتظار الرد","friends.empty":"لا يوجد أصدقاء بعد","friends.no_users":"لا يوجد مستخدمون","friends.request_sent":"تم إرسال الطلب",
+  "settings.title":"الإعدادات","settings.theme":"المظهر","settings.dark":"ليلي","settings.light":"فاتح","settings.language":"اللغة","settings.notifications":"الإشعارات","settings.notifications_on":"تفعيل الإشعارات",
+  "common.cancel":"إلغاء","common.error":"حدث خطأ","common.back":"رجوع","common.confirm":"تأكيد","common.search":"بحث","common.close":"إغلاق",
 };
 const en: Dict = {
   "app.name":"Giant","app.tagline":"Community chat rooms and private messages",
   "auth.login":"Log in","auth.register":"Sign up","auth.username":"Username","auth.password":"Password","auth.confirm":"Confirm password",
   "auth.have_account":"Have an account?","auth.no_account":"No account?","auth.loading":"Loading…","auth.logout":"Log out",
-  "nav.rooms":"Rooms","nav.chats":"Chats","nav.profile":"Profile","nav.settings":"Settings",
-  "rooms.title":"Chat rooms","rooms.subtitle":"Join a community or start your own","rooms.create":"New room","rooms.create_title":"New room","rooms.name":"Room name","rooms.description":"Description","rooms.empty":"No rooms yet","rooms.members":"members",
+  "nav.rooms":"Rooms","nav.chats":"Chats","nav.profile":"Profile","nav.settings":"Settings","nav.friends":"Friends",
+  "rooms.title":"Chat rooms","rooms.subtitle":"Join a community or start your own","rooms.create":"New room","rooms.create_title":"New room","rooms.name":"Room name","rooms.description":"Description","rooms.empty":"No rooms yet","rooms.members":"members","rooms.search":"Search rooms…","rooms.no_results":"No results",
   "room.placeholder":"Type a message…","room.send":"Send","room.leave":"Leave room","room.leave_confirm":"Messages are erased when the last member leaves","room.no_messages":"No messages yet. Be the first!","room.online":"online",
   "room.attach_image":"Attach image","room.record_voice":"Record voice","room.recording":"Recording…","room.stop":"Stop","room.image":"Image","room.voice":"Voice message","room.uploading":"Uploading…",
+  "room.members_title":"Members","room.logs_title":"Room log","room.kick":"Kick","room.ban":"Ban","room.unban":"Unban","room.promote":"Promote to admin","room.demote":"Remove admin","room.transfer":"Transfer ownership","room.transfer_confirm":"Transfer ownership? This cannot be undone.","room.owner":"Owner","room.admin":"Admin","room.member":"Member","room.banned":"Banned","room.action_done":"Done","room.banned_list":"Banned users","room.no_bans":"No banned users","room.no_logs":"No events yet",
+  "log.join":"joined the room","log.leave":"left the room","log.kick":"was kicked","log.ban":"was banned","log.unban":"was unbanned","log.promote":"was promoted","log.demote":"was demoted","log.transfer":"became the new owner",
   "chats.title":"Chats","chats.subtitle":"Your private conversations","chats.soon":"Private chats coming soon",
-  "profile.title":"Profile","profile.bio":"Bio","profile.bio_placeholder":"Write a short bio…","profile.save":"Save","profile.saved":"Saved","profile.avatar":"Avatar","profile.change_photo":"Change photo",
-  "settings.title":"Settings","settings.theme":"Theme","settings.dark":"Dark","settings.light":"Light","settings.language":"Language",
-  "common.cancel":"Cancel","common.error":"Something went wrong","common.back":"Back",
+  "profile.title":"Profile","profile.bio":"Bio","profile.bio_placeholder":"Write a short bio…","profile.save":"Save","profile.saved":"Saved","profile.avatar":"Avatar","profile.change_photo":"Change photo","profile.username":"Username","profile.notifications":"Notifications","profile.account":"Account","profile.security":"Security","profile.about":"About",
+  "friends.title":"Friends","friends.search":"Search by username…","friends.requests":"Friend requests","friends.my_friends":"My friends","friends.add":"Add","friends.accept":"Accept","friends.reject":"Reject","friends.remove":"Remove","friends.pending":"Pending","friends.empty":"No friends yet","friends.no_users":"No users found","friends.request_sent":"Request sent",
+  "settings.title":"Settings","settings.theme":"Theme","settings.dark":"Dark","settings.light":"Light","settings.language":"Language","settings.notifications":"Notifications","settings.notifications_on":"Enable notifications",
+  "common.cancel":"Cancel","common.error":"Something went wrong","common.back":"Back","common.confirm":"Confirm","common.search":"Search","common.close":"Close",
 };
 const fr: Dict = {"app.name":"Giant","app.tagline":"Salons de discussion et messages privés","auth.login":"Connexion","auth.register":"S'inscrire","auth.username":"Nom d'utilisateur","auth.password":"Mot de passe","auth.confirm":"Confirmer le mot de passe","auth.have_account":"Vous avez un compte ?","auth.no_account":"Pas de compte ?","auth.loading":"Chargement…","auth.logout":"Déconnexion","nav.rooms":"Salons","nav.chats":"Messages","nav.profile":"Profil","nav.settings":"Paramètres","rooms.title":"Salons","rooms.subtitle":"Rejoignez une communauté ou créez la vôtre","rooms.create":"Nouveau salon","rooms.create_title":"Nouveau salon","rooms.name":"Nom du salon","rooms.description":"Description","rooms.empty":"Aucun salon","rooms.members":"membres","room.placeholder":"Écrire un message…","room.send":"Envoyer","room.leave":"Quitter","room.leave_confirm":"Les messages sont effacés quand le dernier membre part","room.no_messages":"Aucun message. Soyez le premier !","room.online":"en ligne","room.attach_image":"Joindre une image","room.record_voice":"Enregistrer","room.recording":"Enregistrement…","room.stop":"Arrêter","room.image":"Image","room.voice":"Message vocal","room.uploading":"Envoi…","chats.title":"Messages","chats.subtitle":"Vos conversations privées","chats.soon":"Messages privés bientôt","profile.title":"Profil","profile.bio":"Bio","profile.bio_placeholder":"Écrivez une courte bio…","profile.save":"Enregistrer","profile.saved":"Enregistré","profile.avatar":"Avatar","profile.change_photo":"Changer la photo","settings.title":"Paramètres","settings.theme":"Thème","settings.dark":"Sombre","settings.light":"Clair","settings.language":"Langue","common.cancel":"Annuler","common.error":"Une erreur s'est produite","common.back":"Retour"};
 const es: Dict = {"app.name":"Giant","app.tagline":"Salas de chat y mensajes privados","auth.login":"Iniciar sesión","auth.register":"Registrarse","auth.username":"Usuario","auth.password":"Contraseña","auth.confirm":"Confirmar contraseña","auth.have_account":"¿Tienes cuenta?","auth.no_account":"¿Sin cuenta?","auth.loading":"Cargando…","auth.logout":"Salir","nav.rooms":"Salas","nav.chats":"Mensajes","nav.profile":"Perfil","nav.settings":"Ajustes","rooms.title":"Salas de chat","rooms.subtitle":"Únete a una comunidad","rooms.create":"Nueva sala","rooms.create_title":"Nueva sala","rooms.name":"Nombre","rooms.description":"Descripción","rooms.empty":"Sin salas","rooms.members":"miembros","room.placeholder":"Escribe un mensaje…","room.send":"Enviar","room.leave":"Salir","room.leave_confirm":"Los mensajes se borran cuando se va el último","room.no_messages":"Sin mensajes. ¡Sé el primero!","room.online":"en línea","room.attach_image":"Adjuntar imagen","room.record_voice":"Grabar voz","room.recording":"Grabando…","room.stop":"Detener","room.image":"Imagen","room.voice":"Mensaje de voz","room.uploading":"Subiendo…","chats.title":"Mensajes","chats.subtitle":"Tus chats privados","chats.soon":"Chats privados pronto","profile.title":"Perfil","profile.bio":"Biografía","profile.bio_placeholder":"Escribe una bio…","profile.save":"Guardar","profile.saved":"Guardado","profile.avatar":"Avatar","profile.change_photo":"Cambiar foto","settings.title":"Ajustes","settings.theme":"Tema","settings.dark":"Oscuro","settings.light":"Claro","settings.language":"Idioma","common.cancel":"Cancelar","common.error":"Ha ocurrido un error","common.back":"Atrás"};
@@ -105,7 +97,7 @@ const resources = {
 if (!i18n.isInitialized) {
   i18n.use(LanguageDetector).use(initReactI18next).init({
     resources,
-    fallbackLng: "ar",
+    fallbackLng: ["en", "ar"],
     supportedLngs: SUPPORTED_LANGUAGES.map((l) => l.code),
     interpolation: { escapeValue: false },
     detection: { order: ["localStorage", "navigator"], caches: ["localStorage"], lookupLocalStorage: "giant.lang" },

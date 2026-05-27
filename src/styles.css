@@ -115,3 +115,9 @@
   background: var(--online);
   animation: online-pulse 2s ease-in-out infinite;
 }
+
+/* Hide Lovable badge globally */
+#lovable-badge,
+[id="lovable-badge"] {
+  display: none !important;
+}
