@@ -1,9 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
-import { Plus, Users, Hash, Loader2, X } from "lucide-react";
+import { Plus, Users, Hash, Loader2, X, Search } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/")({
@@ -24,6 +24,7 @@ function RoomsPage() {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
+  const [query, setQuery] = useState("");
 
   const load = async () => {
     setLoading(true);
@@ -50,6 +51,14 @@ function RoomsPage() {
     return () => { supabase.removeChannel(ch); };
   }, []);
 
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return rooms;
+    return rooms.filter(r =>
+      r.name.toLowerCase().includes(q) || (r.description ?? "").toLowerCase().includes(q)
+    );
+  }, [rooms, query]);
+
   return (
     <main className="flex flex-1 flex-col">
       <header className="sticky top-0 z-10 border-b border-border bg-background/90 px-5 py-4 backdrop-blur">
@@ -60,11 +69,23 @@ function RoomsPage() {
           </div>
           <button
             onClick={() => setShowCreate(true)}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm active:scale-95 transition"
             aria-label={t("rooms.create")}
           >
             <Plus className="h-5 w-5" />
           </button>
+        </div>
+        <div className="mt-3 flex items-center gap-2 rounded-2xl border border-input bg-card px-3 h-11">
+          <Search className="h-4 w-4 text-muted-foreground" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={t("rooms.search")}
+            className="flex-1 bg-transparent text-[15px] outline-none placeholder:text-muted-foreground"
+          />
+          {query && (
+            <button onClick={() => setQuery("")} className="text-muted-foreground"><X className="h-4 w-4" /></button>
+          )}
         </div>
       </header>
 
@@ -73,23 +94,25 @@ function RoomsPage() {
           <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
         ) : rooms.length === 0 ? (
           <EmptyState onCreate={() => setShowCreate(true)} />
+        ) : filtered.length === 0 ? (
+          <p className="mt-12 text-center text-sm text-muted-foreground">{t("rooms.no_results")}</p>
         ) : (
           <ul className="flex flex-col gap-2">
-            {rooms.map((r) => (
+            {filtered.map((r) => (
               <li key={r.id}>
                 <Link
                   to="/app/rooms/$id"
                   params={{ id: r.id }}
-                  className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 transition active:scale-[0.99]"
+                  className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 transition active:scale-[0.99] hover:border-foreground/20"
                 >
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-secondary text-foreground">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-secondary to-accent text-foreground">
                     <Hash className="h-5 w-5" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="truncate font-semibold">{r.name}</div>
                     {r.description && <div className="truncate text-sm text-muted-foreground">{r.description}</div>}
                   </div>
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1 text-xs font-medium text-muted-foreground">
                     <Users className="h-3.5 w-3.5" />
                     {r.member_count}
                   </div>
@@ -146,6 +169,7 @@ function CreateRoomSheet({ ownerId, onClose, onCreated }: { ownerId: string; onC
   return (
     <div className="fixed inset-0 z-50 flex items-end bg-black/60" onClick={onClose}>
       <form onSubmit={submit} onClick={(e) => e.stopPropagation()} className="w-full rounded-t-3xl border-t border-border bg-card p-6 pb-8">
+        <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-muted" />
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-bold">{t("rooms.create_title")}</h2>
           <button type="button" onClick={onClose} className="text-muted-foreground"><X className="h-5 w-5" /></button>
