@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      direct_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          receiver_id: string
+          sender_id: string
+        }
+        Insert: {
+          content?: string
+          created_at?: string
+          id?: string
+          receiver_id: string
+          sender_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          receiver_id?: string
+          sender_id?: string
+        }
+        Relationships: []
+      }
       friendships: {
         Row: {
           addressee_id: string
@@ -41,6 +65,148 @@ export type Database = {
         }
         Relationships: []
       }
+      game_guesses: {
+        Row: {
+          ai_name: string | null
+          created_at: string
+          display_name: string
+          id: string
+          round_id: string
+          seat_idx: number
+          user_id: string | null
+          value: number
+        }
+        Insert: {
+          ai_name?: string | null
+          created_at?: string
+          display_name: string
+          id?: string
+          round_id: string
+          seat_idx: number
+          user_id?: string | null
+          value: number
+        }
+        Update: {
+          ai_name?: string | null
+          created_at?: string
+          display_name?: string
+          id?: string
+          round_id?: string
+          seat_idx?: number
+          user_id?: string | null
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_guesses_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "game_rounds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      game_rounds: {
+        Row: {
+          deadline_at: string
+          ended_at: string | null
+          id: string
+          secret: number
+          started_at: string
+          status: string
+          winner_id: string | null
+          winner_name: string | null
+          winner_value: number | null
+        }
+        Insert: {
+          deadline_at?: string
+          ended_at?: string | null
+          id?: string
+          secret?: number
+          started_at?: string
+          status?: string
+          winner_id?: string | null
+          winner_name?: string | null
+          winner_value?: number | null
+        }
+        Update: {
+          deadline_at?: string
+          ended_at?: string | null
+          id?: string
+          secret?: number
+          started_at?: string
+          status?: string
+          winner_id?: string | null
+          winner_name?: string | null
+          winner_value?: number | null
+        }
+        Relationships: []
+      }
+      game_seats: {
+        Row: {
+          ai_name: string | null
+          round_id: string
+          seat_idx: number
+          user_id: string | null
+        }
+        Insert: {
+          ai_name?: string | null
+          round_id: string
+          seat_idx: number
+          user_id?: string | null
+        }
+        Update: {
+          ai_name?: string | null
+          round_id?: string
+          seat_idx?: number
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_seats_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "game_rounds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      game_system_messages: {
+        Row: {
+          created_at: string
+          id: string
+          params: Json | null
+          text_key: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          params?: Json | null
+          text_key: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          params?: Json | null
+          text_key?: string
+        }
+        Relationships: []
+      }
+      game_waitlist: {
+        Row: {
+          joined_at: string
+          user_id: string
+        }
+        Insert: {
+          joined_at?: string
+          user_id: string
+        }
+        Update: {
+          joined_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -48,6 +214,7 @@ export type Database = {
           created_at: string
           id: string
           last_seen_at: string
+          points: number
           username: string
         }
         Insert: {
@@ -56,6 +223,7 @@ export type Database = {
           created_at?: string
           id: string
           last_seen_at?: string
+          points?: number
           username: string
         }
         Update: {
@@ -64,6 +232,7 @@ export type Database = {
           created_at?: string
           id?: string
           last_seen_at?: string
+          points?: number
           username?: string
         }
         Relationships: []
@@ -228,6 +397,12 @@ export type Database = {
         Args: { _reason?: string; _room: string; _user: string }
         Returns: undefined
       }
+      game_ensure_round: { Args: never; Returns: string }
+      game_fill_ai: { Args: { _rid: string }; Returns: undefined }
+      game_guess: { Args: { _value: number }; Returns: undefined }
+      game_join: { Args: never; Returns: Json }
+      game_maybe_end: { Args: { _rid: string }; Returns: undefined }
+      game_tick: { Args: never; Returns: undefined }
       is_room_member: {
         Args: { _room: string; _user: string }
         Returns: boolean

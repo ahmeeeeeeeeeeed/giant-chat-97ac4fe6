@@ -2,7 +2,7 @@ import { createFileRoute, Link, Outlet, useNavigate, useLocation } from "@tansta
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/lib/auth";
-import { Home, MessageSquare, User, Settings, Users as UsersIcon } from "lucide-react";
+import { Home, MessageSquare, User, Settings, Users as UsersIcon, Gamepad2 } from "lucide-react";
 
 export const Route = createFileRoute("/app")({
   component: AppLayout,
@@ -17,6 +17,7 @@ function AppLayout() {
   const tabs = [
     { to: "/app", label: t("nav.rooms"), icon: Home, exact: true },
     { to: "/app/friends", label: t("nav.friends"), icon: UsersIcon, exact: false },
+    { to: "/app/games", label: t("nav.games"), icon: Gamepad2, exact: false },
     { to: "/app/chats", label: t("nav.chats"), icon: MessageSquare, exact: false },
     { to: "/app/profile", label: t("nav.profile"), icon: User, exact: false },
     { to: "/app/settings", label: t("nav.settings"), icon: Settings, exact: false },
