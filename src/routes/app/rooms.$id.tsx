@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/auth";
 import {
   ArrowRight, Send, Settings as SettingsIcon, LogOut, Users, Loader2,
   ImagePlus, Mic, Square, Play, Pause, Crown, Shield, UserX, Ban,
-  ArrowUpCircle, ArrowDownCircle, ScrollText, X, MoreVertical,
+  ArrowUpCircle, ArrowDownCircle, ScrollText, X, MoreVertical, MessageSquare,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
@@ -490,6 +490,10 @@ function RoomPage() {
               </div>
             </div>
             <div className="flex flex-col gap-2">
+              <ActionBtn
+                onClick={() => { const tid = actionTarget.user_id; setActionTarget(null); navigate({ to: "/app/chats/$id", params: { id: tid } }); }}
+                icon={<MessageSquare className="h-5 w-5" />} label={t("friends.chat")}
+              />
               {actionTarget.rank === "member" && (
                 <ActionBtn onClick={() => setRank(actionTarget.user_id, "admin")} icon={<ArrowUpCircle className="h-5 w-5" />} label={t("room.promote")} />
               )}

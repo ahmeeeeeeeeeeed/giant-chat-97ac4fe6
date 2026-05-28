@@ -1,9 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
-import { Search, UserPlus, Check, X, Loader2, Users as UsersIcon } from "lucide-react";
+import { Search, UserPlus, Check, X, Loader2, Users as UsersIcon, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/friends")({
@@ -106,6 +106,11 @@ function FriendsPage() {
                   <li key={f.id} className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3">
                     <AvatarSm profile={p} />
                     <div className="flex-1 truncate font-medium">{p?.username ?? "…"}</div>
+                    <Link to="/app/chats/$id" params={{ id: otherId }}
+                      className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground"
+                      aria-label={t("friends.chat")}>
+                      <MessageSquare className="h-4 w-4" />
+                    </Link>
                     <button onClick={() => removeFriend(f.id)} className="rounded-full p-2 text-muted-foreground hover:text-destructive" aria-label={t("friends.remove")}>
                       <X className="h-4 w-4" />
                     </button>
