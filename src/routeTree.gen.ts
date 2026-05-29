@@ -16,9 +16,11 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app/index'
 import { Route as AppSettingsRouteImport } from './routes/app/settings'
 import { Route as AppProfileRouteImport } from './routes/app/profile'
+import { Route as AppNotificationsRouteImport } from './routes/app/notifications'
 import { Route as AppGamesRouteImport } from './routes/app/games'
 import { Route as AppFriendsRouteImport } from './routes/app/friends'
 import { Route as AppChatsRouteImport } from './routes/app/chats'
+import { Route as AppAdminRouteImport } from './routes/app/admin'
 import { Route as AppRoomsIdRouteImport } from './routes/app/rooms.$id'
 import { Route as AppChatsIdRouteImport } from './routes/app/chats.$id'
 
@@ -57,6 +59,11 @@ const AppProfileRoute = AppProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => AppRoute,
 } as any)
+const AppNotificationsRoute = AppNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppGamesRoute = AppGamesRouteImport.update({
   id: '/games',
   path: '/games',
@@ -70,6 +77,11 @@ const AppFriendsRoute = AppFriendsRouteImport.update({
 const AppChatsRoute = AppChatsRouteImport.update({
   id: '/chats',
   path: '/chats',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminRoute = AppAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => AppRoute,
 } as any)
 const AppRoomsIdRoute = AppRoomsIdRouteImport.update({
@@ -88,9 +100,11 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/app/admin': typeof AppAdminRoute
   '/app/chats': typeof AppChatsRouteWithChildren
   '/app/friends': typeof AppFriendsRoute
   '/app/games': typeof AppGamesRoute
+  '/app/notifications': typeof AppNotificationsRoute
   '/app/profile': typeof AppProfileRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/': typeof AppIndexRoute
@@ -101,9 +115,11 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/app/admin': typeof AppAdminRoute
   '/app/chats': typeof AppChatsRouteWithChildren
   '/app/friends': typeof AppFriendsRoute
   '/app/games': typeof AppGamesRoute
+  '/app/notifications': typeof AppNotificationsRoute
   '/app/profile': typeof AppProfileRoute
   '/app/settings': typeof AppSettingsRoute
   '/app': typeof AppIndexRoute
@@ -116,9 +132,11 @@ export interface FileRoutesById {
   '/app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/app/admin': typeof AppAdminRoute
   '/app/chats': typeof AppChatsRouteWithChildren
   '/app/friends': typeof AppFriendsRoute
   '/app/games': typeof AppGamesRoute
+  '/app/notifications': typeof AppNotificationsRoute
   '/app/profile': typeof AppProfileRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/': typeof AppIndexRoute
@@ -132,9 +150,11 @@ export interface FileRouteTypes {
     | '/app'
     | '/login'
     | '/register'
+    | '/app/admin'
     | '/app/chats'
     | '/app/friends'
     | '/app/games'
+    | '/app/notifications'
     | '/app/profile'
     | '/app/settings'
     | '/app/'
@@ -145,9 +165,11 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/register'
+    | '/app/admin'
     | '/app/chats'
     | '/app/friends'
     | '/app/games'
+    | '/app/notifications'
     | '/app/profile'
     | '/app/settings'
     | '/app'
@@ -159,9 +181,11 @@ export interface FileRouteTypes {
     | '/app'
     | '/login'
     | '/register'
+    | '/app/admin'
     | '/app/chats'
     | '/app/friends'
     | '/app/games'
+    | '/app/notifications'
     | '/app/profile'
     | '/app/settings'
     | '/app/'
@@ -227,6 +251,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppProfileRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/notifications': {
+      id: '/app/notifications'
+      path: '/notifications'
+      fullPath: '/app/notifications'
+      preLoaderRoute: typeof AppNotificationsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/games': {
       id: '/app/games'
       path: '/games'
@@ -246,6 +277,13 @@ declare module '@tanstack/react-router' {
       path: '/chats'
       fullPath: '/app/chats'
       preLoaderRoute: typeof AppChatsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/admin': {
+      id: '/app/admin'
+      path: '/admin'
+      fullPath: '/app/admin'
+      preLoaderRoute: typeof AppAdminRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/rooms/$id': {
@@ -278,9 +316,11 @@ const AppChatsRouteWithChildren = AppChatsRoute._addFileChildren(
 )
 
 interface AppRouteChildren {
+  AppAdminRoute: typeof AppAdminRoute
   AppChatsRoute: typeof AppChatsRouteWithChildren
   AppFriendsRoute: typeof AppFriendsRoute
   AppGamesRoute: typeof AppGamesRoute
+  AppNotificationsRoute: typeof AppNotificationsRoute
   AppProfileRoute: typeof AppProfileRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppIndexRoute: typeof AppIndexRoute
@@ -288,9 +328,11 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppAdminRoute: AppAdminRoute,
   AppChatsRoute: AppChatsRouteWithChildren,
   AppFriendsRoute: AppFriendsRoute,
   AppGamesRoute: AppGamesRoute,
+  AppNotificationsRoute: AppNotificationsRoute,
   AppProfileRoute: AppProfileRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppIndexRoute: AppIndexRoute,
@@ -308,3 +350,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
