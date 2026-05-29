@@ -19,6 +19,10 @@ export type Database = {
           content: string
           created_at: string
           id: string
+          media_duration_ms: number | null
+          media_url: string | null
+          message_type: Database["public"]["Enums"]["message_type"]
+          read_at: string | null
           receiver_id: string
           sender_id: string
         }
@@ -26,6 +30,10 @@ export type Database = {
           content?: string
           created_at?: string
           id?: string
+          media_duration_ms?: number | null
+          media_url?: string | null
+          message_type?: Database["public"]["Enums"]["message_type"]
+          read_at?: string | null
           receiver_id: string
           sender_id: string
         }
@@ -33,6 +41,10 @@ export type Database = {
           content?: string
           created_at?: string
           id?: string
+          media_duration_ms?: number | null
+          media_url?: string | null
+          message_type?: Database["public"]["Enums"]["message_type"]
+          read_at?: string | null
           receiver_id?: string
           sender_id?: string
         }
@@ -388,21 +400,55 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      admin_broadcast: { Args: { _text: string }; Returns: undefined }
+      admin_send_points: {
+        Args: { _amount: number; _target: string }
+        Returns: undefined
+      }
       ban_room_member: {
         Args: { _reason?: string; _room: string; _user: string }
         Returns: undefined
       }
+      dm_mark_read: { Args: { _peer: string }; Returns: undefined }
       game_ensure_round: { Args: never; Returns: string }
       game_fill_ai: { Args: { _rid: string }; Returns: undefined }
       game_guess: { Args: { _value: number }; Returns: undefined }
       game_join: { Args: never; Returns: Json }
       game_maybe_end: { Args: { _rid: string }; Returns: undefined }
       game_tick: { Args: never; Returns: undefined }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       is_room_member: {
         Args: { _room: string; _user: string }
         Returns: boolean
@@ -433,6 +479,7 @@ export type Database = {
       }
     }
     Enums: {
+      app_role: "admin" | "user"
       friendship_status: "pending" | "accepted" | "blocked"
       message_type: "text" | "image" | "voice"
       room_log_event:
@@ -574,6 +621,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "user"],
       friendship_status: ["pending", "accepted", "blocked"],
       message_type: ["text", "image", "voice"],
       room_log_event: [
