@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
-import { Gamepad2, Coins, Crown, Bot, User as UserIcon, Send, Loader2, Trophy } from "lucide-react";
+import { Gamepad2, Coins, Crown, Bot, User as UserIcon, Send, Loader2, Trophy, UserPlus, X } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/games")({
