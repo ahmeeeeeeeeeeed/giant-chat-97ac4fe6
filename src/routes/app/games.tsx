@@ -334,6 +334,44 @@ function GamesPage() {
 
         <p className="text-center text-[11px] text-muted-foreground">{t("game.rules")}</p>
       </div>
+
+      {inviteOpen && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50" onClick={() => setInviteOpen(false)}>
+          <div className="w-full max-w-md rounded-t-3xl bg-background p-4" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-lg font-bold">{t("game.invite_friends")}</h3>
+              <button onClick={() => setInviteOpen(false)} className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            {friends.length === 0 ? (
+              <p className="py-8 text-center text-sm text-muted-foreground">{t("friends.empty")}</p>
+            ) : (
+              <ul className="flex max-h-[60vh] flex-col gap-2 overflow-y-auto">
+                {friends.map(f => {
+                  const sent = invitedIds.has(f.id);
+                  return (
+                    <li key={f.id} className="flex items-center gap-3 rounded-2xl border border-border p-2">
+                      {f.avatar_url ? (
+                        <img src={f.avatar_url} alt="" className="h-10 w-10 rounded-full object-cover" />
+                      ) : (
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary font-bold">
+                          {f.username.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <div className="flex-1 truncate text-sm font-semibold">{f.username}</div>
+                      <button onClick={() => sendInvite(f.id)} disabled={sent}
+                        className="rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground disabled:opacity-50">
+                        {sent ? t("game.invite_sent") : t("game.invite")}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        </div>
+      )}
     </main>
   );
 }
