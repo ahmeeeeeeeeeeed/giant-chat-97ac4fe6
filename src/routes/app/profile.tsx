@@ -29,8 +29,8 @@ function ProfilePage() {
     if (!user) return;
     (async () => {
       const { data } = await supabase
-        .from("profiles").select("username, bio, avatar_url").eq("id", user.id).maybeSingle();
-      if (data) { setUsername(data.username); setBio(data.bio ?? ""); setAvatarUrl(data.avatar_url); }
+        .from("profiles").select("username, bio, avatar_url, points").eq("id", user.id).maybeSingle();
+      if (data) { setUsername(data.username); setBio(data.bio ?? ""); setAvatarUrl(data.avatar_url); setPoints(data.points ?? 0); }
       setLoading(false);
     })();
   }, [user]);
