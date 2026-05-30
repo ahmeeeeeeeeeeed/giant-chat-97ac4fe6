@@ -152,8 +152,8 @@ function DMPage() {
   };
 
   return (
-    <main className="fixed inset-0 z-50 flex flex-col bg-background" style={{ height: "100dvh", paddingBottom: "env(safe-area-inset-bottom)" }}>
-      <header className="flex items-center gap-3 border-b border-border bg-card/95 backdrop-blur px-4 py-3">
+    <main className="flex flex-col bg-background" style={{ height: "100dvh" }}>
+      <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-border bg-card/95 backdrop-blur px-4 py-3">
         <button onClick={() => navigate({ to: "/app/chats" })} aria-label={t("common.back")}>
           <ArrowRight className="h-5 w-5 rtl:rotate-180" />
         </button>
