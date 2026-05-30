@@ -195,3 +195,14 @@ function Row({ icon, label, value }: { icon: React.ReactNode; label: string; val
     </div>
   );
 }
+
+export function VipBadge() {
+  return (
+    <span
+      className="inline-flex items-center gap-1 rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-white shadow-sm ring-1 ring-red-700/40"
+      title="VIP"
+    >
+      ★ شخصية مهمة
+    </span>
+  );
+}
