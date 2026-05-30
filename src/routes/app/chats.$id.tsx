@@ -189,7 +189,7 @@ function DMPage() {
       </div>
 
       {recording ? (
-        <div className="flex items-center gap-3 border-t border-border bg-card px-3 py-3">
+        <div className="sticky bottom-0 z-20 flex items-center gap-3 border-t border-border bg-card px-3 py-3" style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.75rem)" }}>
           <span className="flex h-3 w-3 animate-pulse rounded-full bg-destructive" />
           <span className="flex-1 text-sm font-medium">{t("room.recording")} {formatTime(recordSeconds)}</span>
           <button onClick={stopRecording} className="flex h-11 w-11 items-center justify-center rounded-full bg-destructive text-destructive-foreground">
@@ -197,7 +197,7 @@ function DMPage() {
           </button>
         </div>
       ) : (
-        <form onSubmit={send} className="flex items-center gap-2 border-t border-border bg-card px-3 py-2.5">
+        <form onSubmit={send} className="sticky bottom-0 z-20 flex items-center gap-2 border-t border-border bg-card px-3 py-2.5" style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.625rem)" }}>
           <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={onPickImage} />
           <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading}
             className="flex h-11 w-11 items-center justify-center rounded-full bg-secondary text-foreground disabled:opacity-50" aria-label={t("room.attach_image")}>
