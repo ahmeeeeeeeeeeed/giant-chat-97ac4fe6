@@ -290,14 +290,21 @@ function GamesPage() {
           </div>
         ) : (
           <form onSubmit={submitGuess} className="flex items-center gap-2">
-            <input type="number" min={1} max={100} value={guessVal} onChange={(e) => setGuessVal(e.target.value)}
-              placeholder={t("game.guess_placeholder")}
+            <input type="number" min={1} max={5} value={guessVal} onChange={(e) => setGuessVal(e.target.value)}
+              placeholder="1 - 5"
               className="h-12 flex-1 rounded-2xl border border-input bg-background px-4 text-center text-lg font-bold outline-none focus:border-foreground" />
             <button disabled={busy} className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground disabled:opacity-50">
               {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5 rtl:-scale-x-100" />}
             </button>
           </form>
         )}
+
+        {/* Invite friends */}
+        <button onClick={openInvite}
+          className="flex h-11 items-center justify-center gap-2 rounded-2xl border border-border bg-card text-sm font-semibold">
+          <UserPlus className="h-4 w-4" />
+          {t("game.invite_friends")}
+        </button>
 
         {(me?.points ?? 0) < 10 && !mySeat && (
           <p className="text-center text-xs text-destructive">{t("game.no_points")}</p>
