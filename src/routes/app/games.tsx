@@ -136,12 +136,39 @@ function GamesPage() {
   const submitGuess = async (e: React.FormEvent) => {
     e.preventDefault();
     const v = parseInt(guessVal, 10);
-    if (!Number.isFinite(v) || v < 1 || v > 100) { toast.error(t("game.invalid_guess")); return; }
+    if (!Number.isFinite(v) || v < 1 || v > 5) { toast.error(t("game.invalid_guess")); return; }
     setBusy(true);
     const { error } = await supabase.rpc("game_guess", { _value: v });
     setBusy(false);
     if (error) toast.error(error.message);
     else setGuessVal("");
+  };
+
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [friends, setFriends] = useState<Profile[]>([]);
+  const [invitedIds, setInvitedIds] = useState<Set<string>>(new Set());
+  const openInvite = async () => {
+    if (!user) return;
+    setInviteOpen(true);
+    const { data: fr } = await supabase
+      .from("friendships")
+      .select("requester_id, addressee_id, status")
+      .or(`requester_id.eq.${user.id},addressee_id.eq.${user.id}`)
+      .eq("status", "accepted");
+    const ids = (fr ?? []).map(f => f.requester_id === user.id ? f.addressee_id : f.requester_id);
+    if (ids.length === 0) { setFriends([]); return; }
+    const { data: ps } = await supabase.from("profiles").select("id, username, avatar_url, points").in("id", ids);
+    setFriends((ps ?? []) as Profile[]);
+  };
+  const sendInvite = async (friendId: string) => {
+    if (!user) return;
+    const { error } = await supabase.from("direct_messages").insert({
+      sender_id: user.id, receiver_id: friendId,
+      content: `🎮 ${t("game.invite_message")}`,
+      message_type: "text",
+    });
+    if (error) toast.error(error.message);
+    else { setInvitedIds(s => new Set(s).add(friendId)); toast.success(t("game.invite_sent")); }
   };
 
   const renderSeat = (idx: number) => {
