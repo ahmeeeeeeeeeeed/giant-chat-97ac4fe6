@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
-import { Gamepad2, Coins, Crown, Bot, User as UserIcon, Send, Loader2, Trophy } from "lucide-react";
+import { Gamepad2, Coins, Crown, Bot, User as UserIcon, Send, Loader2, Trophy, UserPlus, X } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/games")({
@@ -136,12 +136,39 @@ function GamesPage() {
   const submitGuess = async (e: React.FormEvent) => {
     e.preventDefault();
     const v = parseInt(guessVal, 10);
-    if (!Number.isFinite(v) || v < 1 || v > 100) { toast.error(t("game.invalid_guess")); return; }
+    if (!Number.isFinite(v) || v < 1 || v > 5) { toast.error(t("game.invalid_guess")); return; }
     setBusy(true);
     const { error } = await supabase.rpc("game_guess", { _value: v });
     setBusy(false);
     if (error) toast.error(error.message);
     else setGuessVal("");
+  };
+
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [friends, setFriends] = useState<Profile[]>([]);
+  const [invitedIds, setInvitedIds] = useState<Set<string>>(new Set());
+  const openInvite = async () => {
+    if (!user) return;
+    setInviteOpen(true);
+    const { data: fr } = await supabase
+      .from("friendships")
+      .select("requester_id, addressee_id, status")
+      .or(`requester_id.eq.${user.id},addressee_id.eq.${user.id}`)
+      .eq("status", "accepted");
+    const ids = (fr ?? []).map(f => f.requester_id === user.id ? f.addressee_id : f.requester_id);
+    if (ids.length === 0) { setFriends([]); return; }
+    const { data: ps } = await supabase.from("profiles").select("id, username, avatar_url, points").in("id", ids);
+    setFriends((ps ?? []) as Profile[]);
+  };
+  const sendInvite = async (friendId: string) => {
+    if (!user) return;
+    const { error } = await supabase.from("direct_messages").insert({
+      sender_id: user.id, receiver_id: friendId,
+      content: `🎮 ${t("game.invite_message")}`,
+      message_type: "text",
+    });
+    if (error) toast.error(error.message);
+    else { setInvitedIds(s => new Set(s).add(friendId)); toast.success(t("game.invite_sent")); }
   };
 
   const renderSeat = (idx: number) => {
@@ -263,14 +290,21 @@ function GamesPage() {
           </div>
         ) : (
           <form onSubmit={submitGuess} className="flex items-center gap-2">
-            <input type="number" min={1} max={100} value={guessVal} onChange={(e) => setGuessVal(e.target.value)}
-              placeholder={t("game.guess_placeholder")}
+            <input type="number" min={1} max={5} value={guessVal} onChange={(e) => setGuessVal(e.target.value)}
+              placeholder="1 - 5"
               className="h-12 flex-1 rounded-2xl border border-input bg-background px-4 text-center text-lg font-bold outline-none focus:border-foreground" />
             <button disabled={busy} className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground disabled:opacity-50">
               {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5 rtl:-scale-x-100" />}
             </button>
           </form>
         )}
+
+        {/* Invite friends */}
+        <button onClick={openInvite}
+          className="flex h-11 items-center justify-center gap-2 rounded-2xl border border-border bg-card text-sm font-semibold">
+          <UserPlus className="h-4 w-4" />
+          {t("game.invite_friends")}
+        </button>
 
         {(me?.points ?? 0) < 10 && !mySeat && (
           <p className="text-center text-xs text-destructive">{t("game.no_points")}</p>
@@ -300,6 +334,44 @@ function GamesPage() {
 
         <p className="text-center text-[11px] text-muted-foreground">{t("game.rules")}</p>
       </div>
+
+      {inviteOpen && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50" onClick={() => setInviteOpen(false)}>
+          <div className="w-full max-w-md rounded-t-3xl bg-background p-4" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-lg font-bold">{t("game.invite_friends")}</h3>
+              <button onClick={() => setInviteOpen(false)} className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            {friends.length === 0 ? (
+              <p className="py-8 text-center text-sm text-muted-foreground">{t("friends.empty")}</p>
+            ) : (
+              <ul className="flex max-h-[60vh] flex-col gap-2 overflow-y-auto">
+                {friends.map(f => {
+                  const sent = invitedIds.has(f.id);
+                  return (
+                    <li key={f.id} className="flex items-center gap-3 rounded-2xl border border-border p-2">
+                      {f.avatar_url ? (
+                        <img src={f.avatar_url} alt="" className="h-10 w-10 rounded-full object-cover" />
+                      ) : (
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary font-bold">
+                          {f.username.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <div className="flex-1 truncate text-sm font-semibold">{f.username}</div>
+                      <button onClick={() => sendInvite(f.id)} disabled={sent}
+                        className="rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground disabled:opacity-50">
+                        {sent ? t("game.invite_sent") : t("game.invite")}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        </div>
+      )}
     </main>
   );
 }
