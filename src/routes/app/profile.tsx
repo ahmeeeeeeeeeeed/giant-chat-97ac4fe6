@@ -16,6 +16,7 @@ function ProfilePage() {
   const [username, setUsername] = useState("");
   const [bio, setBio] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [points, setPoints] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -28,8 +29,8 @@ function ProfilePage() {
     if (!user) return;
     (async () => {
       const { data } = await supabase
-        .from("profiles").select("username, bio, avatar_url").eq("id", user.id).maybeSingle();
-      if (data) { setUsername(data.username); setBio(data.bio ?? ""); setAvatarUrl(data.avatar_url); }
+        .from("profiles").select("username, bio, avatar_url, points").eq("id", user.id).maybeSingle();
+      if (data) { setUsername(data.username); setBio(data.bio ?? ""); setAvatarUrl(data.avatar_url); setPoints(data.points ?? 0); }
       setLoading(false);
     })();
   }, [user]);
@@ -110,8 +111,11 @@ function ProfilePage() {
             </button>
             <input ref={fileRef} type="file" accept="image/*" onChange={onPickAvatar} className="hidden" />
             <div className="min-w-0 flex-1">
-              <div className="truncate text-lg font-bold">{username}</div>
-              <div className="truncate text-xs text-muted-foreground">@{username}</div>
+              <div className="flex items-center gap-2">
+                <div className="truncate text-lg font-bold">{username}</div>
+                {points > 10000 && <VipBadge />}
+              </div>
+              <div className="truncate text-xs text-muted-foreground">@{username} · {points} pts</div>
             </div>
           </div>
         </div>
@@ -189,5 +193,16 @@ function Row({ icon, label, value }: { icon: React.ReactNode; label: string; val
       {value && <span className="text-sm text-muted-foreground">{value}</span>}
       <ChevronLeft className="h-4 w-4 text-muted-foreground rtl:rotate-180 hidden" />
     </div>
+  );
+}
+
+export function VipBadge() {
+  return (
+    <span
+      className="inline-flex items-center gap-1 rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-white shadow-sm ring-1 ring-red-700/40"
+      title="VIP"
+    >
+      ★ شخصية مهمة
+    </span>
   );
 }
