@@ -76,7 +76,8 @@ function ProfilePage() {
 
   const updateFlag = async (field: "hide_last_seen" | "dm_locked", value: boolean) => {
     if (!user) return;
-    const { error } = await supabase.from("profiles").update({ [field]: value }).eq("id", user.id);
+    const payload = field === "hide_last_seen" ? { hide_last_seen: value } : { dm_locked: value };
+    const { error } = await supabase.from("profiles").update(payload).eq("id", user.id);
     if (error) toast.error(t("common.error"));
   };
 
