@@ -3,12 +3,18 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
-import { Loader2, Camera, User as UserIcon, Bell, Info, Shield, ChevronLeft } from "lucide-react";
+import { Loader2, Camera, User as UserIcon, Bell, Info, Shield, ChevronLeft, Lock, EyeOff, Globe, Eye } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute("/app/profile")({
   component: ProfilePage,
 });
+
+const COUNTRIES = [
+  "السعودية", "مصر", "الإمارات", "الكويت", "قطر", "البحرين", "عُمان", "الأردن",
+  "العراق", "سوريا", "لبنان", "فلسطين", "اليمن", "السودان", "ليبيا", "تونس",
+  "الجزائر", "المغرب", "موريتانيا", "تركيا", "أخرى",
+];
 
 function ProfilePage() {
   const { user } = useAuth();
@@ -17,6 +23,11 @@ function ProfilePage() {
   const [bio, setBio] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [points, setPoints] = useState<number>(0);
+  const [gender, setGender] = useState<"male" | "female" | null>(null);
+  const [country, setCountry] = useState<string>("");
+  const [hideLastSeen, setHideLastSeen] = useState(false);
+  const [dmLocked, setDmLocked] = useState(false);
+  const [profileViews, setProfileViews] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -29,8 +40,20 @@ function ProfilePage() {
     if (!user) return;
     (async () => {
       const { data } = await supabase
-        .from("profiles").select("username, bio, avatar_url, points").eq("id", user.id).maybeSingle();
-      if (data) { setUsername(data.username); setBio(data.bio ?? ""); setAvatarUrl(data.avatar_url); setPoints(data.points ?? 0); }
+        .from("profiles")
+        .select("username, bio, avatar_url, points, gender, country, hide_last_seen, dm_locked, profile_views")
+        .eq("id", user.id).maybeSingle();
+      if (data) {
+        setUsername(data.username);
+        setBio(data.bio ?? "");
+        setAvatarUrl(data.avatar_url);
+        setPoints(data.points ?? 0);
+        setGender((data.gender as "male" | "female" | null) ?? null);
+        setCountry(data.country ?? "");
+        setHideLastSeen(!!data.hide_last_seen);
+        setDmLocked(!!data.dm_locked);
+        setProfileViews(data.profile_views ?? 0);
+      }
       setLoading(false);
     })();
   }, [user]);
@@ -39,10 +62,23 @@ function ProfilePage() {
     e.preventDefault();
     if (!user) return;
     setSaving(true);
-    const { error } = await supabase.from("profiles").update({ bio: bio.trim() || null }).eq("id", user.id);
+    const { error } = await supabase.from("profiles").update({
+      bio: bio.trim() || null,
+      gender,
+      country: country || null,
+      hide_last_seen: hideLastSeen,
+      dm_locked: dmLocked,
+    }).eq("id", user.id);
     setSaving(false);
     if (error) { toast.error(t("common.error")); return; }
     toast.success(t("profile.saved"));
+  };
+
+  const updateFlag = async (field: "hide_last_seen" | "dm_locked", value: boolean) => {
+    if (!user) return;
+    const payload = field === "hide_last_seen" ? { hide_last_seen: value } : { dm_locked: value };
+    const { error } = await supabase.from("profiles").update(payload).eq("id", user.id);
+    if (error) toast.error(t("common.error"));
   };
 
   const onPickAvatar = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -91,7 +127,7 @@ function ProfilePage() {
 
       <div className="px-5 py-6">
         {/* Hero card */}
-        <div className="rounded-3xl border border-border bg-gradient-to-br from-card to-secondary p-5">
+        <div className="rounded-3xl border border-border bg-gradient-to-br from-primary/10 via-card to-secondary p-5">
           <div className="flex items-center gap-4">
             <button
               type="button"
@@ -116,12 +152,16 @@ function ProfilePage() {
                 {points > 10000 && <VipBadge />}
               </div>
               <div className="truncate text-xs text-muted-foreground">@{username} · {points} pts</div>
+              <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+                <Eye className="h-3 w-3" />
+                <span>{profileViews} مشاهدة للملف</span>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Bio */}
-        <form onSubmit={save} className="mt-6 flex flex-col gap-3">
+        {/* Bio + identity form */}
+        <form onSubmit={save} className="mt-6 flex flex-col gap-4">
           <label className="flex flex-col gap-2">
             <span className="px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("profile.bio")}</span>
             <textarea
@@ -129,13 +169,39 @@ function ProfilePage() {
               onChange={(e) => setBio(e.target.value)}
               maxLength={160}
               placeholder={t("profile.bio_placeholder")}
-              className="min-h-[90px] rounded-2xl border border-input bg-card p-4 outline-none focus:border-foreground"
+              className="min-h-[90px] rounded-2xl border border-input bg-card p-4 outline-none focus:border-primary"
             />
             <span className="text-end text-xs text-muted-foreground">{bio.length}/160</span>
           </label>
+
+          <div className="flex flex-col gap-2">
+            <span className="px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">الجنس</span>
+            <div className="grid grid-cols-2 gap-2">
+              <button type="button" onClick={() => setGender("male")}
+                className={`h-12 rounded-2xl border text-sm font-semibold transition ${gender === "male" ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card"}`}>
+                ♂ ذكر
+              </button>
+              <button type="button" onClick={() => setGender("female")}
+                className={`h-12 rounded-2xl border text-sm font-semibold transition ${gender === "female" ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card"}`}>
+                ♀ أنثى
+              </button>
+            </div>
+          </div>
+
+          <label className="flex flex-col gap-2">
+            <span className="px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <Globe className="inline h-3 w-3" /> البلد
+            </span>
+            <select value={country} onChange={(e) => setCountry(e.target.value)}
+              className="h-12 rounded-2xl border border-input bg-card px-3 outline-none focus:border-primary">
+              <option value="">— اختر البلد —</option>
+              {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </label>
+
           <button
             disabled={saving}
-            className="flex h-12 items-center justify-center rounded-2xl bg-primary font-semibold text-primary-foreground disabled:opacity-60"
+            className="flex h-12 items-center justify-center rounded-2xl bg-primary font-semibold text-primary-foreground shadow-lg shadow-primary/30 disabled:opacity-60"
           >
             {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : t("profile.save")}
           </button>
@@ -143,20 +209,29 @@ function ProfilePage() {
 
         {/* Settings sections */}
         <div className="mt-8 flex flex-col gap-4">
+          <Section title="الخصوصية">
+            <ToggleRow
+              icon={<Lock className="h-5 w-5" />}
+              label="قفل الرسائل الخاصة"
+              hint="فقط الأصدقاء يمكنهم مراسلتك"
+              value={dmLocked}
+              onChange={(v) => { setDmLocked(v); updateFlag("dm_locked", v); }}
+            />
+            <ToggleRow
+              icon={<EyeOff className="h-5 w-5" />}
+              label="إخفاء آخر ظهور"
+              hint="لن يظهر آخر وقت كنت فيه نشطاً"
+              value={hideLastSeen}
+              onChange={(v) => { setHideLastSeen(v); updateFlag("hide_last_seen", v); }}
+            />
+          </Section>
+
           <Section title={t("profile.account")}>
             <Row icon={<UserIcon className="h-5 w-5" />} label={t("profile.username")} value={username} />
           </Section>
 
           <Section title={t("profile.notifications")}>
-            <button onClick={toggleNotif} className="flex w-full items-center justify-between p-4">
-              <div className="flex items-center gap-3">
-                <Bell className="h-5 w-5" />
-                <span className="font-medium">{t("settings.notifications_on")}</span>
-              </div>
-              <span className={`h-6 w-11 rounded-full transition ${notifEnabled ? "bg-primary" : "bg-muted"} relative`}>
-                <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-card transition ${notifEnabled ? "left-[22px]" : "left-0.5"}`} />
-              </span>
-            </button>
+            <ToggleRow icon={<Bell className="h-5 w-5" />} label={t("settings.notifications_on")} value={notifEnabled} onChange={toggleNotif} />
           </Section>
 
           <Section title={t("profile.security")}>
@@ -193,6 +268,25 @@ function Row({ icon, label, value }: { icon: React.ReactNode; label: string; val
       {value && <span className="text-sm text-muted-foreground">{value}</span>}
       <ChevronLeft className="h-4 w-4 text-muted-foreground rtl:rotate-180 hidden" />
     </div>
+  );
+}
+
+function ToggleRow({ icon, label, hint, value, onChange }: {
+  icon: React.ReactNode; label: string; hint?: string; value: boolean; onChange: (v: boolean) => void;
+}) {
+  return (
+    <button type="button" onClick={() => onChange(!value)} className="flex w-full items-center justify-between p-4 text-start">
+      <div className="flex items-center gap-3">
+        {icon}
+        <div>
+          <div className="font-medium">{label}</div>
+          {hint && <div className="text-[11px] text-muted-foreground">{hint}</div>}
+        </div>
+      </div>
+      <span className={`relative h-6 w-11 rounded-full transition ${value ? "bg-primary" : "bg-muted"}`}>
+        <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-card transition ${value ? "left-[22px]" : "left-0.5"}`} />
+      </span>
+    </button>
   );
 }
 

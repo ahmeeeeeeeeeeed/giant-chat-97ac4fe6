@@ -219,32 +219,68 @@ export type Database = {
         }
         Relationships: []
       }
+      profile_visits: {
+        Row: {
+          created_at: string
+          id: string
+          profile_id: string
+          viewer_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          profile_id: string
+          viewer_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          profile_id?: string
+          viewer_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
           bio: string | null
+          country: string | null
           created_at: string
+          dm_locked: boolean
+          gender: string | null
+          hide_last_seen: boolean
           id: string
           last_seen_at: string
           points: number
+          profile_views: number
           username: string
         }
         Insert: {
           avatar_url?: string | null
           bio?: string | null
+          country?: string | null
           created_at?: string
+          dm_locked?: boolean
+          gender?: string | null
+          hide_last_seen?: boolean
           id: string
           last_seen_at?: string
           points?: number
+          profile_views?: number
           username: string
         }
         Update: {
           avatar_url?: string | null
           bio?: string | null
+          country?: string | null
           created_at?: string
+          dm_locked?: boolean
+          gender?: string | null
+          hide_last_seen?: boolean
           id?: string
           last_seen_at?: string
           points?: number
+          profile_views?: number
           username?: string
         }
         Relationships: []
@@ -449,6 +485,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_profile_view: { Args: { _target: string }; Returns: number }
       is_room_member: {
         Args: { _room: string; _user: string }
         Returns: boolean
