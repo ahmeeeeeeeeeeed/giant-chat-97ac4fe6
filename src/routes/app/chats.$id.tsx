@@ -94,7 +94,14 @@ function DMPage() {
       sender_id: user.id, receiver_id: otherId, content, message_type: "text",
     });
     setSending(false);
-    if (error) { toast.error(t("common.error")); setText(content); }
+    if (error) {
+      if (error.message?.includes("recipient_dm_locked")) {
+        toast.error("هذا المستخدم قفل الرسائل الخاصة (متاح للأصدقاء فقط)");
+      } else {
+        toast.error(t("common.error"));
+      }
+      setText(content);
+    }
   };
 
   const uploadAndSend = async (blob: Blob, kind: "image" | "voice", durationMs?: number) => {
