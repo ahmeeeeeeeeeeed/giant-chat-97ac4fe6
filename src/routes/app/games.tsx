@@ -386,3 +386,127 @@ function GamesPage() {
     </main>
   );
 }
+
+// ===== Mini-games (local, single-player) =====
+
+function MiniCard({ title, emoji, children }: { title: string; emoji: string; children: React.ReactNode }) {
+  return (
+    <div className="rounded-2xl border border-border bg-card p-4">
+      <div className="mb-3 flex items-center gap-2">
+        <span className="text-xl">{emoji}</span>
+        <h3 className="font-bold">{title}</h3>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function RockPaperScissors() {
+  const [you, setYou] = useState<string | null>(null);
+  const [bot, setBot] = useState<string | null>(null);
+  const [result, setResult] = useState<string>("");
+  const opts = [{ k: "rock", e: "✊" }, { k: "paper", e: "✋" }, { k: "scissors", e: "✌️" }];
+  const play = (k: string) => {
+    const b = opts[Math.floor(Math.random() * 3)];
+    setYou(k); setBot(b.k);
+    if (k === b.k) setResult("تعادل");
+    else if ((k === "rock" && b.k === "scissors") || (k === "paper" && b.k === "rock") || (k === "scissors" && b.k === "paper"))
+      setResult("فزت! 🎉");
+    else setResult("خسرت 😅");
+  };
+  return (
+    <MiniCard title="حجر · ورقة · مقص" emoji="✊">
+      <div className="mb-3 flex justify-around text-4xl">
+        <div className="text-center">
+          <div>{you ? opts.find(o => o.k === you)?.e : "❔"}</div>
+          <div className="mt-1 text-[10px] text-muted-foreground">أنت</div>
+        </div>
+        <div className="text-center">
+          <div>{bot ? opts.find(o => o.k === bot)?.e : "❔"}</div>
+          <div className="mt-1 text-[10px] text-muted-foreground">الخصم</div>
+        </div>
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        {opts.map(o => (
+          <button key={o.k} onClick={() => play(o.k)} className="h-12 rounded-xl bg-secondary text-2xl active:scale-95">{o.e}</button>
+        ))}
+      </div>
+      {result && <div className="mt-3 text-center text-sm font-bold text-primary">{result}</div>}
+    </MiniCard>
+  );
+}
+
+function CoinFlip() {
+  const [side, setSide] = useState<string>("");
+  const [flipping, setFlipping] = useState(false);
+  const flip = () => {
+    setFlipping(true);
+    setTimeout(() => { setSide(Math.random() < 0.5 ? "👑 صورة" : "✦ كتابة"); setFlipping(false); }, 600);
+  };
+  return (
+    <MiniCard title="قذف العملة" emoji="🪙">
+      <div className="mb-3 flex justify-center text-5xl">
+        <span className={flipping ? "inline-block animate-spin" : ""}>🪙</span>
+      </div>
+      <button onClick={flip} disabled={flipping} className="h-11 w-full rounded-xl bg-primary font-semibold text-primary-foreground disabled:opacity-50">
+        {flipping ? "..." : "اقذف"}
+      </button>
+      {side && <div className="mt-3 text-center text-sm font-bold text-primary">{side}</div>}
+    </MiniCard>
+  );
+}
+
+function DiceRoll() {
+  const [val, setVal] = useState<number | null>(null);
+  const [rolling, setRolling] = useState(false);
+  const faces = ["⚀","⚁","⚂","⚃","⚄","⚅"];
+  const roll = () => {
+    setRolling(true);
+    setTimeout(() => { setVal(Math.floor(Math.random() * 6) + 1); setRolling(false); }, 500);
+  };
+  return (
+    <MiniCard title="رمي النرد" emoji="🎲">
+      <div className="mb-3 flex justify-center text-6xl">
+        <span className={rolling ? "inline-block animate-bounce" : ""}>{val ? faces[val - 1] : "🎲"}</span>
+      </div>
+      <button onClick={roll} disabled={rolling} className="h-11 w-full rounded-xl bg-primary font-semibold text-primary-foreground disabled:opacity-50">
+        {rolling ? "..." : "ارمِ النرد"}
+      </button>
+      {val && <div className="mt-3 text-center text-sm font-bold text-primary">حصلت على {val}</div>}
+    </MiniCard>
+  );
+}
+
+function ReactionTest() {
+  const [state, setState] = useState<"idle" | "waiting" | "go" | "done">("idle");
+  const [ms, setMs] = useState<number | null>(null);
+  const startRef = useRef(0);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const start = () => {
+    setState("waiting"); setMs(null);
+    const delay = 1000 + Math.random() * 3000;
+    timerRef.current = setTimeout(() => { startRef.current = Date.now(); setState("go"); }, delay);
+  };
+  const click = () => {
+    if (state === "waiting") {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      setState("idle"); setMs(-1);
+    } else if (state === "go") {
+      setMs(Date.now() - startRef.current);
+      setState("done");
+    } else { start(); }
+  };
+  const bg = state === "waiting" ? "bg-red-600" : state === "go" ? "bg-green-600" : "bg-secondary";
+  return (
+    <MiniCard title="اختبار سرعة الاستجابة" emoji="⚡">
+      <button onClick={click} className={`h-28 w-full rounded-xl ${bg} text-lg font-bold text-white transition`}>
+        {state === "idle" && "اضغط للبدء"}
+        {state === "waiting" && "انتظر اللون الأخضر…"}
+        {state === "go" && "اضغط الآن!"}
+        {state === "done" && `${ms} ms — اضغط للإعادة`}
+      </button>
+      {ms === -1 && <div className="mt-2 text-center text-xs text-destructive">كان مبكراً!</div>}
+    </MiniCard>
+  );
+}
+
