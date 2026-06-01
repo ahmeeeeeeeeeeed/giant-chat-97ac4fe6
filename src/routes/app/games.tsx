@@ -333,6 +333,17 @@ function GamesPage() {
         </div>
 
         <p className="text-center text-[11px] text-muted-foreground">{t("game.rules")}</p>
+
+        {/* More mini-games */}
+        <div className="mt-2">
+          <h2 className="mb-2 px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">ألعاب سريعة</h2>
+          <div className="grid grid-cols-1 gap-3">
+            <RockPaperScissors />
+            <CoinFlip />
+            <DiceRoll />
+            <ReactionTest />
+          </div>
+        </div>
       </div>
 
       {inviteOpen && (
