@@ -31,7 +31,11 @@ function AppLayout() {
   }, [loading, session, navigate]);
 
   if (loading || !session) {
-    return <div className="flex min-h-screen items-center justify-center bg-background text-muted-foreground">{t("auth.loading")}</div>;
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <span aria-label="loading" className="block h-8 w-8 animate-spin rounded-full border-2 border-muted border-t-primary" />
+      </div>
+    );
   }
 
   const path = location.pathname;
