@@ -18,35 +18,77 @@ export type Database = {
         Row: {
           content: string
           created_at: string
+          deleted_for: string[]
           id: string
           media_duration_ms: number | null
           media_url: string | null
           message_type: Database["public"]["Enums"]["message_type"]
           read_at: string | null
           receiver_id: string
+          reply_to_id: string | null
           sender_id: string
         }
         Insert: {
           content?: string
           created_at?: string
+          deleted_for?: string[]
           id?: string
           media_duration_ms?: number | null
           media_url?: string | null
           message_type?: Database["public"]["Enums"]["message_type"]
           read_at?: string | null
           receiver_id: string
+          reply_to_id?: string | null
           sender_id: string
         }
         Update: {
           content?: string
           created_at?: string
+          deleted_for?: string[]
           id?: string
           media_duration_ms?: number | null
           media_url?: string | null
           message_type?: Database["public"]["Enums"]["message_type"]
           read_at?: string | null
           receiver_id?: string
+          reply_to_id?: string | null
           sender_id?: string
+        }
+        Relationships: []
+      }
+      dm_blocks: {
+        Row: {
+          blocked_id: string
+          blocker_id: string
+          created_at: string
+        }
+        Insert: {
+          blocked_id: string
+          blocker_id: string
+          created_at?: string
+        }
+        Update: {
+          blocked_id?: string
+          blocker_id?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+      dm_mutes: {
+        Row: {
+          created_at: string
+          muted_id: string
+          muter_id: string
+        }
+        Insert: {
+          created_at?: string
+          muted_id: string
+          muter_id: string
+        }
+        Update: {
+          created_at?: string
+          muted_id?: string
+          muter_id?: string
         }
         Relationships: []
       }
@@ -471,6 +513,8 @@ export type Database = {
         Args: { _reason?: string; _room: string; _user: string }
         Returns: undefined
       }
+      dm_delete_for_all: { Args: { _id: string }; Returns: undefined }
+      dm_delete_for_me: { Args: { _id: string }; Returns: undefined }
       dm_mark_read: { Args: { _peer: string }; Returns: undefined }
       game_ensure_round: { Args: never; Returns: string }
       game_fill_ai: { Args: { _rid: string }; Returns: undefined }
