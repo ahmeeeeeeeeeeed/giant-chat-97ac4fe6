@@ -94,7 +94,7 @@ function RoomPage() {
         const { error: jErr } = await supabase.from("room_members").insert({ room_id: id, user_id: user.id });
         if (jErr) { toast.error(jErr.message ?? t("common.error")); navigate({ to: "/app" }); return; }
       }
-      await Promise.all([loadMessages(), loadMembers(), loadBans(), loadLogs()]);
+      await Promise.all([loadMessages(), loadMembers(), loadBans(), loadLogs(), loadReactions()]);
     })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
