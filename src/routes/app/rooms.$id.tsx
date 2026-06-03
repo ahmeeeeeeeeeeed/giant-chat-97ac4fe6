@@ -6,6 +6,7 @@ import {
   ArrowRight, Send, Settings as SettingsIcon, LogOut, Users, Loader2,
   ImagePlus, Mic, Square, Play, Pause, Crown, Shield, UserX, Ban,
   ArrowUpCircle, ArrowDownCircle, ScrollText, X, MoreVertical, MessageSquare,
+  Smile, Trash2, Pencil,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
