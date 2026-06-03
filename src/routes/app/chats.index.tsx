@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { MessageSquare, Loader2, Search, X } from "lucide-react";
 
-export const Route = createFileRoute("/app/chats")({
+export const Route = createFileRoute("/app/chats/")({
   component: ChatsPage,
 });
 
