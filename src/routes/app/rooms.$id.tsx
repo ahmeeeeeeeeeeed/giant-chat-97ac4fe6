@@ -30,6 +30,9 @@ type Rank = "owner" | "admin" | "member";
 type Member = { user_id: string; rank: Rank; joined_at: string };
 type Ban = { user_id: string; reason: string | null; created_at: string };
 type LogEvt = { id: string; actor_id: string | null; target_id: string | null; event: string; created_at: string };
+type Reaction = { id: string; message_id: string; user_id: string; emoji: string };
+
+const EMOJIS = ["❤️", "👍", "😂", "😮", "😢", "🔥"];
 
 function RoomPage() {
   const { id } = Route.useParams();
