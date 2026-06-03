@@ -45,10 +45,15 @@ function RoomPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [bans, setBans] = useState<Ban[]>([]);
   const [logs, setLogs] = useState<LogEvt[]>([]);
+  const [reactions, setReactions] = useState<Reaction[]>([]);
+  const [pickerFor, setPickerFor] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editDesc, setEditDesc] = useState("");
+  const [savingRoom, setSavingRoom] = useState(false);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [panel, setPanel] = useState<null | "settings" | "members" | "logs" | "bans">(null);
+  const [panel, setPanel] = useState<null | "settings" | "members" | "logs" | "bans" | "edit">(null);
   const [actionTarget, setActionTarget] = useState<Member | null>(null);
   const [recording, setRecording] = useState(false);
   const [recordSeconds, setRecordSeconds] = useState(0);
