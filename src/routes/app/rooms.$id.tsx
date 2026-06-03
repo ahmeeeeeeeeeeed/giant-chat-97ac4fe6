@@ -139,6 +139,52 @@ function RoomPage() {
     await ensureProfiles(list.flatMap(l => [l.actor_id, l.target_id].filter(Boolean) as string[]));
   };
 
+  const loadReactions = async () => {
+    const { data: msgIds } = await supabase.from("room_messages").select("id").eq("room_id", id).limit(500);
+    const ids = (msgIds ?? []).map(r => r.id as string);
+    if (!ids.length) { setReactions([]); return; }
+    const { data } = await supabase
+      .from("room_message_reactions")
+      .select("id, message_id, user_id, emoji")
+      .in("message_id", ids);
+    setReactions((data ?? []) as Reaction[]);
+  };
+
+  const toggleReaction = async (messageId: string, emoji: string) => {
+    if (!user) return;
+    const mine = reactions.find(r => r.message_id === messageId && r.user_id === user.id && r.emoji === emoji);
+    setPickerFor(null);
+    if (mine) {
+      await supabase.from("room_message_reactions").delete().eq("id", mine.id);
+    } else {
+      await supabase.from("room_message_reactions").insert({ message_id: messageId, user_id: user.id, emoji });
+    }
+  };
+
+  const saveRoomEdits = async () => {
+    if (!user || !room) return;
+    const name = editName.trim();
+    if (!name) { toast.error(t("common.error")); return; }
+    setSavingRoom(true);
+    const { error } = await supabase.from("rooms")
+      .update({ name, description: editDesc.trim() || null })
+      .eq("id", room.id);
+    setSavingRoom(false);
+    if (error) { toast.error(error.message); return; }
+    setRoom({ ...room, name, description: editDesc.trim() || null });
+    toast.success(t("room.action_done"));
+    setPanel("settings");
+  };
+
+  const deleteRoom = async () => {
+    if (!room) return;
+    if (!confirm("هل أنت متأكد من حذف الغرفة نهائياً؟")) return;
+    const { error } = await supabase.from("rooms").delete().eq("id", room.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success("تم حذف الغرفة");
+    navigate({ to: "/app" });
+  };
+
   // Realtime
   useEffect(() => {
     if (!user) return;
