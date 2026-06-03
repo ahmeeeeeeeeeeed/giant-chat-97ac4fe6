@@ -366,6 +366,14 @@ function RoomPage() {
               const prev = messages[i - 1];
               const showHeader = !prev || prev.user_id !== m.user_id;
               const profile = profilesMap[m.user_id];
+              const msgReactions = reactions.filter(r => r.message_id === m.id);
+              const grouped = new Map<string, { count: number; mine: boolean }>();
+              msgReactions.forEach(r => {
+                const cur = grouped.get(r.emoji) ?? { count: 0, mine: false };
+                cur.count += 1;
+                if (r.user_id === user?.id) cur.mine = true;
+                grouped.set(r.emoji, cur);
+              });
               return (
                 <li key={m.id} className={`bubble-in flex gap-2 ${mine ? "flex-row-reverse" : ""}`}>
                   <div className="w-9 shrink-0">{showHeader && <Avatar profile={profile} />}</div>
@@ -375,7 +383,40 @@ function RoomPage() {
                         {profile?.username ?? "…"}
                       </div>
                     )}
-                    <MessageBubble m={m} mine={mine} />
+                    <div className="relative group">
+                      <MessageBubble m={m} mine={mine} />
+                      <button
+                        type="button"
+                        onClick={() => setPickerFor(pickerFor === m.id ? null : m.id)}
+                        className={`absolute -bottom-2 ${mine ? "-left-2" : "-right-2"} flex h-7 w-7 items-center justify-center rounded-full border border-border bg-card text-muted-foreground opacity-0 shadow-sm group-hover:opacity-100 focus:opacity-100`}
+                        aria-label="إضافة تفاعل"
+                      >
+                        <Smile className="h-3.5 w-3.5" />
+                      </button>
+                      {pickerFor === m.id && (
+                        <>
+                          <div className="fixed inset-0 z-40" onClick={() => setPickerFor(null)} />
+                          <div className={`absolute z-50 ${mine ? "left-0" : "right-0"} top-full mt-1 flex gap-1 rounded-full border border-border bg-card px-2 py-1.5 shadow-lg`}>
+                            {EMOJIS.map(e => (
+                              <button key={e} type="button" onClick={() => toggleReaction(m.id, e)}
+                                className="text-xl leading-none transition hover:scale-125">
+                                {e}
+                              </button>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                    {grouped.size > 0 && (
+                      <div className={`mt-1 flex flex-wrap gap-1 ${mine ? "justify-end" : "justify-start"}`}>
+                        {Array.from(grouped.entries()).map(([emoji, info]) => (
+                          <button key={emoji} type="button" onClick={() => toggleReaction(m.id, emoji)}
+                            className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs ${info.mine ? "border-primary bg-primary/15 text-foreground" : "border-border bg-card"}`}>
+                            <span>{emoji}</span><span className="font-semibold">{info.count}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </li>
               );
