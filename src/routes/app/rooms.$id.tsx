@@ -206,6 +206,7 @@ function RoomPage() {
       .on("postgres_changes", { event: "*", schema: "public", table: "room_members", filter: `room_id=eq.${id}` }, () => loadMembers())
       .on("postgres_changes", { event: "*", schema: "public", table: "room_bans", filter: `room_id=eq.${id}` }, () => loadBans())
       .on("postgres_changes", { event: "*", schema: "public", table: "room_logs", filter: `room_id=eq.${id}` }, () => loadLogs())
+      .on("postgres_changes", { event: "*", schema: "public", table: "room_message_reactions" }, () => loadReactions())
       .subscribe();
     return () => { supabase.removeChannel(ch); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
