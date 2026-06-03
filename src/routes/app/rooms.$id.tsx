@@ -473,14 +473,44 @@ function RoomPage() {
             {isAdminOrOwner && (
               <PanelBtn onClick={() => setPanel("bans")} icon={<Ban className="h-4 w-4" />} label={t("room.banned_list")} />
             )}
+            {myRank === "owner" && (
+              <PanelBtn
+                onClick={() => { setEditName(room.name); setEditDesc(room.description ?? ""); setPanel("edit"); }}
+                icon={<Pencil className="h-4 w-4" />} label="تعديل الغرفة"
+              />
+            )}
           </div>
           <button onClick={leaveRoom}
             className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl border border-destructive/40 bg-destructive/10 py-3 font-semibold text-destructive">
             <LogOut className="h-4 w-4" />{t("room.leave")}
           </button>
+          {myRank === "owner" && (
+            <button onClick={deleteRoom}
+              className="mt-2 flex w-full items-center justify-center gap-2 rounded-2xl border border-destructive bg-destructive py-3 font-semibold text-destructive-foreground">
+              <Trash2 className="h-4 w-4" />حذف الغرفة نهائياً
+            </button>
+          )}
           <p className="mt-2 text-center text-[11px] text-muted-foreground">{t("room.leave_confirm")}</p>
         </SheetWrap>
       )}
+
+      {/* Edit room panel — owner only */}
+      {panel === "edit" && myRank === "owner" && (
+        <SheetWrap onClose={() => setPanel(null)}>
+          <h2 className="mb-4 text-lg font-bold">تعديل الغرفة</h2>
+          <label className="mb-1 block text-xs font-semibold text-muted-foreground">اسم الغرفة</label>
+          <input value={editName} onChange={e => setEditName(e.target.value)} maxLength={60}
+            className="mb-4 h-11 w-full rounded-2xl border border-input bg-background px-4 text-sm outline-none focus:border-primary" />
+          <label className="mb-1 block text-xs font-semibold text-muted-foreground">الوصف</label>
+          <textarea value={editDesc} onChange={e => setEditDesc(e.target.value)} maxLength={200} rows={3}
+            className="mb-5 w-full rounded-2xl border border-input bg-background px-4 py-3 text-sm outline-none focus:border-primary" />
+          <button onClick={saveRoomEdits} disabled={savingRoom}
+            className="flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-primary font-semibold text-primary-foreground disabled:opacity-60">
+            {savingRoom ? <Loader2 className="h-4 w-4 animate-spin" /> : "حفظ التغييرات"}
+          </button>
+        </SheetWrap>
+      )}
+
 
       {/* Members panel */}
       {panel === "members" && (
