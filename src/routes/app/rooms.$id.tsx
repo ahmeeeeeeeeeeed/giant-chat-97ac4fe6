@@ -6,6 +6,7 @@ import {
   ArrowRight, Send, Settings as SettingsIcon, LogOut, Users, Loader2,
   ImagePlus, Mic, Square, Play, Pause, Crown, Shield, UserX, Ban,
   ArrowUpCircle, ArrowDownCircle, ScrollText, X, MoreVertical, MessageSquare,
+  Smile, Trash2, Pencil,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
@@ -29,6 +30,9 @@ type Rank = "owner" | "admin" | "member";
 type Member = { user_id: string; rank: Rank; joined_at: string };
 type Ban = { user_id: string; reason: string | null; created_at: string };
 type LogEvt = { id: string; actor_id: string | null; target_id: string | null; event: string; created_at: string };
+type Reaction = { id: string; message_id: string; user_id: string; emoji: string };
+
+const EMOJIS = ["❤️", "👍", "😂", "😮", "😢", "🔥"];
 
 function RoomPage() {
   const { id } = Route.useParams();
@@ -41,10 +45,15 @@ function RoomPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [bans, setBans] = useState<Ban[]>([]);
   const [logs, setLogs] = useState<LogEvt[]>([]);
+  const [reactions, setReactions] = useState<Reaction[]>([]);
+  const [pickerFor, setPickerFor] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editDesc, setEditDesc] = useState("");
+  const [savingRoom, setSavingRoom] = useState(false);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [panel, setPanel] = useState<null | "settings" | "members" | "logs" | "bans">(null);
+  const [panel, setPanel] = useState<null | "settings" | "members" | "logs" | "bans" | "edit">(null);
   const [actionTarget, setActionTarget] = useState<Member | null>(null);
   const [recording, setRecording] = useState(false);
   const [recordSeconds, setRecordSeconds] = useState(0);
@@ -85,7 +94,7 @@ function RoomPage() {
         const { error: jErr } = await supabase.from("room_members").insert({ room_id: id, user_id: user.id });
         if (jErr) { toast.error(jErr.message ?? t("common.error")); navigate({ to: "/app" }); return; }
       }
-      await Promise.all([loadMessages(), loadMembers(), loadBans(), loadLogs()]);
+      await Promise.all([loadMessages(), loadMembers(), loadBans(), loadLogs(), loadReactions()]);
     })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -130,6 +139,52 @@ function RoomPage() {
     await ensureProfiles(list.flatMap(l => [l.actor_id, l.target_id].filter(Boolean) as string[]));
   };
 
+  const loadReactions = async () => {
+    const { data: msgIds } = await supabase.from("room_messages").select("id").eq("room_id", id).limit(500);
+    const ids = (msgIds ?? []).map(r => r.id as string);
+    if (!ids.length) { setReactions([]); return; }
+    const { data } = await supabase
+      .from("room_message_reactions")
+      .select("id, message_id, user_id, emoji")
+      .in("message_id", ids);
+    setReactions((data ?? []) as Reaction[]);
+  };
+
+  const toggleReaction = async (messageId: string, emoji: string) => {
+    if (!user) return;
+    const mine = reactions.find(r => r.message_id === messageId && r.user_id === user.id && r.emoji === emoji);
+    setPickerFor(null);
+    if (mine) {
+      await supabase.from("room_message_reactions").delete().eq("id", mine.id);
+    } else {
+      await supabase.from("room_message_reactions").insert({ message_id: messageId, user_id: user.id, emoji });
+    }
+  };
+
+  const saveRoomEdits = async () => {
+    if (!user || !room) return;
+    const name = editName.trim();
+    if (!name) { toast.error(t("common.error")); return; }
+    setSavingRoom(true);
+    const { error } = await supabase.from("rooms")
+      .update({ name, description: editDesc.trim() || null })
+      .eq("id", room.id);
+    setSavingRoom(false);
+    if (error) { toast.error(error.message); return; }
+    setRoom({ ...room, name, description: editDesc.trim() || null });
+    toast.success(t("room.action_done"));
+    setPanel("settings");
+  };
+
+  const deleteRoom = async () => {
+    if (!room) return;
+    if (!confirm("هل أنت متأكد من حذف الغرفة نهائياً؟")) return;
+    const { error } = await supabase.from("rooms").delete().eq("id", room.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success("تم حذف الغرفة");
+    navigate({ to: "/app" });
+  };
+
   // Realtime
   useEffect(() => {
     if (!user) return;
@@ -151,6 +206,7 @@ function RoomPage() {
       .on("postgres_changes", { event: "*", schema: "public", table: "room_members", filter: `room_id=eq.${id}` }, () => loadMembers())
       .on("postgres_changes", { event: "*", schema: "public", table: "room_bans", filter: `room_id=eq.${id}` }, () => loadBans())
       .on("postgres_changes", { event: "*", schema: "public", table: "room_logs", filter: `room_id=eq.${id}` }, () => loadLogs())
+      .on("postgres_changes", { event: "*", schema: "public", table: "room_message_reactions" }, () => loadReactions())
       .subscribe();
     return () => { supabase.removeChannel(ch); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -310,6 +366,14 @@ function RoomPage() {
               const prev = messages[i - 1];
               const showHeader = !prev || prev.user_id !== m.user_id;
               const profile = profilesMap[m.user_id];
+              const msgReactions = reactions.filter(r => r.message_id === m.id);
+              const grouped = new Map<string, { count: number; mine: boolean }>();
+              msgReactions.forEach(r => {
+                const cur = grouped.get(r.emoji) ?? { count: 0, mine: false };
+                cur.count += 1;
+                if (r.user_id === user?.id) cur.mine = true;
+                grouped.set(r.emoji, cur);
+              });
               return (
                 <li key={m.id} className={`bubble-in flex gap-2 ${mine ? "flex-row-reverse" : ""}`}>
                   <div className="w-9 shrink-0">{showHeader && <Avatar profile={profile} />}</div>
@@ -319,7 +383,40 @@ function RoomPage() {
                         {profile?.username ?? "…"}
                       </div>
                     )}
-                    <MessageBubble m={m} mine={mine} />
+                    <div className="relative group">
+                      <MessageBubble m={m} mine={mine} />
+                      <button
+                        type="button"
+                        onClick={() => setPickerFor(pickerFor === m.id ? null : m.id)}
+                        className={`absolute -bottom-2 ${mine ? "-left-2" : "-right-2"} flex h-7 w-7 items-center justify-center rounded-full border border-border bg-card text-muted-foreground opacity-0 shadow-sm group-hover:opacity-100 focus:opacity-100`}
+                        aria-label="إضافة تفاعل"
+                      >
+                        <Smile className="h-3.5 w-3.5" />
+                      </button>
+                      {pickerFor === m.id && (
+                        <>
+                          <div className="fixed inset-0 z-40" onClick={() => setPickerFor(null)} />
+                          <div className={`absolute z-50 ${mine ? "left-0" : "right-0"} top-full mt-1 flex gap-1 rounded-full border border-border bg-card px-2 py-1.5 shadow-lg`}>
+                            {EMOJIS.map(e => (
+                              <button key={e} type="button" onClick={() => toggleReaction(m.id, e)}
+                                className="text-xl leading-none transition hover:scale-125">
+                                {e}
+                              </button>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                    {grouped.size > 0 && (
+                      <div className={`mt-1 flex flex-wrap gap-1 ${mine ? "justify-end" : "justify-start"}`}>
+                        {Array.from(grouped.entries()).map(([emoji, info]) => (
+                          <button key={emoji} type="button" onClick={() => toggleReaction(m.id, emoji)}
+                            className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs ${info.mine ? "border-primary bg-primary/15 text-foreground" : "border-border bg-card"}`}>
+                            <span>{emoji}</span><span className="font-semibold">{info.count}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </li>
               );
@@ -376,14 +473,44 @@ function RoomPage() {
             {isAdminOrOwner && (
               <PanelBtn onClick={() => setPanel("bans")} icon={<Ban className="h-4 w-4" />} label={t("room.banned_list")} />
             )}
+            {myRank === "owner" && (
+              <PanelBtn
+                onClick={() => { setEditName(room.name); setEditDesc(room.description ?? ""); setPanel("edit"); }}
+                icon={<Pencil className="h-4 w-4" />} label="تعديل الغرفة"
+              />
+            )}
           </div>
           <button onClick={leaveRoom}
             className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl border border-destructive/40 bg-destructive/10 py-3 font-semibold text-destructive">
             <LogOut className="h-4 w-4" />{t("room.leave")}
           </button>
+          {myRank === "owner" && (
+            <button onClick={deleteRoom}
+              className="mt-2 flex w-full items-center justify-center gap-2 rounded-2xl border border-destructive bg-destructive py-3 font-semibold text-destructive-foreground">
+              <Trash2 className="h-4 w-4" />حذف الغرفة نهائياً
+            </button>
+          )}
           <p className="mt-2 text-center text-[11px] text-muted-foreground">{t("room.leave_confirm")}</p>
         </SheetWrap>
       )}
+
+      {/* Edit room panel — owner only */}
+      {panel === "edit" && myRank === "owner" && (
+        <SheetWrap onClose={() => setPanel(null)}>
+          <h2 className="mb-4 text-lg font-bold">تعديل الغرفة</h2>
+          <label className="mb-1 block text-xs font-semibold text-muted-foreground">اسم الغرفة</label>
+          <input value={editName} onChange={e => setEditName(e.target.value)} maxLength={60}
+            className="mb-4 h-11 w-full rounded-2xl border border-input bg-background px-4 text-sm outline-none focus:border-primary" />
+          <label className="mb-1 block text-xs font-semibold text-muted-foreground">الوصف</label>
+          <textarea value={editDesc} onChange={e => setEditDesc(e.target.value)} maxLength={200} rows={3}
+            className="mb-5 w-full rounded-2xl border border-input bg-background px-4 py-3 text-sm outline-none focus:border-primary" />
+          <button onClick={saveRoomEdits} disabled={savingRoom}
+            className="flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-primary font-semibold text-primary-foreground disabled:opacity-60">
+            {savingRoom ? <Loader2 className="h-4 w-4 animate-spin" /> : "حفظ التغييرات"}
+          </button>
+        </SheetWrap>
+      )}
+
 
       {/* Members panel */}
       {panel === "members" && (

@@ -42,7 +42,7 @@ function AppLayout() {
   const hideChrome = /\/app\/rooms\/[^/]+/.test(path) || /\/app\/chats\/[^/]+/.test(path);
 
   return (
-    <div className={`flex min-h-screen flex-col bg-background ${hideChrome ? "" : "pb-[72px]"}`}>
+    <div className={`flex min-h-screen flex-col ${hideChrome ? "" : "pb-[72px]"}`}>
       {!hideChrome && (
         <div className="sticky top-0 z-50 flex items-center justify-between border-b border-border bg-background/95 px-4 py-2 backdrop-blur">
           <div className="text-sm font-extrabold tracking-tight">Giant</div>
