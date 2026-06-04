@@ -1,9 +1,9 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/lib/theme";
 import { signOut } from "@/lib/auth";
-import { Moon, Sun, LogOut, ChevronLeft, Globe, Check } from "lucide-react";
+import { Moon, Sun, LogOut, ChevronLeft, Globe, Check, ShoppingBag } from "lucide-react";
 import { SUPPORTED_LANGUAGES } from "@/lib/i18n";
 
 export const Route = createFileRoute("/app/settings")({
@@ -30,6 +30,20 @@ function SettingsPage() {
       </header>
 
       <div className="flex flex-col gap-3 px-4 py-5">
+        <Link to="/app/store"
+          className="flex items-center justify-between rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/15 via-card to-secondary p-4 shadow-lg shadow-primary/10">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow">
+              <ShoppingBag className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="font-extrabold">المتجر</div>
+              <div className="text-[11px] text-muted-foreground">شارات • ألوان • مؤثرات</div>
+            </div>
+          </div>
+          <ChevronLeft className="h-5 w-5 text-muted-foreground rtl:rotate-180" />
+        </Link>
+
         <Section title={t("settings.theme")}>
           <button onClick={toggle} className="flex w-full items-center justify-between p-4">
             <div className="flex items-center gap-3">
