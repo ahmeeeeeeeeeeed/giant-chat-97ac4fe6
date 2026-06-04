@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
+import { getEquipped } from "@/lib/equipped";
+import { FlyingEffect } from "@/components/FlyingEffect";
 
 export const Route = createFileRoute("/app/rooms/$id")({
   component: RoomPage,
@@ -63,6 +65,7 @@ function RoomPage() {
   const recTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [burst, setBurst] = useState<{ id: number; emoji: string; name?: string } | null>(null);
 
   const myRank: Rank | null = user ? (members.find(m => m.user_id === user.id)?.rank ?? null) : null;
   const isAdminOrOwner = myRank === "owner" || myRank === "admin";
@@ -335,6 +338,7 @@ function RoomPage() {
 
   return (
     <main className="fixed inset-0 flex flex-col bg-background">
+      <FlyingEffect burst={burst} />
       <header className="flex items-center gap-3 border-b border-border bg-card/95 backdrop-blur px-4 py-3">
         <button onClick={() => navigate({ to: "/app" })} aria-label={t("common.back")}>
           <ArrowRight className="h-5 w-5 rtl:rotate-180" />
