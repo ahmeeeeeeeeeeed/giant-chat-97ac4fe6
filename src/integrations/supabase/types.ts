@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_config: {
+        Row: {
+          key: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value: string
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
+      }
       direct_messages: {
         Row: {
           content: string
@@ -289,6 +307,10 @@ export type Database = {
           country: string | null
           created_at: string
           dm_locked: boolean
+          equipped_badge: string | null
+          equipped_chat_color: string | null
+          equipped_effect: string | null
+          equipped_name_color: string | null
           gender: string | null
           hide_last_seen: boolean
           id: string
@@ -303,6 +325,10 @@ export type Database = {
           country?: string | null
           created_at?: string
           dm_locked?: boolean
+          equipped_badge?: string | null
+          equipped_chat_color?: string | null
+          equipped_effect?: string | null
+          equipped_name_color?: string | null
           gender?: string | null
           hide_last_seen?: boolean
           id: string
@@ -317,6 +343,10 @@ export type Database = {
           country?: string | null
           created_at?: string
           dm_locked?: boolean
+          equipped_badge?: string | null
+          equipped_chat_color?: string | null
+          equipped_effect?: string | null
+          equipped_name_color?: string | null
           gender?: string | null
           hide_last_seen?: boolean
           id?: string
@@ -325,7 +355,36 @@ export type Database = {
           profile_views?: number
           username?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_equipped_badge_fkey"
+            columns: ["equipped_badge"]
+            isOneToOne: false
+            referencedRelation: "shop_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_equipped_chat_color_fkey"
+            columns: ["equipped_chat_color"]
+            isOneToOne: false
+            referencedRelation: "shop_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_equipped_effect_fkey"
+            columns: ["equipped_effect"]
+            isOneToOne: false
+            referencedRelation: "shop_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_equipped_name_color_fkey"
+            columns: ["equipped_name_color"]
+            isOneToOne: false
+            referencedRelation: "shop_items"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       room_bans: {
         Row: {
@@ -510,6 +569,68 @@ export type Database = {
         }
         Relationships: []
       }
+      shop_items: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          kind: Database["public"]["Enums"]["shop_item_kind"]
+          name_ar: string
+          payload: Json
+          price: number
+          sort_order: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          kind: Database["public"]["Enums"]["shop_item_kind"]
+          name_ar: string
+          payload?: Json
+          price: number
+          sort_order?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["shop_item_kind"]
+          name_ar?: string
+          payload?: Json
+          price?: number
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      user_inventory: {
+        Row: {
+          acquired_at: string
+          id: string
+          item_id: string
+          user_id: string
+        }
+        Insert: {
+          acquired_at?: string
+          id?: string
+          item_id: string
+          user_id: string
+        }
+        Update: {
+          acquired_at?: string
+          id?: string
+          item_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_inventory_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "shop_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -586,6 +707,12 @@ export type Database = {
         }
         Returns: undefined
       }
+      shop_equip: { Args: { _item: string }; Returns: undefined }
+      shop_purchase: { Args: { _item: string }; Returns: undefined }
+      shop_unequip: {
+        Args: { _kind: Database["public"]["Enums"]["shop_item_kind"] }
+        Returns: undefined
+      }
       transfer_room_ownership: {
         Args: { _new_owner: string; _room: string }
         Returns: undefined
@@ -607,6 +734,7 @@ export type Database = {
         | "mute"
         | "unmute"
       room_rank: "owner" | "admin" | "member"
+      shop_item_kind: "badge" | "name_color" | "chat_color" | "effect"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -750,6 +878,7 @@ export const Constants = {
         "unmute",
       ],
       room_rank: ["owner", "admin", "member"],
+      shop_item_kind: ["badge", "name_color", "chat_color", "effect"],
     },
   },
 } as const

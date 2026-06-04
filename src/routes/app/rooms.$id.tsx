@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
+import { getEquipped } from "@/lib/equipped";
+import { FlyingEffect } from "@/components/FlyingEffect";
 
 export const Route = createFileRoute("/app/rooms/$id")({
   component: RoomPage,
@@ -63,6 +65,7 @@ function RoomPage() {
   const recTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [burst, setBurst] = useState<{ id: number; emoji: string; name?: string } | null>(null);
 
   const myRank: Rank | null = user ? (members.find(m => m.user_id === user.id)?.rank ?? null) : null;
   const isAdminOrOwner = myRank === "owner" || myRank === "admin";
@@ -212,6 +215,27 @@ function RoomPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, user]);
 
+  // Flying entrance effect — broadcast my equipped effect on join, listen for others'
+  useEffect(() => {
+    if (!user) return;
+    const ch = supabase.channel(`room-fx:${id}`, { config: { broadcast: { self: false } } });
+    ch.on("broadcast", { event: "enter" }, (msg) => {
+      const p = msg.payload as { emoji?: string; name?: string };
+      if (p?.emoji) setBurst({ id: Date.now() + Math.random(), emoji: p.emoji, name: p.name });
+    }).subscribe(async (status) => {
+      if (status !== "SUBSCRIBED") return;
+      const eq = await getEquipped(user.id);
+      if (eq.effect) {
+        const { data: p } = await supabase.from("profiles").select("username").eq("id", user.id).maybeSingle();
+        ch.send({ type: "broadcast", event: "enter", payload: { emoji: eq.effect.emoji, name: p?.username } });
+        setBurst({ id: Date.now(), emoji: eq.effect.emoji, name: p?.username });
+      }
+    });
+    return () => { supabase.removeChannel(ch); };
+  }, [id, user]);
+
+
+
   // Auto-leave on close / disconnect
   useEffect(() => {
     if (!user) return;
@@ -335,6 +359,7 @@ function RoomPage() {
 
   return (
     <main className="fixed inset-0 flex flex-col bg-background">
+      <FlyingEffect burst={burst} />
       <header className="flex items-center gap-3 border-b border-border bg-card/95 backdrop-blur px-4 py-3">
         <button onClick={() => navigate({ to: "/app" })} aria-label={t("common.back")}>
           <ArrowRight className="h-5 w-5 rtl:rotate-180" />

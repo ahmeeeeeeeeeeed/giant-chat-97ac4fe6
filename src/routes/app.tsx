@@ -67,19 +67,18 @@ function AppLayout() {
       )}
       <Outlet />
       {!hideChrome && (
-        <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 backdrop-blur">
-          <ul className="mx-auto flex max-w-md items-stretch justify-around">
+        <nav className="fixed inset-x-0 bottom-0 z-40 px-3 pb-3 pt-2">
+          <ul className="glass-tab mx-auto flex max-w-md items-stretch justify-around rounded-3xl px-1.5 py-1.5">
             {tabs.map(({ to, label, icon: Icon, exact }) => {
               const active = exact ? path === to : path.startsWith(to);
               return (
                 <li key={to} className="flex-1">
                   <Link
                     to={to}
-                    className={`relative flex flex-col items-center gap-1 py-3 text-[10px] font-medium transition ${
-                      active ? "text-foreground" : "text-muted-foreground"
+                    className={`relative flex flex-col items-center gap-0.5 rounded-2xl py-2 text-[10px] font-semibold transition ${
+                      active ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30" : "text-muted-foreground"
                     }`}
                   >
-                    {active && <span className="absolute top-0 h-0.5 w-8 rounded-full bg-foreground" />}
                     <Icon className="h-5 w-5" strokeWidth={active ? 2.5 : 2} />
                     <span>{label}</span>
                   </Link>

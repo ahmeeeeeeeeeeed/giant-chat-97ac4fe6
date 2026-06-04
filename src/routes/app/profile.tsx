@@ -5,6 +5,8 @@ import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 import { Loader2, Camera, User as UserIcon, Bell, Info, Shield, ChevronLeft, Lock, EyeOff, Globe, Eye } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { getEquipped, type EquippedSet } from "@/lib/equipped";
+import { BadgeChip } from "@/routes/app/store";
 
 export const Route = createFileRoute("/app/profile")({
   component: ProfilePage,
@@ -31,10 +33,16 @@ function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [equipped, setEquipped] = useState<EquippedSet>({});
   const [notifEnabled, setNotifEnabled] = useState(
     typeof window !== "undefined" && localStorage.getItem("giant.notif") === "1"
   );
   const fileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    getEquipped(user.id).then(setEquipped);
+  }, [user]);
 
   useEffect(() => {
     if (!user) return;
@@ -147,9 +155,10 @@ function ProfilePage() {
             </button>
             <input ref={fileRef} type="file" accept="image/*" onChange={onPickAvatar} className="hidden" />
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <div className="truncate text-lg font-bold">{username}</div>
-                {points > 10000 && <VipBadge />}
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="truncate text-lg font-bold" style={equipped.name_color ? { color: equipped.name_color.color, textShadow: `0 0 12px ${equipped.name_color.color}55` } : undefined}>{username}</div>
+                {equipped.badge && <BadgeChip code={equipped.badge.code} color={equipped.badge.payload.color} name={equipped.badge.name_ar} />}
+                {points > 10000 && !equipped.badge && <VipBadge />}
               </div>
               <div className="truncate text-xs text-muted-foreground">@{username} · {points} pts</div>
               <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">

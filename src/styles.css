@@ -128,3 +128,19 @@
 [id="lovable-badge"] {
   display: none !important;
 }
+
+/* Flying entrance effect */
+@keyframes fly-up {
+  0% { transform: translate(0, 0) rotate(0deg); opacity: 0; }
+  10% { opacity: 1; }
+  100% { transform: translate(var(--drift, 0), -110vh) rotate(360deg); opacity: 0; }
+}
+
+/* Modern floating tab bar */
+.glass-tab {
+  background: color-mix(in oklab, var(--card) 75%, transparent);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border: 1px solid color-mix(in oklab, var(--border) 60%, transparent);
+  box-shadow: 0 8px 30px -10px color-mix(in oklab, var(--primary) 30%, transparent);
+}
