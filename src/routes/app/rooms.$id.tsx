@@ -215,6 +215,27 @@ function RoomPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, user]);
 
+  // Flying entrance effect — broadcast my equipped effect on join, listen for others'
+  useEffect(() => {
+    if (!user) return;
+    const ch = supabase.channel(`room-fx:${id}`, { config: { broadcast: { self: false } } });
+    ch.on("broadcast", { event: "enter" }, (msg) => {
+      const p = msg.payload as { emoji?: string; name?: string };
+      if (p?.emoji) setBurst({ id: Date.now() + Math.random(), emoji: p.emoji, name: p.name });
+    }).subscribe(async (status) => {
+      if (status !== "SUBSCRIBED") return;
+      const eq = await getEquipped(user.id);
+      if (eq.effect) {
+        const { data: p } = await supabase.from("profiles").select("username").eq("id", user.id).maybeSingle();
+        ch.send({ type: "broadcast", event: "enter", payload: { emoji: eq.effect.emoji, name: p?.username } });
+        setBurst({ id: Date.now(), emoji: eq.effect.emoji, name: p?.username });
+      }
+    });
+    return () => { supabase.removeChannel(ch); };
+  }, [id, user]);
+
+
+
   // Auto-leave on close / disconnect
   useEffect(() => {
     if (!user) return;
