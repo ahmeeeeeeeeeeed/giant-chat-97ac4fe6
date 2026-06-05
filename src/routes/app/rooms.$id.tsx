@@ -110,16 +110,17 @@ function RoomPage() {
   const loadMessages = async () => {
     const { data } = await supabase
       .from("room_messages")
-      .select("id, user_id, content, created_at, message_type, media_url, media_duration_ms")
+      .select("id, user_id, content, created_at, message_type, media_url, media_duration_ms, meta")
       .eq("room_id", id).order("created_at", { ascending: true }).limit(200);
     const msgs: Msg[] = (data ?? []).map(r => ({
       id: r.id, user_id: r.user_id, content: r.content ?? "",
       created_at: r.created_at,
-      message_type: (r.message_type as Msg["message_type"]) ?? "text",
+      message_type: (r.message_type as MsgType) ?? "text",
       media_url: r.media_url, media_duration_ms: r.media_duration_ms,
+      meta: (r as { meta?: Record<string, unknown> | null }).meta ?? null,
     }));
     setMessages(msgs);
-    await ensureProfiles(msgs.map(m => m.user_id));
+    await ensureProfiles(msgs.map(m => m.user_id).filter((x): x is string => !!x));
     setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight }), 50);
   };
 
