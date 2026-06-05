@@ -201,13 +201,14 @@ function RoomPage() {
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "room_messages", filter: `room_id=eq.${id}` }, async (payload) => {
         const r = payload.new as Record<string, unknown>;
         const m: Msg = {
-          id: r.id as string, user_id: r.user_id as string,
+          id: r.id as string, user_id: (r.user_id as string | null) ?? null,
           content: (r.content as string) ?? "", created_at: r.created_at as string,
-          message_type: ((r.message_type as Msg["message_type"]) ?? "text"),
+          message_type: ((r.message_type as MsgType) ?? "text"),
           media_url: (r.media_url as string | null) ?? null,
           media_duration_ms: (r.media_duration_ms as number | null) ?? null,
+          meta: (r.meta as Record<string, unknown> | null) ?? null,
         };
-        await ensureProfiles([m.user_id]);
+        if (m.user_id) await ensureProfiles([m.user_id]);
         setMessages(old => (old.some(x => x.id === m.id) ? old : [...old, m]));
         setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" }), 30);
       })
