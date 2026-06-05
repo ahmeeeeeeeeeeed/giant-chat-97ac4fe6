@@ -12,19 +12,23 @@ import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { getEquipped } from "@/lib/equipped";
 import { FlyingEffect } from "@/components/FlyingEffect";
+import { MusicPlayer } from "@/components/MusicPlayer";
+import { searchTrack, getTrivia } from "@/lib/music.functions";
 
 export const Route = createFileRoute("/app/rooms/$id")({
   component: RoomPage,
 });
 
+type MsgType = "text" | "image" | "voice" | "system";
 type Msg = {
   id: string;
-  user_id: string;
+  user_id: string | null;
   content: string;
   created_at: string;
-  message_type: "text" | "image" | "voice";
+  message_type: MsgType;
   media_url: string | null;
   media_duration_ms: number | null;
+  meta: Record<string, unknown> | null;
 };
 type Room = { id: string; name: string; description: string | null; owner_id: string };
 type Profile = { username: string; avatar_url: string | null };
@@ -96,6 +100,15 @@ function RoomPage() {
       if (!existing) {
         const { error: jErr } = await supabase.from("room_members").insert({ room_id: id, user_id: user.id });
         if (jErr) { toast.error(jErr.message ?? t("common.error")); navigate({ to: "/app" }); return; }
+        // Welcome bot greets the new arrival
+        setTimeout(() => {
+          supabase.rpc("room_bot_say", {
+            _room: id,
+            _text: `🤖 أهلاً بك في ${roomData.name}! اكتب /help لعرض الأوامر والألعاب والموسيقى.`,
+            _kind: "bot",
+            _meta: {} as never,
+          });
+        }, 800);
       }
       await Promise.all([loadMessages(), loadMembers(), loadBans(), loadLogs(), loadReactions()]);
     })();
@@ -106,16 +119,17 @@ function RoomPage() {
   const loadMessages = async () => {
     const { data } = await supabase
       .from("room_messages")
-      .select("id, user_id, content, created_at, message_type, media_url, media_duration_ms")
+      .select("id, user_id, content, created_at, message_type, media_url, media_duration_ms, meta")
       .eq("room_id", id).order("created_at", { ascending: true }).limit(200);
     const msgs: Msg[] = (data ?? []).map(r => ({
       id: r.id, user_id: r.user_id, content: r.content ?? "",
       created_at: r.created_at,
-      message_type: (r.message_type as Msg["message_type"]) ?? "text",
+      message_type: (r.message_type as MsgType) ?? "text",
       media_url: r.media_url, media_duration_ms: r.media_duration_ms,
+      meta: (r as { meta?: Record<string, unknown> | null }).meta ?? null,
     }));
     setMessages(msgs);
-    await ensureProfiles(msgs.map(m => m.user_id));
+    await ensureProfiles(msgs.map(m => m.user_id).filter((x): x is string => !!x));
     setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight }), 50);
   };
 
@@ -196,13 +210,14 @@ function RoomPage() {
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "room_messages", filter: `room_id=eq.${id}` }, async (payload) => {
         const r = payload.new as Record<string, unknown>;
         const m: Msg = {
-          id: r.id as string, user_id: r.user_id as string,
+          id: r.id as string, user_id: (r.user_id as string | null) ?? null,
           content: (r.content as string) ?? "", created_at: r.created_at as string,
-          message_type: ((r.message_type as Msg["message_type"]) ?? "text"),
+          message_type: ((r.message_type as MsgType) ?? "text"),
           media_url: (r.media_url as string | null) ?? null,
           media_duration_ms: (r.media_duration_ms as number | null) ?? null,
+          meta: (r.meta as Record<string, unknown> | null) ?? null,
         };
-        await ensureProfiles([m.user_id]);
+        if (m.user_id) await ensureProfiles([m.user_id]);
         setMessages(old => (old.some(x => x.id === m.id) ? old : [...old, m]));
         setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" }), 30);
       })
@@ -254,16 +269,85 @@ function RoomPage() {
     };
   }, [id, user]);
 
+  const botSay = async (txt: string, kind = "bot", meta: Record<string, unknown> = {}) => {
+    await supabase.rpc("room_bot_say", { _room: id, _text: txt, _kind: kind, _meta: meta as never });
+  };
+
+
+  const runCommand = async (raw: string): Promise<boolean> => {
+    if (!raw.startsWith("/")) return false;
+    const [cmd, ...rest] = raw.slice(1).split(/\s+/);
+    const arg = rest.join(" ").trim();
+    const c = cmd.toLowerCase();
+    try {
+      if (c === "play") {
+        if (!arg) { await botSay("استخدم: /play اسم الأغنية"); return true; }
+        await botSay(`🔎 يبحث عن: ${arg}`);
+        const { track, error } = await searchTrack({ data: { q: arg } });
+        if (!track) { await botSay(`❌ لم أجد نتائج (${error ?? "no_results"})`); return true; }
+        const me = profilesMap[user!.id]?.username ?? "";
+        await supabase.rpc("music_play", { _room: id, _track: { ...track, requester_name: me, requester_id: user!.id } });
+      } else if (c === "pause") { await supabase.rpc("music_pause", { _room: id }); }
+      else if (c === "resume") { await supabase.rpc("music_resume", { _room: id }); }
+      else if (c === "stop") { await supabase.rpc("music_stop", { _room: id }); }
+      else if (c === "skip") { await supabase.rpc("music_skip", { _room: id }); }
+      else if (c === "volume") {
+        const v = Math.max(0, Math.min(100, parseInt(arg, 10) || 70));
+        await supabase.rpc("music_set_volume", { _room: id, _vol: v });
+        await botSay(`🔊 الصوت: ${v}%`);
+      } else if (c === "queue") {
+        const { data } = await supabase.from("room_music").select("queue, current").eq("room_id", id).maybeSingle();
+        const q = ((data?.queue as Array<{ title: string; artist: string }>) ?? []);
+        const cur = data?.current as { title: string; artist: string } | null;
+        const lines = [
+          cur ? `▶️ الآن: ${cur.title} — ${cur.artist}` : "لا توجد أغنية حالية",
+          ...q.map((t, i) => `${i + 1}. ${t.title} — ${t.artist}`),
+        ];
+        await botSay(lines.join("\n"));
+      } else if (c === "nowplaying" || c === "np") {
+        const { data } = await supabase.from("room_music").select("current").eq("room_id", id).maybeSingle();
+        const cur = data?.current as { title: string; artist: string; requester_name?: string } | null;
+        await botSay(cur ? `🎵 ${cur.title} — ${cur.artist}${cur.requester_name ? ` (طلبها ${cur.requester_name})` : ""}` : "لا توجد أغنية الآن");
+      } else if (c === "help") {
+        await botSay("الأوامر:\n/play <اسم> /pause /resume /stop /skip /queue /nowplaying /volume 0-100\nالألعاب: /roll /coin /8ball <سؤال> /trivia /guess <1-10>");
+      } else if (c === "roll") {
+        await botSay(`🎲 رميت النرد: ${1 + Math.floor(Math.random() * 6)}`);
+      } else if (c === "coin") {
+        await botSay(`🪙 ${Math.random() < 0.5 ? "صورة" : "كتابة"}`);
+      } else if (c === "8ball") {
+        const ans = ["نعم بالتأكيد", "لا أعتقد ذلك", "ربما", "حاول لاحقًا", "بدون شك", "السؤال غامض", "مستبعد جدًا", "الإجابة نعم"];
+        await botSay(`🎱 ${ans[Math.floor(Math.random() * ans.length)]}`);
+      } else if (c === "guess") {
+        const n = parseInt(arg, 10);
+        if (!n || n < 1 || n > 10) { await botSay("استخدم: /guess <1-10>"); return true; }
+        const secret = 1 + Math.floor(Math.random() * 10);
+        await botSay(secret === n ? `🎉 صحيح! الرقم كان ${secret}` : `❌ خطأ. الرقم كان ${secret} وأنت قلت ${n}`);
+      } else if (c === "trivia") {
+        const { question } = await getTrivia();
+        if (!question) { await botSay("تعذر جلب سؤال الآن"); return true; }
+        await botSay(`❓ [${question.category}]\n${question.q}\n\nالخيارات: ${question.choices.join(" / ")}\n\nالجواب: ||${question.answer}||`);
+      } else {
+        return false;
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "خطأ";
+      await botSay(`⚠️ ${msg}`);
+    }
+    return true;
+  };
+
   const send = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!text.trim() || !user) return;
     setSending(true);
     const content = text.trim();
     setText("");
+    if (await runCommand(content)) { setSending(false); return; }
     const { error } = await supabase.from("room_messages").insert({ room_id: id, user_id: user.id, content, message_type: "text" });
     setSending(false);
     if (error) { toast.error(t("common.error")); setText(content); }
   };
+
 
   const uploadAndSend = async (blob: Blob, kind: "image" | "voice", durationMs?: number) => {
     if (!user) return;
@@ -379,6 +463,8 @@ function RoomPage() {
         </button>
       </header>
 
+      <MusicPlayer roomId={id} />
+
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-4">
         {messages.length === 0 ? (
           <div className="flex h-full items-center justify-center px-6 text-center">
@@ -387,10 +473,11 @@ function RoomPage() {
         ) : (
           <ul className="flex flex-col gap-3">
             {messages.map((m, i) => {
+              if (m.message_type === "system") return <SystemMessage key={m.id} m={m} />;
               const mine = m.user_id === user?.id;
               const prev = messages[i - 1];
-              const showHeader = !prev || prev.user_id !== m.user_id;
-              const profile = profilesMap[m.user_id];
+              const showHeader = !prev || prev.user_id !== m.user_id || prev.message_type === "system";
+              const profile = m.user_id ? profilesMap[m.user_id] : undefined;
               const msgReactions = reactions.filter(r => r.message_id === m.id);
               const grouped = new Map<string, { count: number; mine: boolean }>();
               msgReactions.forEach(r => {
@@ -705,6 +792,43 @@ function Avatar({ profile }: { profile?: Profile }) {
   if (profile?.avatar_url) return <img src={profile.avatar_url} alt="" className="h-9 w-9 rounded-full object-cover" />;
   const letter = (profile?.username ?? "?").charAt(0).toUpperCase();
   return <div className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-sm font-bold">{letter}</div>;
+}
+
+function SystemMessage({ m }: { m: Msg }) {
+  const kind = (m.meta?.kind as string) ?? "system";
+  if (kind === "music_now" || kind === "music_queued") {
+    const tr = m.meta?.track as { title: string; artist: string; artwork: string; requester_name?: string } | undefined;
+    return (
+      <li className="bubble-in flex justify-center">
+        <div className="flex max-w-[88%] items-center gap-3 rounded-2xl border border-primary/30 bg-gradient-to-r from-primary/15 to-transparent px-3 py-2">
+          {tr?.artwork && <img src={tr.artwork} alt="" className="h-12 w-12 rounded-lg object-cover" />}
+          <div className="min-w-0">
+            <div className="text-[11px] font-bold text-primary">{kind === "music_now" ? "🎵 يشغل الآن" : "➕ في قائمة الانتظار"}</div>
+            <div className="truncate text-sm font-semibold">{tr?.title}</div>
+            <div className="truncate text-[11px] text-muted-foreground">{tr?.artist}{tr?.requester_name ? ` · ${tr.requester_name}` : ""}</div>
+          </div>
+        </div>
+      </li>
+    );
+  }
+  if (kind === "bot") {
+    return (
+      <li className="bubble-in flex justify-center">
+        <div className="max-w-[88%] rounded-2xl border border-border bg-card px-3 py-2 text-center">
+          <div className="mb-0.5 text-[10px] font-bold text-primary">🤖 Bot</div>
+          <div className="whitespace-pre-wrap text-[13px] leading-relaxed">{m.content}</div>
+        </div>
+      </li>
+    );
+  }
+  // event / generic system
+  return (
+    <li className="bubble-in flex justify-center">
+      <div className="rounded-full bg-muted/70 px-3 py-1 text-[11px] font-medium text-muted-foreground">
+        {m.content}
+      </div>
+    </li>
+  );
 }
 
 function MessageBubble({ m, mine }: { m: Msg; mine: boolean }) {
