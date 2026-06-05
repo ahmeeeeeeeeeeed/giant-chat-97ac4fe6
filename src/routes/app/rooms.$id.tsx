@@ -261,8 +261,9 @@ function RoomPage() {
   }, [id, user]);
 
   const botSay = async (txt: string, kind = "bot", meta: Record<string, unknown> = {}) => {
-    await supabase.rpc("room_bot_say", { _room: id, _text: txt, _kind: kind, _meta: meta });
+    await supabase.rpc("room_bot_say", { _room: id, _text: txt, _kind: kind, _meta: meta as never });
   };
+
 
   const runCommand = async (raw: string): Promise<boolean> => {
     if (!raw.startsWith("/")) return false;
