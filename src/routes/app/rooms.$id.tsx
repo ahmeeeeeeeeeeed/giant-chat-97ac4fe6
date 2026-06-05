@@ -393,10 +393,11 @@ function RoomPage() {
         ) : (
           <ul className="flex flex-col gap-3">
             {messages.map((m, i) => {
+              if (m.message_type === "system") return <SystemMessage key={m.id} m={m} />;
               const mine = m.user_id === user?.id;
               const prev = messages[i - 1];
-              const showHeader = !prev || prev.user_id !== m.user_id;
-              const profile = profilesMap[m.user_id];
+              const showHeader = !prev || prev.user_id !== m.user_id || prev.message_type === "system";
+              const profile = m.user_id ? profilesMap[m.user_id] : undefined;
               const msgReactions = reactions.filter(r => r.message_id === m.id);
               const grouped = new Map<string, { count: number; mine: boolean }>();
               msgReactions.forEach(r => {
