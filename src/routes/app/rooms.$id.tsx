@@ -12,19 +12,23 @@ import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { getEquipped } from "@/lib/equipped";
 import { FlyingEffect } from "@/components/FlyingEffect";
+import { MusicPlayer } from "@/components/MusicPlayer";
+import { searchTrack, getTrivia } from "@/lib/music.functions";
 
 export const Route = createFileRoute("/app/rooms/$id")({
   component: RoomPage,
 });
 
+type MsgType = "text" | "image" | "voice" | "system";
 type Msg = {
   id: string;
-  user_id: string;
+  user_id: string | null;
   content: string;
   created_at: string;
-  message_type: "text" | "image" | "voice";
+  message_type: MsgType;
   media_url: string | null;
   media_duration_ms: number | null;
+  meta: Record<string, unknown> | null;
 };
 type Room = { id: string; name: string; description: string | null; owner_id: string };
 type Profile = { username: string; avatar_url: string | null };
