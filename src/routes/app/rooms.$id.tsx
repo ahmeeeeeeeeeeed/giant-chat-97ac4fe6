@@ -794,6 +794,43 @@ function Avatar({ profile }: { profile?: Profile }) {
   return <div className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-sm font-bold">{letter}</div>;
 }
 
+function SystemMessage({ m }: { m: Msg }) {
+  const kind = (m.meta?.kind as string) ?? "system";
+  if (kind === "music_now" || kind === "music_queued") {
+    const tr = m.meta?.track as { title: string; artist: string; artwork: string; requester_name?: string } | undefined;
+    return (
+      <li className="bubble-in flex justify-center">
+        <div className="flex max-w-[88%] items-center gap-3 rounded-2xl border border-primary/30 bg-gradient-to-r from-primary/15 to-transparent px-3 py-2">
+          {tr?.artwork && <img src={tr.artwork} alt="" className="h-12 w-12 rounded-lg object-cover" />}
+          <div className="min-w-0">
+            <div className="text-[11px] font-bold text-primary">{kind === "music_now" ? "🎵 يشغل الآن" : "➕ في قائمة الانتظار"}</div>
+            <div className="truncate text-sm font-semibold">{tr?.title}</div>
+            <div className="truncate text-[11px] text-muted-foreground">{tr?.artist}{tr?.requester_name ? ` · ${tr.requester_name}` : ""}</div>
+          </div>
+        </div>
+      </li>
+    );
+  }
+  if (kind === "bot") {
+    return (
+      <li className="bubble-in flex justify-center">
+        <div className="max-w-[88%] rounded-2xl border border-border bg-card px-3 py-2 text-center">
+          <div className="mb-0.5 text-[10px] font-bold text-primary">🤖 Bot</div>
+          <div className="whitespace-pre-wrap text-[13px] leading-relaxed">{m.content}</div>
+        </div>
+      </li>
+    );
+  }
+  // event / generic system
+  return (
+    <li className="bubble-in flex justify-center">
+      <div className="rounded-full bg-muted/70 px-3 py-1 text-[11px] font-medium text-muted-foreground">
+        {m.content}
+      </div>
+    </li>
+  );
+}
+
 function MessageBubble({ m, mine }: { m: Msg; mine: boolean }) {
   const base = `rounded-2xl px-3 py-2 ${mine ? "rounded-br-md bg-primary text-primary-foreground" : "rounded-bl-md bg-card text-foreground border border-border"}`;
   if (m.message_type === "image" && m.media_url) {
