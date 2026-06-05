@@ -260,16 +260,84 @@ function RoomPage() {
     };
   }, [id, user]);
 
+  const botSay = async (txt: string, kind = "bot", meta: Record<string, unknown> = {}) => {
+    await supabase.rpc("room_bot_say", { _room: id, _text: txt, _kind: kind, _meta: meta });
+  };
+
+  const runCommand = async (raw: string): Promise<boolean> => {
+    if (!raw.startsWith("/")) return false;
+    const [cmd, ...rest] = raw.slice(1).split(/\s+/);
+    const arg = rest.join(" ").trim();
+    const c = cmd.toLowerCase();
+    try {
+      if (c === "play") {
+        if (!arg) { await botSay("استخدم: /play اسم الأغنية"); return true; }
+        await botSay(`🔎 يبحث عن: ${arg}`);
+        const { track, error } = await searchTrack({ data: { q: arg } });
+        if (!track) { await botSay(`❌ لم أجد نتائج (${error ?? "no_results"})`); return true; }
+        const me = profilesMap[user!.id]?.username ?? "";
+        await supabase.rpc("music_play", { _room: id, _track: { ...track, requester_name: me, requester_id: user!.id } });
+      } else if (c === "pause") { await supabase.rpc("music_pause", { _room: id }); }
+      else if (c === "resume") { await supabase.rpc("music_resume", { _room: id }); }
+      else if (c === "stop") { await supabase.rpc("music_stop", { _room: id }); }
+      else if (c === "skip") { await supabase.rpc("music_skip", { _room: id }); }
+      else if (c === "volume") {
+        const v = Math.max(0, Math.min(100, parseInt(arg, 10) || 70));
+        await supabase.rpc("music_set_volume", { _room: id, _vol: v });
+        await botSay(`🔊 الصوت: ${v}%`);
+      } else if (c === "queue") {
+        const { data } = await supabase.from("room_music").select("queue, current").eq("room_id", id).maybeSingle();
+        const q = ((data?.queue as Array<{ title: string; artist: string }>) ?? []);
+        const cur = data?.current as { title: string; artist: string } | null;
+        const lines = [
+          cur ? `▶️ الآن: ${cur.title} — ${cur.artist}` : "لا توجد أغنية حالية",
+          ...q.map((t, i) => `${i + 1}. ${t.title} — ${t.artist}`),
+        ];
+        await botSay(lines.join("\n"));
+      } else if (c === "nowplaying" || c === "np") {
+        const { data } = await supabase.from("room_music").select("current").eq("room_id", id).maybeSingle();
+        const cur = data?.current as { title: string; artist: string; requester_name?: string } | null;
+        await botSay(cur ? `🎵 ${cur.title} — ${cur.artist}${cur.requester_name ? ` (طلبها ${cur.requester_name})` : ""}` : "لا توجد أغنية الآن");
+      } else if (c === "help") {
+        await botSay("الأوامر:\n/play <اسم> /pause /resume /stop /skip /queue /nowplaying /volume 0-100\nالألعاب: /roll /coin /8ball <سؤال> /trivia /guess <1-10>");
+      } else if (c === "roll") {
+        await botSay(`🎲 رميت النرد: ${1 + Math.floor(Math.random() * 6)}`);
+      } else if (c === "coin") {
+        await botSay(`🪙 ${Math.random() < 0.5 ? "صورة" : "كتابة"}`);
+      } else if (c === "8ball") {
+        const ans = ["نعم بالتأكيد", "لا أعتقد ذلك", "ربما", "حاول لاحقًا", "بدون شك", "السؤال غامض", "مستبعد جدًا", "الإجابة نعم"];
+        await botSay(`🎱 ${ans[Math.floor(Math.random() * ans.length)]}`);
+      } else if (c === "guess") {
+        const n = parseInt(arg, 10);
+        if (!n || n < 1 || n > 10) { await botSay("استخدم: /guess <1-10>"); return true; }
+        const secret = 1 + Math.floor(Math.random() * 10);
+        await botSay(secret === n ? `🎉 صحيح! الرقم كان ${secret}` : `❌ خطأ. الرقم كان ${secret} وأنت قلت ${n}`);
+      } else if (c === "trivia") {
+        const { question } = await getTrivia();
+        if (!question) { await botSay("تعذر جلب سؤال الآن"); return true; }
+        await botSay(`❓ [${question.category}]\n${question.q}\n\nالخيارات: ${question.choices.join(" / ")}\n\nالجواب: ||${question.answer}||`);
+      } else {
+        return false;
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "خطأ";
+      await botSay(`⚠️ ${msg}`);
+    }
+    return true;
+  };
+
   const send = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!text.trim() || !user) return;
     setSending(true);
     const content = text.trim();
     setText("");
+    if (await runCommand(content)) { setSending(false); return; }
     const { error } = await supabase.from("room_messages").insert({ room_id: id, user_id: user.id, content, message_type: "text" });
     setSending(false);
     if (error) { toast.error(t("common.error")); setText(content); }
   };
+
 
   const uploadAndSend = async (blob: Blob, kind: "image" | "voice", durationMs?: number) => {
     if (!user) return;
