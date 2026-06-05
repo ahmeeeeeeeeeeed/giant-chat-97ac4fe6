@@ -100,6 +100,15 @@ function RoomPage() {
       if (!existing) {
         const { error: jErr } = await supabase.from("room_members").insert({ room_id: id, user_id: user.id });
         if (jErr) { toast.error(jErr.message ?? t("common.error")); navigate({ to: "/app" }); return; }
+        // Welcome bot greets the new arrival
+        setTimeout(() => {
+          supabase.rpc("room_bot_say", {
+            _room: id,
+            _text: `🤖 أهلاً بك في ${roomData.name}! اكتب /help لعرض الأوامر والألعاب والموسيقى.`,
+            _kind: "bot",
+            _meta: {} as never,
+          });
+        }, 800);
       }
       await Promise.all([loadMessages(), loadMembers(), loadBans(), loadLogs(), loadReactions()]);
     })();
