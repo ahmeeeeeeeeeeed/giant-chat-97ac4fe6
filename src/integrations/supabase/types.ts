@@ -512,8 +512,9 @@ export type Database = {
           media_duration_ms: number | null
           media_url: string | null
           message_type: Database["public"]["Enums"]["message_type"]
+          meta: Json | null
           room_id: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           content?: string | null
@@ -522,8 +523,9 @@ export type Database = {
           media_duration_ms?: number | null
           media_url?: string | null
           message_type?: Database["public"]["Enums"]["message_type"]
+          meta?: Json | null
           room_id: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           content?: string | null
@@ -532,14 +534,56 @@ export type Database = {
           media_duration_ms?: number | null
           media_url?: string | null
           message_type?: Database["public"]["Enums"]["message_type"]
+          meta?: Json | null
           room_id?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
             foreignKeyName: "room_messages_room_id_fkey"
             columns: ["room_id"]
             isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      room_music: {
+        Row: {
+          current: Json | null
+          paused: boolean
+          paused_pos_ms: number
+          queue: Json
+          room_id: string
+          started_at: string | null
+          updated_at: string
+          volume: number
+        }
+        Insert: {
+          current?: Json | null
+          paused?: boolean
+          paused_pos_ms?: number
+          queue?: Json
+          room_id: string
+          started_at?: string | null
+          updated_at?: string
+          volume?: number
+        }
+        Update: {
+          current?: Json | null
+          paused?: boolean
+          paused_pos_ms?: number
+          queue?: Json
+          room_id?: string
+          started_at?: string | null
+          updated_at?: string
+          volume?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_music_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: true
             referencedRelation: "rooms"
             referencedColumns: ["id"]
           },
@@ -691,6 +735,20 @@ export type Database = {
         Args: { _room: string; _user: string }
         Returns: undefined
       }
+      music_advance_if_ended: { Args: { _room: string }; Returns: undefined }
+      music_pause: { Args: { _room: string }; Returns: undefined }
+      music_play: { Args: { _room: string; _track: Json }; Returns: undefined }
+      music_resume: { Args: { _room: string }; Returns: undefined }
+      music_set_volume: {
+        Args: { _room: string; _vol: number }
+        Returns: undefined
+      }
+      music_skip: { Args: { _room: string }; Returns: undefined }
+      music_stop: { Args: { _room: string }; Returns: undefined }
+      room_bot_say: {
+        Args: { _kind?: string; _meta?: Json; _room: string; _text: string }
+        Returns: undefined
+      }
       room_joined_at: {
         Args: { _room: string; _user: string }
         Returns: string
@@ -721,7 +779,7 @@ export type Database = {
     Enums: {
       app_role: "admin" | "user"
       friendship_status: "pending" | "accepted" | "blocked"
-      message_type: "text" | "image" | "voice"
+      message_type: "text" | "image" | "voice" | "system"
       room_log_event:
         | "join"
         | "leave"
@@ -864,7 +922,7 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "user"],
       friendship_status: ["pending", "accepted", "blocked"],
-      message_type: ["text", "image", "voice"],
+      message_type: ["text", "image", "voice", "system"],
       room_log_event: [
         "join",
         "leave",
