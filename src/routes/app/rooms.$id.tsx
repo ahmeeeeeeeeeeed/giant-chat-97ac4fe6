@@ -14,7 +14,7 @@ import { getEquipped } from "@/lib/equipped";
 import { FlyingEffect } from "@/components/FlyingEffect";
 import { MusicPlayer } from "@/components/MusicPlayer";
 import { BroadcastCard } from "@/components/BroadcastCard";
-import { getTrivia } from "@/lib/music.functions";
+import { searchTrack, getTrivia } from "@/lib/music.functions";
 
 export const Route = createFileRoute("/app/rooms/$id")({
   component: RoomPage,
