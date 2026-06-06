@@ -743,6 +743,36 @@ function RoomPage() {
         </SheetWrap>
       )}
 
+      {/* Bot help panel */}
+      {panel === "help" && (
+        <SheetWrap onClose={() => setPanel(null)}>
+          <h2 className="mb-1 text-lg font-bold">🤖 شرح البوت</h2>
+          <p className="mb-4 text-xs text-muted-foreground">يمكنك استخدام الأزرار أعلاه أو كتابة الأوامر التالية:</p>
+          <HelpSection title="🎵 الموسيقى">
+            <HelpCmd cmd="/play <اسم الأغنية>" desc="بحث وتشغيل أغنية" />
+            <HelpCmd cmd="/pause /resume" desc="إيقاف مؤقت / استئناف" />
+            <HelpCmd cmd="/skip /stop" desc="تخطي / إيقاف" />
+            <HelpCmd cmd="/volume 0-100" desc="ضبط الصوت" />
+            <HelpCmd cmd="/queue /nowplaying" desc="القائمة / الحالية" />
+            <p className="mt-1 text-[11px] text-muted-foreground">• البحث + التشغيل + النشر متاحة من شريط الموسيقى أعلى الغرفة.</p>
+          </HelpSection>
+          <HelpSection title="🎮 ألعاب">
+            <HelpCmd cmd="/roll" desc="رمي النرد 1-6" />
+            <HelpCmd cmd="/coin" desc="صورة أو كتابة" />
+            <HelpCmd cmd="/8ball <سؤال>" desc="كرة سحرية" />
+            <HelpCmd cmd="/guess <1-10>" desc="خمّن الرقم" />
+            <HelpCmd cmd="/trivia" desc="سؤال معلومات عامة" />
+          </HelpSection>
+          <HelpSection title="📣 النشر">
+            <p className="text-[12px] leading-relaxed text-muted-foreground">
+              زر «نشر» يُرسل الأغنية الحالية إلى كل الغرف العامة مع اسمك. يمكن للأعضاء تشغيلها والتفاعل معها، وستصلك إشعارات بكل تفاعل.
+            </p>
+          </HelpSection>
+        </SheetWrap>
+      )}
+
+
+
       {/* Per-member actions */}
       {actionTarget && (
         <div className="fixed inset-0 z-[60] flex items-end bg-black/60" onClick={() => setActionTarget(null)}>
@@ -823,6 +853,12 @@ function Avatar({ profile }: { profile?: Profile }) {
 
 function SystemMessage({ m }: { m: Msg }) {
   const kind = (m.meta?.kind as string) ?? "system";
+  if (kind === "music_broadcast") {
+    const tr = m.meta?.track as { title: string; artist: string; artwork: string; preview_url: string } | undefined;
+    const bid = m.meta?.broadcast_id as string | undefined;
+    const rname = m.meta?.requester_name as string | undefined;
+    if (tr && bid) return <li><BroadcastCard broadcastId={bid} requesterName={rname} track={tr} /></li>;
+  }
   if (kind === "music_now" || kind === "music_queued") {
     const tr = m.meta?.track as { title: string; artist: string; artwork: string; requester_name?: string } | undefined;
     return (
@@ -830,7 +866,7 @@ function SystemMessage({ m }: { m: Msg }) {
         <div className="flex max-w-[88%] items-center gap-3 rounded-2xl border border-primary/30 bg-gradient-to-r from-primary/15 to-transparent px-3 py-2">
           {tr?.artwork && <img src={tr.artwork} alt="" className="h-12 w-12 rounded-lg object-cover" />}
           <div className="min-w-0">
-            <div className="text-[11px] font-bold text-primary">{kind === "music_now" ? "🎵 يشغل الآن" : "➕ في قائمة الانتظار"}</div>
+            <div className="text-[11px] font-bold text-primary">{kind === "music_now" ? "🎵 جاهزة للتشغيل" : "➕ في قائمة الانتظار"}</div>
             <div className="truncate text-sm font-semibold">{tr?.title}</div>
             <div className="truncate text-[11px] text-muted-foreground">{tr?.artist}{tr?.requester_name ? ` · ${tr.requester_name}` : ""}</div>
           </div>
