@@ -472,6 +472,9 @@ function RoomPage() {
             {members.length} {t("rooms.members")}
           </div>
         </button>
+        <button onClick={() => setPanel("help")} aria-label="شرح البوت" className="rounded-full p-2 hover:bg-secondary">
+          <HelpCircle className="h-5 w-5 text-muted-foreground" />
+        </button>
         <button onClick={() => setPanel("members")} aria-label={t("room.members_title")} className="rounded-full p-2 hover:bg-secondary">
           <Users className="h-5 w-5 text-muted-foreground" />
         </button>
@@ -508,7 +511,14 @@ function RoomPage() {
                   <div className="w-9 shrink-0">{showHeader && <Avatar profile={profile} />}</div>
                   <div className={`flex max-w-[78%] flex-col ${mine ? "items-end" : "items-start"}`}>
                     {showHeader && (
-                      <div className={`mb-1 px-1 text-[11px] font-semibold text-muted-foreground ${mine ? "text-end" : ""}`}>
+                      <div
+                        className={`mb-1 px-1 text-[11px] font-extrabold ${mine ? "text-end" : ""}`}
+                        style={
+                          m.user_id && nameColors[m.user_id]
+                            ? { color: nameColors[m.user_id], textShadow: `0 0 8px ${nameColors[m.user_id]}66` }
+                            : { color: "hsl(var(--muted-foreground))" }
+                        }
+                      >
                         {profile?.username ?? "…"}
                       </div>
                     )}
