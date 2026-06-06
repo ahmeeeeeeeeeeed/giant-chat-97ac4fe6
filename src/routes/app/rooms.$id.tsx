@@ -959,3 +959,20 @@ function formatRel(ts: string) {
   if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
   return new Date(ts).toLocaleDateString();
 }
+
+function HelpSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="mb-4">
+      <div className="mb-1.5 text-sm font-bold">{title}</div>
+      <div className="flex flex-col gap-1 rounded-2xl border border-border bg-background p-2.5">{children}</div>
+    </div>
+  );
+}
+function HelpCmd({ cmd, desc }: { cmd: string; desc: string }) {
+  return (
+    <div className="flex items-baseline justify-between gap-2 text-[12px]">
+      <code className="rounded bg-secondary px-1.5 py-0.5 font-mono text-[11px] text-primary">{cmd}</code>
+      <span className="text-muted-foreground">{desc}</span>
+    </div>
+  );
+}
