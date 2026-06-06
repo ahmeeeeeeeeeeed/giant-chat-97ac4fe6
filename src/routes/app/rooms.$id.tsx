@@ -6,13 +6,14 @@ import {
   ArrowRight, Send, Settings as SettingsIcon, LogOut, Users, Loader2,
   ImagePlus, Mic, Square, Play, Pause, Crown, Shield, UserX, Ban,
   ArrowUpCircle, ArrowDownCircle, ScrollText, X, MoreVertical, MessageSquare,
-  Smile, Trash2, Pencil,
+  Smile, Trash2, Pencil, HelpCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { getEquipped } from "@/lib/equipped";
 import { FlyingEffect } from "@/components/FlyingEffect";
 import { MusicPlayer } from "@/components/MusicPlayer";
+import { BroadcastCard } from "@/components/BroadcastCard";
 import { searchTrack, getTrivia } from "@/lib/music.functions";
 
 export const Route = createFileRoute("/app/rooms/$id")({
@@ -59,7 +60,8 @@ function RoomPage() {
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [panel, setPanel] = useState<null | "settings" | "members" | "logs" | "bans" | "edit">(null);
+  const [panel, setPanel] = useState<null | "settings" | "members" | "logs" | "bans" | "edit" | "help">(null);
+  const [nameColors, setNameColors] = useState<Record<string, string>>({});
   const [actionTarget, setActionTarget] = useState<Member | null>(null);
   const [recording, setRecording] = useState(false);
   const [recordSeconds, setRecordSeconds] = useState(0);
@@ -251,23 +253,38 @@ function RoomPage() {
 
 
 
-  // Auto-leave on close / disconnect
+  // Auto-leave after 30s of being hidden / offline (cancel if user comes back)
   useEffect(() => {
     if (!user) return;
-    const leave = () => { supabase.from("room_members").delete().eq("room_id", id).eq("user_id", user.id); };
-    const onHide = () => { if (document.visibilityState === "hidden") leave(); };
-    const onOffline = () => leave();
-    window.addEventListener("pagehide", leave);
-    window.addEventListener("beforeunload", leave);
-    window.addEventListener("offline", onOffline);
-    document.addEventListener("visibilitychange", onHide);
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const leaveNow = () => { supabase.from("room_members").delete().eq("room_id", id).eq("user_id", user.id); };
+    const arm = () => { if (timer) return; timer = setTimeout(leaveNow, 30_000); };
+    const disarm = () => { if (timer) { clearTimeout(timer); timer = null; } };
+    const onVis = () => { document.visibilityState === "hidden" ? arm() : disarm(); };
+    document.addEventListener("visibilitychange", onVis);
+    window.addEventListener("offline", arm);
+    window.addEventListener("online", disarm);
+    window.addEventListener("pagehide", leaveNow);
     return () => {
-      window.removeEventListener("pagehide", leave);
-      window.removeEventListener("beforeunload", leave);
-      window.removeEventListener("offline", onOffline);
-      document.removeEventListener("visibilitychange", onHide);
+      disarm();
+      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("offline", arm);
+      window.removeEventListener("online", disarm);
+      window.removeEventListener("pagehide", leaveNow);
     };
   }, [id, user]);
+
+  // Resolve name colors for any author seen in messages
+  useEffect(() => {
+    const ids = Array.from(new Set(messages.map(m => m.user_id).filter((x): x is string => !!x)));
+    ids.forEach(uid => {
+      if (nameColors[uid] !== undefined) return;
+      getEquipped(uid).then(eq => {
+        setNameColors(c => ({ ...c, [uid]: eq.name_color?.color ?? "" }));
+      });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages]);
 
   const botSay = async (txt: string, kind = "bot", meta: Record<string, unknown> = {}) => {
     await supabase.rpc("room_bot_say", { _room: id, _text: txt, _kind: kind, _meta: meta as never });
@@ -455,6 +472,9 @@ function RoomPage() {
             {members.length} {t("rooms.members")}
           </div>
         </button>
+        <button onClick={() => setPanel("help")} aria-label="شرح البوت" className="rounded-full p-2 hover:bg-secondary">
+          <HelpCircle className="h-5 w-5 text-muted-foreground" />
+        </button>
         <button onClick={() => setPanel("members")} aria-label={t("room.members_title")} className="rounded-full p-2 hover:bg-secondary">
           <Users className="h-5 w-5 text-muted-foreground" />
         </button>
@@ -491,7 +511,14 @@ function RoomPage() {
                   <div className="w-9 shrink-0">{showHeader && <Avatar profile={profile} />}</div>
                   <div className={`flex max-w-[78%] flex-col ${mine ? "items-end" : "items-start"}`}>
                     {showHeader && (
-                      <div className={`mb-1 px-1 text-[11px] font-semibold text-muted-foreground ${mine ? "text-end" : ""}`}>
+                      <div
+                        className={`mb-1 px-1 text-[11px] font-extrabold ${mine ? "text-end" : ""}`}
+                        style={
+                          m.user_id && nameColors[m.user_id]
+                            ? { color: nameColors[m.user_id], textShadow: `0 0 8px ${nameColors[m.user_id]}66` }
+                            : { color: "hsl(var(--muted-foreground))" }
+                        }
+                      >
                         {profile?.username ?? "…"}
                       </div>
                     )}
@@ -716,6 +743,36 @@ function RoomPage() {
         </SheetWrap>
       )}
 
+      {/* Bot help panel */}
+      {panel === "help" && (
+        <SheetWrap onClose={() => setPanel(null)}>
+          <h2 className="mb-1 text-lg font-bold">🤖 شرح البوت</h2>
+          <p className="mb-4 text-xs text-muted-foreground">يمكنك استخدام الأزرار أعلاه أو كتابة الأوامر التالية:</p>
+          <HelpSection title="🎵 الموسيقى">
+            <HelpCmd cmd="/play <اسم الأغنية>" desc="بحث وتشغيل أغنية" />
+            <HelpCmd cmd="/pause /resume" desc="إيقاف مؤقت / استئناف" />
+            <HelpCmd cmd="/skip /stop" desc="تخطي / إيقاف" />
+            <HelpCmd cmd="/volume 0-100" desc="ضبط الصوت" />
+            <HelpCmd cmd="/queue /nowplaying" desc="القائمة / الحالية" />
+            <p className="mt-1 text-[11px] text-muted-foreground">• البحث + التشغيل + النشر متاحة من شريط الموسيقى أعلى الغرفة.</p>
+          </HelpSection>
+          <HelpSection title="🎮 ألعاب">
+            <HelpCmd cmd="/roll" desc="رمي النرد 1-6" />
+            <HelpCmd cmd="/coin" desc="صورة أو كتابة" />
+            <HelpCmd cmd="/8ball <سؤال>" desc="كرة سحرية" />
+            <HelpCmd cmd="/guess <1-10>" desc="خمّن الرقم" />
+            <HelpCmd cmd="/trivia" desc="سؤال معلومات عامة" />
+          </HelpSection>
+          <HelpSection title="📣 النشر">
+            <p className="text-[12px] leading-relaxed text-muted-foreground">
+              زر «نشر» يُرسل الأغنية الحالية إلى كل الغرف العامة مع اسمك. يمكن للأعضاء تشغيلها والتفاعل معها، وستصلك إشعارات بكل تفاعل.
+            </p>
+          </HelpSection>
+        </SheetWrap>
+      )}
+
+
+
       {/* Per-member actions */}
       {actionTarget && (
         <div className="fixed inset-0 z-[60] flex items-end bg-black/60" onClick={() => setActionTarget(null)}>
@@ -796,6 +853,12 @@ function Avatar({ profile }: { profile?: Profile }) {
 
 function SystemMessage({ m }: { m: Msg }) {
   const kind = (m.meta?.kind as string) ?? "system";
+  if (kind === "music_broadcast") {
+    const tr = m.meta?.track as { title: string; artist: string; artwork: string; preview_url: string } | undefined;
+    const bid = m.meta?.broadcast_id as string | undefined;
+    const rname = m.meta?.requester_name as string | undefined;
+    if (tr && bid) return <li><BroadcastCard broadcastId={bid} requesterName={rname} track={tr} /></li>;
+  }
   if (kind === "music_now" || kind === "music_queued") {
     const tr = m.meta?.track as { title: string; artist: string; artwork: string; requester_name?: string } | undefined;
     return (
@@ -803,7 +866,7 @@ function SystemMessage({ m }: { m: Msg }) {
         <div className="flex max-w-[88%] items-center gap-3 rounded-2xl border border-primary/30 bg-gradient-to-r from-primary/15 to-transparent px-3 py-2">
           {tr?.artwork && <img src={tr.artwork} alt="" className="h-12 w-12 rounded-lg object-cover" />}
           <div className="min-w-0">
-            <div className="text-[11px] font-bold text-primary">{kind === "music_now" ? "🎵 يشغل الآن" : "➕ في قائمة الانتظار"}</div>
+            <div className="text-[11px] font-bold text-primary">{kind === "music_now" ? "🎵 جاهزة للتشغيل" : "➕ في قائمة الانتظار"}</div>
             <div className="truncate text-sm font-semibold">{tr?.title}</div>
             <div className="truncate text-[11px] text-muted-foreground">{tr?.artist}{tr?.requester_name ? ` · ${tr.requester_name}` : ""}</div>
           </div>
@@ -895,4 +958,21 @@ function formatRel(ts: string) {
   if (diff < 3600) return `${Math.floor(diff / 60)}m`;
   if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
   return new Date(ts).toLocaleDateString();
+}
+
+function HelpSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="mb-4">
+      <div className="mb-1.5 text-sm font-bold">{title}</div>
+      <div className="flex flex-col gap-1 rounded-2xl border border-border bg-background p-2.5">{children}</div>
+    </div>
+  );
+}
+function HelpCmd({ cmd, desc }: { cmd: string; desc: string }) {
+  return (
+    <div className="flex items-baseline justify-between gap-2 text-[12px]">
+      <code className="rounded bg-secondary px-1.5 py-0.5 font-mono text-[11px] text-primary">{cmd}</code>
+      <span className="text-muted-foreground">{desc}</span>
+    </div>
+  );
 }

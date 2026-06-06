@@ -3,7 +3,9 @@ import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/lib/auth";
 import { useIsAdmin, useUnreadDMCount } from "@/lib/use-admin";
-import { Home, MessageSquare, User, Settings, Users as UsersIcon, Gamepad2, Bell, Shield } from "lucide-react";
+import { Home, MessageSquare, User, Settings, Users as UsersIcon, Gamepad2, Bell, Shield, Flag } from "lucide-react";
+import { findAdminId } from "@/lib/find-admin";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/app")({
   component: AppLayout,
@@ -41,8 +43,23 @@ function AppLayout() {
   const path = location.pathname;
   const hideChrome = /\/app\/rooms\/[^/]+/.test(path) || /\/app\/chats\/[^/]+/.test(path);
 
+  const openComplaints = async () => {
+    const id = await findAdminId();
+    if (!id) { toast.error("لم يتم العثور على حساب الإدارة"); return; }
+    navigate({ to: "/app/chats/$id", params: { id } });
+  };
+
   return (
     <div className={`flex min-h-screen flex-col ${hideChrome ? "" : "pb-[72px]"}`}>
+      {/* Persistent floating Complaints button — shows everywhere inside the app */}
+      <button
+        onClick={openComplaints}
+        aria-label="الشكاوى والاقتراحات"
+        title="الشكاوى والاقتراحات"
+        className="fixed bottom-24 end-3 z-[60] flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-orange-500 to-red-500 text-white shadow-xl shadow-orange-500/40 ring-2 ring-background transition active:scale-95"
+      >
+        <Flag className="h-5 w-5" />
+      </button>
       {!hideChrome && (
         <div className="sticky top-0 z-50 flex items-center justify-between border-b border-border bg-background/95 px-4 py-2 backdrop-blur">
           <div className="text-sm font-extrabold tracking-tight">Giant</div>

@@ -279,6 +279,59 @@ export type Database = {
         }
         Relationships: []
       }
+      music_broadcast_reactions: {
+        Row: {
+          broadcast_id: string
+          created_at: string
+          emoji: string
+          user_id: string
+        }
+        Insert: {
+          broadcast_id: string
+          created_at?: string
+          emoji: string
+          user_id: string
+        }
+        Update: {
+          broadcast_id?: string
+          created_at?: string
+          emoji?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "music_broadcast_reactions_broadcast_id_fkey"
+            columns: ["broadcast_id"]
+            isOneToOne: false
+            referencedRelation: "music_broadcasts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      music_broadcasts: {
+        Row: {
+          created_at: string
+          id: string
+          requester_id: string
+          requester_name: string
+          track: Json
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          requester_id: string
+          requester_name: string
+          track: Json
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          requester_id?: string
+          requester_name?: string
+          track?: Json
+        }
+        Relationships: []
+      }
       profile_visits: {
         Row: {
           created_at: string
@@ -736,6 +789,11 @@ export type Database = {
         Returns: undefined
       }
       music_advance_if_ended: { Args: { _room: string }; Returns: undefined }
+      music_broadcast_publish: { Args: { _track: Json }; Returns: string }
+      music_broadcast_react: {
+        Args: { _bid: string; _emoji: string }
+        Returns: undefined
+      }
       music_pause: { Args: { _room: string }; Returns: undefined }
       music_play: { Args: { _room: string; _track: Json }; Returns: undefined }
       music_resume: { Args: { _room: string }; Returns: undefined }
