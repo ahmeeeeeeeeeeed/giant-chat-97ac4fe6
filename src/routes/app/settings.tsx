@@ -3,8 +3,10 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/lib/theme";
 import { signOut } from "@/lib/auth";
-import { Moon, Sun, LogOut, ChevronLeft, Globe, Check, ShoppingBag } from "lucide-react";
+import { Moon, Sun, LogOut, ChevronLeft, Globe, Check, ShoppingBag, Flag } from "lucide-react";
 import { SUPPORTED_LANGUAGES } from "@/lib/i18n";
+import { findAdminId } from "@/lib/find-admin";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/settings")({
   component: SettingsPage,
@@ -19,6 +21,12 @@ function SettingsPage() {
   const handleLogout = async () => {
     await signOut();
     navigate({ to: "/" });
+  };
+
+  const openReports = async () => {
+    const id = await findAdminId();
+    if (!id) { toast.error("لم يتم العثور على حساب الإدارة"); return; }
+    navigate({ to: "/app/chats/$id", params: { id } });
   };
 
   const currentLang = SUPPORTED_LANGUAGES.find((l) => l.code === i18n.language) ?? SUPPORTED_LANGUAGES[0];
@@ -43,6 +51,20 @@ function SettingsPage() {
           </div>
           <ChevronLeft className="h-5 w-5 text-muted-foreground rtl:rotate-180" />
         </Link>
+
+        <button onClick={openReports}
+          className="flex items-center justify-between rounded-2xl border border-orange-500/30 bg-gradient-to-br from-orange-500/10 via-card to-secondary p-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-500 text-white shadow">
+              <Flag className="h-5 w-5" />
+            </div>
+            <div className="text-start">
+              <div className="font-extrabold">الإبلاغ والشكاوى</div>
+              <div className="text-[11px] text-muted-foreground">تواصل مباشر مع الإدارة</div>
+            </div>
+          </div>
+          <ChevronLeft className="h-5 w-5 text-muted-foreground rtl:rotate-180" />
+        </button>
 
         <Section title={t("settings.theme")}>
           <button onClick={toggle} className="flex w-full items-center justify-between p-4">
