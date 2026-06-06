@@ -6,14 +6,15 @@ import {
   ArrowRight, Send, Settings as SettingsIcon, LogOut, Users, Loader2,
   ImagePlus, Mic, Square, Play, Pause, Crown, Shield, UserX, Ban,
   ArrowUpCircle, ArrowDownCircle, ScrollText, X, MoreVertical, MessageSquare,
-  Smile, Trash2, Pencil,
+  Smile, Trash2, Pencil, HelpCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { getEquipped } from "@/lib/equipped";
 import { FlyingEffect } from "@/components/FlyingEffect";
 import { MusicPlayer } from "@/components/MusicPlayer";
-import { searchTrack, getTrivia } from "@/lib/music.functions";
+import { BroadcastCard } from "@/components/BroadcastCard";
+import { getTrivia } from "@/lib/music.functions";
 
 export const Route = createFileRoute("/app/rooms/$id")({
   component: RoomPage,
@@ -59,7 +60,8 @@ function RoomPage() {
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [panel, setPanel] = useState<null | "settings" | "members" | "logs" | "bans" | "edit">(null);
+  const [panel, setPanel] = useState<null | "settings" | "members" | "logs" | "bans" | "edit" | "help">(null);
+  const [nameColors, setNameColors] = useState<Record<string, string>>({});
   const [actionTarget, setActionTarget] = useState<Member | null>(null);
   const [recording, setRecording] = useState(false);
   const [recordSeconds, setRecordSeconds] = useState(0);
@@ -251,23 +253,38 @@ function RoomPage() {
 
 
 
-  // Auto-leave on close / disconnect
+  // Auto-leave after 30s of being hidden / offline (cancel if user comes back)
   useEffect(() => {
     if (!user) return;
-    const leave = () => { supabase.from("room_members").delete().eq("room_id", id).eq("user_id", user.id); };
-    const onHide = () => { if (document.visibilityState === "hidden") leave(); };
-    const onOffline = () => leave();
-    window.addEventListener("pagehide", leave);
-    window.addEventListener("beforeunload", leave);
-    window.addEventListener("offline", onOffline);
-    document.addEventListener("visibilitychange", onHide);
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const leaveNow = () => { supabase.from("room_members").delete().eq("room_id", id).eq("user_id", user.id); };
+    const arm = () => { if (timer) return; timer = setTimeout(leaveNow, 30_000); };
+    const disarm = () => { if (timer) { clearTimeout(timer); timer = null; } };
+    const onVis = () => { document.visibilityState === "hidden" ? arm() : disarm(); };
+    document.addEventListener("visibilitychange", onVis);
+    window.addEventListener("offline", arm);
+    window.addEventListener("online", disarm);
+    window.addEventListener("pagehide", leaveNow);
     return () => {
-      window.removeEventListener("pagehide", leave);
-      window.removeEventListener("beforeunload", leave);
-      window.removeEventListener("offline", onOffline);
-      document.removeEventListener("visibilitychange", onHide);
+      disarm();
+      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("offline", arm);
+      window.removeEventListener("online", disarm);
+      window.removeEventListener("pagehide", leaveNow);
     };
   }, [id, user]);
+
+  // Resolve name colors for any author seen in messages
+  useEffect(() => {
+    const ids = Array.from(new Set(messages.map(m => m.user_id).filter((x): x is string => !!x)));
+    ids.forEach(uid => {
+      if (nameColors[uid] !== undefined) return;
+      getEquipped(uid).then(eq => {
+        setNameColors(c => ({ ...c, [uid]: eq.name_color?.color ?? "" }));
+      });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages]);
 
   const botSay = async (txt: string, kind = "bot", meta: Record<string, unknown> = {}) => {
     await supabase.rpc("room_bot_say", { _room: id, _text: txt, _kind: kind, _meta: meta as never });
