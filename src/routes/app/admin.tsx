@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 import { 
   Shield, Users, Search, Ban, Trash2, Eye, Coins, 
-  Send, MessageSquare, Lock, Unlock, Loader2, X, CheckCircle, XCircle
+  Send, Loader2, X
 } from "lucide-react";
 
 export const Route = createFileRoute("/app/admin")({
@@ -20,21 +20,12 @@ type Profile = {
   created_at: string;
 };
 
-type Room = {
-  id: string;
-  name: string;
-  type: string;
-  is_active: boolean;
-  member_count: number;
-};
-
 function AdminPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   
   const [isAdmin, setIsAdmin] = useState(false);
   const [loadingAuth, setLoadingAuth] = useState(true);
-  const [activeTab, setActiveTab] = useState<"users" | "rooms">("users");
   
   // المستخدمين
   const [users, setUsers] = useState<Profile[]>([]);
@@ -42,10 +33,6 @@ function AdminPage() {
   const [searchUser, setSearchUser] = useState("");
   const [sendingPoints, setSendingPoints] = useState<string | null>(null);
   const [pointsAmount, setPointsAmount] = useState<Record<string, string>>({});
-  
-  // الغرف
-  const [rooms, setRooms] = useState<Room[]>([]);
-  const [loadingRooms, setLoadingRooms] = useState(false);
   
   // البث العام
   const [broadcastMsg, setBroadcastMsg] = useState("");
@@ -98,36 +85,11 @@ function AdminPage() {
     setLoadingUsers(false);
   };
 
-  // جلب الغرف
-  const loadRooms = async () => {
-    setLoadingRooms(true);
-    const { data, error } = await supabase
-      .from("rooms")
-      .select("id, name, type, is_active")
-      .order("created_at", { ascending: false });
-    
-    if (!error && data) {
-      // جلب عدد الأعضاء لكل غرفة
-      const roomsWithCount = await Promise.all(
-        data.map(async (room) => {
-          const { count } = await supabase
-            .from("room_members")
-            .select("*", { count: "exact", head: true })
-            .eq("room_id", room.id);
-          return { ...room, member_count: count || 0 };
-        })
-      );
-      setRooms(roomsWithCount);
-    }
-    setLoadingRooms(false);
-  };
-
   useEffect(() => {
     if (isAdmin) {
-      if (activeTab === "users") loadUsers();
-      if (activeTab === "rooms") loadRooms();
+      loadUsers();
     }
-  }, [isAdmin, activeTab, searchUser]);
+  }, [isAdmin, searchUser]);
 
   // حظر مستخدم
   const handleBanUser = async (userId: string) => {
@@ -141,7 +103,7 @@ function AdminPage() {
       toast.success("تم حظر المستخدم");
       loadUsers();
     } catch {
-      toast.error("فشل الحظر (قد لا يوجد عمود is_banned)");
+      toast.error("فشل الحظر");
     }
   };
 
@@ -218,40 +180,20 @@ function AdminPage() {
     }
   };
 
-  // تعطيل/تفعيل غرفة
-  const toggleRoom = async (roomId: string, currentStatus: boolean) => {
-    const { error } = await supabase
-      .from("rooms")
-      .update({ is_active: !currentStatus })
-      .eq("id", roomId);
-    
-    if (error) {
-      toast.error("فشل تغيير حالة الغرفة");
-    } else {
-      toast.success(!currentStatus ? "تم تفعيل الغرفة" : "تم تعطيل الغرفة");
-      loadRooms();
-    }
-  };
-
-  // حذف غرفة
-  const deleteRoom = async (roomId: string, roomName: string) => {
-    if (!confirm(`هل تريد حذف الغرفة "${roomName}"؟`)) return;
-    
-    const { error } = await supabase.from("rooms").delete().eq("id", roomId);
-    if (error) {
-      toast.error("فشل حذف الغرفة");
-    } else {
-      toast.success(`تم حذف ${roomName}`);
-      loadRooms();
-    }
-  };
-
   if (loadingAuth) {
-    return <div className="flex h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
   }
   
   if (!isAdmin) {
-    return <div className="flex h-screen items-center justify-center text-muted-foreground">غير مصرح لك بالدخول</div>;
+    return (
+      <div className="flex h-screen items-center justify-center text-muted-foreground">
+        غير مصرح لك بالدخول
+      </div>
+    );
   }
 
   return (
@@ -263,198 +205,145 @@ function AdminPage() {
             <Shield className="h-6 w-6 text-primary" />
             <div>
               <h1 className="text-xl font-bold">لوحة التحكم</h1>
-              <p className="text-xs text-muted-foreground">إدارة المستخدمين والغرف</p>
+              <p className="text-xs text-muted-foreground">إدارة المستخدمين</p>
             </div>
           </div>
-          <button onClick={() => navigate({ to: "/app" })} className="rounded-xl bg-secondary px-4 py-2 text-sm">
+          <button 
+            onClick={() => navigate({ to: "/app" })} 
+            className="rounded-xl bg-secondary px-4 py-2 text-sm"
+          >
             العودة
           </button>
         </div>
       </header>
 
-      {/* تبويبات */}
-      <div className="flex border-b border-border px-5">
-        <button
-          onClick={() => setActiveTab("users")}
-          className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition ${
-            activeTab === "users" ? "border-primary text-primary" : "border-transparent text-muted-foreground"
-          }`}
-        >
-          <Users className="h-4 w-4" />
-          المستخدمين ({users.length})
-        </button>
-        <button
-          onClick={() => setActiveTab("rooms")}
-          className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition ${
-            activeTab === "rooms" ? "border-primary text-primary" : "border-transparent text-muted-foreground"
-          }`}
-        >
-          <MessageSquare className="h-4 w-4" />
-          الغرف ({rooms.length})
-        </button>
-      </div>
-
       <div className="p-5">
-        {/* تبويب المستخدمين */}
-        {activeTab === "users" && (
-          <div>
-            {/* شريط البحث */}
-            <div className="relative max-w-sm mb-4">
-              <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="بحث عن مستخدم..."
-                value={searchUser}
-                onChange={(e) => setSearchUser(e.target.value)}
-                className="h-10 w-full rounded-xl border border-input bg-background pr-10 pl-4 text-sm"
-              />
-            </div>
-
-            {/* جدول المستخدمين */}
-            <div className="overflow-x-auto rounded-2xl border border-border bg-card">
-              <table className="w-full">
-                <thead className="border-b border-border bg-secondary/50">
-                  <tr className="text-right text-sm">
-                    <th className="p-3">المستخدم</th>
-                    <th className="p-3">النقاط</th>
-                    <th className="p-3">إجراءات</th>
-                   </tr>
-                </thead>
-                <tbody>
-                  {loadingUsers ? (
-                    <tr><td colSpan={3} className="p-8 text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></td></tr>
-                  ) : users.length === 0 ? (
-                    <tr><td colSpan={3} className="p-8 text-center text-muted-foreground">لا توجد مستخدمين</td></tr>
-                  ) : (
-                    users.map((u) => (
-                      <tr key={u.id} className="border-b border-border hover:bg-secondary/20">
-                        <td className="p-3">
-                          <div className="flex items-center gap-2">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-sm font-bold">
-                              {u.username.charAt(0).toUpperCase()}
-                            </div>
-                            <span className="font-medium">{u.username}</span>
-                          </div>
-                        </td>
-                        <td className="p-3 font-semibold text-primary">{u.points}</td>
-                        <td className="p-3">
-                          <div className="flex flex-wrap gap-2">
-                            {/* زر إرسال نقاط */}
-                            <div className="flex items-center gap-1">
-                              <input
-                                type="number"
-                                placeholder="نقاط"
-                                value={pointsAmount[u.id] || ""}
-                                onChange={(e) => setPointsAmount(prev => ({ ...prev, [u.id]: e.target.value }))}
-                                className="w-20 h-8 rounded-lg border border-input bg-background px-2 text-sm"
-                              />
-                              <button
-                                onClick={() => handleSendPoints(u.id, u.username)}
-                                disabled={sendingPoints === u.id}
-                                className="rounded-lg bg-yellow-500/10 p-1.5 text-yellow-500 hover:bg-yellow-500/20"
-                                title="إرسال نقاط"
-                              >
-                                {sendingPoints === u.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Coins className="h-4 w-4" />}
-                              </button>
-                            </div>
-                            
-                            {/* زر فتح البروفايل */}
-                            <button
-                              onClick={() => navigate({ to: "/app/profile/$id", params: { id: u.id } })}
-                              className="rounded-lg bg-blue-500/10 p-1.5 text-blue-500 hover:bg-blue-500/20"
-                              title="عرض البروفايل"
-                            >
-                              <Eye className="h-4 w-4" />
-                            </button>
-                            
-                            {/* زر حظر */}
-                            <button
-                              onClick={() => handleBanUser(u.id)}
-                              className="rounded-lg bg-red-500/10 p-1.5 text-red-500 hover:bg-red-500/20"
-                              title="حظر"
-                            >
-                              <Ban className="h-4 w-4" />
-                            </button>
-                            
-                            {/* زر حذف */}
-                            <button
-                              onClick={() => handleDeleteUser(u.id, u.username)}
-                              className="rounded-lg bg-destructive/10 p-1.5 text-destructive hover:bg-destructive/20"
-                              title="حذف"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+        {/* شريط البحث وعدد المستخدمين */}
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <div className="flex items-center gap-2">
+            <Users className="h-5 w-5 text-muted-foreground" />
+            <span className="text-sm font-medium">عدد المستخدمين: {users.length}</span>
           </div>
-        )}
-
-        {/* تبويب الغرف */}
-        {activeTab === "rooms" && (
-          <div>
-            <div className="overflow-x-auto rounded-2xl border border-border bg-card">
-              <table className="w-full">
-                <thead className="border-b border-border bg-secondary/50">
-                  <tr className="text-right text-sm">
-                    <th className="p-3">الغرفة</th>
-                    <th className="p-3">النوع</th>
-                    <th className="p-3">الأعضاء</th>
-                    <th className="p-3">الحالة</th>
-                    <th className="p-3">إجراءات</th>
-                   </tr>
-                </thead>
-                <tbody>
-                  {loadingRooms ? (
-                    <tr><td colSpan={5} className="p-8 text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></td></tr>
-                  ) : rooms.length === 0 ? (
-                    <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">لا توجد غرف</td></tr>
-                  ) : (
-                    rooms.map((r) => (
-                      <tr key={r.id} className="border-b border-border hover:bg-secondary/20">
-                        <td className="p-3 font-medium">{r.name}</td>
-                        <td className="p-3">{r.type === "private" ? "خاصة" : "عامة"}</td>
-                        <td className="p-3">{r.member_count}</td>
-                        <td className="p-3">
-                          {r.is_active ? (
-                            <span className="text-green-500">نشطة</span>
-                          ) : (
-                            <span className="text-red-500">معطلة</span>
-                          )}
-                        </td>
-                        <td className="p-3">
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => toggleRoom(r.id, r.is_active)}
-                              className="rounded-lg bg-blue-500/10 p-1.5 text-blue-500 hover:bg-blue-500/20"
-                              title={r.is_active ? "تعطيل" : "تفعيل"}
-                            >
-                              {r.is_active ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}
-                            </button>
-                            <button
-                              onClick={() => deleteRoom(r.id, r.name)}
-                              className="rounded-lg bg-destructive/10 p-1.5 text-destructive hover:bg-destructive/20"
-                              title="حذف"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+          <div className="relative w-64">
+            <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="بحث عن مستخدم..."
+              value={searchUser}
+              onChange={(e) => setSearchUser(e.target.value)}
+              className="h-10 w-full rounded-xl border border-input bg-background pr-10 pl-4 text-sm"
+            />
+            {searchUser && (
+              <button
+                onClick={() => setSearchUser("")}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
           </div>
-        )}
+        </div>
 
-        {/* قسم البث العام (يظهر في كل التبويبات) */}
+        {/* جدول المستخدمين */}
+        <div className="overflow-x-auto rounded-2xl border border-border bg-card">
+          <table className="w-full">
+            <thead className="border-b border-border bg-secondary/50">
+              <tr className="text-right text-sm">
+                <th className="p-3 text-right">المستخدم</th>
+                <th className="p-3 text-right">النقاط</th>
+                <th className="p-3 text-right">تاريخ التسجيل</th>
+                <th className="p-3 text-right">إجراءات</th>
+                ),
+            </thead>
+            <tbody>
+              {loadingUsers ? (
+                <tr>
+                  <td colSpan={4} className="p-8 text-center">
+                    <Loader2 className="mx-auto h-6 w-6 animate-spin" />
+                  </td>
+                </tr>
+              ) : users.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="p-8 text-center text-muted-foreground">
+                    لا توجد مستخدمين
+                  </td>
+                </tr>
+              ) : (
+                users.map((u) => (
+                  <tr key={u.id} className="border-b border-border hover:bg-secondary/20">
+                    <td className="p-3">
+                      <div className="flex items-center gap-2">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-sm font-bold">
+                          {u.username.charAt(0).toUpperCase()}
+                        </div>
+                        <span className="font-medium">{u.username}</span>
+                      </div>
+                    </td>
+                    <td className="p-3 font-semibold text-primary">{u.points}</td>
+                    <td className="p-3 text-sm text-muted-foreground">
+                      {new Date(u.created_at).toLocaleDateString("ar")}
+                    </td>
+                    <td className="p-3">
+                      <div className="flex flex-wrap gap-2">
+                        {/* إرسال نقاط */}
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="number"
+                            placeholder="نقاط"
+                            value={pointsAmount[u.id] || ""}
+                            onChange={(e) => setPointsAmount(prev => ({ ...prev, [u.id]: e.target.value }))}
+                            className="w-20 h-8 rounded-lg border border-input bg-background px-2 text-sm"
+                          />
+                          <button
+                            onClick={() => handleSendPoints(u.id, u.username)}
+                            disabled={sendingPoints === u.id}
+                            className="rounded-lg bg-yellow-500/10 p-1.5 text-yellow-500 hover:bg-yellow-500/20"
+                            title="إرسال نقاط"
+                          >
+                            {sendingPoints === u.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Coins className="h-4 w-4" />
+                            )}
+                          </button>
+                        </div>
+                        
+                        {/* فتح البروفايل */}
+                        <button
+                          onClick={() => navigate({ to: "/app/profile/$id", params: { id: u.id } })}
+                          className="rounded-lg bg-blue-500/10 p-1.5 text-blue-500 hover:bg-blue-500/20"
+                          title="عرض البروفايل"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </button>
+                        
+                        {/* حظر */}
+                        <button
+                          onClick={() => handleBanUser(u.id)}
+                          className="rounded-lg bg-red-500/10 p-1.5 text-red-500 hover:bg-red-500/20"
+                          title="حظر"
+                        >
+                          <Ban className="h-4 w-4" />
+                        </button>
+                        
+                        {/* حذف */}
+                        <button
+                          onClick={() => handleDeleteUser(u.id, u.username)}
+                          className="rounded-lg bg-destructive/10 p-1.5 text-destructive hover:bg-destructive/20"
+                          title="حذف"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* قسم إرسال رسالة عامة */}
         <div className="mt-6 rounded-2xl border border-border bg-card p-4">
           <div className="flex items-center gap-2 mb-3">
             <Send className="h-5 w-5 text-blue-500" />
