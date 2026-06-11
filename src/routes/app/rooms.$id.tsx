@@ -3,7 +3,7 @@ import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
-import { ArrowRight, Send, Loader2, Users, Lock, ArrowLeft } from "lucide-react";
+import { ArrowRight, Send, Loader2, Users, Plus, ArrowLeft, Hash } from "lucide-react";
 
 export const Route = createFileRoute("/app/room/$id")({
   component: RoomPage,
@@ -19,14 +19,14 @@ function RoomPage() {
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [passwordInput, setPasswordInput] = useState("");
-  const [needPassword, setNeedPassword] = useState(false);
+  const [isMember, setIsMember] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadRoom();
     loadMessages();
+    checkMembership();
   }, [roomId]);
 
   const loadRoom = async () => {
@@ -43,21 +43,24 @@ function RoomPage() {
     }
 
     setRoom(data);
-    
-    if (data.type === "private" && data.password) {
-      setNeedPassword(true);
-    }
-    
     setLoading(false);
+  };
+
+  const checkMembership = async () => {
+    if (!user) return;
+    
+    const { data } = await supabase
+      .from("room_members")
+      .select("*")
+      .eq("room_id", roomId)
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    setIsMember(!!data);
   };
 
   const joinRoom = async () => {
     if (!user || !room) return;
-    
-    if (room.type === "private" && room.password && passwordInput !== room.password) {
-      toast.error("كلمة المرور غير صحيحة");
-      return;
-    }
 
     const { error } = await supabase.from("room_members").insert({
       room_id: roomId,
@@ -68,9 +71,27 @@ function RoomPage() {
     if (error) {
       toast.error("فشل الانضمام إلى الغرفة");
     } else {
-      setNeedPassword(false);
+      setIsMember(true);
       toast.success("تم الانضمام إلى الغرفة");
       loadMessages();
+    }
+  };
+
+  const leaveRoom = async () => {
+    if (!confirm("هل تريد مغادرة الغرفة؟")) return;
+    
+    const { error } = await supabase
+      .from("room_members")
+      .delete()
+      .eq("room_id", roomId)
+      .eq("user_id", user?.id);
+
+    if (error) {
+      toast.error("فشل مغادرة الغرفة");
+    } else {
+      setIsMember(false);
+      toast.success("تم مغادرة الغرفة");
+      navigate({ to: "/app" });
     }
   };
 
@@ -80,7 +101,7 @@ function RoomPage() {
       .select("*")
       .eq("room_id", roomId)
       .order("created_at", { ascending: true })
-      .limit(50);
+      .limit(100);
 
     if (!error && data) {
       setMessages(data);
@@ -91,6 +112,10 @@ function RoomPage() {
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!text.trim() || !user || sending) return;
+    if (!isMember) {
+      toast.error("يجب الانضمام إلى الغرفة أولاً");
+      return;
+    }
 
     setSending(true);
     const { error } = await supabase.from("room_messages").insert({
@@ -117,57 +142,72 @@ function RoomPage() {
     );
   }
 
-  if (needPassword) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-background p-6">
-        <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 text-center">
-          <Lock className="mx-auto h-12 w-12 text-primary mb-4" />
-          <h2 className="text-xl font-bold mb-2">غرفة خاصة</h2>
-          <p className="text-sm text-muted-foreground mb-4">
-            هذه الغرفة محمية بكلمة مرور
-          </p>
-          <input
-            type="password"
-            value={passwordInput}
-            onChange={(e) => setPasswordInput(e.target.value)}
-            placeholder="كلمة المرور"
-            className="w-full h-11 rounded-xl border border-input bg-background px-4 text-sm mb-3"
-          />
-          <button
-            onClick={joinRoom}
-            className="w-full h-11 rounded-xl bg-primary font-semibold text-primary-foreground"
-          >
-            دخول
-          </button>
-          <button
-            onClick={() => navigate({ to: "/app" })}
-            className="w-full h-11 rounded-xl border border-border mt-3"
-          >
-            إلغاء
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <main className="flex flex-col h-screen bg-background">
+      {/* الهيدر */}
       <header className="sticky top-0 z-10 border-b border-border bg-background/90 px-4 py-3 backdrop-blur">
-        <div className="flex items-center gap-3">
-          <button onClick={() => navigate({ to: "/app" })} className="rounded-lg p-2 hover:bg-secondary">
-            <ArrowLeft className="h-5 w-5" />
-          </button>
-          <div>
-            <h1 className="font-bold">{room?.name}</h1>
-            {room?.description && <p className="text-xs text-muted-foreground">{room.description}</p>}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button onClick={() => navigate({ to: "/app" })} className="rounded-lg p-2 hover:bg-secondary">
+              <ArrowLeft className="h-5 w-5" />
+            </button>
+            <div>
+              <div className="flex items-center gap-2">
+                <Hash className="h-4 w-4 text-muted-foreground" />
+                <h1 className="font-bold">{room?.name}</h1>
+              </div>
+              {room?.description && <p className="text-xs text-muted-foreground">{room.description}</p>}
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            {/* زر إنشاء غرفة جديدة */}
+            <button
+              onClick={() => navigate({ to: "/app/create-room" })}
+              className="flex items-center gap-1 rounded-lg bg-primary/10 px-3 py-1.5 text-sm font-semibold text-primary hover:bg-primary/20"
+              title="إنشاء غرفة جديدة"
+            >
+              <Plus className="h-4 w-4" />
+              <span className="hidden sm:inline">غرفة جديدة</span>
+            </button>
+            
+            {/* زر الانضمام/المغادرة */}
+            {isMember ? (
+              <button
+                onClick={leaveRoom}
+                className="rounded-lg bg-destructive/10 px-3 py-1.5 text-sm font-semibold text-destructive hover:bg-destructive/20"
+              >
+                مغادرة
+              </button>
+            ) : (
+              <button
+                onClick={joinRoom}
+                className="rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
+              >
+                انضمام
+              </button>
+            )}
           </div>
         </div>
       </header>
 
+      {/* عدد الأعضاء */}
+      <div className="border-b border-border bg-secondary/30 px-4 py-2">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Users className="h-3.5 w-3.5" />
+          <span>{room?.member_count || 0} عضو في هذه الغرفة</span>
+        </div>
+      </div>
+
+      {/* الرسائل */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {messages.length === 0 ? (
           <div className="flex h-full items-center justify-center">
-            <p className="text-center text-muted-foreground">لا توجد رسائل بعد</p>
+            <div className="text-center">
+              <Hash className="mx-auto h-12 w-12 text-muted-foreground mb-3" />
+              <p className="text-muted-foreground">لا توجد رسائل بعد</p>
+              <p className="text-xs text-muted-foreground mt-1">كن أول من يكتب رسالة!</p>
+            </div>
           </div>
         ) : (
           messages.map((msg) => (
@@ -178,7 +218,7 @@ function RoomPage() {
                 )}
                 <p className="text-sm break-words">{msg.content}</p>
                 <p className="text-[10px] opacity-70 mt-1">
-                  {new Date(msg.created_at).toLocaleTimeString("ar")}
+                  {new Date(msg.created_at).toLocaleTimeString("ar", { hour: "2-digit", minute: "2-digit" })}
                 </p>
               </div>
             </div>
@@ -187,17 +227,19 @@ function RoomPage() {
         <div ref={messagesEndRef} />
       </div>
 
+      {/* إدخال الرسالة */}
       <form onSubmit={sendMessage} className="border-t border-border bg-background p-4">
         <div className="flex gap-2">
           <input
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="اكتب رسالة..."
-            className="flex-1 h-11 rounded-xl border border-input bg-background px-4 text-sm outline-none focus:border-primary"
+            placeholder={isMember ? "اكتب رسالة..." : "يجب الانضمام إلى الغرفة أولاً"}
+            disabled={!isMember}
+            className="flex-1 h-11 rounded-xl border border-input bg-background px-4 text-sm outline-none focus:border-primary disabled:opacity-50"
           />
           <button
             type="submit"
-            disabled={sending || !text.trim()}
+            disabled={sending || !text.trim() || !isMember}
             className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-primary-foreground disabled:opacity-50"
           >
             {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
