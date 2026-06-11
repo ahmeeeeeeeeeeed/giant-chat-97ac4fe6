@@ -309,28 +309,51 @@ function DMPage() {
 
   const [menuOpen, setMenuOpen] = useState(false);
 
+  // Function to navigate to profile
+  const goToProfile = () => {
+    navigate({ to: "/app/profile/$id", params: { id: otherId } });
+  };
+
   return (
     <main className="flex flex-col bg-background" style={{ height: "100dvh" }}>
+      {/* HEADER - MODIFIED: avatar, username, and status are now clickable */}
       <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-primary/20 bg-primary text-primary-foreground px-3 py-3 shadow-sm">
         <button onClick={() => navigate({ to: "/app/chats" })} aria-label="رجوع" className="p-1.5 rounded-full hover:bg-primary-foreground/10">
           <ArrowRight className="h-5 w-5 rtl:rotate-180" />
         </button>
-        {other?.avatar_url ? (
-          <img src={other.avatar_url} alt="" className="h-10 w-10 rounded-full object-cover ring-2 ring-primary-foreground/30" />
-        ) : (
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-foreground/20 font-bold">
-            {(other?.username ?? "?").charAt(0).toUpperCase()}
-          </div>
-        )}
-        <div className="min-w-0 flex-1">
-          <h1 className="truncate text-base font-bold leading-tight">{other?.username ?? "…"}</h1>
+        
+        {/* Clickable Avatar */}
+        <button 
+          onClick={goToProfile}
+          className="focus:outline-none"
+          aria-label="عرض البروفايل"
+        >
+          {other?.avatar_url ? (
+            <img src={other.avatar_url} alt="" className="h-10 w-10 rounded-full object-cover ring-2 ring-primary-foreground/30 transition-transform active:scale-95" />
+          ) : (
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-foreground/20 font-bold transition-transform active:scale-95">
+              {(other?.username ?? "?").charAt(0).toUpperCase()}
+            </div>
+          )}
+        </button>
+        
+        {/* Clickable Username and Status */}
+        <button 
+          onClick={goToProfile}
+          className="min-w-0 flex-1 text-left focus:outline-none"
+          aria-label="عرض البروفايل"
+        >
+          <h1 className="truncate text-base font-bold leading-tight hover:underline">
+            {other?.username ?? "…"}
+          </h1>
           <div className="flex items-center gap-1.5 text-[11px] opacity-90">
             {(otherOnline || otherActivity !== "idle") && (
               <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-300 animate-pulse" />
             )}
             <span className="truncate">{presenceLabel}</span>
           </div>
-        </div>
+        </button>
+        
         <div className="relative">
           <button onClick={() => setMenuOpen(v => !v)} aria-label="القائمة" className="p-1.5 rounded-full hover:bg-primary-foreground/10">
             <MoreVertical className="h-5 w-5" />
@@ -339,6 +362,17 @@ function DMPage() {
             <>
               <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
               <div className="absolute end-0 top-full mt-2 z-50 w-52 overflow-hidden rounded-xl border border-border bg-card text-foreground shadow-lg">
+                {/* View Profile option in menu */}
+                <button 
+                  onClick={() => { 
+                    setMenuOpen(false); 
+                    goToProfile();
+                  }}
+                  className="flex w-full items-center gap-3 px-4 py-3 text-sm hover:bg-secondary text-start"
+                >
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                  عرض البروفايل
+                </button>
                 <button onClick={() => { setMenuOpen(false); toggleMute(); }}
                   className="flex w-full items-center gap-3 px-4 py-3 text-sm hover:bg-secondary text-start">
                   {muted ? <Bell className="h-4 w-4" /> : <BellOff className="h-4 w-4" />}
