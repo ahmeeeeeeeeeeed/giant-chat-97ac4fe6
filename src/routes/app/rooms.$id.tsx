@@ -4,11 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 import {
-  ArrowRight, Send, Loader2, Users, Lock, Unlock, 
+  ArrowRight, Send, Loader2, Users, Lock, 
   MoreVertical, Ban, UserX, UserCheck, Crown, 
-  Shield, LogOut, Copy, Check, Trash2, MessageSquare,
-  Plus, X, Search, DoorOpen, Settings, Volume2, VolumeX,
-  Globe, Hash, Key
+  Shield, LogOut, Copy, Check, Trash2,
+  Plus, X, Search, Volume2, VolumeX
 } from "lucide-react";
 
 export const Route = createFileRoute("/app/room/$id")({
@@ -62,9 +61,6 @@ function RoomPage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
   const [showMembers, setShowMembers] = useState(false);
-  const [showBanned, setShowBanned] = useState(false);
-  const [showInvite, setShowInvite] = useState(false);
-  const [showAdminPanel, setShowAdminPanel] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [inviteLink, setInviteLink] = useState("");
   const [copied, setCopied] = useState(false);
@@ -72,7 +68,6 @@ function RoomPage() {
   const [needPassword, setNeedPassword] = useState(false);
   const [isMember, setIsMember] = useState(false);
   
-  const scrollRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // تحميل بيانات الغرفة
@@ -80,15 +75,12 @@ function RoomPage() {
     loadRoom();
     loadMessages();
     
-    // الاشتراك في التحديثات المباشرة
     const channel = supabase
       .channel(`room-${roomId}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "room_messages" }, (payload) => {
         const newMsg = payload.new as Message;
-        if (newMsg.room_id === roomId) {
-          setMessages(prev => [...prev, newMsg]);
-          setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
-        }
+        setMessages(prev => [...prev, newMsg]);
+        setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
       })
       .on("postgres_changes", { event: "*", schema: "public", table: "room_members" }, () => {
         loadMembers();
@@ -116,7 +108,6 @@ function RoomPage() {
 
     setRoom(data);
     
-    // التحقق من صلاحيات المستخدم
     if (user) {
       setIsOwner(data.owner_id === user.id);
       await checkMembership(data.id);
@@ -153,15 +144,8 @@ function RoomPage() {
   const joinRoom = async (password?: string) => {
     if (!user || !room) return;
     
-    // التحقق من كلمة المرور للغرف الخاصة
     if (room.type === "private" && room.password && password !== room.password) {
       toast.error("كلمة المرور غير صحيحة");
-      return;
-    }
-
-    // التحقق من الحد الأقصى للأعضاء
-    if (room.member_count && room.member_count >= room.max_members) {
-      toast.error("الغرفة ممتلئة (الحد الأقصى " + room.max_members + " أعضاء)");
       return;
     }
 
@@ -175,11 +159,10 @@ function RoomPage() {
     });
 
     if (error) {
-      toast.error("فشل الانضمام إلى الغرفة: " + error.message);
+      toast.error("فشل الانضمام إلى الغرفة");
     } else {
       setNeedPassword(false);
       setIsMember(true);
-      setIsAdmin(false);
       loadMembers();
       toast.success("تم الانضمام إلى الغرفة");
     }
@@ -194,7 +177,6 @@ function RoomPage() {
 
     if (!error && data) {
       setMembers(data as RoomMember[]);
-      // تحديث عدد الأعضاء في الغرفة
       if (room) {
         setRoom({ ...room, member_count: data.length });
       }
@@ -246,15 +228,13 @@ function RoomPage() {
     }
   };
 
-  // إدارة الأعضاء
   const banMember = async (memberId: string, username: string) => {
     if (!confirm(`هل تريد حظر ${username} من الغرفة؟`)) return;
     
     const { error } = await supabase
       .from("room_members")
       .update({ is_banned: true })
-      .eq("id", memberId)
-      .eq("room_id", roomId);
+      .eq("id", memberId);
 
     if (error) {
       toast.error("فشل حظر العضو");
@@ -268,8 +248,7 @@ function RoomPage() {
     const { error } = await supabase
       .from("room_members")
       .update({ is_banned: false })
-      .eq("id", memberId)
-      .eq("room_id", roomId);
+      .eq("id", memberId);
 
     if (error) {
       toast.error("فشل إلغاء الحظر");
@@ -283,8 +262,7 @@ function RoomPage() {
     const { error } = await supabase
       .from("room_members")
       .update({ is_muted: true })
-      .eq("id", memberId)
-      .eq("room_id", roomId);
+      .eq("id", memberId);
 
     if (error) {
       toast.error("فشل كتم العضو");
@@ -298,8 +276,7 @@ function RoomPage() {
     const { error } = await supabase
       .from("room_members")
       .update({ is_muted: false })
-      .eq("id", memberId)
-      .eq("room_id", roomId);
+      .eq("id", memberId);
 
     if (error) {
       toast.error("فشل إلغاء الكتم");
@@ -313,28 +290,12 @@ function RoomPage() {
     const { error } = await supabase
       .from("room_members")
       .update({ is_admin: true })
-      .eq("id", memberId)
-      .eq("room_id", roomId);
+      .eq("id", memberId);
 
     if (error) {
       toast.error("فشل تعيين مشرف");
     } else {
       toast.success(`تم تعيين ${username} كمشرف`);
-      loadMembers();
-    }
-  };
-
-  const removeAdmin = async (memberId: string, username: string) => {
-    const { error } = await supabase
-      .from("room_members")
-      .update({ is_admin: false })
-      .eq("id", memberId)
-      .eq("room_id", roomId);
-
-    if (error) {
-      toast.error("فشل إلغاء المشرف");
-    } else {
-      toast.success(`تم إلغاء مشرفية ${username}`);
       loadMembers();
     }
   };
@@ -345,8 +306,7 @@ function RoomPage() {
     const { error } = await supabase
       .from("room_members")
       .delete()
-      .eq("id", memberId)
-      .eq("room_id", roomId);
+      .eq("id", memberId);
 
     if (error) {
       toast.error("فشل طرد العضو");
@@ -368,30 +328,21 @@ function RoomPage() {
     if (error) {
       toast.error("فشل مغادرة الغرفة");
     } else {
-      setIsMember(false);
       navigate({ to: "/app" });
     }
   };
 
   const generateInviteLink = () => {
-    const link = `${window.location.origin}/invite/${roomId}`;
+    const link = `${window.location.origin}/app/room/${roomId}`;
     setInviteLink(link);
-    setShowInvite(true);
-  };
-
-  const copyInviteLink = async () => {
-    await navigator.clipboard.writeText(inviteLink);
+    navigator.clipboard.writeText(link);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
     toast.success("تم نسخ رابط الدعوة");
   };
 
-  const filteredMembers = members.filter(m => 
-    m.username.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const bannedMembers = members.filter(m => m.is_banned);
   const activeMembers = members.filter(m => !m.is_banned);
+  const bannedMembers = members.filter(m => m.is_banned);
 
   if (loading) {
     return (
@@ -437,7 +388,7 @@ function RoomPage() {
 
   return (
     <main className="flex h-screen bg-background">
-      {/* قائمة الأعضاء الجانبية */}
+      {/* القائمة الجانبية للأعضاء */}
       <div className={`fixed right-0 top-0 z-20 h-full w-80 transform border-l border-border bg-background transition-transform duration-300 ${showMembers ? "translate-x-0" : "translate-x-full"} lg:relative lg:translate-x-0`}>
         <div className="flex h-16 items-center justify-between border-b border-border px-4">
           <h3 className="font-bold flex items-center gap-2">
@@ -448,35 +399,9 @@ function RoomPage() {
             <X className="h-5 w-5" />
           </button>
         </div>
-        
-        {/* تبويبات */}
-        <div className="flex border-b border-border">
-          <button
-            onClick={() => { setShowBanned(false); setShowAdminPanel(false); setShowInvite(false); }}
-            className={`flex-1 py-2 text-sm font-medium ${!showBanned && !showAdminPanel && !showInvite ? "border-b-2 border-primary text-primary" : "text-muted-foreground"}`}
-          >
-            الأعضاء
-          </button>
-          {(isAdmin || isOwner) && (
-            <button
-              onClick={() => { setShowAdminPanel(true); setShowBanned(false); setShowInvite(false); }}
-              className={`flex-1 py-2 text-sm font-medium ${showAdminPanel ? "border-b-2 border-primary text-primary" : "text-muted-foreground"}`}
-            >
-              الإدارة
-            </button>
-          )}
-          {(isAdmin || isOwner) && bannedMembers.length > 0 && (
-            <button
-              onClick={() => { setShowBanned(true); setShowAdminPanel(false); setShowInvite(false); }}
-              className={`flex-1 py-2 text-sm font-medium ${showBanned ? "border-b-2 border-primary text-primary" : "text-muted-foreground"}`}
-            >
-              محظورين ({bannedMembers.length})
-            </button>
-          )}
-        </div>
 
         <div className="p-3">
-          {/* شريط البحث */}
+          {/* بحث */}
           <div className="relative mb-3">
             <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
@@ -488,205 +413,95 @@ function RoomPage() {
             />
           </div>
 
-          {/* قائمة الأعضاء */}
-          {!showBanned && !showAdminPanel && !showInvite && (
-            <div className="space-y-1 max-h-[calc(100vh-150px)] overflow-y-auto">
-              {filteredMembers.filter(m => !m.is_banned).map((member) => (
-                <div key={member.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-secondary/20">
-                  <div className="flex items-center gap-2">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-sm font-bold">
-                      {member.username.charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-1">
-                        <span className="text-sm font-medium">{member.username}</span>
-                        {member.user_id === room?.owner_id && (
-                          <Crown className="h-3 w-3 text-yellow-500" />
-                        )}
-                        {member.is_admin && member.user_id !== room?.owner_id && (
-                          <Shield className="h-3 w-3 text-blue-500" />
-                        )}
-                        {member.is_muted && (
-                          <VolumeX className="h-3 w-3 text-orange-500" />
-                        )}
-                      </div>
-                    </div>
+          {/* قائمة الأعضاء النشطين */}
+          <div className="space-y-1 max-h-[calc(100vh-120px)] overflow-y-auto">
+            {activeMembers.filter(m => m.username.toLowerCase().includes(searchQuery.toLowerCase())).map((member) => (
+              <div key={member.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-secondary/20">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-sm font-bold">
+                    {member.username.charAt(0).toUpperCase()}
                   </div>
-                  {(isAdmin || isOwner) && member.user_id !== user?.id && member.user_id !== room?.owner_id && (
-                    <div className="relative group">
-                      <button className="p-1 rounded-lg hover:bg-secondary">
-                        <MoreVertical className="h-4 w-4" />
-                      </button>
-                      <div className="absolute left-0 top-full mt-1 hidden group-focus-within:block group-hover:block z-10 bg-card border border-border rounded-lg shadow-lg min-w-36">
-                        {member.is_muted ? (
-                          <button onClick={() => unmuteMember(member.id, member.username)} className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-secondary">
-                            <Volume2 className="h-4 w-4" />
-                            إلغاء الكتم
-                          </button>
-                        ) : (
-                          <button onClick={() => muteMember(member.id, member.username)} className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-secondary">
-                            <VolumeX className="h-4 w-4" />
-                            كتم
-                          </button>
-                        )}
-                        <button onClick={() => banMember(member.id, member.username)} className="flex w-full items-center gap-2 px-3 py-2 text-sm text-destructive hover:bg-secondary">
-                          <Ban className="h-4 w-4" />
-                          حظر
-                        </button>
-                        <button onClick={() => removeMember(member.id, member.username)} className="flex w-full items-center gap-2 px-3 py-2 text-sm text-destructive hover:bg-secondary">
-                          <UserX className="h-4 w-4" />
-                          طرد
-                        </button>
-                        {isOwner && !member.is_admin && (
-                          <button onClick={() => makeAdmin(member.id, member.username)} className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-secondary">
-                            <Shield className="h-4 w-4" />
-                            تعيين مشرف
-                          </button>
-                        )}
-                        {isOwner && member.is_admin && (
-                          <button onClick={() => removeAdmin(member.id, member.username)} className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-secondary">
-                            <UserX className="h-4 w-4" />
-                            إلغاء المشرفية
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-1">
+                    <span className="text-sm font-medium">{member.username}</span>
+                    {member.user_id === room?.owner_id && <Crown className="h-3 w-3 text-yellow-500" />}
+                    {member.is_admin && member.user_id !== room?.owner_id && <Shield className="h-3 w-3 text-blue-500" />}
+                    {member.is_muted && <VolumeX className="h-3 w-3 text-orange-500" />}
+                  </div>
                 </div>
-              ))}
-              {filteredMembers.filter(m => !m.is_banned).length === 0 && (
-                <p className="text-center text-muted-foreground py-4">لا يوجد أعضاء</p>
-              )}
-            </div>
-          )}
-
-          {/* قائمة المحظورين */}
-          {showBanned && (
-            <div className="space-y-1 max-h-[calc(100vh-150px)] overflow-y-auto">
-              {bannedMembers.length === 0 ? (
-                <p className="text-center text-muted-foreground py-4">لا يوجد أعضاء محظورين</p>
-              ) : (
-                bannedMembers.map((member) => (
-                  <div key={member.id} className="flex items-center justify-between p-2 rounded-lg bg-red-500/10">
-                    <span className="text-sm">{member.username}</span>
-                    <button
-                      onClick={() => unbanMember(member.id, member.username)}
-                      className="rounded-lg bg-green-500/10 p-1.5 text-green-500 hover:bg-green-500/20"
-                    >
-                      <UserCheck className="h-4 w-4" />
+                {(isAdmin || isOwner) && member.user_id !== user?.id && member.user_id !== room?.owner_id && (
+                  <div className="relative group">
+                    <button className="p-1 rounded-lg hover:bg-secondary">
+                      <MoreVertical className="h-4 w-4" />
                     </button>
+                    <div className="absolute left-0 top-full mt-1 hidden group-hover:block z-10 bg-card border border-border rounded-lg shadow-lg min-w-32">
+                      {member.is_muted ? (
+                        <button onClick={() => unmuteMember(member.id, member.username)} className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-secondary">
+                          <Volume2 className="h-4 w-4" />
+                          إلغاء الكتم
+                        </button>
+                      ) : (
+                        <button onClick={() => muteMember(member.id, member.username)} className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-secondary">
+                          <VolumeX className="h-4 w-4" />
+                          كتم
+                        </button>
+                      )}
+                      <button onClick={() => banMember(member.id, member.username)} className="flex w-full items-center gap-2 px-3 py-2 text-sm text-destructive hover:bg-secondary">
+                        <Ban className="h-4 w-4" />
+                        حظر
+                      </button>
+                      <button onClick={() => removeMember(member.id, member.username)} className="flex w-full items-center gap-2 px-3 py-2 text-sm text-destructive hover:bg-secondary">
+                        <UserX className="h-4 w-4" />
+                        طرد
+                      </button>
+                      {isOwner && !member.is_admin && (
+                        <button onClick={() => makeAdmin(member.id, member.username)} className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-secondary">
+                          <Shield className="h-4 w-4" />
+                          تعيين مشرف
+                        </button>
+                      )}
+                    </div>
                   </div>
-                ))
-              )}
-            </div>
-          )}
-
-          {/* لوحة الإدارة */}
-          {showAdminPanel && (
-            <div className="space-y-2">
-              <button
-                onClick={generateInviteLink}
-                className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-2 text-sm font-semibold text-primary-foreground"
-              >
-                <Plus className="h-4 w-4" />
-                دعوة أعضاء جدد
-              </button>
-              <button
-                onClick={() => {/* فتح إعدادات الغرفة */}}
-                className="flex w-full items-center gap-2 rounded-lg border border-border p-2 text-sm hover:bg-secondary"
-              >
-                <Settings className="h-4 w-4" />
-                إعدادات الغرفة
-              </button>
-              <button
-                onClick={leaveRoom}
-                className="flex w-full items-center gap-2 rounded-lg border border-destructive/20 p-2 text-sm text-destructive hover:bg-destructive/10"
-              >
-                <LogOut className="h-4 w-4" />
-                مغادرة الغرفة
-              </button>
-            </div>
-          )}
-
-          {/* نافذة الدعوة */}
-          {showInvite && (
-            <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">شارك هذا الرابط لدعوة أصدقائك:</p>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={inviteLink}
-                  readOnly
-                  className="flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm"
-                />
-                <button
-                  onClick={copyInviteLink}
-                  className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
-                >
-                  {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                </button>
+                )}
               </div>
-              <button onClick={() => setShowInvite(false)} className="text-sm text-muted-foreground">
-                إغلاق
-              </button>
-            </div>
-          )}
+            ))}
+          </div>
         </div>
       </div>
 
       {/* منطقة الدردشة الرئيسية */}
       <div className="flex-1 flex flex-col">
-        {/* هيدر الغرفة */}
+        {/* الهيدر */}
         <header className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-background/90 px-4 py-3 backdrop-blur">
           <div className="flex items-center gap-3">
             <button onClick={() => navigate({ to: "/app" })} className="rounded-lg p-2 hover:bg-secondary">
               <ArrowRight className="h-5 w-5 rtl:rotate-180" />
             </button>
             <div>
-              <div className="flex items-center gap-2">
-                <h1 className="font-bold">{room?.name}</h1>
-                {room?.type === "private" ? (
-                  <Lock className="h-3 w-3 text-amber-500" />
-                ) : (
-                  <Globe className="h-3 w-3 text-green-500" />
-                )}
-              </div>
-              {room?.description && (
-                <p className="text-xs text-muted-foreground">{room.description}</p>
-              )}
+              <h1 className="font-bold">{room?.name}</h1>
+              {room?.description && <p className="text-xs text-muted-foreground">{room.description}</p>}
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {/* زر الانضمام للغرف العامة */}
             {!isMember && room?.type === "public" && (
-              <button
-                onClick={() => joinRoom()}
-                className="rounded-lg bg-primary px-4 py-1.5 text-sm font-semibold text-primary-foreground"
-              >
+              <button onClick={() => joinRoom()} className="rounded-lg bg-primary px-4 py-1.5 text-sm font-semibold text-primary-foreground">
                 انضمام
               </button>
             )}
-            <button
-              onClick={() => setShowMembers(!showMembers)}
-              className="relative rounded-lg p-2 hover:bg-secondary lg:hidden"
-            >
+            <button onClick={() => setShowMembers(!showMembers)} className="relative rounded-lg p-2 hover:bg-secondary lg:hidden">
               <Users className="h-5 w-5" />
               <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
                 {activeMembers.length}
               </span>
             </button>
             {(isAdmin || isOwner) && (
-              <button
-                onClick={generateInviteLink}
-                className="rounded-lg bg-primary/10 p-2 text-primary hover:bg-primary/20"
-              >
+              <button onClick={generateInviteLink} className="rounded-lg bg-primary/10 p-2 text-primary hover:bg-primary/20">
                 <Plus className="h-5 w-5" />
               </button>
             )}
           </div>
         </header>
 
-        {/* رسالة إذا لم يكن عضواً */}
+        {/* رسالة الترحيب للغير أعضاء */}
         {!isMember && room?.type === "private" && (
           <div className="bg-amber-500/10 text-amber-600 text-center py-3 px-4 text-sm">
             <Lock className="inline h-4 w-4 ml-1" />
@@ -694,22 +509,11 @@ function RoomPage() {
           </div>
         )}
 
-        {!isMember && room?.type === "public" && (
-          <div className="bg-blue-500/10 text-blue-600 text-center py-3 px-4 text-sm">
-            <Globe className="inline h-4 w-4 ml-1" />
-            هذه غرفة عامة. اضغط على "انضمام" للدخول والمشاركة.
-          </div>
-        )}
-
         {/* الرسائل */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3">
+        <div className="flex-1 overflow-y-auto p-4 space-y-3">
           {messages.length === 0 ? (
             <div className="flex h-full items-center justify-center">
-              <p className="text-center text-muted-foreground">
-                لا توجد رسائل بعد
-                <br />
-                <span className="text-xs">كن أول من يرسل رسالة!</span>
-              </p>
+              <p className="text-center text-muted-foreground">لا توجد رسائل بعد</p>
             </div>
           ) : (
             messages.map((msg) => (
@@ -732,7 +536,7 @@ function RoomPage() {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* إدخال الرسالة (فقط للأعضاء) */}
+        {/* إدخال الرسالة */}
         {isMember ? (
           <form onSubmit={sendMessage} className="border-t border-border bg-background p-4">
             <div className="flex gap-2">
@@ -741,11 +545,10 @@ function RoomPage() {
                 onChange={(e) => setText(e.target.value)}
                 placeholder="اكتب رسالة..."
                 className="flex-1 h-11 rounded-xl border border-input bg-background px-4 text-sm outline-none focus:border-primary"
-                disabled={!isMember}
               />
               <button
                 type="submit"
-                disabled={sending || !text.trim() || !isMember}
+                disabled={sending || !text.trim()}
                 className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-primary-foreground disabled:opacity-50"
               >
                 {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
