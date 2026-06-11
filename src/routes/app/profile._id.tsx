@@ -3,8 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
-import { Loader2, ArrowRight, MessageCircle, Ban, Flag, Mail, Lock, EyeOff, Globe } from "lucide-react";
-import { useTranslation } from "react-i18next";
+import { Loader2, ArrowRight, MessageCircle, Ban, Flag, Globe, Lock, EyeOff } from "lucide-react";
 
 export const Route = createFileRoute("/app/profile/$id")({
   component: OtherProfilePage,
@@ -27,7 +26,6 @@ function OtherProfilePage() {
   const { id: otherId } = Route.useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { t } = useTranslation();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isBlocked, setIsBlocked] = useState(false);
@@ -35,8 +33,11 @@ function OtherProfilePage() {
 
   useEffect(() => {
     if (!user) return;
-    (async () => {
-      // Fetch profile
+    
+    const fetchProfile = async () => {
+      setLoading(true);
+      
+      // Fetch profile data
       const { data: p, error } = await supabase
         .from("profiles")
         .select("id, username, avatar_url, bio, points, gender, country, hide_last_seen, dm_locked, last_seen_at")
@@ -57,9 +58,10 @@ function OtherProfilePage() {
       ]);
       setIsBlockedBy(!!blockMe);
       setIsBlocked(!!blockByMe);
-
       setLoading(false);
-    })();
+    };
+
+    fetchProfile();
   }, [otherId, user, navigate]);
 
   const handleSendMessage = () => {
@@ -74,17 +76,17 @@ function OtherProfilePage() {
         .delete()
         .eq("blocker_id", user.id)
         .eq("blocked_id", otherId);
-      if (error) toast.error(t("common.error"));
+      if (error) toast.error("حدث خطأ");
       else {
         setIsBlocked(false);
         toast.success("تم إلغاء حظر المستخدم");
       }
     } else {
-      if (!confirm("هل تريد حظر هذا المستخدم؟ لن تتمكن من استقبال رسائله.")) return;
+      if (!confirm("هل تريد حظر هذا المستخدم؟")) return;
       const { error } = await supabase
         .from("dm_blocks")
         .insert({ blocker_id: user.id, blocked_id: otherId });
-      if (error) toast.error(t("common.error"));
+      if (error) toast.error("حدث خطأ");
       else {
         setIsBlocked(true);
         toast.success("تم حظر المستخدم");
@@ -102,9 +104,9 @@ function OtherProfilePage() {
     if (!profile.last_seen_at) return "غير متصل";
     const diff = (Date.now() - new Date(profile.last_seen_at).getTime()) / 1000;
     if (diff < 60) return "متصل الآن";
-    if (diff < 3600) return `آخر ظهور منذ ${Math.floor(diff / 60)} دقيقة`;
-    if (diff < 86400) return `آخر ظهور منذ ${Math.floor(diff / 3600)} ساعة`;
-    return `آخر ظهور منذ ${Math.floor(diff / 86400)} يوم`;
+    if (diff < 3600) return `منذ ${Math.floor(diff / 60)} دقيقة`;
+    if (diff < 86400) return `منذ ${Math.floor(diff / 3600)} ساعة`;
+    return `منذ ${Math.floor(diff / 86400)} يوم`;
   };
 
   if (loading) {
@@ -120,19 +122,18 @@ function OtherProfilePage() {
   const isOwnProfile = user?.id === profile.id;
 
   return (
-    <main className="flex flex-1 flex-col">
+    <main className="flex flex-1 flex-col min-h-screen bg-background">
       <header className="sticky top-0 z-10 border-b border-border bg-background/90 px-5 py-4 backdrop-blur">
         <button
           onClick={() => navigate({ to: "/app/chats" })}
           className="flex items-center gap-2 text-muted-foreground hover:text-foreground"
         >
-          <ArrowRight className="h-5 w-5 rtl:rotate-180" />
-          <span>الرجوع</span>
+          <ArrowRight className="h-5 w-5" />
+          <span>الرجوع للمحادثات</span>
         </button>
       </header>
 
-      <div className="px-5 py-6">
-        {/* Profile Card */}
+      <div className="flex-1 px-5 py-6">
         <div className="rounded-3xl border border-border bg-gradient-to-br from-primary/10 via-card to-secondary p-6">
           <div className="flex flex-col items-center text-center">
             {/* Avatar */}
@@ -150,7 +151,7 @@ function OtherProfilePage() {
             <h1 className="mt-4 text-2xl font-extrabold">{profile.username}</h1>
             
             {/* Points & Status */}
-            <div className="mt-1 flex flex-wrap items-center justify-center gap-2">
+            <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
               <span className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold">
                 🪙 {profile.points} نقطة
               </span>
@@ -167,7 +168,7 @@ function OtherProfilePage() {
             {/* Gender & Country */}
             <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
               {profile.gender && (
-                <span className="flex items-center gap-1 text-sm text-muted-foreground">
+                <span className="text-sm text-muted-foreground">
                   {profile.gender === "male" ? "♂ ذكر" : "♀ أنثى"}
                 </span>
               )}
@@ -180,7 +181,7 @@ function OtherProfilePage() {
             </div>
 
             {/* Privacy Info */}
-            <div className="mt-4 flex flex-wrap items-center justify-center gap-3 text-xs text-muted-foreground">
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-3 text-xs text-muted-foreground">
               {profile.dm_locked && (
                 <span className="flex items-center gap-1">
                   <Lock className="h-3 w-3" />
