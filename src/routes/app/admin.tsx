@@ -5,9 +5,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { 
   Shield, Coins, Megaphone, Loader2, Users, MessageSquare, 
-  Ban, Trash2, UserX, UserCheck, Search, 
-  Eye, ChevronLeft, ChevronRight, RefreshCw,
-  Flag, CheckCircle, XCircle
+  Ban, Trash2, UserX, UserCheck, Lock, Unlock, Search, 
+  Eye, ChevronLeft, ChevronRight, Settings, BarChart3, 
+  AlertTriangle, CheckCircle, XCircle, RefreshCw,
+  Mail, Gift, Star, Flag, Volume2, VolumeX, Plus, X, Edit
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -20,8 +21,10 @@ type Profile = {
   username: string;
   avatar_url: string | null;
   points: number;
+  is_banned: boolean;
+  is_muted: boolean;
   created_at: string;
-  is_banned?: boolean;
+  last_seen_at: string | null;
 };
 
 type Room = {
@@ -29,6 +32,15 @@ type Room = {
   name: string;
   description: string | null;
   type: string;
+  is_active: boolean;
+  member_count: number;
+  created_at: string;
+};
+
+type Announcement = {
+  id: string;
+  title: string;
+  content: string;
   is_active: boolean;
   created_at: string;
 };
@@ -38,7 +50,7 @@ function AdminPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   
-  const [activeTab, setActiveTab] = useState<"users" | "rooms" | "points">("users");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "users" | "rooms" | "announcements" | "points">("dashboard");
   const [isAdmin, setIsAdmin] = useState(false);
   const [loadingAuth, setLoadingAuth] = useState(true);
   
@@ -53,13 +65,29 @@ function AdminPage() {
   const [loadingRooms, setLoadingRooms] = useState(false);
   const [roomPage, setRoomPage] = useState(0);
   
-  // النقاط
+  // الإعلانات
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [loadingAnnouncements, setLoadingAnnouncements] = useState(false);
+  const [showAddAnnouncement, setShowAddAnnouncement] = useState(false);
+  const [newAnnouncement, setNewAnnouncement] = useState({ title: "", content: "" });
+  
+  // النقاط والبث
   const [username, setUsername] = useState("");
   const [amount, setAmount] = useState("");
   const [sendingPts, setSendingPts] = useState(false);
   const [broadcast, setBroadcast] = useState("");
   const [sendingBc, setSendingBc] = useState(false);
   
+  // إحصائيات
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    bannedUsers: 0,
+    totalRooms: 0,
+    activeRooms: 0,
+    pendingReports: 0,
+  });
+  
+  const [loading, setLoading] = useState(true);
   const itemsPerPage = 10;
 
   // التحقق من صلاحيات الأدمن
@@ -70,14 +98,12 @@ function AdminPage() {
         return;
       }
       
-      // التحقق من وجود عمود is_admin (إذا لم يكن موجوداً، اعتبر أول مستخدم هو الأدمن)
       const { data, error } = await supabase
         .from("profiles")
         .select("is_admin")
         .eq("id", user.id)
         .maybeSingle();
       
-      // إذا لم يوجد عمود is_admin، اجعل أول مستخدم مسجل هو الأدمن
       if (error || !data) {
         const { data: firstUser } = await supabase
           .from("profiles")
@@ -85,7 +111,6 @@ function AdminPage() {
           .order("created_at", { ascending: true })
           .limit(1)
           .single();
-        
         setIsAdmin(firstUser?.id === user.id);
       } else {
         setIsAdmin(data.is_admin === true);
@@ -102,19 +127,39 @@ function AdminPage() {
     checkAdmin();
   }, [user, navigate]);
 
+  // تحميل البيانات
   useEffect(() => {
     if (isAdmin) {
+      loadDashboardData();
       if (activeTab === "users") loadUsers();
       if (activeTab === "rooms") loadRooms();
+      if (activeTab === "announcements") loadAnnouncements();
     }
   }, [isAdmin, activeTab, searchUser]);
 
-  // جلب المستخدمين
+  const loadDashboardData = async () => {
+    setLoading(true);
+    
+    const { count: userCount } = await supabase.from("profiles").select("*", { count: "exact", head: true });
+    const { count: roomCount } = await supabase.from("rooms").select("*", { count: "exact", head: true });
+    const { count: activeRoomCount } = await supabase.from("rooms").select("*", { count: "exact", head: true }).eq("is_active", true);
+    
+    setStats({
+      totalUsers: userCount || 0,
+      bannedUsers: 0,
+      totalRooms: roomCount || 0,
+      activeRooms: activeRoomCount || 0,
+      pendingReports: 0,
+    });
+    
+    setLoading(false);
+  };
+
   const loadUsers = async () => {
     setLoadingUsers(true);
     let query = supabase
       .from("profiles")
-      .select("id, username, avatar_url, points, created_at")
+      .select("id, username, avatar_url, points, created_at, last_seen_at")
       .order("created_at", { ascending: false });
     
     if (searchUser) {
@@ -126,12 +171,16 @@ function AdminPage() {
     if (error) {
       toast.error("خطأ في جلب المستخدمين");
     } else {
-      setUsers(data as Profile[]);
+      const usersWithStatus = (data || []).map(u => ({ 
+        ...u, 
+        is_banned: false, 
+        is_muted: false 
+      })) as Profile[];
+      setUsers(usersWithStatus);
     }
     setLoadingUsers(false);
   };
 
-  // جلب الغرف
   const loadRooms = async () => {
     setLoadingRooms(true);
     const { data, error } = await supabase
@@ -143,12 +192,35 @@ function AdminPage() {
       toast.error("خطأ في جلب الغرف");
       setRooms([]);
     } else {
-      setRooms(data as Room[]);
+      const roomsWithCount = await Promise.all(
+        (data || []).map(async (room) => {
+          const { count } = await supabase
+            .from("room_members")
+            .select("*", { count: "exact", head: true })
+            .eq("room_id", room.id);
+          return { ...room, member_count: count || 0 };
+        })
+      );
+      setRooms(roomsWithCount as Room[]);
     }
     setLoadingRooms(false);
   };
 
-  // حظر مستخدم (تحديث قاعدة البيانات)
+  const loadAnnouncements = async () => {
+    setLoadingAnnouncements(true);
+    const { data, error } = await supabase
+      .from("announcements")
+      .select("*")
+      .order("created_at", { ascending: false });
+    
+    if (error) {
+      setAnnouncements([]);
+    } else {
+      setAnnouncements(data as Announcement[]);
+    }
+    setLoadingAnnouncements(false);
+  };
+
   const handleBanUser = async (userId: string, isBanned: boolean) => {
     try {
       const { error } = await supabase
@@ -161,13 +233,28 @@ function AdminPage() {
       setUsers(users.map(u => u.id === userId ? { ...u, is_banned: isBanned } : u));
       toast.success(isBanned ? "تم حظر المستخدم" : "تم إلغاء حظر المستخدم");
     } catch (error) {
-      toast.error("فشل العملية. قد يكون عمود is_banned غير موجود في قاعدة البيانات");
+      toast.error("فشل العملية");
     }
   };
 
-  // حذف مستخدم
+  const handleMuteUser = async (userId: string, isMuted: boolean) => {
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ is_muted: isMuted })
+        .eq("id", userId);
+      
+      if (error) throw error;
+      
+      setUsers(users.map(u => u.id === userId ? { ...u, is_muted: isMuted } : u));
+      toast.success(isMuted ? "تم كتم المستخدم" : "تم إلغاء كتم المستخدم");
+    } catch (error) {
+      toast.error("فشل العملية");
+    }
+  };
+
   const handleDeleteUser = async (userId: string, username: string) => {
-    if (!confirm(`هل أنت متأكد من حذف المستخدم "${username}"؟ هذا الإجراء لا يمكن التراجع عنه.`)) return;
+    if (!confirm(`هل أنت متأكد من حذف المستخدم "${username}"؟`)) return;
     
     try {
       const { error } = await supabase.from("profiles").delete().eq("id", userId);
@@ -175,12 +262,12 @@ function AdminPage() {
       
       setUsers(users.filter(u => u.id !== userId));
       toast.success(`تم حذف المستخدم ${username}`);
+      loadDashboardData();
     } catch (error) {
       toast.error("فشل حذف المستخدم");
     }
   };
 
-  // تعطيل/تفعيل غرفة
   const toggleRoomStatus = async (roomId: string, currentActive: boolean) => {
     try {
       const { error } = await supabase
@@ -192,12 +279,12 @@ function AdminPage() {
       
       setRooms(rooms.map(r => r.id === roomId ? { ...r, is_active: !currentActive } : r));
       toast.success(!currentActive ? "تم تفعيل الغرفة" : "تم تعطيل الغرفة");
+      loadDashboardData();
     } catch (error) {
       toast.error("فشل تغيير حالة الغرفة");
     }
   };
 
-  // حذف غرفة
   const handleDeleteRoom = async (roomId: string, roomName: string) => {
     if (!confirm(`هل أنت متأكد من حذف الغرفة "${roomName}"؟`)) return;
     
@@ -207,12 +294,70 @@ function AdminPage() {
       
       setRooms(rooms.filter(r => r.id !== roomId));
       toast.success(`تم حذف الغرفة ${roomName}`);
+      loadDashboardData();
     } catch (error) {
       toast.error("فشل حذف الغرفة");
     }
   };
 
-  // إرسال نقاط
+  const addAnnouncement = async () => {
+    if (!newAnnouncement.title.trim() || !newAnnouncement.content.trim()) {
+      toast.error("يرجى إدخال عنوان ومحتوى الإعلان");
+      return;
+    }
+    
+    try {
+      const { data, error } = await supabase
+        .from("announcements")
+        .insert({
+          title: newAnnouncement.title.trim(),
+          content: newAnnouncement.content.trim(),
+          is_active: true,
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      setAnnouncements([data, ...announcements]);
+      setNewAnnouncement({ title: "", content: "" });
+      setShowAddAnnouncement(false);
+      toast.success("تم إضافة الإعلان");
+    } catch (error) {
+      toast.error("فشل إضافة الإعلان");
+    }
+  };
+
+  const deleteAnnouncement = async (id: string) => {
+    if (!confirm("هل تريد حذف هذا الإعلان؟")) return;
+    
+    try {
+      const { error } = await supabase.from("announcements").delete().eq("id", id);
+      if (error) throw error;
+      
+      setAnnouncements(announcements.filter(a => a.id !== id));
+      toast.success("تم حذف الإعلان");
+    } catch (error) {
+      toast.error("فشل حذف الإعلان");
+    }
+  };
+
+  const toggleAnnouncementStatus = async (id: string, currentActive: boolean) => {
+    try {
+      const { error } = await supabase
+        .from("announcements")
+        .update({ is_active: !currentActive })
+        .eq("id", id);
+      
+      if (error) throw error;
+      
+      setAnnouncements(announcements.map(a => a.id === id ? { ...a, is_active: !currentActive } : a));
+      toast.success(!currentActive ? "تم تفعيل الإعلان" : "تم تعطيل الإعلان");
+    } catch (error) {
+      toast.error("فشل تغيير حالة الإعلان");
+    }
+  };
+
   const sendPoints = async (e: React.FormEvent) => {
     e.preventDefault();
     const amt = parseInt(amount, 10);
@@ -253,14 +398,12 @@ function AdminPage() {
     }
   };
 
-  // إرسال بث جماعي (إشعار)
   const sendBroadcast = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!broadcast.trim()) return;
     
     setSendingBc(true);
     
-    // حفظ البث في جدول announcements
     const { error } = await supabase
       .from("announcements")
       .insert({
@@ -272,20 +415,20 @@ function AdminPage() {
     setSendingBc(false);
     
     if (error) {
-      toast.error("فشل إرسال البث: " + (error.message || "خطأ غير معروف"));
+      toast.error("فشل إرسال البث: " + error.message);
     } else {
       toast.success("تم إرسال البث لجميع المستخدمين");
       setBroadcast("");
+      loadAnnouncements();
     }
   };
 
-  // ترقيم الصفحات
   const paginatedUsers = users.slice(userPage * itemsPerPage, (userPage + 1) * itemsPerPage);
   const totalUserPages = Math.ceil(users.length / itemsPerPage);
   const paginatedRooms = rooms.slice(roomPage * itemsPerPage, (roomPage + 1) * itemsPerPage);
   const totalRoomPages = Math.ceil(rooms.length / itemsPerPage);
 
-  if (loadingAuth) {
+  if (loadingAuth || loading) {
     return (
       <div className="flex h-screen items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -311,7 +454,7 @@ function AdminPage() {
             </div>
             <div>
               <h1 className="text-xl font-extrabold">لوحة التحكم</h1>
-              <p className="text-xs text-muted-foreground">إدارة المستخدمين والغرف</p>
+              <p className="text-xs text-muted-foreground">إدارة كاملة للمستخدمين والغرف</p>
             </div>
           </div>
           <button
@@ -325,14 +468,26 @@ function AdminPage() {
 
       {/* تبويبات */}
       <div className="border-b border-border">
-        <div className="flex px-4 gap-1">
+        <div className="flex px-4 gap-1 overflow-x-auto">
+          <TabButton active={activeTab === "dashboard"} onClick={() => setActiveTab("dashboard")} icon={<BarChart3 className="h-4 w-4" />} label="لوحة المعلومات" />
           <TabButton active={activeTab === "users"} onClick={() => setActiveTab("users")} icon={<Users className="h-4 w-4" />} label="المستخدمين" />
           <TabButton active={activeTab === "rooms"} onClick={() => setActiveTab("rooms")} icon={<MessageSquare className="h-4 w-4" />} label="الغرف" />
+          <TabButton active={activeTab === "announcements"} onClick={() => setActiveTab("announcements")} icon={<Mail className="h-4 w-4" />} label="الإعلانات" />
           <TabButton active={activeTab === "points"} onClick={() => setActiveTab("points")} icon={<Coins className="h-4 w-4" />} label="نقاط وبث" />
         </div>
       </div>
 
       <div className="p-6">
+        {/* لوحة المعلومات */}
+        {activeTab === "dashboard" && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <StatCard icon={<Users className="h-5 w-5" />} label="إجمالي المستخدمين" value={stats.totalUsers} color="blue" />
+            <StatCard icon={<Ban className="h-5 w-5" />} label="محظورين" value={stats.bannedUsers} color="red" />
+            <StatCard icon={<MessageSquare className="h-5 w-5" />} label="الغرف" value={stats.totalRooms} color="purple" />
+            <StatCard icon={<CheckCircle className="h-5 w-5" />} label="غرف نشطة" value={stats.activeRooms} color="green" />
+          </div>
+        )}
+
         {/* المستخدمين */}
         {activeTab === "users" && (
           <div>
@@ -359,14 +514,15 @@ function AdminPage() {
                     <th className="p-3">المستخدم</th>
                     <th className="p-3">النقاط</th>
                     <th className="p-3">تاريخ التسجيل</th>
+                    <th className="p-3">الحالة</th>
                     <th className="p-3">إجراءات</th>
                    </tr>
                 </thead>
                 <tbody>
                   {loadingUsers ? (
-                    <tr><td colSpan={4} className="p-8 text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></td></tr>
+                    <tr><td colSpan={5} className="p-8 text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></td></tr>
                   ) : paginatedUsers.length === 0 ? (
-                    <tr><td colSpan={4} className="p-8 text-center text-muted-foreground">لا توجد مستخدمين</td></tr>
+                    <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">لا توجد مستخدمين</td></tr>
                   ) : (
                     paginatedUsers.map((u) => (
                       <tr key={u.id} className="border-b border-border hover:bg-secondary/20">
@@ -381,8 +537,18 @@ function AdminPage() {
                         <td className="p-3">{u.points}</td>
                         <td className="p-3 text-sm text-muted-foreground">{new Date(u.created_at).toLocaleDateString("ar")}</td>
                         <td className="p-3">
+                          {u.is_banned ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-red-500/10 px-2 py-0.5 text-xs font-semibold text-red-500">محظور</span>
+                          ) : u.is_muted ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-orange-500/10 px-2 py-0.5 text-xs font-semibold text-orange-500">مكتوم</span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-green-500/10 px-2 py-0.5 text-xs font-semibold text-green-500">نشط</span>
+                          )}
+                        </td>
+                        <td className="p-3">
                           <div className="flex gap-1">
-                            <ActionButton onClick={() => handleBanUser(u.id, true)} icon={<Ban className="h-4 w-4" />} color="red" title="حظر" />
+                            <ActionButton onClick={() => handleBanUser(u.id, !u.is_banned)} icon={u.is_banned ? <UserCheck className="h-4 w-4" /> : <Ban className="h-4 w-4" />} color="red" title={u.is_banned ? "إلغاء الحظر" : "حظر"} />
+                            <ActionButton onClick={() => handleMuteUser(u.id, !u.is_muted)} icon={u.is_muted ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />} color="orange" title={u.is_muted ? "إلغاء الكتم" : "كتم"} />
                             <ActionButton onClick={() => handleDeleteUser(u.id, u.username)} icon={<Trash2 className="h-4 w-4" />} color="red" title="حذف" />
                           </div>
                         </td>
@@ -405,20 +571,22 @@ function AdminPage() {
                   <tr className="text-right text-sm">
                     <th className="p-3">الغرفة</th>
                     <th className="p-3">النوع</th>
+                    <th className="p-3">الأعضاء</th>
                     <th className="p-3">الحالة</th>
                     <th className="p-3">إجراءات</th>
                    </tr>
                 </thead>
                 <tbody>
                   {loadingRooms ? (
-                    <tr><td colSpan={4} className="p-8 text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></td></tr>
+                    <tr><td colSpan={5} className="p-8 text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></td></tr>
                   ) : paginatedRooms.length === 0 ? (
-                    <tr><td colSpan={4} className="p-8 text-center text-muted-foreground">لا توجد غرف</td></tr>
+                    <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">لا توجد غرف</td></tr>
                   ) : (
                     paginatedRooms.map((r) => (
                       <tr key={r.id} className="border-b border-border hover:bg-secondary/20">
                         <td className="p-3 font-medium">{r.name}</td>
                         <td className="p-3">{r.type === "private" ? "خاصة" : "عامة"}</td>
+                        <td className="p-3">{r.member_count}</td>
                         <td className="p-3">
                           {r.is_active ? (
                             <span className="text-green-500">نشطة</span>
@@ -428,7 +596,7 @@ function AdminPage() {
                         </td>
                         <td className="p-3">
                           <div className="flex gap-1">
-                            <ActionButton onClick={() => toggleRoomStatus(r.id, r.is_active)} icon={r.is_active ? <XCircle className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />} color="blue" title={r.is_active ? "تعطيل" : "تفعيل"} />
+                            <ActionButton onClick={() => toggleRoomStatus(r.id, r.is_active)} icon={r.is_active ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />} color="blue" title={r.is_active ? "تعطيل" : "تفعيل"} />
                             <ActionButton onClick={() => handleDeleteRoom(r.id, r.name)} icon={<Trash2 className="h-4 w-4" />} color="red" title="حذف" />
                           </div>
                         </td>
@@ -439,6 +607,67 @@ function AdminPage() {
               </table>
             </div>
             {totalRoomPages > 1 && <Pagination page={roomPage} totalPages={totalRoomPages} onPageChange={setRoomPage} />}
+          </div>
+        )}
+
+        {/* الإعلانات */}
+        {activeTab === "announcements" && (
+          <div className="max-w-3xl mx-auto">
+            <div className="mb-4">
+              <button
+                onClick={() => setShowAddAnnouncement(true)}
+                className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+              >
+                <Plus className="h-4 w-4" />
+                إضافة إعلان جديد
+              </button>
+            </div>
+
+            {showAddAnnouncement && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setShowAddAnnouncement(false)}>
+                <div className="w-full max-w-md rounded-2xl bg-card p-6" onClick={(e) => e.stopPropagation()}>
+                  <h3 className="font-bold mb-4">إضافة إعلان جديد</h3>
+                  <input
+                    value={newAnnouncement.title}
+                    onChange={(e) => setNewAnnouncement({ ...newAnnouncement, title: e.target.value })}
+                    placeholder="العنوان"
+                    className="w-full h-10 rounded-lg border border-input bg-background px-3 text-sm mb-3"
+                  />
+                  <textarea
+                    value={newAnnouncement.content}
+                    onChange={(e) => setNewAnnouncement({ ...newAnnouncement, content: e.target.value })}
+                    placeholder="المحتوى"
+                    rows={3}
+                    className="w-full rounded-lg border border-input bg-background p-3 text-sm mb-3"
+                  />
+                  <div className="flex gap-2">
+                    <button onClick={addAnnouncement} className="flex-1 rounded-lg bg-primary py-2 text-sm font-semibold text-primary-foreground">إضافة</button>
+                    <button onClick={() => setShowAddAnnouncement(false)} className="flex-1 rounded-lg border border-border py-2 text-sm">إلغاء</button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-3">
+              {announcements.map((a) => (
+                <div key={a.id} className="rounded-2xl border border-border bg-card p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-bold">{a.title}</h3>
+                      <p className="text-sm text-muted-foreground mt-1">{a.content}</p>
+                      <p className="text-xs text-muted-foreground mt-2">{new Date(a.created_at).toLocaleDateString("ar")}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <ActionButton onClick={() => toggleAnnouncementStatus(a.id, a.is_active)} icon={a.is_active ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />} color="blue" title={a.is_active ? "إخفاء" : "عرض"} />
+                      <ActionButton onClick={() => deleteAnnouncement(a.id)} icon={<Trash2 className="h-4 w-4" />} color="red" title="حذف" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {announcements.length === 0 && (
+                <p className="text-center text-muted-foreground py-8">لا توجد إعلانات</p>
+              )}
+            </div>
           </div>
         )}
 
@@ -481,9 +710,34 @@ function TabButton({ active, onClick, icon, label }: { active: boolean; onClick:
   );
 }
 
-function ActionButton({ onClick, icon, color, title }: { onClick: () => void; icon: React.ReactNode; color: string; title: string }) {
+function StatCard({ icon, label, value, color }: { icon: React.ReactNode; label: string; value: number; color: string }) {
+  const colors: Record<string, string> = {
+    blue: "bg-blue-500/10 text-blue-500",
+    green: "bg-green-500/10 text-green-500",
+    red: "bg-red-500/10 text-red-500",
+    purple: "bg-purple-500/10 text-purple-500",
+    orange: "bg-orange-500/10 text-orange-500",
+  };
   return (
-    <button onClick={onClick} className="rounded-lg p-1.5 bg-red-500/10 text-red-500 hover:bg-red-500/20" title={title}>
+    <div className="rounded-2xl border border-border bg-card p-4">
+      <div className="flex items-center justify-between">
+        <div className={`rounded-xl p-2 ${colors[color]}`}>{icon}</div>
+        <span className="text-2xl font-bold">{value}</span>
+      </div>
+      <p className="mt-2 text-xs text-muted-foreground">{label}</p>
+    </div>
+  );
+}
+
+function ActionButton({ onClick, icon, color, title }: { onClick: () => void; icon: React.ReactNode; color: string; title: string }) {
+  const colors: Record<string, string> = {
+    red: "bg-red-500/10 text-red-500 hover:bg-red-500/20",
+    orange: "bg-orange-500/10 text-orange-500 hover:bg-orange-500/20",
+    blue: "bg-blue-500/10 text-blue-500 hover:bg-blue-500/20",
+    green: "bg-green-500/10 text-green-500 hover:bg-green-500/20",
+  };
+  return (
+    <button onClick={onClick} className={`rounded-lg p-1.5 transition ${colors[color]}`} title={title}>
       {icon}
     </button>
   );
@@ -500,5 +754,13 @@ function Pagination({ page, totalPages, onPageChange }: { page: number; totalPag
         <ChevronLeft className="h-4 w-4" />
       </button>
     </div>
+  );
+}
+
+function EyeOff(props: any) {
+  return (
+    <svg {...props} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+    </svg>
   );
 }
