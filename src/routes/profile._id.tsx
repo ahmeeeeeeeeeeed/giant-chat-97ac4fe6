@@ -28,34 +28,69 @@ function OtherProfilePage() {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [isBlocked, setIsBlocked] = useState(false);
   const [isBlockedBy, setIsBlockedBy] = useState(false);
 
+  // للتصحيح: طباعة الـ ID
+  console.log("OtherProfilePage - otherId:", otherId);
+  console.log("OtherProfilePage - user:", user?.id);
+
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      console.log("لا يوجد مستخدم مسجل دخول");
+      setError("يرجى تسجيل الدخول");
+      setLoading(false);
+      return;
+    }
     
     const fetchProfile = async () => {
       setLoading(true);
+      setError(null);
       
-      const { data: p, error } = await supabase
+      console.log("جاري جلب بيانات المستخدم:", otherId);
+      
+      // جلب بيانات البروفايل
+      const { data: p, error: profileError } = await supabase
         .from("profiles")
         .select("id, username, avatar_url, bio, points, gender, country, hide_last_seen, dm_locked, last_seen_at")
         .eq("id", otherId)
         .maybeSingle();
       
-      if (error || !p) {
-        toast.error("المستخدم غير موجود");
-        navigate({ to: "/app/chats" });
+      console.log("نتيجة جلب البروفايل:", { data: p, error: profileError });
+      
+      if (profileError) {
+        console.error("خطأ في جلب البروفايل:", profileError);
+        setError(`خطأ في قاعدة البيانات: ${profileError.message}`);
+        setLoading(false);
         return;
       }
+      
+      if (!p) {
+        console.log("المستخدم غير موجود في قاعدة البيانات");
+        setError("المستخدم غير موجود");
+        toast.error("المستخدم غير موجود");
+        setLoading(false);
+        setTimeout(() => navigate({ to: "/app/chats" }), 1500);
+        return;
+      }
+      
       setProfile(p as Profile);
+      console.log("تم تعيين البروفايل:", p);
 
-      const [{ data: blockMe }, { data: blockByMe }] = await Promise.all([
-        supabase.from("dm_blocks").select("blocker_id").eq("blocker_id", otherId).eq("blocked_id", user.id).maybeSingle(),
-        supabase.from("dm_blocks").select("blocked_id").eq("blocker_id", user.id).eq("blocked_id", otherId).maybeSingle(),
-      ]);
-      setIsBlockedBy(!!blockMe);
-      setIsBlocked(!!blockByMe);
+      // جلب حالة الحظر
+      try {
+        const [{ data: blockMe }, { data: blockByMe }] = await Promise.all([
+          supabase.from("dm_blocks").select("blocker_id").eq("blocker_id", otherId).eq("blocked_id", user.id).maybeSingle(),
+          supabase.from("dm_blocks").select("blocked_id").eq("blocker_id", user.id).eq("blocked_id", otherId).maybeSingle(),
+        ]);
+        setIsBlockedBy(!!blockMe);
+        setIsBlocked(!!blockByMe);
+        console.log("حالة الحظر:", { isBlockedBy: !!blockMe, isBlocked: !!blockByMe });
+      } catch (blockErr) {
+        console.error("خطأ في جلب حالة الحظر:", blockErr);
+      }
+      
       setLoading(false);
     };
 
@@ -107,6 +142,34 @@ function OtherProfilePage() {
     return `منذ ${Math.floor(diff / 86400)} يوم`;
   };
 
+  // عرض رسالة الخطأ إذا وجدت
+  if (error) {
+    return (
+      <main className="flex flex-1 flex-col min-h-screen bg-background">
+        <header className="sticky top-0 z-10 border-b border-border bg-background/90 px-5 py-4 backdrop-blur">
+          <button
+            onClick={() => navigate({ to: "/app/chats" })}
+            className="flex items-center gap-2 text-muted-foreground hover:text-foreground"
+          >
+            <ArrowRight className="h-5 w-5" />
+            <span>الرجوع للمحادثات</span>
+          </button>
+        </header>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-destructive mb-4">{error}</p>
+            <button
+              onClick={() => navigate({ to: "/app/chats" })}
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg"
+            >
+              العودة للمحادثات
+            </button>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   if (loading) {
     return (
       <main className="flex flex-1 items-center justify-center min-h-screen">
@@ -115,7 +178,24 @@ function OtherProfilePage() {
     );
   }
 
-  if (!profile) return null;
+  if (!profile) {
+    return (
+      <main className="flex flex-1 flex-col min-h-screen bg-background">
+        <header className="sticky top-0 z-10 border-b border-border bg-background/90 px-5 py-4 backdrop-blur">
+          <button
+            onClick={() => navigate({ to: "/app/chats" })}
+            className="flex items-center gap-2 text-muted-foreground hover:text-foreground"
+          >
+            <ArrowRight className="h-5 w-5" />
+            <span>الرجوع للمحادثات</span>
+          </button>
+        </header>
+        <div className="flex-1 flex items-center justify-center">
+          <p className="text-muted-foreground">لا توجد بيانات للمستخدم</p>
+        </div>
+      </main>
+    );
+  }
 
   const isOwnProfile = user?.id === profile.id;
 
