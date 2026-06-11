@@ -19,7 +19,7 @@ type Room = {
 };
 
 function RoomsPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth(); // أضف loading
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [rooms, setRooms] = useState<Room[]>([]);
@@ -28,12 +28,20 @@ function RoomsPage() {
   const [query, setQuery] = useState("");
   const [error, setError] = useState<string | null>(null);
 
+  // التحقق من تسجيل الدخول
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate({ to: "/login" });
+    }
+  }, [user, authLoading, navigate]);
+
   const load = async () => {
+    if (!user) return;
+    
     setLoading(true);
     setError(null);
     
     try {
-      // جلب الغرف (بدون عمود type)
       const { data: roomsData, error: roomsError } = await supabase
         .from("rooms")
         .select("id, name, description, owner_id")
@@ -45,7 +53,6 @@ function RoomsPage() {
         return;
       }
       
-      // جلب عدد الأعضاء
       const { data: counts } = await supabase
         .from("room_members")
         .select("room_id");
@@ -68,7 +75,9 @@ function RoomsPage() {
   };
 
   useEffect(() => {
-    load();
+    if (user) {
+      load();
+    }
     
     const ch = supabase
       .channel("rooms-list")
@@ -77,7 +86,21 @@ function RoomsPage() {
       .subscribe();
     
     return () => { supabase.removeChannel(ch); };
-  }, []);
+  }, [user]);
+
+  // إذا كان يتحقق من المصادقة
+  if (authLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // إذا لم يكن هناك مستخدم، لا تعرض الصفحة (سيتم التوجيه)
+  if (!user) {
+    return null;
+  }
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -145,17 +168,7 @@ function RoomsPage() {
         {loading ? (
           <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
         ) : rooms.length === 0 ? (
-          <div className="mt-20 flex flex-col items-center text-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-secondary">
-              <Hash className="h-7 w-7 text-muted-foreground" />
-            </div>
-            <h3 className="mt-4 text-lg font-semibold">لا توجد غرف</h3>
-            <p className="mt-1 max-w-xs text-sm text-muted-foreground">قم بإنشاء أول غرفة الآن</p>
-            <button onClick={goToCreateRoom} className="mt-5 rounded-2xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground">
-              <Plus className="inline h-4 w-4 ml-1" />
-              إنشاء غرفة جديدة
-            </button>
-          </div>
+          <EmptyState onCreate={goToCreateRoom} />
         ) : filtered.length === 0 ? (
           <p className="mt-12 text-center text-sm text-muted-foreground">{t("rooms.no_results")}</p>
         ) : (
@@ -186,44 +199,80 @@ function RoomsPage() {
       </div>
 
       {showCreate && user && (
-        <div className="fixed inset-0 z-50 flex items-end bg-black/60" onClick={() => setShowCreate(false)}>
-          <form onSubmit={async (e) => {
-            e.preventDefault();
-            const formData = new FormData(e.currentTarget);
-            const name = formData.get("name") as string;
-            const desc = formData.get("description") as string;
-            if (!name?.trim()) return;
-            
-            const { error } = await supabase.from("rooms").insert({ 
-              name: name.trim(), 
-              description: desc?.trim() || null, 
-              owner_id: user.id 
-            });
-            
-            if (error) { 
-              toast.error("فشل إنشاء الغرفة: " + error.message); 
-              return; 
-            }
-            
-            toast.success("تم إنشاء الغرفة بنجاح");
-            setShowCreate(false);
-            load();
-          }} onClick={(e) => e.stopPropagation()} className="w-full rounded-t-3xl border-t border-border bg-card p-6 pb-8">
-            <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-muted" />
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-bold">إنشاء غرفة جديدة</h2>
-              <button type="button" onClick={() => setShowCreate(false)} className="text-muted-foreground"><X className="h-5 w-5" /></button>
-            </div>
-            <div className="flex flex-col gap-3">
-              <input name="name" placeholder="اسم الغرفة" className="h-12 rounded-2xl border border-input bg-background px-4 outline-none focus:border-foreground" maxLength={50} required />
-              <textarea name="description" placeholder="وصف الغرفة (اختياري)" className="min-h-[80px] rounded-2xl border border-input bg-background p-4 outline-none focus:border-foreground" maxLength={200} />
-              <button type="submit" className="mt-2 flex h-12 items-center justify-center rounded-2xl bg-primary font-semibold text-primary-foreground">
-                إنشاء
-              </button>
-            </div>
-          </form>
-        </div>
+        <CreateRoomSheet
+          ownerId={user.id}
+          onClose={() => setShowCreate(false)}
+          onCreated={() => { setShowCreate(false); load(); }}
+        />
       )}
     </main>
+  );
+}
+
+function EmptyState({ onCreate }: { onCreate: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <div className="mt-20 flex flex-col items-center text-center">
+      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-secondary">
+        <Hash className="h-7 w-7 text-muted-foreground" />
+      </div>
+      <h3 className="mt-4 text-lg font-semibold">{t("rooms.empty")}</h3>
+      <p className="mt-1 max-w-xs text-sm text-muted-foreground">{t("rooms.subtitle")}</p>
+      <button onClick={onCreate} className="mt-5 rounded-2xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground">
+        <Plus className="inline h-4 w-4 ml-1" />
+        إنشاء غرفة جديدة
+      </button>
+    </div>
+  );
+}
+
+function CreateRoomSheet({ ownerId, onClose, onCreated }: { ownerId: string; onClose: () => void; onCreated: () => void }) {
+  const { t } = useTranslation();
+  const [name, setName] = useState("");
+  const [desc, setDesc] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) return;
+    setBusy(true);
+    
+    const { error } = await supabase.from("rooms").insert({ 
+      name: name.trim(), 
+      description: desc.trim() || null, 
+      owner_id: ownerId 
+    });
+    
+    setBusy(false);
+    
+    if (error) { 
+      console.error("خطأ في إنشاء الغرفة:", error);
+      toast.error("فشل إنشاء الغرفة: " + error.message); 
+      return; 
+    }
+    
+    toast.success("تم إنشاء الغرفة بنجاح");
+    onCreated();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end bg-black/60" onClick={onClose}>
+      <form onSubmit={submit} onClick={(e) => e.stopPropagation()} className="w-full rounded-t-3xl border-t border-border bg-card p-6 pb-8">
+        <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-muted" />
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-lg font-bold">إنشاء غرفة جديدة</h2>
+          <button type="button" onClick={onClose} className="text-muted-foreground"><X className="h-5 w-5" /></button>
+        </div>
+        <div className="flex flex-col gap-3">
+          <input value={name} onChange={(e) => setName(e.target.value)} placeholder={t("rooms.name")}
+            className="h-12 rounded-2xl border border-input bg-background px-4 outline-none focus:border-foreground" maxLength={50} required />
+          <textarea value={desc} onChange={(e) => setDesc(e.target.value)} placeholder={t("rooms.description")}
+            className="min-h-[80px] rounded-2xl border border-input bg-background p-4 outline-none focus:border-foreground" maxLength={200} />
+          <button disabled={busy} className="mt-2 flex h-12 items-center justify-center rounded-2xl bg-primary font-semibold text-primary-foreground disabled:opacity-60">
+            {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : t("rooms.create")}
+          </button>
+        </div>
+      </form>
+    </div>
   );
 }
