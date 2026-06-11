@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 import { 
   Shield, Users, Search, Ban, Trash2, Eye, Coins, 
-  Send, Loader2, X
+  Send, Loader2, X, UserCheck, RefreshCw
 } from "lucide-react";
 
 export const Route = createFileRoute("/app/admin")({
@@ -17,6 +17,7 @@ type Profile = {
   username: string;
   avatar_url: string | null;
   points: number;
+  is_banned: boolean;
   created_at: string;
 };
 
@@ -46,7 +47,6 @@ function AdminPage() {
         return;
       }
       
-      // اجعل أول مستخدم مسجل هو الأدمن
       const { data: firstUser } = await supabase
         .from("profiles")
         .select("id")
@@ -80,7 +80,18 @@ function AdminPage() {
     
     const { data, error } = await query;
     if (!error && data) {
-      setUsers(data);
+      // جلب حالة الحظر من قاعدة البيانات (إذا كان العمود موجود)
+      const usersWithBan = await Promise.all(
+        data.map(async (u) => {
+          const { data: banData } = await supabase
+            .from("profiles")
+            .select("is_banned")
+            .eq("id", u.id)
+            .single();
+          return { ...u, is_banned: banData?.is_banned || false };
+        })
+      );
+      setUsers(usersWithBan);
     }
     setLoadingUsers(false);
   };
@@ -93,28 +104,48 @@ function AdminPage() {
 
   // حظر مستخدم
   const handleBanUser = async (userId: string) => {
-    if (!confirm("هل تريد حظر هذا المستخدم؟")) return;
     try {
       const { error } = await supabase
         .from("profiles")
         .update({ is_banned: true })
         .eq("id", userId);
+      
       if (error) throw error;
+      
+      setUsers(users.map(u => u.id === userId ? { ...u, is_banned: true } : u));
       toast.success("تم حظر المستخدم");
-      loadUsers();
     } catch {
       toast.error("فشل الحظر");
+    }
+  };
+
+  // فك حظر مستخدم
+  const handleUnbanUser = async (userId: string) => {
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ is_banned: false })
+        .eq("id", userId);
+      
+      if (error) throw error;
+      
+      setUsers(users.map(u => u.id === userId ? { ...u, is_banned: false } : u));
+      toast.success("تم إلغاء حظر المستخدم");
+    } catch {
+      toast.error("فشل إلغاء الحظر");
     }
   };
 
   // حذف مستخدم
   const handleDeleteUser = async (userId: string, username: string) => {
     if (!confirm(`هل تريد حذف المستخدم "${username}" نهائياً؟`)) return;
+    
     try {
       const { error } = await supabase.from("profiles").delete().eq("id", userId);
       if (error) throw error;
+      
+      setUsers(users.filter(u => u.id !== userId));
       toast.success(`تم حذف ${username}`);
-      loadUsers();
     } catch {
       toast.error("فشل الحذف");
     }
@@ -223,6 +254,13 @@ function AdminPage() {
           <div className="flex items-center gap-2">
             <Users className="h-5 w-5 text-muted-foreground" />
             <span className="text-sm font-medium">عدد المستخدمين: {users.length}</span>
+            <button 
+              onClick={loadUsers} 
+              className="rounded-lg bg-secondary p-1.5 hover:bg-secondary/70"
+              title="تحديث"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </button>
           </div>
           <div className="relative w-64">
             <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -251,7 +289,7 @@ function AdminPage() {
               <tr className="text-right text-sm">
                 <th className="p-3 text-right">المستخدم</th>
                 <th className="p-3 text-right">النقاط</th>
-                <th className="p-3 text-right">تاريخ التسجيل</th>
+                <th className="p-3 text-right">الحالة</th>
                 <th className="p-3 text-right">إجراءات</th>
                 ),
             </thead>
@@ -260,14 +298,14 @@ function AdminPage() {
                 <tr>
                   <td colSpan={4} className="p-8 text-center">
                     <Loader2 className="mx-auto h-6 w-6 animate-spin" />
-                  </td>
-                </tr>
+                   </td>
+                 </tr>
               ) : users.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="p-8 text-center text-muted-foreground">
                     لا توجد مستخدمين
-                  </td>
-                </tr>
+                   </td>
+                 </tr>
               ) : (
                 users.map((u) => (
                   <tr key={u.id} className="border-b border-border hover:bg-secondary/20">
@@ -280,8 +318,17 @@ function AdminPage() {
                       </div>
                     </td>
                     <td className="p-3 font-semibold text-primary">{u.points}</td>
-                    <td className="p-3 text-sm text-muted-foreground">
-                      {new Date(u.created_at).toLocaleDateString("ar")}
+                    <td className="p-3">
+                      {u.is_banned ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-red-500/10 px-2 py-0.5 text-xs font-semibold text-red-500">
+                          <Ban className="h-3 w-3" />
+                          محظور
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-green-500/10 px-2 py-0.5 text-xs font-semibold text-green-500">
+                          نشط
+                        </span>
+                      )}
                     </td>
                     <td className="p-3">
                       <div className="flex flex-wrap gap-2">
@@ -317,14 +364,24 @@ function AdminPage() {
                           <Eye className="h-4 w-4" />
                         </button>
                         
-                        {/* حظر */}
-                        <button
-                          onClick={() => handleBanUser(u.id)}
-                          className="rounded-lg bg-red-500/10 p-1.5 text-red-500 hover:bg-red-500/20"
-                          title="حظر"
-                        >
-                          <Ban className="h-4 w-4" />
-                        </button>
+                        {/* حظر / فك الحظر */}
+                        {u.is_banned ? (
+                          <button
+                            onClick={() => handleUnbanUser(u.id)}
+                            className="rounded-lg bg-green-500/10 p-1.5 text-green-500 hover:bg-green-500/20"
+                            title="إلغاء الحظر"
+                          >
+                            <UserCheck className="h-4 w-4" />
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleBanUser(u.id)}
+                            className="rounded-lg bg-red-500/10 p-1.5 text-red-500 hover:bg-red-500/20"
+                            title="حظر"
+                          >
+                            <Ban className="h-4 w-4" />
+                          </button>
+                        )}
                         
                         {/* حذف */}
                         <button
@@ -347,13 +404,13 @@ function AdminPage() {
         <div className="mt-6 rounded-2xl border border-border bg-card p-4">
           <div className="flex items-center gap-2 mb-3">
             <Send className="h-5 w-5 text-blue-500" />
-            <h3 className="font-bold">إرسال رسالة عامة (بث لجميع المستخدمين)</h3>
+            <h3 className="font-bold">إرسال رسالة عامة لجميع المستخدمين</h3>
           </div>
           <div className="flex gap-2">
             <textarea
               value={broadcastMsg}
               onChange={(e) => setBroadcastMsg(e.target.value)}
-              placeholder="اكتب رسالة سترسل لجميع المستخدمين..."
+              placeholder="اكتب الرسالة التي ستظهر لجميع المستخدمين..."
               rows={2}
               className="flex-1 rounded-xl border border-input bg-background p-3 text-sm outline-none focus:border-primary"
             />
