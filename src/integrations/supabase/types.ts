@@ -1265,7 +1265,7 @@ export type Database = {
         | "transfer"
         | "mute"
         | "unmute"
-      room_rank: "owner" | "admin" | "member"
+      room_rank: "owner" | "admin" | "moderator" | "member"
       shop_item_kind: "badge" | "name_color" | "chat_color" | "effect"
     }
     CompositeTypes: {
@@ -1412,7 +1412,7 @@ export const Constants = {
         "mute",
         "unmute",
       ],
-      room_rank: ["owner", "admin", "member"],
+      room_rank: ["owner", "admin", "moderator", "member"],
       shop_item_kind: ["badge", "name_color", "chat_color", "effect"],
     },
   },
