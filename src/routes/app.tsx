@@ -1,9 +1,9 @@
-import { createFileRoute, Link, Outlet, useNavigate, useLocation } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useNavigate, useLocation, useRouter } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/lib/auth";
 import { useIsAdmin, useUnreadDMCount } from "@/lib/use-admin";
-import { Home, MessageSquare, User, Settings, Users as UsersIcon, Gamepad2, Bell, Shield, Flag } from "lucide-react";
+import { Home, MessageSquare, User, Settings, Users as UsersIcon, Gamepad2, Bell, Shield, Flag, ArrowRight } from "lucide-react";
 import { findAdminId } from "@/lib/find-admin";
 import { toast } from "sonner";
 
