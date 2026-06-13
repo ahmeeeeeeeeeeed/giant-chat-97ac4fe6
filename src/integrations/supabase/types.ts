@@ -647,22 +647,34 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          is_active: boolean
+          max_members: number
           name: string
           owner_id: string
+          password_hash: string | null
+          type: string
         }
         Insert: {
           created_at?: string
           description?: string | null
           id?: string
+          is_active?: boolean
+          max_members?: number
           name: string
           owner_id: string
+          password_hash?: string | null
+          type?: string
         }
         Update: {
           created_at?: string
           description?: string | null
           id?: string
+          is_active?: boolean
+          max_members?: number
           name?: string
           owner_id?: string
+          password_hash?: string | null
+          type?: string
         }
         Relationships: []
       }
@@ -807,6 +819,10 @@ export type Database = {
         Args: { _kind?: string; _meta?: Json; _room: string; _text: string }
         Returns: undefined
       }
+      room_join: {
+        Args: { _password?: string; _room: string }
+        Returns: undefined
+      }
       room_joined_at: {
         Args: { _room: string; _user: string }
         Returns: string
@@ -831,6 +847,10 @@ export type Database = {
       }
       transfer_room_ownership: {
         Args: { _new_owner: string; _room: string }
+        Returns: undefined
+      }
+      unban_room_member: {
+        Args: { _room: string; _user: string }
         Returns: undefined
       }
     }
