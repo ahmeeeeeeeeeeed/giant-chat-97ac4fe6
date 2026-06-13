@@ -14,7 +14,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app/index'
-import { Route as ProfileIdRouteImport } from './routes/profile._id'
+import { Route as ProfileIdRouteImport } from './routes/profile.$id'
 import { Route as AppStoreRouteImport } from './routes/app/store'
 import { Route as AppSettingsRouteImport } from './routes/app/settings'
 import { Route as AppNotificationsRouteImport } from './routes/app/notifications'
@@ -25,7 +25,7 @@ import { Route as AppCreateRoomRouteImport } from './routes/app/create-room'
 import { Route as AppAccountRouteImport } from './routes/app/account'
 import { Route as AppChatsIndexRouteImport } from './routes/app/chats.index'
 import { Route as AppRoomsIdRouteImport } from './routes/app/rooms.$id'
-import { Route as AppProfileIdRouteImport } from './routes/app/profile._id'
+import { Route as AppProfileIdRouteImport } from './routes/app/profile.$id'
 import { Route as AppChatsIdRouteImport } from './routes/app/chats.$id'
 
 const RegisterRoute = RegisterRouteImport.update({
@@ -54,8 +54,8 @@ const AppIndexRoute = AppIndexRouteImport.update({
   getParentRoute: () => AppRoute,
 } as any)
 const ProfileIdRoute = ProfileIdRouteImport.update({
-  id: '/profile/_id',
-  path: '/profile',
+  id: '/profile/$id',
+  path: '/profile/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppStoreRoute = AppStoreRouteImport.update({
@@ -109,8 +109,8 @@ const AppRoomsIdRoute = AppRoomsIdRouteImport.update({
   getParentRoute: () => AppRoute,
 } as any)
 const AppProfileIdRoute = AppProfileIdRouteImport.update({
-  id: '/profile/_id',
-  path: '/profile',
+  id: '/profile/$id',
+  path: '/profile/$id',
   getParentRoute: () => AppRoute,
 } as any)
 const AppChatsIdRoute = AppChatsIdRouteImport.update({
@@ -132,10 +132,10 @@ export interface FileRoutesByFullPath {
   '/app/notifications': typeof AppNotificationsRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/store': typeof AppStoreRoute
-  '/profile': typeof ProfileIdRoute
+  '/profile/$id': typeof ProfileIdRoute
   '/app/': typeof AppIndexRoute
   '/app/chats/$id': typeof AppChatsIdRoute
-  '/app/profile': typeof AppProfileIdRoute
+  '/app/profile/$id': typeof AppProfileIdRoute
   '/app/rooms/$id': typeof AppRoomsIdRoute
   '/app/chats/': typeof AppChatsIndexRoute
 }
@@ -151,10 +151,10 @@ export interface FileRoutesByTo {
   '/app/notifications': typeof AppNotificationsRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/store': typeof AppStoreRoute
-  '/profile': typeof ProfileIdRoute
+  '/profile/$id': typeof ProfileIdRoute
   '/app': typeof AppIndexRoute
   '/app/chats/$id': typeof AppChatsIdRoute
-  '/app/profile': typeof AppProfileIdRoute
+  '/app/profile/$id': typeof AppProfileIdRoute
   '/app/rooms/$id': typeof AppRoomsIdRoute
   '/app/chats': typeof AppChatsIndexRoute
 }
@@ -172,10 +172,10 @@ export interface FileRoutesById {
   '/app/notifications': typeof AppNotificationsRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/store': typeof AppStoreRoute
-  '/profile/_id': typeof ProfileIdRoute
+  '/profile/$id': typeof ProfileIdRoute
   '/app/': typeof AppIndexRoute
   '/app/chats/$id': typeof AppChatsIdRoute
-  '/app/profile/_id': typeof AppProfileIdRoute
+  '/app/profile/$id': typeof AppProfileIdRoute
   '/app/rooms/$id': typeof AppRoomsIdRoute
   '/app/chats/': typeof AppChatsIndexRoute
 }
@@ -194,10 +194,10 @@ export interface FileRouteTypes {
     | '/app/notifications'
     | '/app/settings'
     | '/app/store'
-    | '/profile'
+    | '/profile/$id'
     | '/app/'
     | '/app/chats/$id'
-    | '/app/profile'
+    | '/app/profile/$id'
     | '/app/rooms/$id'
     | '/app/chats/'
   fileRoutesByTo: FileRoutesByTo
@@ -213,10 +213,10 @@ export interface FileRouteTypes {
     | '/app/notifications'
     | '/app/settings'
     | '/app/store'
-    | '/profile'
+    | '/profile/$id'
     | '/app'
     | '/app/chats/$id'
-    | '/app/profile'
+    | '/app/profile/$id'
     | '/app/rooms/$id'
     | '/app/chats'
   id:
@@ -233,10 +233,10 @@ export interface FileRouteTypes {
     | '/app/notifications'
     | '/app/settings'
     | '/app/store'
-    | '/profile/_id'
+    | '/profile/$id'
     | '/app/'
     | '/app/chats/$id'
-    | '/app/profile/_id'
+    | '/app/profile/$id'
     | '/app/rooms/$id'
     | '/app/chats/'
   fileRoutesById: FileRoutesById
@@ -286,10 +286,10 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
-    '/profile/_id': {
-      id: '/profile/_id'
-      path: '/profile'
-      fullPath: '/profile'
+    '/profile/$id': {
+      id: '/profile/$id'
+      path: '/profile/$id'
+      fullPath: '/profile/$id'
       preLoaderRoute: typeof ProfileIdRouteImport
       parentRoute: typeof rootRouteImport
     }
@@ -363,10 +363,10 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRoomsIdRouteImport
       parentRoute: typeof AppRoute
     }
-    '/app/profile/_id': {
-      id: '/app/profile/_id'
-      path: '/profile'
-      fullPath: '/app/profile'
+    '/app/profile/$id': {
+      id: '/app/profile/$id'
+      path: '/profile/$id'
+      fullPath: '/app/profile/$id'
       preLoaderRoute: typeof AppProfileIdRouteImport
       parentRoute: typeof AppRoute
     }
@@ -424,3 +424,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 import { Loader2, ArrowRight, MessageCircle, Ban, Flag, Globe, Lock, EyeOff } from "lucide-react";
 
-export const Route = createFileRoute("/profile/_id")({
+export const Route = createFileRoute("/profile/$id")({
   component: OtherProfilePage,
 });
 
