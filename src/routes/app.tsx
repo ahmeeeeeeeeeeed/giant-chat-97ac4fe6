@@ -102,6 +102,7 @@ function AppLayout() {
           <ul className="mx-auto flex max-w-md items-stretch justify-around rounded-3xl bg-gradient-to-r from-emerald-600 to-green-600 px-1.5 py-1.5 shadow-2xl shadow-emerald-900/30 ring-1 ring-white/10">
             {tabs.map(({ to, label, icon: Icon, exact }) => {
               const active = exact ? path === to : path.startsWith(to);
+              const showBadge = to === "/app/chats" && unread > 0;
               return (
                 <li key={to} className="flex-1">
                   <Link
@@ -110,7 +111,14 @@ function AppLayout() {
                       active ? "bg-white text-emerald-700 shadow-lg" : "text-white/90 hover:bg-white/10"
                     }`}
                   >
-                    <Icon className="h-5 w-5" strokeWidth={active ? 2.5 : 2} />
+                    <div className="relative">
+                      <Icon className="h-5 w-5" strokeWidth={active ? 2.5 : 2} />
+                      {showBadge && (
+                        <span className="absolute -end-2 -top-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-destructive-foreground ring-1 ring-white/40">
+                          {unread > 99 ? "99+" : unread}
+                        </span>
+                      )}
+                    </div>
                     <span>{label}</span>
                   </Link>
                 </li>
