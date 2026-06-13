@@ -190,8 +190,6 @@ export function MusicPlayer({ roomId }: { roomId: string }) {
             <button onClick={() => seek(5)}
               className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-xs font-bold"
               aria-label="تقديم">+5</button>
-              className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-xs font-bold"
-              aria-label="تقديم">+5</button>
             <button onClick={() => supabase.rpc("music_skip", { _room: roomId })}
               className="flex h-9 w-9 items-center justify-center rounded-full border border-border" aria-label="تخطي">
               <SkipForward className="h-4 w-4" />
