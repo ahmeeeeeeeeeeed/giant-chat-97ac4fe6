@@ -11,8 +11,8 @@ type Track = {
 };
 
 export function BroadcastCard({
-  broadcastId, requesterName, track,
-}: { broadcastId: string; requesterName?: string; track: Track }) {
+  broadcastId, requesterName, sourceRoomName, track,
+}: { broadcastId: string; requesterName?: string; sourceRoomName?: string; track: Track }) {
   const { user } = useAuth();
   const [playing, setPlaying] = useState(false);
   const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
