@@ -60,12 +60,11 @@ function AdminUsers() {
     );
   }, [users, q]);
 
-  const wrap = async (id: string, fn: () => Promise<{ error: unknown } | void>) => {
+  const wrap = async (id: string, fn: () => PromiseLike<{ error: { message?: string } | null }>) => {
     setBusy(id);
     try {
       const res = await fn();
-      const err = (res && typeof res === "object" && "error" in res) ? (res as { error: { message?: string } | null }).error : null;
-      if (err) throw err;
+      if (res?.error) throw res.error;
       await load();
       toast.success("تم");
     } catch (e) {
