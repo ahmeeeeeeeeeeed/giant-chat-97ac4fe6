@@ -44,7 +44,7 @@ export default defineConfig({
           navigateFallback: "/offline",
           navigateFallbackDenylist: [/^\/~oauth/, /^\/api\//, /^\/assets\//],
           globPatterns: ["**/*.{js,css,html,ico,png,svg,webp,jpg,jpeg,woff,woff2,ttf,otf}"],
-          maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
+          maximumFileSizeToCacheInBytes: 12 * 1024 * 1024,
           runtimeCaching: [
             {
               // Cache every visited page. When offline, return the exact cached
@@ -74,6 +74,30 @@ export default defineConfig({
               options: {
                 cacheName: "giant-images",
                 expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 30 },
+              },
+            },
+            {
+              // Cache Lovable CDN assets (videos, large media). The welcome
+              // screen background video lives here — caching it makes the
+              // splash play offline inside the APK after the first launch.
+              urlPattern: ({ url }) => url.pathname.startsWith("/__l5e/assets-v1/"),
+              handler: "CacheFirst",
+              options: {
+                cacheName: "giant-cdn-assets",
+                rangeRequests: true,
+                expiration: { maxEntries: 30, maxAgeSeconds: 60 * 60 * 24 * 365 },
+                cacheableResponse: { statuses: [0, 200, 206] },
+              },
+            },
+            {
+              // Generic video fallback (mp4/webm/mov) — same-origin or remote.
+              urlPattern: ({ request }) => request.destination === "video",
+              handler: "CacheFirst",
+              options: {
+                cacheName: "giant-videos",
+                rangeRequests: true,
+                expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
+                cacheableResponse: { statuses: [0, 200, 206] },
               },
             },
             {

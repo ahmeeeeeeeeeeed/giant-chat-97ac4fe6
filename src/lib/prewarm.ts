@@ -2,7 +2,7 @@
 // app routes so the service worker caches them for later offline use.
 // Runs once per install, never blocks the UI.
 
-const PREWARM_KEY = "giant:prewarmed:v1";
+const PREWARM_KEY = "giant:prewarmed:v2";
 
 const ROUTES_TO_PREWARM = [
   "/",
@@ -20,6 +20,12 @@ const ROUTES_TO_PREWARM = [
   "/app/account",
   "/app/my_profile",
   "/app/create-room",
+];
+
+// Large media that must be available offline. The welcome video plays on the
+// landing page (`/`) and should keep working inside the APK without network.
+const MEDIA_TO_PREWARM = [
+  "/__l5e/assets-v1/03139ba5-10e0-4dcc-b177-50976f81e15e/welcome-bg.mp4",
 ];
 
 function canPrewarm(): boolean {
@@ -72,6 +78,14 @@ export function schedulePrewarm(): void {
       }
     });
     await Promise.all(workers);
+    // Prefetch large media (welcome video) so it plays offline inside the APK.
+    for (const url of MEDIA_TO_PREWARM) {
+      try {
+        await fetch(url, { credentials: "same-origin", cache: "no-cache" });
+      } catch {
+        /* ignore */
+      }
+    }
     try {
       localStorage.setItem(PREWARM_KEY, String(Date.now()));
     } catch {
