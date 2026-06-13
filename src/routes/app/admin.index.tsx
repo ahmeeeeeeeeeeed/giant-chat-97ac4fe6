@@ -41,7 +41,7 @@ function AdminHome() {
   const sendBroadcast = async () => {
     if (!broadcast.trim()) return;
     setBusy(true);
-    const { error } = await supabase.rpc("admin_broadcast", { _content: broadcast.trim() });
+    const { error } = await supabase.rpc("admin_broadcast", { _text: broadcast.trim() });
     setBusy(false);
     if (error) toast.error(error.message);
     else { toast.success("تم إرسال الإعلان"); setBroadcast(""); }
