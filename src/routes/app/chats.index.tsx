@@ -4,6 +4,8 @@ import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { MessageSquare, Loader2, Search, X } from "lucide-react";
+import { cacheGet, cacheSet, cacheKeys } from "@/lib/offline-cache";
+
 
 export const Route = createFileRoute("/app/chats/")({
   component: ChatsPage,
@@ -24,35 +26,44 @@ function ChatsPage() {
 
   const load = async () => {
     if (!user) return;
-    setLoading(true);
-    const { data } = await supabase
-      .from("direct_messages")
-      .select("sender_id, receiver_id, content, created_at, read_at")
-      .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
-      .order("created_at", { ascending: false })
-      .limit(300);
-    const map = new Map<string, { last: string; created_at: string; unread: number }>();
-    (data ?? []).forEach(m => {
-      const otherId = m.sender_id === user.id ? m.receiver_id : m.sender_id;
-      const existing = map.get(otherId);
-      const isUnreadForMe = m.receiver_id === user.id && !m.read_at;
-      if (!existing) {
-        map.set(otherId, { last: m.content, created_at: m.created_at, unread: isUnreadForMe ? 1 : 0 });
-      } else if (isUnreadForMe) {
-        existing.unread += 1;
-      }
-    });
-    const ids = Array.from(map.keys());
-    if (ids.length === 0) { setConvos([]); setLoading(false); return; }
-    const { data: profs } = await supabase.from("profiles").select("id, username, avatar_url").in("id", ids);
-    const out: Convo[] = ids.map(id => {
-      const p = profs?.find(x => x.id === id);
-      const last = map.get(id)!;
-      return { otherId: id, username: p?.username ?? "?", avatar_url: p?.avatar_url ?? null, last: last.last, created_at: last.created_at, unread: last.unread };
-    });
-    setConvos(out);
-    setLoading(false);
+    const cached = await cacheGet<Convo[]>(cacheKeys.chatsList(user.id));
+    if (cached) { setConvos(cached); setLoading(false); } else { setLoading(true); }
+    try {
+      const { data, error } = await supabase
+        .from("direct_messages")
+        .select("sender_id, receiver_id, content, created_at, read_at")
+        .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+        .order("created_at", { ascending: false })
+        .limit(300);
+      if (error) throw error;
+      const map = new Map<string, { last: string; created_at: string; unread: number }>();
+      (data ?? []).forEach(m => {
+        const otherId = m.sender_id === user.id ? m.receiver_id : m.sender_id;
+        const existing = map.get(otherId);
+        const isUnreadForMe = m.receiver_id === user.id && !m.read_at;
+        if (!existing) {
+          map.set(otherId, { last: m.content, created_at: m.created_at, unread: isUnreadForMe ? 1 : 0 });
+        } else if (isUnreadForMe) {
+          existing.unread += 1;
+        }
+      });
+      const ids = Array.from(map.keys());
+      if (ids.length === 0) { setConvos([]); await cacheSet(cacheKeys.chatsList(user.id), []); setLoading(false); return; }
+      const { data: profs } = await supabase.from("profiles").select("id, username, avatar_url").in("id", ids);
+      const out: Convo[] = ids.map(id => {
+        const p = profs?.find(x => x.id === id);
+        const last = map.get(id)!;
+        return { otherId: id, username: p?.username ?? "?", avatar_url: p?.avatar_url ?? null, last: last.last, created_at: last.created_at, unread: last.unread };
+      });
+      setConvos(out);
+      await cacheSet(cacheKeys.chatsList(user.id), out);
+    } catch {
+      // offline — keep cached
+    } finally {
+      setLoading(false);
+    }
   };
+
 
   useEffect(() => {
     load();
