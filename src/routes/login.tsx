@@ -12,10 +12,15 @@ export const Route = createFileRoute("/login")({
 function LoginPage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const [username, setUsername] = useState("");
+  const [username, setUsername] = useState(() =>
+    typeof window !== "undefined" ? localStorage.getItem("giant.remember.user") ?? "" : ""
+  );
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPwd, setShowPwd] = useState(false);
+  const [remember, setRemember] = useState(() =>
+    typeof window !== "undefined" ? localStorage.getItem("giant.remember.user") !== null : false
+  );
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,6 +28,8 @@ function LoginPage() {
     const { error } = await signInWithUsername(username, password);
     setLoading(false);
     if (error) { toast.error(error); return; }
+    if (remember) localStorage.setItem("giant.remember.user", username.trim());
+    else localStorage.removeItem("giant.remember.user");
     navigate({ to: "/app" });
   };
 
@@ -99,6 +106,21 @@ function LoginPage() {
             </button>
           </div>
         </label>
+
+        <div className="mt-1 flex items-center justify-between text-xs">
+          <label className="flex cursor-pointer items-center gap-2 select-none">
+            <input
+              type="checkbox"
+              checked={remember}
+              onChange={(e) => setRemember(e.target.checked)}
+              className="h-4 w-4 accent-primary"
+            />
+            <span className="text-muted-foreground">تذكّرني</span>
+          </label>
+          <Link to="/recovery" className="font-bold text-primary hover:underline">
+            استرجاع الحساب
+          </Link>
+        </div>
 
         <button
           type="submit"

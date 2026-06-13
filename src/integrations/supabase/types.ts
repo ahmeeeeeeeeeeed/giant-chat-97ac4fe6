@@ -543,6 +543,8 @@ export type Database = {
           last_seen_at: string
           points: number
           profile_views: number
+          recovery_email: string | null
+          recovery_email_verified_at: string | null
           username: string
         }
         Insert: {
@@ -564,6 +566,8 @@ export type Database = {
           last_seen_at?: string
           points?: number
           profile_views?: number
+          recovery_email?: string | null
+          recovery_email_verified_at?: string | null
           username: string
         }
         Update: {
@@ -585,6 +589,8 @@ export type Database = {
           last_seen_at?: string
           points?: number
           profile_views?: number
+          recovery_email?: string | null
+          recovery_email_verified_at?: string | null
           username?: string
         }
         Relationships: [
@@ -940,6 +946,39 @@ export type Database = {
         }
         Relationships: []
       }
+      verification_codes: {
+        Row: {
+          code: string
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          purpose: string
+          used_at: string | null
+          user_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          purpose: string
+          used_at?: string | null
+          user_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          purpose?: string
+          used_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -988,6 +1027,14 @@ export type Database = {
         Args: { _reason?: string; _room: string; _user: string }
         Returns: undefined
       }
+      confirm_email_verification_code: {
+        Args: { _code: string }
+        Returns: boolean
+      }
+      consume_recovery_code: {
+        Args: { _code: string; _username: string }
+        Returns: string
+      }
       dm_delete_for_all: { Args: { _id: string }; Returns: undefined }
       dm_delete_for_me: { Args: { _id: string }; Returns: undefined }
       dm_mark_read: { Args: { _peer: string }; Returns: undefined }
@@ -1009,6 +1056,22 @@ export type Database = {
       is_room_member: {
         Args: { _room: string; _user: string }
         Returns: boolean
+      }
+      issue_email_verification_code: {
+        Args: { _email: string }
+        Returns: {
+          code: string
+          expires_at: string
+        }[]
+      }
+      issue_recovery_code: {
+        Args: { _email: string; _username: string }
+        Returns: {
+          code: string
+          email: string
+          expires_at: string
+          user_id: string
+        }[]
       }
       kick_room_member: {
         Args: { _room: string; _user: string }
