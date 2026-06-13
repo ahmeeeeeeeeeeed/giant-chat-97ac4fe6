@@ -73,42 +73,54 @@ function AppLayout() {
         <Flag className="h-5 w-5" />
       </button>
       {!hideChrome && (
-        <div className="sticky top-0 z-50 flex items-center justify-between border-b border-emerald-700/40 bg-gradient-to-r from-emerald-600 to-green-600 text-white px-4 py-2 shadow-md pt-[calc(0.5rem+env(safe-area-inset-top))]">
-          <div className="flex items-center gap-2">
-            {showBack && (
-              <button
-                onClick={() => { try { router.history.back(); } catch { navigate({ to: "/app" }); } }}
-                aria-label="رجوع"
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 hover:bg-white/25 transition"
-              >
-                <ArrowRight className="h-5 w-5" />
-              </button>
-            )}
-            <div className="text-sm font-extrabold tracking-tight">Giant</div>
-          </div>
-          <div className="flex items-center gap-2">
-            {isAdmin && (
-              <Link to="/app/admin" aria-label={t("admin.title")}
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 hover:bg-white/25 transition">
-                <Shield className="h-5 w-5" />
-              </Link>
-            )}
-            <Link to="/app/notifications" aria-label={t("notif.title")}
-              className="relative flex h-9 w-9 items-center justify-center rounded-full bg-white/15 hover:bg-white/25 transition">
-              <Bell className="h-5 w-5" />
-              {unread > 0 && (
-                <span className="absolute -end-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
-                  {unread > 99 ? "99+" : unread}
-                </span>
+        <header className="sticky top-0 z-50 pt-[env(safe-area-inset-top)] bg-gradient-to-b from-emerald-700 via-emerald-600 to-emerald-600/95 text-white shadow-[0_8px_24px_-12px_rgba(6,78,59,0.55)]">
+          <div className="relative flex items-center justify-between px-3 py-2.5">
+            <div className="flex min-w-0 items-center gap-2.5">
+              {showBack ? (
+                <button
+                  onClick={() => { try { router.history.back(); } catch { navigate({ to: "/app" }); } }}
+                  aria-label="رجوع"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/15 backdrop-blur transition active:scale-95 hover:bg-white/20"
+                >
+                  <ArrowRight className="h-[18px] w-[18px]" />
+                </button>
+              ) : (
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/95 text-emerald-700 shadow-md shadow-emerald-900/30 ring-1 ring-white/40">
+                  <span className="text-base font-black tracking-tight">G</span>
+                </div>
               )}
-            </Link>
+              <div className="min-w-0">
+                <div className="truncate text-[15px] font-extrabold leading-tight tracking-tight">Giant</div>
+                <div className="text-[10px] font-medium uppercase tracking-[0.15em] text-emerald-100/80">chat · مجتمعات</div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              {isAdmin && (
+                <Link to="/app/admin" aria-label={t("admin.title")}
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/15 backdrop-blur transition active:scale-95 hover:bg-white/20">
+                  <Shield className="h-[18px] w-[18px]" />
+                </Link>
+              )}
+              <Link to="/app/notifications" aria-label={t("notif.title")}
+                className="relative flex h-9 w-9 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/15 backdrop-blur transition active:scale-95 hover:bg-white/20">
+                <Bell className="h-[18px] w-[18px]" />
+                {unread > 0 && (
+                  <span className="absolute -end-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white ring-2 ring-emerald-600">
+                    {unread > 99 ? "99+" : unread}
+                  </span>
+                )}
+              </Link>
+            </div>
           </div>
-        </div>
+          {/* subtle bottom accent line */}
+          <div className="h-px w-full bg-gradient-to-r from-transparent via-white/25 to-transparent" />
+        </header>
       )}
       <Outlet />
       {!hideChrome && (
-        <nav className="fixed inset-x-0 bottom-0 z-40 px-3 pt-2 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
-          <ul className="mx-auto flex max-w-md items-stretch justify-around rounded-3xl bg-gradient-to-r from-emerald-600 to-green-600 px-1.5 py-1.5 shadow-2xl shadow-emerald-900/30 ring-1 ring-white/10">
+        <nav className="fixed inset-x-0 bottom-0 z-40 px-3 pt-2 pb-[calc(0.6rem+env(safe-area-inset-bottom))]">
+          <ul className="mx-auto flex max-w-md items-stretch justify-around rounded-[28px] border border-white/10 bg-emerald-900/85 px-2 py-2 shadow-[0_20px_50px_-15px_rgba(6,78,59,0.65)] backdrop-blur-xl">
             {tabs.map(({ to, label, icon: Icon, exact }) => {
               const active = exact ? path === to : path.startsWith(to);
               const showBadge = to === "/app/chats" && unread > 0;
@@ -116,19 +128,26 @@ function AppLayout() {
                 <li key={to} className="flex-1">
                   <Link
                     to={to}
-                    className={`relative flex flex-col items-center gap-0.5 rounded-2xl py-2 text-[10px] font-semibold transition ${
-                      active ? "bg-white text-emerald-700 shadow-lg" : "text-white/90 hover:bg-white/10"
-                    }`}
+                    className="group relative flex flex-col items-center gap-1 py-1 text-[10px] font-semibold transition"
                   >
-                    <div className="relative">
-                      <Icon className="h-5 w-5" strokeWidth={active ? 2.5 : 2} />
+                    <span
+                      className={`relative flex h-9 w-9 items-center justify-center rounded-2xl transition-all duration-300 ${
+                        active
+                          ? "bg-gradient-to-br from-emerald-400 to-emerald-600 text-white shadow-lg shadow-emerald-500/40 ring-1 ring-emerald-300/40 -translate-y-0.5"
+                          : "text-emerald-100/80 group-active:scale-90"
+                      }`}
+                    >
+                      <Icon className="h-[18px] w-[18px]" strokeWidth={active ? 2.5 : 2} />
                       {showBadge && (
-                        <span className="absolute -end-2 -top-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-destructive-foreground ring-1 ring-white/40">
+                        <span className="absolute -end-1.5 -top-1 flex h-[16px] min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white ring-2 ring-emerald-900">
                           {unread > 99 ? "99+" : unread}
                         </span>
                       )}
-                    </div>
-                    <span>{label}</span>
+                    </span>
+                    <span className={`leading-none transition ${active ? "text-white" : "text-emerald-100/70"}`}>{label}</span>
+                    {active && (
+                      <span className="absolute -bottom-0.5 h-1 w-1 rounded-full bg-emerald-300 shadow-[0_0_6px_2px_rgba(110,231,183,0.6)]" />
+                    )}
                   </Link>
                 </li>
               );
@@ -136,6 +155,7 @@ function AppLayout() {
           </ul>
         </nav>
       )}
+
     </div>
   );
 }
