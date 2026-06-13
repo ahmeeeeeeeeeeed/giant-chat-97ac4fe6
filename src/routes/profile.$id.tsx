@@ -67,7 +67,7 @@ function OtherProfilePage() {
       // جلب بيانات البروفايل
       const { data: p, error: profileError } = await supabase
         .from("profiles")
-        .select("id, username, avatar_url, bio, points, gender, country, hide_last_seen, dm_locked, last_seen_at")
+        .select("id, username, avatar_url, bio, points, gender, country, hide_last_seen, dm_locked, last_seen_at, profile_views")
         .eq("id", otherId)
         .maybeSingle();
       
@@ -91,6 +91,14 @@ function OtherProfilePage() {
       
       setProfile(p as Profile);
       console.log("تم تعيين البروفايل:", p);
+
+      // جلب الشارات المجهزة
+      try {
+        const eq = await getEquipped(otherId);
+        setEquipped(eq);
+      } catch (eqErr) {
+        console.error("خطأ في جلب الشارات:", eqErr);
+      }
 
       // جلب حالة الحظر
       try {
