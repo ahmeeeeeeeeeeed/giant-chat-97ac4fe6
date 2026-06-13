@@ -95,6 +95,7 @@ function RoomPage() {
     loadMembership();
     loadMemberCount();
     loadMessages();
+    if (user?.id) ensureProfiles([user.id]);
 
     const ch = supabase
       .channel(`room:${roomId}`)
