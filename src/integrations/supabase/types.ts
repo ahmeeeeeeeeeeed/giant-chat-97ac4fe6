@@ -488,6 +488,7 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          ban_reason: string | null
           bio: string | null
           country: string | null
           created_at: string
@@ -499,6 +500,7 @@ export type Database = {
           gender: string | null
           hide_last_seen: boolean
           id: string
+          is_banned: boolean
           last_seen_at: string
           points: number
           profile_views: number
@@ -506,6 +508,7 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          ban_reason?: string | null
           bio?: string | null
           country?: string | null
           created_at?: string
@@ -517,6 +520,7 @@ export type Database = {
           gender?: string | null
           hide_last_seen?: boolean
           id: string
+          is_banned?: boolean
           last_seen_at?: string
           points?: number
           profile_views?: number
@@ -524,6 +528,7 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          ban_reason?: string | null
           bio?: string | null
           country?: string | null
           created_at?: string
@@ -535,6 +540,7 @@ export type Database = {
           gender?: string | null
           hide_last_seen?: boolean
           id?: string
+          is_banned?: boolean
           last_seen_at?: string
           points?: number
           profile_views?: number
@@ -900,8 +906,40 @@ export type Database = {
     Functions: {
       admin_broadcast: { Args: { _text: string }; Returns: undefined }
       admin_delete_post: { Args: { _post: string }; Returns: undefined }
+      admin_delete_user: { Args: { _target: string }; Returns: undefined }
+      admin_list_users: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          ban_reason: string
+          country: string
+          created_at: string
+          id: string
+          is_banned: boolean
+          last_seen_at: string
+          points: number
+          roles: string[]
+          username: string
+        }[]
+      }
+      admin_reset_username: {
+        Args: { _new_username: string; _target: string }
+        Returns: undefined
+      }
       admin_send_points: {
         Args: { _amount: number; _target: string }
+        Returns: undefined
+      }
+      admin_set_banned: {
+        Args: { _banned: boolean; _reason?: string; _target: string }
+        Returns: undefined
+      }
+      admin_set_role: {
+        Args: {
+          _grant: boolean
+          _role: Database["public"]["Enums"]["app_role"]
+          _target: string
+        }
         Returns: undefined
       }
       ban_room_member: {
