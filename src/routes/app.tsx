@@ -128,7 +128,7 @@ function AppLayout() {
           <ul className="mx-auto flex max-w-md items-stretch justify-around rounded-[28px] border border-white/10 bg-emerald-900/85 px-2 py-2 shadow-[0_20px_50px_-15px_rgba(6,78,59,0.65)] backdrop-blur-xl">
             {tabs.map(({ to, label, icon: Icon, exact }) => {
               const active = exact ? path === to : path.startsWith(to);
-              const showBadge = to === "/app/chats" && unread > 0;
+              const showBadge = to === "/app/chats" && unreadDM > 0;
               return (
                 <li key={to} className="flex-1">
                   <Link
