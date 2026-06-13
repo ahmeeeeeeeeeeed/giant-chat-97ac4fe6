@@ -70,15 +70,24 @@ function StorePage() {
     if (points < item.price) { toast.error("نقاطك غير كافية"); return; }
     setBusyId(item.id);
     const { error } = await supabase.rpc("shop_purchase", { _item: item.id });
-    setBusyId(null);
     if (error) {
+      setBusyId(null);
       const m = error.message.includes("insufficient") ? "نقاطك غير كافية"
         : error.message.includes("already_owned") ? "تمتلكه بالفعل" : "تعذّر الشراء";
       toast.error(m); return;
     }
     setPoints((p) => p - item.price);
     setOwned((s) => new Set(s).add(item.id));
-    toast.success(`تم شراء «${item.name_ar}» 🎉`);
+    // Auto-equip immediately so it shows on the profile right away
+    const { error: eqErr } = await supabase.rpc("shop_equip", { _item: item.id });
+    setBusyId(null);
+    if (!eqErr) {
+      setEquipped((e) => ({ ...e, [item.kind]: item.id }));
+      clearEquippedCache(user.id);
+      toast.success(`تم شراء «${item.name_ar}» وتفعيله على بروفايلك 🎉`);
+    } else {
+      toast.success(`تم شراء «${item.name_ar}» 🎉`);
+    }
   };
 
   const equip = async (item: ShopItem) => {
