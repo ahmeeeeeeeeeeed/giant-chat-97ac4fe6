@@ -164,6 +164,11 @@ function ChatsPage() {
                     <div className="truncate font-semibold">{c.username}</div>
                     <div className="truncate text-sm text-muted-foreground">{c.last}</div>
                   </div>
+                  {c.unread > 0 && (
+                    <span className="flex h-6 min-w-[24px] items-center justify-center rounded-full bg-destructive px-2 text-[11px] font-bold text-destructive-foreground">
+                      {c.unread > 99 ? "99+" : c.unread}
+                    </span>
+                  )}
                 </Link>
               </li>
             ))}
