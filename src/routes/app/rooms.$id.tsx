@@ -137,7 +137,9 @@ function RoomPage() {
       if (msg.includes("wrong_password")) toast.error("كلمة المرور غير صحيحة");
       else if (msg.includes("banned")) toast.error("أنت محظور من هذه الغرفة");
       else if (msg.includes("room_full")) toast.error("الغرفة ممتلئة");
-      else toast.error("فشل الانضمام");
+      else if (msg.includes("room_inactive")) toast.error("الغرفة موقوفة");
+      else if (msg.includes("room_not_found")) toast.error("الغرفة غير موجودة");
+      else toast.error("فشل الانضمام: " + msg);
       return;
     }
     
