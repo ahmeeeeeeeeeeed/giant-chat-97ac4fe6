@@ -559,6 +559,13 @@ function VoicePlayer({ url, durationMs, mine }: { url: string; durationMs: numbe
 
 function formatTime(s: number) { const m = Math.floor(s / 60); const r = s % 60; return `${m}:${r.toString().padStart(2, "0")}`; }
 
+function formatDateTime(iso: string) {
+  const d = new Date(iso);
+  const time = d.toLocaleTimeString("ar", { hour: "2-digit", minute: "2-digit" });
+  const date = d.toLocaleDateString("ar", { day: "2-digit", month: "2-digit", year: "2-digit" });
+  return `${date} · ${time}`;
+}
+
 function relativeTime(iso: string): string {
   const diff = (Date.now() - new Date(iso).getTime()) / 1000;
   if (diff < 60) return "قبل لحظات";
