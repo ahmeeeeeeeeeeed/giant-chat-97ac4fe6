@@ -32,6 +32,138 @@ export type Database = {
         }
         Relationships: []
       }
+      community_comments: {
+        Row: {
+          author_id: string
+          content: string
+          created_at: string
+          id: string
+          post_id: string
+        }
+        Insert: {
+          author_id: string
+          content: string
+          created_at?: string
+          id?: string
+          post_id: string
+        }
+        Update: {
+          author_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          post_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "community_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      community_posts: {
+        Row: {
+          author_id: string
+          content: string | null
+          created_at: string
+          edited: boolean
+          id: string
+          kind: Database["public"]["Enums"]["community_post_kind"]
+          media_type: string | null
+          media_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          author_id: string
+          content?: string | null
+          created_at?: string
+          edited?: boolean
+          id?: string
+          kind?: Database["public"]["Enums"]["community_post_kind"]
+          media_type?: string | null
+          media_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          content?: string | null
+          created_at?: string
+          edited?: boolean
+          id?: string
+          kind?: Database["public"]["Enums"]["community_post_kind"]
+          media_type?: string | null
+          media_url?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      community_reactions: {
+        Row: {
+          created_at: string
+          post_id: string
+          reaction: Database["public"]["Enums"]["community_reaction"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          post_id: string
+          reaction: Database["public"]["Enums"]["community_reaction"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          post_id?: string
+          reaction?: Database["public"]["Enums"]["community_reaction"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_reactions_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "community_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      community_reports: {
+        Row: {
+          created_at: string
+          id: string
+          post_id: string
+          reason: string | null
+          reporter_id: string
+          status: Database["public"]["Enums"]["community_report_status"]
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          post_id: string
+          reason?: string | null
+          reporter_id: string
+          status?: Database["public"]["Enums"]["community_report_status"]
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          post_id?: string
+          reason?: string | null
+          reporter_id?: string
+          status?: Database["public"]["Enums"]["community_report_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_reports_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "community_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       direct_messages: {
         Row: {
           content: string
@@ -767,6 +899,7 @@ export type Database = {
     }
     Functions: {
       admin_broadcast: { Args: { _text: string }; Returns: undefined }
+      admin_delete_post: { Args: { _post: string }; Returns: undefined }
       admin_send_points: {
         Args: { _amount: number; _target: string }
         Returns: undefined
@@ -858,6 +991,9 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
+      community_post_kind: "text" | "image" | "video" | "mixed"
+      community_reaction: "like" | "love" | "haha" | "wow" | "sad" | "angry"
+      community_report_status: "open" | "reviewed" | "dismissed"
       friendship_status: "pending" | "accepted" | "blocked"
       message_type: "text" | "image" | "voice" | "system"
       room_log_event:
@@ -1001,6 +1137,9 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      community_post_kind: ["text", "image", "video", "mixed"],
+      community_reaction: ["like", "love", "haha", "wow", "sad", "angry"],
+      community_report_status: ["open", "reviewed", "dismissed"],
       friendship_status: ["pending", "accepted", "blocked"],
       message_type: ["text", "image", "voice", "system"],
       room_log_event: [
