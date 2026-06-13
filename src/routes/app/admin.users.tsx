@@ -207,6 +207,14 @@ function AdminUsers() {
                     className="flex flex-col items-center gap-0.5 rounded-lg border border-destructive/40 p-2 text-[10px] text-destructive disabled:opacity-50">
                     <Trash2 className="h-4 w-4" /> حذف
                   </button>
+                  <button onClick={() => revealPassword(u)} disabled={busy === u.id}
+                    className="flex flex-col items-center gap-0.5 rounded-lg border border-border p-2 text-[10px] text-sky-600 disabled:opacity-50 col-span-2">
+                    <Eye className="h-4 w-4" /> كشف كلمة المرور
+                  </button>
+                  <button onClick={() => changePassword(u)} disabled={busy === u.id}
+                    className="flex flex-col items-center gap-0.5 rounded-lg border border-border p-2 text-[10px] text-fuchsia-600 disabled:opacity-50 col-span-3">
+                    <KeyRound className="h-4 w-4" /> تغيير كلمة المرور
+                  </button>
                 </div>
               </div>
             );
