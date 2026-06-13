@@ -116,6 +116,7 @@ function LanguageSync() {
   useEffect(() => {
     registerAppServiceWorker();
     schedulePrewarm();
+    initCapacitorChrome();
   }, []);
   return null;
 }
