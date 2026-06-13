@@ -3,9 +3,10 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
-import { Send, Loader2, ArrowLeft, Users, Hash, Lock, Settings, Shield, Ban, UserMinus, ArrowUp, ArrowDown, Crown, FileText, X, KeyRound, MoreVertical } from "lucide-react";
+import { Send, Loader2, ArrowLeft, Users, Hash, Lock, Settings, Shield, Ban, UserMinus, ArrowUp, ArrowDown, Crown, FileText, X, KeyRound, MoreVertical, Megaphone } from "lucide-react";
 import { MusicPlayer } from "@/components/MusicPlayer";
 import { BroadcastCard } from "@/components/BroadcastCard";
+import { SharePostModal, SharedPostCard } from "@/components/SharePostModal";
 
 type Rank = "owner" | "admin" | "member";
 
@@ -27,6 +28,7 @@ function RoomPage() {
   const [myRank, setMyRank] = useState<Rank | null>(null);
   const [memberCount, setMemberCount] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
+  const [showShare, setShowShare] = useState(false);
   const [askPassword, setAskPassword] = useState(false);
   const [joinPw, setJoinPw] = useState("");
   const [joining, setJoining] = useState(false);
@@ -209,6 +211,9 @@ function RoomPage() {
                   />
                 );
               }
+              if (meta?.kind === "user_share") {
+                return <SharedPostCard key={msg.id} meta={meta} />;
+              }
               return (
                 <div key={msg.id} className="flex justify-center">
                   <div className="rounded-full bg-muted/50 px-3 py-1 text-xs text-muted-foreground" suppressHydrationWarning>
@@ -238,6 +243,11 @@ function RoomPage() {
 
       <form onSubmit={sendMessage} className="border-t border-border bg-background p-4">
         <div className="flex gap-2">
+          <button type="button" onClick={() => setShowShare(true)} disabled={!isMember}
+            title="نشر منشور في كل الغرف"
+            className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 disabled:opacity-50 hover:bg-emerald-500/20 transition">
+            <Megaphone className="h-5 w-5" />
+          </button>
           <input value={text} onChange={(e) => setText(e.target.value)}
             placeholder={isMember ? "اكتب رسالة..." : "يجب الانضمام إلى الغرفة أولاً"} disabled={!isMember}
             className="flex-1 h-11 rounded-xl border border-input bg-background px-4 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary disabled:opacity-50 transition" />
@@ -247,6 +257,9 @@ function RoomPage() {
           </button>
         </div>
       </form>
+
+      {showShare && <SharePostModal roomId={roomId} onClose={() => setShowShare(false)} />}
+
 
       {askPassword && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setAskPassword(false)}>
