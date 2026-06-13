@@ -22,7 +22,18 @@ type Profile = {
   hide_last_seen: boolean;
   dm_locked: boolean;
   last_seen_at: string | null;
+  profile_views: number;
 };
+
+function getUserLevel(points: number) {
+  if (points >= 100000) return { label: "أسطورة", color: "#9333EA" };
+  if (points >= 50000)  return { label: "خبير", color: "#2563EB" };
+  if (points >= 25000)  return { label: "محترف", color: "#0891B2" };
+  if (points >= 10000)  return { label: "شخصية مهمة", color: "#DC2626" };
+  if (points >= 5000)   return { label: "نشيط", color: "#16A34A" };
+  if (points >= 1000)   return { label: "متقدم", color: "#CA8A04" };
+  return { label: "مبتدئ", color: "#6B7280" };
+}
 
 function OtherProfilePage() {
   const { id: otherId } = Route.useParams();
