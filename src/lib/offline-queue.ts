@@ -45,12 +45,16 @@ async function writeQueue(items: QueuedMessage[]): Promise<void> {
   }
 }
 
-export async function enqueueMessage(msg: Omit<QueuedMessage, "id" | "createdAt">): Promise<QueuedMessage> {
-  const full: QueuedMessage = {
-    ...msg,
+export type QueueInput =
+  | { kind: "dm"; sender_id: string; receiver_id: string; content: string }
+  | { kind: "room"; room_id: string; user_id: string; content: string };
+
+export async function enqueueMessage(msg: QueueInput): Promise<QueuedMessage> {
+  const base = {
     id: `q_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
     createdAt: Date.now(),
-  } as QueuedMessage;
+  };
+  const full = { ...msg, ...base } as QueuedMessage;
   const q = await readQueue();
   q.push(full);
   await writeQueue(q);
