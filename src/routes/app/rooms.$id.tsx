@@ -80,7 +80,7 @@ function RoomPage() {
       room_id: roomId,
       user_id: user.id,
       username: user.user_metadata?.username || "مستخدم",
-    });
+    } as never);
 
     if (error) {
       toast.error("فشل الانضمام إلى الغرفة");
