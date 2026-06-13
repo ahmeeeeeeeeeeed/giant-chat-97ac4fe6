@@ -98,7 +98,8 @@ function Welcome() {
           </div>
 
           <Link
-            to="/signup"
+            to="/login"
+            search={{ mode: "signup" } as never}
             className="flex h-14 w-full items-center justify-center gap-2 rounded-full bg-white/10 px-6 text-base font-bold text-white backdrop-blur-sm ring-1 ring-white/40 transition active:scale-95 hover:bg-white/15"
           >
             إنشاء حساب جديد
