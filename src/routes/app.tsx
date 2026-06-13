@@ -8,6 +8,7 @@ import { findAdminId } from "@/lib/find-admin";
 import { toast } from "sonner";
 import { OnlineStatusBanner } from "@/components/OnlineStatusBanner";
 import { scheduleDataPrewarm } from "@/lib/data-prewarm";
+import giantLogo from "@/assets/giant-logo.png.asset.json";
 
 export const Route = createFileRoute("/app")({
   component: AppLayout,
@@ -85,8 +86,8 @@ function AppLayout() {
                   <ArrowRight className="h-[18px] w-[18px]" />
                 </button>
               ) : (
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/95 text-emerald-700 shadow-md shadow-emerald-900/30 ring-1 ring-white/40">
-                  <span className="text-base font-black tracking-tight">G</span>
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white shadow-md shadow-emerald-900/30 ring-1 ring-white/40">
+                  <img src={giantLogo.url} alt="Giant" className="h-full w-full object-cover" />
                 </div>
               )}
               <div className="min-w-0">
