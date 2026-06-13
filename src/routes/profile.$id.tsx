@@ -44,6 +44,7 @@ function OtherProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const [isBlocked, setIsBlocked] = useState(false);
   const [isBlockedBy, setIsBlockedBy] = useState(false);
+  const [equipped, setEquipped] = useState<EquippedSet>({});
 
   // للتصحيح: طباعة الـ ID
   console.log("OtherProfilePage - otherId:", otherId);
