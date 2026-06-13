@@ -9,6 +9,9 @@ import {
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { tryParseTrackDM, TrackDMPlayer } from "@/components/TrackDMPlayer";
+import { cacheGet, cacheSet, cacheKeys } from "@/lib/offline-cache";
+import { enqueueMessage } from "@/lib/offline-queue";
+import { getOnline } from "@/lib/use-online";
 
 export const Route = createFileRoute("/app/chats/$id")({
   component: DMPage,
