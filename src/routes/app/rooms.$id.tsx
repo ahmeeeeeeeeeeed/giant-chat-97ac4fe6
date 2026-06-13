@@ -98,7 +98,7 @@ function RoomPage() {
       .from("room_members")
       .delete()
       .eq("room_id", roomId)
-      .eq("user_id", user?.id);
+      .eq("user_id", user!.id);
 
     if (error) {
       toast.error("فشل مغادرة الغرفة");
