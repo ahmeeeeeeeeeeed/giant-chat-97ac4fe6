@@ -105,10 +105,6 @@ function LanguageSync() {
   useEffect(() => {
     applyLanguageDir(i18n.language);
     const onChange = (lng: string) => applyLanguageDir(lng);
-function LanguageSync() {
-  useEffect(() => {
-    applyLanguageDir(i18n.language);
-    const onChange = (lng: string) => applyLanguageDir(lng);
     i18n.on("languageChanged", onChange);
     return () => { i18n.off("languageChanged", onChange); };
   }, []);
