@@ -86,7 +86,7 @@ function AppLayout() {
                   <ArrowRight className="h-[18px] w-[18px]" />
                 </button>
               ) : (
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white shadow-md shadow-emerald-900/30 ring-1 ring-white/40">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white shadow-md shadow-emerald-900/30 ring-1 ring-white/40">
                   <img src={giantLogo.url} alt="Giant" className="h-full w-full object-cover" />
                 </div>
               )}
