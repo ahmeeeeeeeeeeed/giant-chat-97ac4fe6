@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 import { Send, Loader2, ArrowLeft, Users, Hash, Lock, Settings, Shield, Ban, UserMinus, ArrowUp, ArrowDown, Crown, FileText, X, KeyRound, MoreVertical } from "lucide-react";
+import { MusicPlayer } from "@/components/MusicPlayer";
+import { BroadcastCard } from "@/components/BroadcastCard";
 
 type Rank = "owner" | "admin" | "member";
 
