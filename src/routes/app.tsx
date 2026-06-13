@@ -6,6 +6,7 @@ import { useIsAdmin, useUnreadDMCount } from "@/lib/use-admin";
 import { Home, MessageSquare, User, Settings, Users as UsersIcon, Gamepad2, Bell, Shield, Flag, ArrowRight, Newspaper } from "lucide-react";
 import { findAdminId } from "@/lib/find-admin";
 import { toast } from "sonner";
+import { OnlineStatusBanner } from "@/components/OnlineStatusBanner";
 
 export const Route = createFileRoute("/app")({
   component: AppLayout,
@@ -55,6 +56,7 @@ function AppLayout() {
 
   return (
     <div className={`flex min-h-screen flex-col ${hideChrome ? "" : "pb-[72px]"}`}>
+      <OnlineStatusBanner />
       {/* Persistent floating Complaints button — shows everywhere inside the app */}
       <button
         onClick={openComplaints}

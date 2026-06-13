@@ -9,6 +9,7 @@ import { useTranslation } from "react-i18next";
 import { getEquipped, type EquippedSet } from "@/lib/equipped";
 import { BadgeChip } from "@/routes/app/store";
 import { requestEmailVerification, confirmEmailVerification } from "@/lib/recovery.functions";
+import { cacheGet, cacheSet, cacheKeys } from "@/lib/offline-cache";
 
 export const Route = createFileRoute("/app/my_profile")({
   component: ProfilePage,
@@ -57,26 +58,50 @@ function ProfilePage() {
   useEffect(() => {
     if (!user) return;
     (async () => {
-      const { data } = await supabase
-        .from("profiles")
-        .select("username, bio, avatar_url, points, gender, country, hide_last_seen, dm_locked, profile_views")
-        .eq("id", user.id).maybeSingle();
-      if (data) {
-        setUsername(data.username);
-        setBio(data.bio ?? "");
-        setAvatarUrl(data.avatar_url);
-        setPoints(data.points ?? 0);
-        setGender((data.gender as "male" | "female" | null) ?? null);
-        setCountry(data.country ?? "");
-        setHideLastSeen(!!data.hide_last_seen);
-        setDmLocked(!!data.dm_locked);
-        setProfileViews(data.profile_views ?? 0);
+      type CachedProfile = {
+        username: string; bio: string | null; avatar_url: string | null;
+        points: number | null; gender: "male" | "female" | null; country: string | null;
+        hide_last_seen: boolean | null; dm_locked: boolean | null; profile_views: number | null;
+      };
+      const cached = await cacheGet<CachedProfile>(cacheKeys.profile(user.id));
+      if (cached) {
+        setUsername(cached.username);
+        setBio(cached.bio ?? "");
+        setAvatarUrl(cached.avatar_url);
+        setPoints(cached.points ?? 0);
+        setGender(cached.gender ?? null);
+        setCountry(cached.country ?? "");
+        setHideLastSeen(!!cached.hide_last_seen);
+        setDmLocked(!!cached.dm_locked);
+        setProfileViews(cached.profile_views ?? 0);
+        setLoading(false);
       }
-      const { data: rec } = await supabase.rpc("get_my_recovery_status" as never);
-      const row = Array.isArray(rec) ? rec[0] : rec;
-      if (row) {
-        setRecoveryEmail((row as { recovery_email?: string | null }).recovery_email ?? "");
-        setEmailVerifiedAt((row as { recovery_email_verified_at?: string | null }).recovery_email_verified_at ?? null);
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("username, bio, avatar_url, points, gender, country, hide_last_seen, dm_locked, profile_views")
+          .eq("id", user.id).maybeSingle();
+        if (error) throw error;
+        if (data) {
+          setUsername(data.username);
+          setBio(data.bio ?? "");
+          setAvatarUrl(data.avatar_url);
+          setPoints(data.points ?? 0);
+          setGender((data.gender as "male" | "female" | null) ?? null);
+          setCountry(data.country ?? "");
+          setHideLastSeen(!!data.hide_last_seen);
+          setDmLocked(!!data.dm_locked);
+          setProfileViews(data.profile_views ?? 0);
+          await cacheSet(cacheKeys.profile(user.id), data as CachedProfile);
+        }
+        const { data: rec } = await supabase.rpc("get_my_recovery_status" as never);
+        const row = Array.isArray(rec) ? rec[0] : rec;
+        if (row) {
+          setRecoveryEmail((row as { recovery_email?: string | null }).recovery_email ?? "");
+          setEmailVerifiedAt((row as { recovery_email_verified_at?: string | null }).recovery_email_verified_at ?? null);
+        }
+      } catch {
+        // offline — keep cached values
       }
       setLoading(false);
     })();

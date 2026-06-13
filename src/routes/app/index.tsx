@@ -5,6 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { Plus, Users, Hash, Loader2, X, Search } from "lucide-react";
 import { toast } from "sonner";
+import { cacheGet, cacheSet, cacheKeys } from "@/lib/offline-cache";
+
 
 export const Route = createFileRoute("/app/")({
   component: RoomsPage,
@@ -37,42 +39,47 @@ function RoomsPage() {
 
   const load = async () => {
     if (!user) return;
-    
-    setLoading(true);
+
     setError(null);
-    
+
+    // Seed from cache for instant offline render
+    const cached = await cacheGet<Room[]>(cacheKeys.roomsList());
+    if (cached) {
+      setRooms(cached);
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
+
     try {
       const { data: roomsData, error: roomsError } = await supabase
         .from("rooms")
         .select("id, name, description, owner_id")
         .order("created_at", { ascending: false });
-      
-      if (roomsError) {
-        setError(roomsError.message);
-        setLoading(false);
-        return;
-      }
-      
+
+      if (roomsError) throw roomsError;
+
       const { data: counts } = await supabase
         .from("room_members")
         .select("room_id");
-      
+
       const map = new Map<string, number>();
       counts?.forEach((m) => map.set(m.room_id, (map.get(m.room_id) ?? 0) + 1));
-      
-      const roomsWithCount = (roomsData ?? []).map((r) => ({ 
-        ...r, 
-        member_count: map.get(r.id) ?? 0 
+
+      const roomsWithCount = (roomsData ?? []).map((r) => ({
+        ...r,
+        member_count: map.get(r.id) ?? 0,
       }));
-      
+
       setRooms(roomsWithCount);
-      
+      await cacheSet(cacheKeys.roomsList(), roomsWithCount);
     } catch (err) {
-      setError("حدث خطأ في تحميل الغرف");
+      if (!cached) setError("تعذر الاتصال بالخادم — يتم العمل بدون إنترنت");
     }
-    
+
     setLoading(false);
   };
+
 
   useEffect(() => {
     if (user) {
