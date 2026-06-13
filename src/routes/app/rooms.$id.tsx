@@ -326,7 +326,6 @@ function SettingsSheet({ roomId, canModerate, myRank, ownerId, onClose, ensurePr
             <ul className="space-y-2">
               {members.map((m) => {
                 const p = userMap[m.user_id];
-                const isSelf = false; // we hide self-actions via canModerate check
                 return (
                   <li key={m.user_id} className="flex items-center gap-3 rounded-xl bg-background p-3">
                     <div className="h-10 w-10 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-bold overflow-hidden">
@@ -338,20 +337,16 @@ function SettingsSheet({ roomId, canModerate, myRank, ownerId, onClose, ensurePr
                         {rankBadge(m.rank)}
                       </div>
                     </div>
-                    {canModerate && m.user_id !== ownerId && !isSelf && (
-                      <div className="flex gap-1">
-                        {myRank === "owner" && m.rank === "member" && (
-                          <button onClick={() => promote(m.user_id)} className="rounded-lg p-2 hover:bg-blue-500/10 text-blue-500" title="ترقية"><ArrowUp className="h-4 w-4" /></button>
-                        )}
-                        {myRank === "owner" && m.rank === "admin" && (
-                          <button onClick={() => demote(m.user_id)} className="rounded-lg p-2 hover:bg-orange-500/10 text-orange-500" title="تخفيض"><ArrowDown className="h-4 w-4" /></button>
-                        )}
-                        {myRank === "owner" && m.rank !== "owner" && (
-                          <button onClick={() => transfer(m.user_id)} className="rounded-lg p-2 hover:bg-amber-500/10 text-amber-500" title="نقل ملكية"><Crown className="h-4 w-4" /></button>
-                        )}
-                        <button onClick={() => kick(m.user_id)} className="rounded-lg p-2 hover:bg-orange-500/10 text-orange-500" title="طرد"><UserMinus className="h-4 w-4" /></button>
-                        <button onClick={() => ban(m.user_id)} className="rounded-lg p-2 hover:bg-red-500/10 text-red-500" title="حظر"><Ban className="h-4 w-4" /></button>
-                      </div>
+                    {canModerate && m.user_id !== ownerId && (
+                      <MemberMenu
+                        canOwner={myRank === "owner"}
+                        rank={m.rank}
+                        onPromote={() => promote(m.user_id)}
+                        onDemote={() => demote(m.user_id)}
+                        onTransfer={() => transfer(m.user_id)}
+                        onKick={() => kick(m.user_id)}
+                        onBan={() => ban(m.user_id)}
+                      />
                     )}
                   </li>
                 );
