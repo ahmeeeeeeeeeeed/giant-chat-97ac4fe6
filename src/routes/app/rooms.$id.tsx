@@ -282,22 +282,22 @@ function SettingsSheet({ roomId, canModerate, myRank, ownerId, onClose, ensurePr
 
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [tab]);
 
-  const act = async (fn: () => Promise<{ error: any }>, okMsg: string) => {
-    const { error } = await fn();
+  const act = async (p: any, okMsg: string) => {
+    const { error } = await p;
     if (error) toast.error(error.message); else { toast.success(okMsg); load(); }
   };
 
-  const kick = (uid: string) => act(() => supabase.rpc("kick_room_member", { _room: roomId, _user: uid }), "تم الطرد");
+  const kick = (uid: string) => act(supabase.rpc("kick_room_member", { _room: roomId, _user: uid }), "تم الطرد");
   const ban = (uid: string) => {
-    const reason = prompt("سبب الحظر (اختياري)") ?? null;
-    return act(() => supabase.rpc("ban_room_member", { _room: roomId, _user: uid, _reason: reason }), "تم الحظر");
+    const reason = prompt("سبب الحظر (اختياري)") ?? "";
+    return act(supabase.rpc("ban_room_member", { _room: roomId, _user: uid, _reason: reason }), "تم الحظر");
   };
-  const unban = (uid: string) => act(() => supabase.rpc("unban_room_member", { _room: roomId, _user: uid }), "تم إلغاء الحظر");
-  const promote = (uid: string) => act(() => supabase.rpc("set_member_rank", { _room: roomId, _user: uid, _new_rank: "admin" }), "تمت الترقية");
-  const demote = (uid: string) => act(() => supabase.rpc("set_member_rank", { _room: roomId, _user: uid, _new_rank: "member" }), "تم التخفيض");
+  const unban = (uid: string) => act(supabase.rpc("unban_room_member", { _room: roomId, _user: uid }), "تم إلغاء الحظر");
+  const promote = (uid: string) => act(supabase.rpc("set_member_rank", { _room: roomId, _user: uid, _new_rank: "admin" }), "تمت الترقية");
+  const demote = (uid: string) => act(supabase.rpc("set_member_rank", { _room: roomId, _user: uid, _new_rank: "member" }), "تم التخفيض");
   const transfer = (uid: string) => {
-    if (!confirm("نقل ملكية الغرفة إلى هذا المستخدم؟")) return Promise.resolve();
-    return act(() => supabase.rpc("transfer_room_ownership", { _room: roomId, _new_owner: uid }), "تم نقل الملكية");
+    if (!confirm("نقل ملكية الغرفة إلى هذا المستخدم؟")) return;
+    return act(supabase.rpc("transfer_room_ownership", { _room: roomId, _new_owner: uid }), "تم نقل الملكية");
   };
 
   const rankBadge = (r: string) => r === "owner" ? <span className="text-[10px] rounded bg-amber-500/20 text-amber-600 px-1.5 py-0.5 font-bold">مالك</span>
