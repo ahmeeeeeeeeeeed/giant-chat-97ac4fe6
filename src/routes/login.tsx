@@ -27,10 +27,10 @@ function LoginPage() {
   };
 
   return (
-    <main className="relative flex min-h-dvh flex-col overflow-hidden bg-gradient-to-b from-background via-background to-primary/5 px-6 py-8">
+    <main className="relative flex min-h-dvh flex-col overflow-hidden bg-background px-6 py-8 text-foreground">
       {/* Decorative blobs */}
       <div className="pointer-events-none absolute -top-20 -end-20 h-72 w-72 rounded-full bg-primary/30 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-24 -start-20 h-80 w-80 rounded-full bg-fuchsia-500/20 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-24 -start-20 h-80 w-80 rounded-full bg-accent/40 blur-3xl" />
 
       <Link to="/" className="relative z-10 self-start text-muted-foreground transition hover:text-foreground">
         <ArrowRight className="h-6 w-6 rtl:rotate-180" />
@@ -41,19 +41,22 @@ function LoginPage() {
         <div className="relative">
           <div className="absolute inset-0 animate-pulse rounded-3xl bg-primary/40 blur-2xl" />
           <div
-            className="relative flex h-24 w-24 items-center justify-center rounded-3xl bg-gradient-to-br from-primary via-fuchsia-500 to-amber-400 shadow-2xl ring-4 ring-background"
+            className="relative flex h-24 w-24 items-center justify-center rounded-3xl bg-gradient-to-br from-primary via-primary to-success shadow-2xl ring-4 ring-card"
             style={{ animation: "logo-float 3s ease-in-out infinite alternate" }}
           >
-            <span className="text-3xl font-black text-white drop-shadow-md">B</span>
-            <Sparkles className="absolute -top-2 -end-2 h-5 w-5 animate-pulse text-amber-300" />
+            <span className="text-3xl font-black text-primary-foreground drop-shadow-md">G</span>
+            <Sparkles className="absolute -top-2 -end-2 h-5 w-5 animate-pulse text-primary" />
           </div>
         </div>
 
-        <h1 className="mt-5 text-4xl font-black tracking-tight">BIMO</h1>
+        <h1 className="mt-5 bg-gradient-to-b from-foreground to-primary bg-clip-text text-4xl font-black tracking-tight text-transparent">
+          Giant
+        </h1>
         <p className="mt-2 text-sm text-muted-foreground">
           مرحباً بعودتك ✨ دردش، شارك، والعب — كل شيء في مكان واحد
         </p>
       </div>
+
 
       <form onSubmit={submit} className="relative z-10 mt-10 flex flex-col gap-3">
         <label className="flex flex-col gap-2">
@@ -100,10 +103,11 @@ function LoginPage() {
         <button
           type="submit"
           disabled={loading}
-          className="mt-3 flex h-12 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-primary to-fuchsia-500 text-base font-bold text-primary-foreground shadow-lg shadow-primary/30 transition active:scale-[0.98] disabled:opacity-60"
+          className="mt-3 flex h-12 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-primary to-success text-base font-bold text-primary-foreground shadow-lg shadow-primary/30 transition active:scale-[0.98] disabled:opacity-60"
         >
           {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : t("auth.login")}
         </button>
+
       </form>
 
       <p className="relative z-10 mt-auto pt-8 text-center text-sm text-muted-foreground">
