@@ -32,6 +32,44 @@ export type Database = {
         }
         Relationships: []
       }
+      bot_subagents: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          owner_id: string
+          password: string
+          room_id: string
+          silent: boolean
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          owner_id: string
+          password: string
+          room_id: string
+          silent?: boolean
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          owner_id?: string
+          password?: string
+          room_id?: string
+          silent?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bot_subagents_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       community_comments: {
         Row: {
           author_id: string
@@ -501,6 +539,7 @@ export type Database = {
           hide_last_seen: boolean
           id: string
           is_banned: boolean
+          is_bot: boolean
           last_seen_at: string
           points: number
           profile_views: number
@@ -521,6 +560,7 @@ export type Database = {
           hide_last_seen?: boolean
           id: string
           is_banned?: boolean
+          is_bot?: boolean
           last_seen_at?: string
           points?: number
           profile_views?: number
@@ -541,6 +581,7 @@ export type Database = {
           hide_last_seen?: boolean
           id?: string
           is_banned?: boolean
+          is_bot?: boolean
           last_seen_at?: string
           points?: number
           profile_views?: number
@@ -955,6 +996,7 @@ export type Database = {
       game_join: { Args: never; Returns: Json }
       game_maybe_end: { Args: { _rid: string }; Returns: undefined }
       game_tick: { Args: never; Returns: undefined }
+      get_bot_id: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
