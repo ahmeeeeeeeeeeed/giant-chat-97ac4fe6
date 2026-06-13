@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/lib/auth";
 import { useIsAdmin, useUnreadDMCount } from "@/lib/use-admin";
-import { Home, MessageSquare, User, Settings, Users as UsersIcon, Gamepad2, Bell, Shield, Flag, ArrowRight } from "lucide-react";
+import { Home, MessageSquare, User, Settings, Users as UsersIcon, Gamepad2, Bell, Shield, Flag, ArrowRight, Newspaper } from "lucide-react";
 import { findAdminId } from "@/lib/find-admin";
 import { toast } from "sonner";
 
@@ -21,6 +21,7 @@ function AppLayout() {
 
   const tabs = [
     { to: "/app", label: t("nav.rooms"), icon: Home, exact: true },
+    { to: "/app/community", label: "المجتمع", icon: Newspaper, exact: false },
     { to: "/app/friends", label: t("nav.friends"), icon: UsersIcon, exact: false },
     { to: "/app/games", label: t("nav.games"), icon: Gamepad2, exact: false },
     { to: "/app/chats", label: t("nav.chats"), icon: MessageSquare, exact: false },
@@ -42,7 +43,7 @@ function AppLayout() {
 
   const path = location.pathname;
   const hideChrome = /\/app\/rooms\/[^/]+/.test(path) || /\/app\/chats\/[^/]+/.test(path);
-  const tabRoots = new Set(["/app", "/app/friends", "/app/games", "/app/chats", "/app/my_profile", "/app/settings"]);
+  const tabRoots = new Set(["/app", "/app/community", "/app/friends", "/app/games", "/app/chats", "/app/my_profile", "/app/settings"]);
   const showBack = !hideChrome && !tabRoots.has(path);
   const router = useRouter();
 
