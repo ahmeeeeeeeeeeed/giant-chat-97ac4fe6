@@ -111,7 +111,7 @@ export function MusicPlayer({ roomId }: { roomId: string }) {
   const publish = async (track: NonNullable<RoomMusic["current"]>) => {
     setPublishing(true);
     try {
-      const { error } = await supabase.rpc("music_broadcast_publish", { _track: track as never });
+      const { error } = await supabase.rpc("music_broadcast_publish", { _track: track as never, _source_room: roomId } as never);
       if (error) throw error;
       toast.success("تم نشر الأغنية في كل الغرف");
     } catch (err) {

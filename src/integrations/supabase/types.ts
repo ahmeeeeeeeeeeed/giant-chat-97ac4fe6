@@ -801,7 +801,9 @@ export type Database = {
         Returns: undefined
       }
       music_advance_if_ended: { Args: { _room: string }; Returns: undefined }
-      music_broadcast_publish: { Args: { _track: Json }; Returns: string }
+      music_broadcast_publish:
+        | { Args: { _track: Json }; Returns: string }
+        | { Args: { _source_room?: string; _track: Json }; Returns: string }
       music_broadcast_react: {
         Args: { _bid: string; _emoji: string }
         Returns: undefined
