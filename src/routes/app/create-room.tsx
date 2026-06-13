@@ -45,7 +45,7 @@ function CreateRoomPage() {
         max_members: maxMembers,
         owner_id: user!.id,
         is_active: true,
-      })
+      } as never)
       .select()
       .single();
 
