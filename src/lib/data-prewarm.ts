@@ -5,7 +5,7 @@
 // can render those pages without a network round trip — even pages the user
 // has never visited.
 import { supabase } from "@/integrations/supabase/client";
-import { cacheGet, cacheSet, cacheKeys } from "./offline-cache";
+import { cacheSet, cacheKeys } from "./offline-cache";
 import { getOnline } from "./use-online";
 
 const THROTTLE_HOURS = 12;
