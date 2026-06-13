@@ -76,7 +76,7 @@ function AdminUsers() {
   const toggleBan = (u: AdminUser) => {
     if (u.id === user?.id) { toast.error("لا يمكنك حظر نفسك"); return; }
     const reason = u.is_banned ? null : (prompt("سبب الحظر (اختياري):") ?? "");
-    wrap(u.id, () => supabase.rpc("admin_set_banned", { _target: u.id, _banned: !u.is_banned, _reason: reason }));
+    wrap(u.id, () => supabase.rpc("admin_set_banned", { _target: u.id, _banned: !u.is_banned, _reason: reason ?? undefined }));
   };
 
   const toggleAdmin = (u: AdminUser) => {
