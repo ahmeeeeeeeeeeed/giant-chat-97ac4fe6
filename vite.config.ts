@@ -34,18 +34,25 @@ export default defineConfig({
           ],
         },
         workbox: {
-          navigateFallback: "/",
-          navigateFallbackDenylist: [/^\/~oauth/, /^\/api\//],
+          cleanupOutdatedCaches: true,
+          clientsClaim: true,
+          skipWaiting: true,
+          navigateFallback: "/offline",
+          navigateFallbackDenylist: [/^\/~oauth/, /^\/api\//, /^\/assets\//],
           globPatterns: ["**/*.{js,css,html,ico,png,svg,webp,jpg,jpeg,woff,woff2,ttf,otf}"],
           maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
           runtimeCaching: [
             {
+              // Cache every visited page. When offline, return the exact cached
+              // page the user last visited instead of falling back to /offline.
               urlPattern: ({ request }) => request.mode === "navigate",
               handler: "NetworkFirst",
               options: {
                 cacheName: "giant-pages",
                 networkTimeoutSeconds: 4,
-                expiration: { maxEntries: 60, maxAgeSeconds: 60 * 60 * 24 * 7 },
+                expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 * 30 },
+                matchOptions: { ignoreSearch: false },
+                plugins: [],
               },
             },
             {
