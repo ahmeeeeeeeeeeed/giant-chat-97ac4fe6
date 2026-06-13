@@ -61,17 +61,17 @@ function AppLayout() {
         <Flag className="h-5 w-5" />
       </button>
       {!hideChrome && (
-        <div className="sticky top-0 z-50 flex items-center justify-between border-b border-border bg-background/95 px-4 py-2 backdrop-blur">
+        <div className="sticky top-0 z-50 flex items-center justify-between border-b border-emerald-700/40 bg-gradient-to-r from-emerald-600 to-green-600 text-white px-4 py-2 shadow-md">
           <div className="text-sm font-extrabold tracking-tight">Giant</div>
           <div className="flex items-center gap-2">
             {isAdmin && (
               <Link to="/app/admin" aria-label={t("admin.title")}
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card">
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 hover:bg-white/25 transition">
                 <Shield className="h-5 w-5" />
               </Link>
             )}
             <Link to="/app/notifications" aria-label={t("notif.title")}
-              className="relative flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card">
+              className="relative flex h-9 w-9 items-center justify-center rounded-full bg-white/15 hover:bg-white/25 transition">
               <Bell className="h-5 w-5" />
               {unread > 0 && (
                 <span className="absolute -end-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
@@ -85,7 +85,7 @@ function AppLayout() {
       <Outlet />
       {!hideChrome && (
         <nav className="fixed inset-x-0 bottom-0 z-40 px-3 pb-3 pt-2">
-          <ul className="glass-tab mx-auto flex max-w-md items-stretch justify-around rounded-3xl px-1.5 py-1.5">
+          <ul className="mx-auto flex max-w-md items-stretch justify-around rounded-3xl bg-gradient-to-r from-emerald-600 to-green-600 px-1.5 py-1.5 shadow-2xl shadow-emerald-900/30 ring-1 ring-white/10">
             {tabs.map(({ to, label, icon: Icon, exact }) => {
               const active = exact ? path === to : path.startsWith(to);
               return (
@@ -93,7 +93,7 @@ function AppLayout() {
                   <Link
                     to={to}
                     className={`relative flex flex-col items-center gap-0.5 rounded-2xl py-2 text-[10px] font-semibold transition ${
-                      active ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30" : "text-muted-foreground"
+                      active ? "bg-white text-emerald-700 shadow-lg" : "text-white/90 hover:bg-white/10"
                     }`}
                   >
                     <Icon className="h-5 w-5" strokeWidth={active ? 2.5 : 2} />
