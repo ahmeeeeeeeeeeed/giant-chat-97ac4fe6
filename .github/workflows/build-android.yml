@@ -47,6 +47,9 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
+      - name: Patch AndroidManifest permissions
+        run: node scripts/patch-android-permissions.mjs
+
       - name: Grant gradlew permission
         run: chmod +x android/gradlew
 
