@@ -22,8 +22,10 @@ import { Route as AppMy_profileRouteImport } from './routes/app/my_profile'
 import { Route as AppGamesRouteImport } from './routes/app/games'
 import { Route as AppFriendsRouteImport } from './routes/app/friends'
 import { Route as AppCreateRoomRouteImport } from './routes/app/create-room'
+import { Route as AppAdminRouteImport } from './routes/app/admin'
 import { Route as AppAccountRouteImport } from './routes/app/account'
 import { Route as AppChatsIndexRouteImport } from './routes/app/chats.index'
+import { Route as AppAdminIndexRouteImport } from './routes/app/admin.index'
 import { Route as AppRoomsIdRouteImport } from './routes/app/rooms.$id'
 import { Route as AppProfileIdRouteImport } from './routes/app/profile.$id'
 import { Route as AppChatsIdRouteImport } from './routes/app/chats.$id'
@@ -93,6 +95,11 @@ const AppCreateRoomRoute = AppCreateRoomRouteImport.update({
   path: '/create-room',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAdminRoute = AppAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAccountRoute = AppAccountRouteImport.update({
   id: '/account',
   path: '/account',
@@ -102,6 +109,11 @@ const AppChatsIndexRoute = AppChatsIndexRouteImport.update({
   id: '/chats/',
   path: '/chats/',
   getParentRoute: () => AppRoute,
+} as any)
+const AppAdminIndexRoute = AppAdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppAdminRoute,
 } as any)
 const AppRoomsIdRoute = AppRoomsIdRouteImport.update({
   id: '/rooms/$id',
@@ -125,6 +137,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/app/account': typeof AppAccountRoute
+  '/app/admin': typeof AppAdminRouteWithChildren
   '/app/create-room': typeof AppCreateRoomRoute
   '/app/friends': typeof AppFriendsRoute
   '/app/games': typeof AppGamesRoute
@@ -137,6 +150,7 @@ export interface FileRoutesByFullPath {
   '/app/chats/$id': typeof AppChatsIdRoute
   '/app/profile/$id': typeof AppProfileIdRoute
   '/app/rooms/$id': typeof AppRoomsIdRoute
+  '/app/admin/': typeof AppAdminIndexRoute
   '/app/chats/': typeof AppChatsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -156,6 +170,7 @@ export interface FileRoutesByTo {
   '/app/chats/$id': typeof AppChatsIdRoute
   '/app/profile/$id': typeof AppProfileIdRoute
   '/app/rooms/$id': typeof AppRoomsIdRoute
+  '/app/admin': typeof AppAdminIndexRoute
   '/app/chats': typeof AppChatsIndexRoute
 }
 export interface FileRoutesById {
@@ -165,6 +180,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/app/account': typeof AppAccountRoute
+  '/app/admin': typeof AppAdminRouteWithChildren
   '/app/create-room': typeof AppCreateRoomRoute
   '/app/friends': typeof AppFriendsRoute
   '/app/games': typeof AppGamesRoute
@@ -177,6 +193,7 @@ export interface FileRoutesById {
   '/app/chats/$id': typeof AppChatsIdRoute
   '/app/profile/$id': typeof AppProfileIdRoute
   '/app/rooms/$id': typeof AppRoomsIdRoute
+  '/app/admin/': typeof AppAdminIndexRoute
   '/app/chats/': typeof AppChatsIndexRoute
 }
 export interface FileRouteTypes {
@@ -187,6 +204,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/app/account'
+    | '/app/admin'
     | '/app/create-room'
     | '/app/friends'
     | '/app/games'
@@ -199,6 +217,7 @@ export interface FileRouteTypes {
     | '/app/chats/$id'
     | '/app/profile/$id'
     | '/app/rooms/$id'
+    | '/app/admin/'
     | '/app/chats/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -218,6 +237,7 @@ export interface FileRouteTypes {
     | '/app/chats/$id'
     | '/app/profile/$id'
     | '/app/rooms/$id'
+    | '/app/admin'
     | '/app/chats'
   id:
     | '__root__'
@@ -226,6 +246,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/app/account'
+    | '/app/admin'
     | '/app/create-room'
     | '/app/friends'
     | '/app/games'
@@ -238,6 +259,7 @@ export interface FileRouteTypes {
     | '/app/chats/$id'
     | '/app/profile/$id'
     | '/app/rooms/$id'
+    | '/app/admin/'
     | '/app/chats/'
   fileRoutesById: FileRoutesById
 }
@@ -342,6 +364,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCreateRoomRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/admin': {
+      id: '/app/admin'
+      path: '/admin'
+      fullPath: '/app/admin'
+      preLoaderRoute: typeof AppAdminRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/account': {
       id: '/app/account'
       path: '/account'
@@ -355,6 +384,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/chats/'
       preLoaderRoute: typeof AppChatsIndexRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/app/admin/': {
+      id: '/app/admin/'
+      path: '/'
+      fullPath: '/app/admin/'
+      preLoaderRoute: typeof AppAdminIndexRouteImport
+      parentRoute: typeof AppAdminRoute
     }
     '/app/rooms/$id': {
       id: '/app/rooms/$id'
@@ -380,8 +416,21 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AppAdminRouteChildren {
+  AppAdminIndexRoute: typeof AppAdminIndexRoute
+}
+
+const AppAdminRouteChildren: AppAdminRouteChildren = {
+  AppAdminIndexRoute: AppAdminIndexRoute,
+}
+
+const AppAdminRouteWithChildren = AppAdminRoute._addFileChildren(
+  AppAdminRouteChildren,
+)
+
 interface AppRouteChildren {
   AppAccountRoute: typeof AppAccountRoute
+  AppAdminRoute: typeof AppAdminRouteWithChildren
   AppCreateRoomRoute: typeof AppCreateRoomRoute
   AppFriendsRoute: typeof AppFriendsRoute
   AppGamesRoute: typeof AppGamesRoute
@@ -398,6 +447,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppAccountRoute: AppAccountRoute,
+  AppAdminRoute: AppAdminRouteWithChildren,
   AppCreateRoomRoute: AppCreateRoomRoute,
   AppFriendsRoute: AppFriendsRoute,
   AppGamesRoute: AppGamesRoute,
@@ -424,3 +474,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
