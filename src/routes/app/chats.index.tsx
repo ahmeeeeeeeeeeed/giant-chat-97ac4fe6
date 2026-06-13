@@ -9,7 +9,7 @@ export const Route = createFileRoute("/app/chats/")({
   component: ChatsPage,
 });
 
-type Convo = { otherId: string; username: string; avatar_url: string | null; last: string; created_at: string };
+type Convo = { otherId: string; username: string; avatar_url: string | null; last: string; created_at: string; unread: number };
 type SearchProfile = { id: string; username: string; avatar_url: string | null };
 
 function ChatsPage() {
@@ -27,14 +27,20 @@ function ChatsPage() {
     setLoading(true);
     const { data } = await supabase
       .from("direct_messages")
-      .select("sender_id, receiver_id, content, created_at")
+      .select("sender_id, receiver_id, content, created_at, read_at")
       .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
       .order("created_at", { ascending: false })
       .limit(300);
-    const map = new Map<string, { last: string; created_at: string }>();
+    const map = new Map<string, { last: string; created_at: string; unread: number }>();
     (data ?? []).forEach(m => {
       const otherId = m.sender_id === user.id ? m.receiver_id : m.sender_id;
-      if (!map.has(otherId)) map.set(otherId, { last: m.content, created_at: m.created_at });
+      const existing = map.get(otherId);
+      const isUnreadForMe = m.receiver_id === user.id && !m.read_at;
+      if (!existing) {
+        map.set(otherId, { last: m.content, created_at: m.created_at, unread: isUnreadForMe ? 1 : 0 });
+      } else if (isUnreadForMe) {
+        existing.unread += 1;
+      }
     });
     const ids = Array.from(map.keys());
     if (ids.length === 0) { setConvos([]); setLoading(false); return; }
@@ -42,7 +48,7 @@ function ChatsPage() {
     const out: Convo[] = ids.map(id => {
       const p = profs?.find(x => x.id === id);
       const last = map.get(id)!;
-      return { otherId: id, username: p?.username ?? "?", avatar_url: p?.avatar_url ?? null, last: last.last, created_at: last.created_at };
+      return { otherId: id, username: p?.username ?? "?", avatar_url: p?.avatar_url ?? null, last: last.last, created_at: last.created_at, unread: last.unread };
     });
     setConvos(out);
     setLoading(false);
@@ -158,6 +164,11 @@ function ChatsPage() {
                     <div className="truncate font-semibold">{c.username}</div>
                     <div className="truncate text-sm text-muted-foreground">{c.last}</div>
                   </div>
+                  {c.unread > 0 && (
+                    <span className="flex h-6 min-w-[24px] items-center justify-center rounded-full bg-destructive px-2 text-[11px] font-bold text-destructive-foreground">
+                      {c.unread > 99 ? "99+" : c.unread}
+                    </span>
+                  )}
                 </Link>
               </li>
             ))}

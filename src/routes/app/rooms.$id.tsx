@@ -3,7 +3,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
-import { Send, Loader2, ArrowLeft, Users, Hash, Lock, Settings, Shield, Ban, UserMinus, ArrowUp, ArrowDown, Crown, FileText, X, KeyRound } from "lucide-react";
+import { Send, Loader2, ArrowLeft, Users, Hash, Lock, Settings, Shield, Ban, UserMinus, ArrowUp, ArrowDown, Crown, FileText, X, KeyRound, MoreVertical } from "lucide-react";
 
 type Rank = "owner" | "admin" | "member";
 
@@ -163,8 +163,8 @@ function RoomPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <button onClick={() => setShowSettings(true)} className="flex items-center gap-1 rounded-lg bg-secondary/50 px-2 py-1 text-xs hover:bg-secondary transition">
-            <Users className="h-3 w-3" /><span>{memberCount}</span>
+          <button onClick={() => setShowSettings(true)} className="flex items-center gap-1.5 rounded-lg bg-emerald-500/10 px-2.5 py-1.5 text-xs font-semibold text-emerald-600 hover:bg-emerald-500/20 transition">
+            <Users className="h-3.5 w-3.5" /><span>عرض الأعضاء ({memberCount})</span>
           </button>
           {isMember ? (
             <button onClick={leaveRoom} className="rounded-lg bg-red-500/10 px-3 py-1.5 text-sm font-medium text-red-500 hover:bg-red-500/20 transition">مغادرة</button>
@@ -326,7 +326,6 @@ function SettingsSheet({ roomId, canModerate, myRank, ownerId, onClose, ensurePr
             <ul className="space-y-2">
               {members.map((m) => {
                 const p = userMap[m.user_id];
-                const isSelf = false; // we hide self-actions via canModerate check
                 return (
                   <li key={m.user_id} className="flex items-center gap-3 rounded-xl bg-background p-3">
                     <div className="h-10 w-10 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-bold overflow-hidden">
@@ -338,20 +337,16 @@ function SettingsSheet({ roomId, canModerate, myRank, ownerId, onClose, ensurePr
                         {rankBadge(m.rank)}
                       </div>
                     </div>
-                    {canModerate && m.user_id !== ownerId && !isSelf && (
-                      <div className="flex gap-1">
-                        {myRank === "owner" && m.rank === "member" && (
-                          <button onClick={() => promote(m.user_id)} className="rounded-lg p-2 hover:bg-blue-500/10 text-blue-500" title="ترقية"><ArrowUp className="h-4 w-4" /></button>
-                        )}
-                        {myRank === "owner" && m.rank === "admin" && (
-                          <button onClick={() => demote(m.user_id)} className="rounded-lg p-2 hover:bg-orange-500/10 text-orange-500" title="تخفيض"><ArrowDown className="h-4 w-4" /></button>
-                        )}
-                        {myRank === "owner" && m.rank !== "owner" && (
-                          <button onClick={() => transfer(m.user_id)} className="rounded-lg p-2 hover:bg-amber-500/10 text-amber-500" title="نقل ملكية"><Crown className="h-4 w-4" /></button>
-                        )}
-                        <button onClick={() => kick(m.user_id)} className="rounded-lg p-2 hover:bg-orange-500/10 text-orange-500" title="طرد"><UserMinus className="h-4 w-4" /></button>
-                        <button onClick={() => ban(m.user_id)} className="rounded-lg p-2 hover:bg-red-500/10 text-red-500" title="حظر"><Ban className="h-4 w-4" /></button>
-                      </div>
+                    {canModerate && m.user_id !== ownerId && (
+                      <MemberMenu
+                        canOwner={myRank === "owner"}
+                        rank={m.rank}
+                        onPromote={() => promote(m.user_id)}
+                        onDemote={() => demote(m.user_id)}
+                        onTransfer={() => transfer(m.user_id)}
+                        onKick={() => kick(m.user_id)}
+                        onBan={() => ban(m.user_id)}
+                      />
                     )}
                   </li>
                 );
@@ -410,6 +405,52 @@ function SettingsSheet({ roomId, canModerate, myRank, ownerId, onClose, ensurePr
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+function MemberMenu({ canOwner, rank, onPromote, onDemote, onTransfer, onKick, onBan }: {
+  canOwner: boolean; rank: Rank;
+  onPromote: () => void; onDemote: () => void; onTransfer: () => void; onKick: () => void; onBan: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (!open) return;
+    const close = () => setOpen(false);
+    window.addEventListener("click", close);
+    return () => window.removeEventListener("click", close);
+  }, [open]);
+  const item = "flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-secondary text-start";
+  return (
+    <div className="relative" onClick={(e) => e.stopPropagation()}>
+      <button onClick={() => setOpen((v) => !v)} className="rounded-lg p-2 hover:bg-secondary" aria-label="خيارات">
+        <MoreVertical className="h-4 w-4" />
+      </button>
+      {open && (
+        <div className="absolute end-0 top-full z-50 mt-1 w-44 overflow-hidden rounded-xl border border-border bg-card shadow-xl">
+          {canOwner && rank === "member" && (
+            <button onClick={() => { setOpen(false); onPromote(); }} className={`${item} text-blue-600`}>
+              <Shield className="h-4 w-4" /> تعيين كمشرف
+            </button>
+          )}
+          {canOwner && rank === "admin" && (
+            <button onClick={() => { setOpen(false); onDemote(); }} className={`${item} text-orange-600`}>
+              <ArrowDown className="h-4 w-4" /> إزالة الإشراف
+            </button>
+          )}
+          {canOwner && rank !== "owner" && (
+            <button onClick={() => { setOpen(false); onTransfer(); }} className={`${item} text-amber-600`}>
+              <Crown className="h-4 w-4" /> نقل الملكية
+            </button>
+          )}
+          <button onClick={() => { setOpen(false); onKick(); }} className={`${item} text-orange-600`}>
+            <UserMinus className="h-4 w-4" /> طرد
+          </button>
+          <button onClick={() => { setOpen(false); onBan(); }} className={`${item} text-red-600`}>
+            <Ban className="h-4 w-4" /> حظر
+          </button>
+        </div>
+      )}
     </div>
   );
 }
