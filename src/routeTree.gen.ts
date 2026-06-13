@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as RegisterRouteImport } from './routes/register'
+import { Route as RecoveryRouteImport } from './routes/recovery'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
@@ -37,6 +38,11 @@ import { Route as AppAdminCommunityRouteImport } from './routes/app/admin.commun
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
   path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RecoveryRoute = RecoveryRouteImport.update({
+  id: '/recovery',
+  path: '/recovery',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -159,6 +165,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
+  '/recovery': typeof RecoveryRoute
   '/register': typeof RegisterRoute
   '/app/account': typeof AppAccountRoute
   '/app/admin': typeof AppAdminRouteWithChildren
@@ -184,6 +191,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/recovery': typeof RecoveryRoute
   '/register': typeof RegisterRoute
   '/app/account': typeof AppAccountRoute
   '/app/community': typeof AppCommunityRoute
@@ -210,6 +218,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
+  '/recovery': typeof RecoveryRoute
   '/register': typeof RegisterRoute
   '/app/account': typeof AppAccountRoute
   '/app/admin': typeof AppAdminRouteWithChildren
@@ -238,6 +247,7 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/login'
+    | '/recovery'
     | '/register'
     | '/app/account'
     | '/app/admin'
@@ -263,6 +273,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
+    | '/recovery'
     | '/register'
     | '/app/account'
     | '/app/community'
@@ -288,6 +299,7 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/login'
+    | '/recovery'
     | '/register'
     | '/app/account'
     | '/app/admin'
@@ -315,6 +327,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
+  RecoveryRoute: typeof RecoveryRoute
   RegisterRoute: typeof RegisterRoute
   ProfileIdRoute: typeof ProfileIdRoute
 }
@@ -326,6 +339,13 @@ declare module '@tanstack/react-router' {
       path: '/register'
       fullPath: '/register'
       preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/recovery': {
+      id: '/recovery'
+      path: '/recovery'
+      fullPath: '/recovery'
+      preLoaderRoute: typeof RecoveryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -552,6 +572,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
+  RecoveryRoute: RecoveryRoute,
   RegisterRoute: RegisterRoute,
   ProfileIdRoute: ProfileIdRoute,
 }
