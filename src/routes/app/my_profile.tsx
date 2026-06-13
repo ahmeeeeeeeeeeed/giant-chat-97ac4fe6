@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
-import { Loader2, Camera, User as UserIcon, Bell, Info, Shield, ChevronLeft, Lock, EyeOff, Globe, Eye, Mail, CheckCircle2 } from "lucide-react";
+import { Loader2, Camera, User as UserIcon, Bell, Info, Shield, ChevronLeft, Lock, EyeOff, Globe, Eye, Mail, CheckCircle2, KeyRound } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { getEquipped, type EquippedSet } from "@/lib/equipped";
 import { BadgeChip } from "@/routes/app/store";
@@ -406,6 +406,7 @@ function ProfilePage() {
 
           <Section title={t("profile.security")}>
             <Row icon={<Shield className="h-5 w-5" />} label={t("profile.security")} value="✓" />
+            <PasswordChangeRow />
           </Section>
 
           <Section title={t("profile.about")}>
@@ -468,5 +469,78 @@ export function VipBadge() {
     >
       ★ شخصية مهمة
     </span>
+  );
+}
+
+function PasswordChangeRow() {
+  const [open, setOpen] = useState(false);
+  const [pw, setPw] = useState("");
+  const [pw2, setPw2] = useState("");
+  const [show, setShow] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  const submit = async () => {
+    if (pw.length < 6) { toast.error("كلمة المرور 6 أحرف على الأقل"); return; }
+    if (pw !== pw2) { toast.error("كلمتا المرور غير متطابقتين"); return; }
+    setBusy(true);
+    const { error } = await supabase.auth.updateUser({ password: pw });
+    setBusy(false);
+    if (error) { toast.error(error.message || "تعذّر التحديث"); return; }
+    toast.success("تم تغيير كلمة المرور ✓");
+    setPw(""); setPw2(""); setOpen(false);
+  };
+
+  return (
+    <div className="p-4">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between text-start"
+      >
+        <div className="flex items-center gap-3">
+          <KeyRound className="h-5 w-5" />
+          <span className="font-medium">تغيير كلمة المرور</span>
+        </div>
+        <ChevronLeft className={`h-4 w-4 text-muted-foreground transition ${open ? "rotate-90" : "rtl:rotate-180"}`} />
+      </button>
+      {open && (
+        <div className="mt-3 space-y-2">
+          <div className="relative">
+            <input
+              type={show ? "text" : "password"}
+              value={pw}
+              onChange={(e) => setPw(e.target.value)}
+              placeholder="كلمة المرور الجديدة"
+              dir="ltr"
+              className="h-11 w-full rounded-xl border border-input bg-background px-3 pe-10 outline-none focus:border-primary"
+            />
+            <button
+              type="button"
+              onClick={() => setShow((v) => !v)}
+              className="absolute end-2 top-1/2 -translate-y-1/2 text-muted-foreground"
+              aria-label={show ? "إخفاء" : "إظهار"}
+            >
+              {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
+          <input
+            type={show ? "text" : "password"}
+            value={pw2}
+            onChange={(e) => setPw2(e.target.value)}
+            placeholder="تأكيد كلمة المرور"
+            dir="ltr"
+            className="h-11 w-full rounded-xl border border-input bg-background px-3 outline-none focus:border-primary"
+          />
+          <button
+            type="button"
+            onClick={submit}
+            disabled={busy || !pw || !pw2}
+            className="flex h-10 w-full items-center justify-center rounded-xl bg-primary text-sm font-bold text-primary-foreground disabled:opacity-60"
+          >
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "حفظ كلمة المرور الجديدة"}
+          </button>
+        </div>
+      )}
+    </div>
   );
 }

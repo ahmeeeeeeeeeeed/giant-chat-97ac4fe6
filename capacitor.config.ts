@@ -20,7 +20,7 @@ const config: CapacitorConfig = {
   },
   plugins: {
     SplashScreen: {
-      launchShowDuration: 1500,
+      launchShowDuration: 1200,
       launchAutoHide: true,
       backgroundColor: "#0a1a14",
       androidSplashResourceName: "splash",
@@ -28,9 +28,18 @@ const config: CapacitorConfig = {
       showSpinner: false,
     },
     StatusBar: {
+      // Edge-to-edge: WebView fills the entire screen including under the
+      // status bar / navigation bar so the in-app header and bottom tab bar
+      // appear seamlessly. CSS safe-area-inset-* padding keeps controls
+      // tappable.
+      overlaysWebView: true,
       style: "DARK",
-      backgroundColor: "#10b981",
+      backgroundColor: "#00000000",
     },
+    EdgeToEdge: {
+      backgroundColor: "#00000000",
+    },
+  },
   },
 };
 

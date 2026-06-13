@@ -60,7 +60,8 @@ function AppLayout() {
   };
 
   return (
-    <div className={`flex min-h-screen flex-col ${hideChrome ? "" : "pb-[72px]"}`}>
+    <div className={`flex min-h-screen flex-col ${hideChrome ? "" : "pb-[calc(72px+env(safe-area-inset-bottom))]"}`}>
+
       <OnlineStatusBanner />
       {/* Persistent floating Complaints button — shows everywhere inside the app */}
       <button
@@ -72,7 +73,7 @@ function AppLayout() {
         <Flag className="h-5 w-5" />
       </button>
       {!hideChrome && (
-        <div className="sticky top-0 z-50 flex items-center justify-between border-b border-emerald-700/40 bg-gradient-to-r from-emerald-600 to-green-600 text-white px-4 py-2 shadow-md">
+        <div className="sticky top-0 z-50 flex items-center justify-between border-b border-emerald-700/40 bg-gradient-to-r from-emerald-600 to-green-600 text-white px-4 py-2 shadow-md pt-[calc(0.5rem+env(safe-area-inset-top))]">
           <div className="flex items-center gap-2">
             {showBack && (
               <button
@@ -106,7 +107,7 @@ function AppLayout() {
       )}
       <Outlet />
       {!hideChrome && (
-        <nav className="fixed inset-x-0 bottom-0 z-40 px-3 pb-3 pt-2">
+        <nav className="fixed inset-x-0 bottom-0 z-40 px-3 pt-2 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
           <ul className="mx-auto flex max-w-md items-stretch justify-around rounded-3xl bg-gradient-to-r from-emerald-600 to-green-600 px-1.5 py-1.5 shadow-2xl shadow-emerald-900/30 ring-1 ring-white/10">
             {tabs.map(({ to, label, icon: Icon, exact }) => {
               const active = exact ? path === to : path.startsWith(to);
