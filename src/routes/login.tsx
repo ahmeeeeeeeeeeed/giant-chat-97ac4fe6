@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { signInWithUsername } from "@/lib/auth";
 import { toast } from "sonner";
-import { ArrowRight, Loader2 } from "lucide-react";
+import { ArrowRight, Loader2, Eye, EyeOff, User, Lock, Sparkles } from "lucide-react";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
@@ -15,6 +15,7 @@ function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPwd, setShowPwd] = useState(false);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,34 +27,98 @@ function LoginPage() {
   };
 
   return (
-    <main className="flex min-h-screen flex-col bg-background px-6 py-8">
-      <Link to="/" className="self-start text-muted-foreground"><ArrowRight className="h-6 w-6 rtl:rotate-180" /></Link>
-      <div className="mt-10">
-        <h1 className="text-3xl font-bold">{t("auth.login")}</h1>
-        <p className="mt-2 text-muted-foreground">{t("app.name")}</p>
+    <main className="relative flex min-h-dvh flex-col overflow-hidden bg-gradient-to-b from-background via-background to-primary/5 px-6 py-8">
+      {/* Decorative blobs */}
+      <div className="pointer-events-none absolute -top-20 -end-20 h-72 w-72 rounded-full bg-primary/30 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-24 -start-20 h-80 w-80 rounded-full bg-fuchsia-500/20 blur-3xl" />
+
+      <Link to="/" className="relative z-10 self-start text-muted-foreground transition hover:text-foreground">
+        <ArrowRight className="h-6 w-6 rtl:rotate-180" />
+      </Link>
+
+      {/* Logo + tagline */}
+      <div className="relative z-10 mt-8 flex flex-col items-center text-center">
+        <div className="relative">
+          <div className="absolute inset-0 animate-pulse rounded-3xl bg-primary/40 blur-2xl" />
+          <div
+            className="relative flex h-24 w-24 items-center justify-center rounded-3xl bg-gradient-to-br from-primary via-fuchsia-500 to-amber-400 shadow-2xl ring-4 ring-background"
+            style={{ animation: "logo-float 3s ease-in-out infinite alternate" }}
+          >
+            <span className="text-3xl font-black text-white drop-shadow-md">B</span>
+            <Sparkles className="absolute -top-2 -end-2 h-5 w-5 animate-pulse text-amber-300" />
+          </div>
+        </div>
+
+        <h1 className="mt-5 text-4xl font-black tracking-tight">BIMO</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          مرحباً بعودتك ✨ دردش، شارك، والعب — كل شيء في مكان واحد
+        </p>
       </div>
 
-      <form onSubmit={submit} className="mt-10 flex flex-col gap-4">
+      <form onSubmit={submit} className="relative z-10 mt-10 flex flex-col gap-3">
         <label className="flex flex-col gap-2">
-          <span className="text-sm font-medium text-muted-foreground">{t("auth.username")}</span>
-          <input value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username"
-            className="h-12 w-full rounded-2xl border border-input bg-card px-4 text-base outline-none focus:border-foreground" required />
-        </label>
-        <label className="flex flex-col gap-2">
-          <span className="text-sm font-medium text-muted-foreground">{t("auth.password")}</span>
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password"
-            className="h-12 w-full rounded-2xl border border-input bg-card px-4 text-base outline-none focus:border-foreground" placeholder="••••••••" required />
+          <span className="text-xs font-bold text-muted-foreground">{t("auth.username")}</span>
+          <div className="relative">
+            <User className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              autoComplete="username"
+              dir="ltr"
+              className="h-12 w-full rounded-2xl border border-input bg-card ps-10 pe-4 text-base outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+              placeholder="اسم المستخدم"
+              required
+            />
+          </div>
         </label>
 
-        <button type="submit" disabled={loading}
-          className="mt-2 flex h-12 items-center justify-center rounded-2xl bg-primary text-base font-semibold text-primary-foreground disabled:opacity-60">
+        <label className="flex flex-col gap-2">
+          <span className="text-xs font-bold text-muted-foreground">{t("auth.password")}</span>
+          <div className="relative">
+            <Lock className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type={showPwd ? "text" : "password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
+              dir="ltr"
+              className="h-12 w-full rounded-2xl border border-input bg-card ps-10 pe-12 text-base outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+              placeholder="••••••••"
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowPwd(s => !s)}
+              className="absolute end-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              aria-label="إظهار/إخفاء كلمة المرور"
+            >
+              {showPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
+        </label>
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="mt-3 flex h-12 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-primary to-fuchsia-500 text-base font-bold text-primary-foreground shadow-lg shadow-primary/30 transition active:scale-[0.98] disabled:opacity-60"
+        >
           {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : t("auth.login")}
         </button>
       </form>
 
-      <p className="mt-auto pt-8 text-center text-sm text-muted-foreground">
-        {t("auth.no_account")} <Link to="/register" className="font-semibold text-foreground">{t("auth.register")}</Link>
+      <p className="relative z-10 mt-auto pt-8 text-center text-sm text-muted-foreground">
+        {t("auth.no_account")}{" "}
+        <Link to="/register" className="font-bold text-primary underline-offset-2 hover:underline">
+          {t("auth.register")}
+        </Link>
       </p>
+
+      <style>{`
+        @keyframes logo-float {
+          0% { transform: translateY(0) rotate(-3deg); }
+          100% { transform: translateY(-6px) rotate(3deg); }
+        }
+      `}</style>
     </main>
   );
 }

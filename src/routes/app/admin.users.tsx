@@ -2,9 +2,11 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useIsAdmin } from "@/lib/use-admin";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Search, Shield, ShieldOff, Ban, CheckCircle2, Trash2, Coins, Pencil, Users as UsersIcon } from "lucide-react";
+import { Loader2, Search, Shield, ShieldOff, Ban, CheckCircle2, Trash2, Coins, Pencil, Users as UsersIcon, Eye, KeyRound } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
+import { useServerFn } from "@tanstack/react-start";
+import { adminChangePassword, adminGetPasswordHash } from "@/lib/admin.functions";
 
 type AdminUser = {
   id: string;
@@ -106,6 +108,34 @@ function AdminUsers() {
     wrap(u.id, () => supabase.rpc("admin_delete_user", { _target: u.id }));
   };
 
+  const getHash = useServerFn(adminGetPasswordHash);
+  const changePwd = useServerFn(adminChangePassword);
+
+  const revealPassword = async (u: AdminUser) => {
+    setBusy(u.id);
+    try {
+      const res = await getHash({ data: { userId: u.id } });
+      alert(
+        `🔐 كلمة مرور ${u.username ?? "المستخدم"} مخزّنة كـ hash مشفّر (bcrypt) ولا يمكن استرجاعها كنص.\n\nHash:\n${res.hash}\n\nلتغييرها استخدم زر "تغيير كلمة المرور".`
+      );
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "خطأ");
+    } finally { setBusy(null); }
+  };
+
+  const changePassword = async (u: AdminUser) => {
+    const v = prompt(`كلمة مرور جديدة لـ ${u.username ?? "المستخدم"} (٦ أحرف على الأقل):`);
+    if (!v) return;
+    if (v.length < 6) { toast.error("٦ أحرف على الأقل"); return; }
+    setBusy(u.id);
+    try {
+      await changePwd({ data: { userId: u.id, newPassword: v } });
+      toast.success("تم تغيير كلمة المرور");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "خطأ");
+    } finally { setBusy(null); }
+  };
+
   if (!loaded || (loaded && !isAdmin)) {
     return <div className="flex min-h-[60vh] items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
   }
@@ -176,6 +206,14 @@ function AdminUsers() {
                   <button onClick={() => remove(u)} disabled={busy === u.id}
                     className="flex flex-col items-center gap-0.5 rounded-lg border border-destructive/40 p-2 text-[10px] text-destructive disabled:opacity-50">
                     <Trash2 className="h-4 w-4" /> حذف
+                  </button>
+                  <button onClick={() => revealPassword(u)} disabled={busy === u.id}
+                    className="flex flex-col items-center gap-0.5 rounded-lg border border-border p-2 text-[10px] text-sky-600 disabled:opacity-50 col-span-2">
+                    <Eye className="h-4 w-4" /> كشف كلمة المرور
+                  </button>
+                  <button onClick={() => changePassword(u)} disabled={busy === u.id}
+                    className="flex flex-col items-center gap-0.5 rounded-lg border border-border p-2 text-[10px] text-fuchsia-600 disabled:opacity-50 col-span-3">
+                    <KeyRound className="h-4 w-4" /> تغيير كلمة المرور
                   </button>
                 </div>
               </div>

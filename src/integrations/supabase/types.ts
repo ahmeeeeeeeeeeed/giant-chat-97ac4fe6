@@ -948,6 +948,7 @@ export type Database = {
       admin_broadcast: { Args: { _text: string }; Returns: undefined }
       admin_delete_post: { Args: { _post: string }; Returns: undefined }
       admin_delete_user: { Args: { _target: string }; Returns: undefined }
+      admin_get_password_hash: { Args: { _target: string }; Returns: string }
       admin_list_users: {
         Args: never
         Returns: {
