@@ -249,12 +249,37 @@ function OtherProfilePage() {
             <h1 className="mt-4 text-2xl font-extrabold">{profile.username}</h1>
             
             <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
+              {(() => {
+                const lvl = getUserLevel(profile.points);
+                return (
+                  <span
+                    className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-extrabold text-white shadow-sm"
+                    style={{ backgroundColor: lvl.color }}
+                    title={lvl.label}
+                  >
+                    <Award className="h-3 w-3" /> {lvl.label}
+                  </span>
+                );
+              })()}
+              {equipped.badge && (
+                <BadgeChip code={equipped.badge.code} color={equipped.badge.payload.color} name={equipped.badge.name_ar} />
+              )}
+              {profile.points > 10000 && !equipped.badge && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-white shadow-sm ring-1 ring-red-700/40">
+                  <Crown className="h-3 w-3" /> شخصية مهمة
+                </span>
+              )}
               <span className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold">
                 🪙 {profile.points} نقطة
               </span>
               <span className="rounded-full bg-secondary px-3 py-1 text-xs">
                 {formatLastSeen()}
               </span>
+            </div>
+
+            <div className="mt-1 flex items-center justify-center gap-1 text-xs text-muted-foreground">
+              <Eye className="h-3 w-3" />
+              <span>{profile.profile_views ?? 0} مشاهدة</span>
             </div>
 
             {profile.bio && (
