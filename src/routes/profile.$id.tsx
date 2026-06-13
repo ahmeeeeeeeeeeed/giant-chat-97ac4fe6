@@ -3,7 +3,9 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
-import { Loader2, ArrowRight, MessageCircle, Ban, Flag, Globe, Lock, EyeOff } from "lucide-react";
+import { Loader2, ArrowRight, MessageCircle, Ban, Flag, Globe, Lock, EyeOff, Eye, Crown, Award } from "lucide-react";
+import { getEquipped, type EquippedSet } from "@/lib/equipped";
+import { BadgeChip } from "@/routes/app/store";
 
 export const Route = createFileRoute("/profile/$id")({
   component: OtherProfilePage,
