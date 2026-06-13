@@ -13,6 +13,7 @@ import { ThemeProvider } from "@/lib/theme";
 import { AuthProvider } from "@/lib/auth";
 import { Toaster } from "@/components/ui/sonner";
 import i18n, { applyLanguageDir } from "@/lib/i18n";
+import { registerAppServiceWorker } from "@/lib/register-sw";
 
 import appCss from "../styles.css?url";
 
@@ -71,6 +72,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     links: [
       { rel: "stylesheet", href: appCss },
+      { rel: "manifest", href: "/manifest.webmanifest" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
@@ -105,6 +107,9 @@ function LanguageSync() {
     const onChange = (lng: string) => applyLanguageDir(lng);
     i18n.on("languageChanged", onChange);
     return () => { i18n.off("languageChanged", onChange); };
+  }, []);
+  useEffect(() => {
+    registerAppServiceWorker();
   }, []);
   return null;
 }
