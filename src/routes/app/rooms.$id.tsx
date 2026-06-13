@@ -250,17 +250,55 @@ function RoomPage() {
               );
             }
             return (
-              <div key={msg.id} className={`flex ${isOwn ? "justify-end" : "justify-start"}`}>
-                <div className={`max-w-[75%] rounded-2xl px-4 py-2 ${isOwn ? "bg-primary text-primary-foreground" : "bg-card border border-border"}`}>
+              <div key={msg.id} className={`flex items-end gap-2 ${isOwn ? "justify-end" : "justify-start"}`}>
+                {!isOwn && msg.user_id && (
+                  <button
+                    onClick={() => navigate({ to: "/app/profile/$id", params: { id: msg.user_id } })}
+                    className="shrink-0 transition active:scale-95"
+                    aria-label="عرض البروفايل"
+                  >
+                    {prof?.avatar_url ? (
+                      <img src={prof.avatar_url} alt="" className="h-9 w-9 rounded-full object-cover ring-2 ring-emerald-500/20" />
+                    ) : (
+                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-emerald-700 text-sm font-bold text-white">
+                        {(prof?.username ?? "?").charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                  </button>
+                )}
+                <div className={`flex max-w-[78%] flex-col ${isOwn ? "items-end" : "items-start"}`}>
                   {!isOwn && msg.user_id && (
-                    <button onClick={() => navigate({ to: "/app/profile/$id", params: { id: msg.user_id } })}
-                      className="text-xs font-semibold mb-1 text-emerald-600 hover:underline">
+                    <button
+                      onClick={() => navigate({ to: "/app/profile/$id", params: { id: msg.user_id } })}
+                      className="mb-1 px-1 text-xs font-bold text-emerald-600 hover:underline"
+                    >
                       {prof?.username ?? "مستخدم"}
                     </button>
                   )}
-                  <p className="text-sm break-words">{msg.content}</p>
-                  <p className="text-[10px] opacity-70 mt-1 text-right" suppressHydrationWarning>{date} · {time}</p>
+                  <div
+                    className={`rounded-2xl px-4 py-2.5 shadow-sm ${
+                      isOwn
+                        ? "rounded-br-md bg-gradient-to-br from-emerald-500 to-emerald-600 text-white"
+                        : "rounded-bl-md border border-border bg-card text-foreground"
+                    }`}
+                  >
+                    <p className="whitespace-pre-wrap break-words text-[15px] leading-relaxed">{msg.content}</p>
+                  </div>
+                  <p className={`mt-1 text-[10px] ${isOwn ? "text-muted-foreground" : "text-muted-foreground/80"}`} suppressHydrationWarning>
+                    {date} · {time}
+                  </p>
                 </div>
+                {isOwn && (
+                  <div className="shrink-0">
+                    {prof?.avatar_url || userMap[user!.id]?.avatar_url ? (
+                      <img src={prof?.avatar_url ?? userMap[user!.id]?.avatar_url ?? ""} alt="" className="h-9 w-9 rounded-full object-cover ring-2 ring-emerald-500/30" />
+                    ) : (
+                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 text-sm font-bold text-white">
+                        {(userMap[user!.id]?.username ?? "أ").charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })
