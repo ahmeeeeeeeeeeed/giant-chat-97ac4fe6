@@ -8,7 +8,7 @@ import { MusicPlayer } from "@/components/MusicPlayer";
 import { BroadcastCard } from "@/components/BroadcastCard";
 import { SharePostModal, SharedPostCard } from "@/components/SharePostModal";
 
-type Rank = "owner" | "admin" | "member";
+type Rank = "owner" | "admin" | "moderator" | "member";
 
 export const Route = createFileRoute("/app/rooms/$id")({
   component: RoomPage,
@@ -137,7 +137,9 @@ function RoomPage() {
       if (msg.includes("wrong_password")) toast.error("كلمة المرور غير صحيحة");
       else if (msg.includes("banned")) toast.error("أنت محظور من هذه الغرفة");
       else if (msg.includes("room_full")) toast.error("الغرفة ممتلئة");
-      else toast.error("فشل الانضمام");
+      else if (msg.includes("room_inactive")) toast.error("الغرفة موقوفة");
+      else if (msg.includes("room_not_found")) toast.error("الغرفة غير موجودة");
+      else toast.error("فشل الانضمام: " + msg);
       return;
     }
     
@@ -303,7 +305,7 @@ function RoomPage() {
       )}
 
       {showSettings && (
-        <SettingsSheet roomId={roomId} canModerate={myRank === "owner" || myRank === "admin"} myRank={myRank}
+        <SettingsSheet roomId={roomId} canModerate={myRank === "owner" || myRank === "admin" || myRank === "moderator"} myRank={myRank}
           ownerId={room.owner_id} onClose={() => setShowSettings(false)} ensureProfiles={ensureProfiles} userMap={userMap} />
       )}
     </div>
@@ -346,15 +348,12 @@ function SettingsSheet({ roomId, canModerate, myRank, ownerId, onClose, ensurePr
     return act(supabase.rpc("ban_room_member", { _room: roomId, _user: uid, _reason: reason }), "تم الحظر");
   };
   const unban = (uid: string) => act(supabase.rpc("unban_room_member", { _room: roomId, _user: uid }), "تم إلغاء الحظر");
-  const promote = (uid: string) => act(supabase.rpc("set_member_rank", { _room: roomId, _user: uid, _new_rank: "admin" }), "تمت الترقية");
-  const demote = (uid: string) => act(supabase.rpc("set_member_rank", { _room: roomId, _user: uid, _new_rank: "member" }), "تم التخفيض");
-  const transfer = (uid: string) => {
-    if (!confirm("نقل ملكية الغرفة إلى هذا المستخدم؟")) return;
-    return act(supabase.rpc("transfer_room_ownership", { _room: roomId, _new_owner: uid }), "تم نقل الملكية");
-  };
+  const setRank = (uid: string, rank: "admin" | "moderator" | "member", okMsg: string) =>
+    act(supabase.rpc("set_member_rank", { _room: roomId, _user: uid, _new_rank: rank }), okMsg);
 
   const rankBadge = (r: string) => r === "owner" ? <span className="text-[10px] rounded bg-amber-500/20 text-amber-600 px-1.5 py-0.5 font-bold">مالك</span>
-    : r === "admin" ? <span className="text-[10px] rounded bg-blue-500/20 text-blue-600 px-1.5 py-0.5 font-bold">مشرف</span>
+    : r === "admin" ? <span className="text-[10px] rounded bg-blue-500/20 text-blue-600 px-1.5 py-0.5 font-bold">مسؤول</span>
+    : r === "moderator" ? <span className="text-[10px] rounded bg-emerald-500/20 text-emerald-600 px-1.5 py-0.5 font-bold">مشرف</span>
     : <span className="text-[10px] rounded bg-muted px-1.5 py-0.5 text-muted-foreground">عضو</span>;
 
   const showAdminTabs = canModerate;
@@ -406,11 +405,11 @@ function SettingsSheet({ roomId, canModerate, myRank, ownerId, onClose, ensurePr
                     </div>
                     {canModerate && m.user_id !== ownerId && (
                       <MemberMenu
-                        canOwner={myRank === "owner"}
+                        myRank={myRank}
                         rank={m.rank}
-                        onPromote={() => promote(m.user_id)}
-                        onDemote={() => demote(m.user_id)}
-                        onTransfer={() => transfer(m.user_id)}
+                        onMakeAdmin={() => setRank(m.user_id, "admin", "تمت الترقية إلى مسؤول")}
+                        onMakeModerator={() => setRank(m.user_id, "moderator", "تمت الترقية إلى مشرف")}
+                        onMakeMember={() => setRank(m.user_id, "member", "تم التخفيض إلى عضو")}
                         onKick={() => kick(m.user_id)}
                         onBan={() => ban(m.user_id)}
                       />
@@ -476,9 +475,10 @@ function SettingsSheet({ roomId, canModerate, myRank, ownerId, onClose, ensurePr
   );
 }
 
-function MemberMenu({ canOwner, rank, onPromote, onDemote, onTransfer, onKick, onBan }: {
-  canOwner: boolean; rank: Rank;
-  onPromote: () => void; onDemote: () => void; onTransfer: () => void; onKick: () => void; onBan: () => void;
+function MemberMenu({ myRank, rank, onMakeAdmin, onMakeModerator, onMakeMember, onKick, onBan }: {
+  myRank: Rank | null; rank: Rank;
+  onMakeAdmin: () => void; onMakeModerator: () => void; onMakeMember: () => void;
+  onKick: () => void; onBan: () => void;
 }) {
   const [open, setOpen] = useState(false);
   useEffect(() => {
@@ -488,34 +488,42 @@ function MemberMenu({ canOwner, rank, onPromote, onDemote, onTransfer, onKick, o
     return () => window.removeEventListener("click", close);
   }, [open]);
   const item = "flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-secondary text-start";
+  const canManageRanks = myRank === "owner" || myRank === "admin";
+  const isMod = myRank === "moderator";
+  // moderator can only act on members; admin/owner can act on admin/moderator/member
+  const canActOnTarget = !isMod || rank === "member";
   return (
     <div className="relative" onClick={(e) => e.stopPropagation()}>
       <button onClick={() => setOpen((v) => !v)} className="rounded-lg p-2 hover:bg-secondary" aria-label="خيارات">
         <MoreVertical className="h-4 w-4" />
       </button>
       {open && (
-        <div className="absolute end-0 top-full z-50 mt-1 w-44 overflow-hidden rounded-xl border border-border bg-card shadow-xl">
-          {canOwner && rank === "member" && (
-            <button onClick={() => { setOpen(false); onPromote(); }} className={`${item} text-blue-600`}>
-              <Shield className="h-4 w-4" /> تعيين كمشرف
+        <div className="absolute end-0 top-full z-50 mt-1 w-48 overflow-hidden rounded-xl border border-border bg-card shadow-xl">
+          {canManageRanks && rank !== "admin" && (
+            <button onClick={() => { setOpen(false); onMakeAdmin(); }} className={`${item} text-blue-600`}>
+              <Shield className="h-4 w-4" /> تعيين مسؤول
             </button>
           )}
-          {canOwner && rank === "admin" && (
-            <button onClick={() => { setOpen(false); onDemote(); }} className={`${item} text-orange-600`}>
-              <ArrowDown className="h-4 w-4" /> إزالة الإشراف
+          {canManageRanks && rank !== "moderator" && (
+            <button onClick={() => { setOpen(false); onMakeModerator(); }} className={`${item} text-emerald-600`}>
+              <ArrowUp className="h-4 w-4" /> تعيين مشرف
             </button>
           )}
-          {canOwner && rank !== "owner" && (
-            <button onClick={() => { setOpen(false); onTransfer(); }} className={`${item} text-amber-600`}>
-              <Crown className="h-4 w-4" /> نقل الملكية
+          {canManageRanks && rank !== "member" && (
+            <button onClick={() => { setOpen(false); onMakeMember(); }} className={`${item} text-orange-600`}>
+              <ArrowDown className="h-4 w-4" /> إعادة إلى عضو
             </button>
           )}
-          <button onClick={() => { setOpen(false); onKick(); }} className={`${item} text-orange-600`}>
-            <UserMinus className="h-4 w-4" /> طرد
-          </button>
-          <button onClick={() => { setOpen(false); onBan(); }} className={`${item} text-red-600`}>
-            <Ban className="h-4 w-4" /> حظر
-          </button>
+          {canActOnTarget && (
+            <button onClick={() => { setOpen(false); onKick(); }} className={`${item} text-orange-600`}>
+              <UserMinus className="h-4 w-4" /> طرد
+            </button>
+          )}
+          {canActOnTarget && (
+            <button onClick={() => { setOpen(false); onBan(); }} className={`${item} text-red-600`}>
+              <Ban className="h-4 w-4" /> حظر
+            </button>
+          )}
         </div>
       )}
     </div>
