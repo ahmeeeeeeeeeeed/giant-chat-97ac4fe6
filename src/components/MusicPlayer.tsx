@@ -174,12 +174,22 @@ export function MusicPlayer({ roomId }: { roomId: string }) {
               className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-xs font-bold"
               aria-label="ترجيع">−5</button>
             <button
-              onClick={() => supabase.rpc(state.paused ? "music_resume" : "music_pause", { _room: roomId })}
+              onClick={async () => {
+                // Trigger audio inside the user gesture to bypass autoplay policy
+                const a = audioRef.current;
+                if (state.paused && a && state.current?.preview_url) {
+                  if (a.src !== state.current.preview_url) { a.src = state.current.preview_url; a.load(); }
+                  a.play().catch(() => {});
+                }
+                await supabase.rpc(state.paused ? "music_resume" : "music_pause", { _room: roomId });
+              }}
               className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow"
               aria-label={state.paused ? "تشغيل" : "إيقاف"}>
               {state.paused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
             </button>
             <button onClick={() => seek(5)}
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-xs font-bold"
+              aria-label="تقديم">+5</button>
               className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-xs font-bold"
               aria-label="تقديم">+5</button>
             <button onClick={() => supabase.rpc("music_skip", { _room: roomId })}
