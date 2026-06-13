@@ -108,6 +108,34 @@ function AdminUsers() {
     wrap(u.id, () => supabase.rpc("admin_delete_user", { _target: u.id }));
   };
 
+  const getHash = useServerFn(adminGetPasswordHash);
+  const changePwd = useServerFn(adminChangePassword);
+
+  const revealPassword = async (u: AdminUser) => {
+    setBusy(u.id);
+    try {
+      const res = await getHash({ data: { userId: u.id } });
+      alert(
+        `🔐 كلمة مرور ${u.username ?? "المستخدم"} مخزّنة كـ hash مشفّر (bcrypt) ولا يمكن استرجاعها كنص.\n\nHash:\n${res.hash}\n\nلتغييرها استخدم زر "تغيير كلمة المرور".`
+      );
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "خطأ");
+    } finally { setBusy(null); }
+  };
+
+  const changePassword = async (u: AdminUser) => {
+    const v = prompt(`كلمة مرور جديدة لـ ${u.username ?? "المستخدم"} (٦ أحرف على الأقل):`);
+    if (!v) return;
+    if (v.length < 6) { toast.error("٦ أحرف على الأقل"); return; }
+    setBusy(u.id);
+    try {
+      await changePwd({ data: { userId: u.id, newPassword: v } });
+      toast.success("تم تغيير كلمة المرور");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "خطأ");
+    } finally { setBusy(null); }
+  };
+
   if (!loaded || (loaded && !isAdmin)) {
     return <div className="flex min-h-[60vh] items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
   }
