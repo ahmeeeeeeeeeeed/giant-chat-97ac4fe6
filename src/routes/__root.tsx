@@ -13,6 +13,7 @@ import { ThemeProvider } from "@/lib/theme";
 import { AuthProvider } from "@/lib/auth";
 import { Toaster } from "@/components/ui/sonner";
 import i18n, { applyLanguageDir } from "@/lib/i18n";
+import { registerAppServiceWorker } from "@/lib/register-sw";
 
 import appCss from "../styles.css?url";
 
