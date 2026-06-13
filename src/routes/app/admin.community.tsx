@@ -29,7 +29,7 @@ function AdminCommunity() {
       db.from("community_posts").select("*").order("created_at", { ascending: false }).limit(100),
       db.from("community_reports").select("*, post:community_posts(*)").order("created_at", { ascending: false }).limit(100),
     ]);
-    const ids = Array.from(new Set([...(p ?? []).map((x: any) => x.author_id), ...(r ?? []).map((x: any) => x.reporter_id)]));
+    const ids = Array.from(new Set([...(p ?? []).map((x: any) => x.author_id), ...(r ?? []).map((x: any) => x.reporter_id)])) as string[];
     const map = new Map<string, any>();
     if (ids.length) {
       const { data: profs } = await supabase.from("profiles").select("id,username").in("id", ids);
