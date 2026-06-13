@@ -176,7 +176,7 @@ function RoomsPage() {
             {filtered.map((r) => (
               <li key={r.id}>
                 <Link
-                  to="/app/room/$id"
+                  to="/app/rooms/$id"
                   params={{ id: r.id }}
                   className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 transition active:scale-[0.99] hover:border-foreground/20"
                 >

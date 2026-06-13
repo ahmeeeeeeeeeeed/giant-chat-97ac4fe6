@@ -24,7 +24,7 @@ function AppLayout() {
     { to: "/app/friends", label: t("nav.friends"), icon: UsersIcon, exact: false },
     { to: "/app/games", label: t("nav.games"), icon: Gamepad2, exact: false },
     { to: "/app/chats", label: t("nav.chats"), icon: MessageSquare, exact: false },
-    { to: "/app/profile", label: t("nav.profile"), icon: User, exact: false },
+    { to: "/app/my_profile", label: t("nav.profile"), icon: User, exact: false },
     { to: "/app/settings", label: t("nav.settings"), icon: Settings, exact: false },
   ] as const;
 
