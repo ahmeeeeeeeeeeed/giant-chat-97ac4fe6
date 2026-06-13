@@ -32,6 +32,7 @@ function RoomPage() {
   const [askPassword, setAskPassword] = useState(false);
   const [joinPw, setJoinPw] = useState("");
   const [joining, setJoining] = useState(false);
+  const [isBanned, setIsBanned] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -59,6 +60,14 @@ function RoomPage() {
     setLoading(false);
   };
 
+  const checkBanned = async () => {
+    if (!user) return false;
+    const { data } = await supabase.from("room_bans").select("user_id").eq("room_id", roomId).eq("user_id", user.id).maybeSingle();
+    const banned = !!data;
+    setIsBanned(banned);
+    return banned;
+  };
+
   const loadMembership = async () => {
     if (!user) return;
     const { data } = await supabase.from("room_members").select("rank").eq("room_id", roomId).eq("user_id", user.id).maybeSingle();
@@ -82,6 +91,7 @@ function RoomPage() {
 
   useEffect(() => {
     loadRoom();
+    checkBanned();
     loadMembership();
     loadMemberCount();
     loadMessages();
@@ -104,10 +114,24 @@ function RoomPage() {
 
   const tryJoin = async (pw?: string) => {
     if (!user || !room) return;
-    if (room.type === "private" && !pw) { setAskPassword(true); return; }
+    
+    // التحقق من الحظر أولاً
+    const banned = await checkBanned();
+    if (banned) {
+      toast.error("أنت محظور من هذه الغرفة");
+      return;
+    }
+    
+    // إذا كانت الغرفة خاصة وتحتاج كلمة مرور
+    if (room.type === "private" && !pw) {
+      setAskPassword(true);
+      return;
+    }
+    
     setJoining(true);
     const { error } = await supabase.rpc("room_join", { _room: roomId, _password: pw ?? "" });
     setJoining(false);
+    
     if (error) {
       const msg = error.message || "";
       if (msg.includes("wrong_password")) toast.error("كلمة المرور غير صحيحة");
@@ -116,6 +140,7 @@ function RoomPage() {
       else toast.error("فشل الانضمام");
       return;
     }
+    
     setAskPassword(false);
     setJoinPw("");
     toast.success("تم الانضمام");
@@ -134,6 +159,7 @@ function RoomPage() {
     e.preventDefault();
     if (!text.trim() || !user || sending) return;
     if (!myRank) { toast.error("يجب الانضمام إلى الغرفة أولاً"); return; }
+    if (isBanned) { toast.error("أنت محظور من هذه الغرفة"); return; }
     setSending(true);
     const { error } = await supabase.from("room_messages").insert({
       room_id: roomId, user_id: user.id, content: text.trim(),
@@ -150,7 +176,6 @@ function RoomPage() {
   }
 
   const isMember = !!myRank;
-  const canModerate = myRank === "owner" || myRank === "admin";
 
   return (
     <div className="flex flex-col h-screen bg-background">
@@ -173,9 +198,9 @@ function RoomPage() {
           {isMember ? (
             <button onClick={leaveRoom} className="rounded-lg bg-red-500/10 px-3 py-1.5 text-sm font-medium text-red-500 hover:bg-red-500/20 transition">مغادرة</button>
           ) : (
-            <button onClick={() => tryJoin()} disabled={joining}
+            <button onClick={() => tryJoin()} disabled={joining || isBanned}
               className="rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition disabled:opacity-50">
-              {joining ? "..." : "انضمام"}
+              {joining ? <Loader2 className="h-4 w-4 animate-spin" /> : isBanned ? "محظور" : "انضمام"}
             </button>
           )}
         </div>
@@ -243,15 +268,15 @@ function RoomPage() {
 
       <form onSubmit={sendMessage} className="border-t border-border bg-background p-4">
         <div className="flex gap-2">
-          <button type="button" onClick={() => setShowShare(true)} disabled={!isMember}
+          <button type="button" onClick={() => setShowShare(true)} disabled={!isMember || isBanned}
             title="نشر منشور في كل الغرف"
             className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 disabled:opacity-50 hover:bg-emerald-500/20 transition">
             <Megaphone className="h-5 w-5" />
           </button>
           <input value={text} onChange={(e) => setText(e.target.value)}
-            placeholder={isMember ? "اكتب رسالة..." : "يجب الانضمام إلى الغرفة أولاً"} disabled={!isMember}
+            placeholder={isMember ? (isBanned ? "أنت محظور" : "اكتب رسالة...") : "يجب الانضمام إلى الغرفة أولاً"} disabled={!isMember || isBanned}
             className="flex-1 h-11 rounded-xl border border-input bg-background px-4 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary disabled:opacity-50 transition" />
-          <button type="submit" disabled={sending || !text.trim() || !isMember}
+          <button type="submit" disabled={sending || !text.trim() || !isMember || isBanned}
             className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-primary-foreground disabled:opacity-50 transition hover:bg-primary/90">
             {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           </button>
@@ -259,7 +284,6 @@ function RoomPage() {
       </form>
 
       {showShare && <SharePostModal roomId={roomId} onClose={() => setShowShare(false)} />}
-
 
       {askPassword && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setAskPassword(false)}>
@@ -279,7 +303,7 @@ function RoomPage() {
       )}
 
       {showSettings && (
-        <SettingsSheet roomId={roomId} canModerate={canModerate} myRank={myRank}
+        <SettingsSheet roomId={roomId} canModerate={myRank === "owner" || myRank === "admin"} myRank={myRank}
           ownerId={room.owner_id} onClose={() => setShowSettings(false)} ensureProfiles={ensureProfiles} userMap={userMap} />
       )}
     </div>
@@ -333,6 +357,8 @@ function SettingsSheet({ roomId, canModerate, myRank, ownerId, onClose, ensurePr
     : r === "admin" ? <span className="text-[10px] rounded bg-blue-500/20 text-blue-600 px-1.5 py-0.5 font-bold">مشرف</span>
     : <span className="text-[10px] rounded bg-muted px-1.5 py-0.5 text-muted-foreground">عضو</span>;
 
+  const showAdminTabs = canModerate;
+
   return (
     <div className="fixed inset-0 z-50 flex items-end bg-black/60" onClick={onClose}>
       <div className="w-full max-h-[85vh] overflow-hidden rounded-t-3xl bg-card flex flex-col" onClick={(e) => e.stopPropagation()}>
@@ -342,12 +368,24 @@ function SettingsSheet({ roomId, canModerate, myRank, ownerId, onClose, ensurePr
         </div>
 
         <div className="flex gap-1 border-b border-border px-3">
-          {([["members","الأعضاء",Users],["bans","الحظر",Ban],["logs","السجل",FileText]] as const).map(([k,l,Icon]) => (
-            <button key={k} onClick={() => setTab(k)}
-              className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition ${tab===k ? "border-primary text-primary" : "border-transparent text-muted-foreground"}`}>
-              <Icon className="h-4 w-4" /> {l}
+          <button onClick={() => setTab("members")}
+            className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition ${tab === "members" ? "border-primary text-primary" : "border-transparent text-muted-foreground"}`}>
+            <Users className="h-4 w-4" /> الأعضاء
+          </button>
+          
+          {showAdminTabs && (
+            <button onClick={() => setTab("bans")}
+              className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition ${tab === "bans" ? "border-primary text-primary" : "border-transparent text-muted-foreground"}`}>
+              <Ban className="h-4 w-4" /> الحظر
             </button>
-          ))}
+          )}
+          
+          {showAdminTabs && (
+            <button onClick={() => setTab("logs")}
+              className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition ${tab === "logs" ? "border-primary text-primary" : "border-transparent text-muted-foreground"}`}>
+              <FileText className="h-4 w-4" /> السجل
+            </button>
+          )}
         </div>
 
         <div className="flex-1 overflow-y-auto p-3">
@@ -384,7 +422,7 @@ function SettingsSheet({ roomId, canModerate, myRank, ownerId, onClose, ensurePr
             </ul>
           )}
 
-          {tab === "bans" && (
+          {showAdminTabs && tab === "bans" && (
             <ul className="space-y-2">
               {bans.map((b) => {
                 const p = userMap[b.user_id];
@@ -405,7 +443,7 @@ function SettingsSheet({ roomId, canModerate, myRank, ownerId, onClose, ensurePr
             </ul>
           )}
 
-          {tab === "logs" && (
+          {showAdminTabs && tab === "logs" && (
             <ul className="space-y-2">
               {logs.map((l) => {
                 const actor = l.actor_id ? userMap[l.actor_id]?.username : null;
