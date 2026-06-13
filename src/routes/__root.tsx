@@ -15,6 +15,7 @@ import { Toaster } from "@/components/ui/sonner";
 import i18n, { applyLanguageDir } from "@/lib/i18n";
 import { registerAppServiceWorker } from "@/lib/register-sw";
 import { schedulePrewarm } from "@/lib/prewarm";
+import { initCapacitorChrome } from "@/lib/capacitor-init";
 
 import appCss from "../styles.css?url";
 
