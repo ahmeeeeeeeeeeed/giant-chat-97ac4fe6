@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { LogIn, Loader2, MessageCircle, Users, Music, Sparkles } from "lucide-react";
+import welcomeBg from "@/assets/welcome-bg.mp4.asset.json";
 
 
 export const Route = createFileRoute("/")({
