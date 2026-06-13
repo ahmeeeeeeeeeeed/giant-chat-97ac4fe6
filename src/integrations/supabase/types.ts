@@ -1144,6 +1144,13 @@ export type Database = {
       game_maybe_end: { Args: { _rid: string }; Returns: undefined }
       game_tick: { Args: never; Returns: undefined }
       get_bot_id: { Args: never; Returns: string }
+      get_my_recovery_status: {
+        Args: never
+        Returns: {
+          recovery_email: string
+          recovery_email_verified_at: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
