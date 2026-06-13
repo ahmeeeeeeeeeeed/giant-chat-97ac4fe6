@@ -163,8 +163,8 @@ function RoomPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <button onClick={() => setShowSettings(true)} className="flex items-center gap-1 rounded-lg bg-secondary/50 px-2 py-1 text-xs hover:bg-secondary transition">
-            <Users className="h-3 w-3" /><span>{memberCount}</span>
+          <button onClick={() => setShowSettings(true)} className="flex items-center gap-1.5 rounded-lg bg-emerald-500/10 px-2.5 py-1.5 text-xs font-semibold text-emerald-600 hover:bg-emerald-500/20 transition">
+            <Users className="h-3.5 w-3.5" /><span>عرض الأعضاء ({memberCount})</span>
           </button>
           {isMember ? (
             <button onClick={leaveRoom} className="rounded-lg bg-red-500/10 px-3 py-1.5 text-sm font-medium text-red-500 hover:bg-red-500/20 transition">مغادرة</button>
