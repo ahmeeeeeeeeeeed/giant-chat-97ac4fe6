@@ -102,7 +102,7 @@ function RoomPage() {
     if (!user || !room) return;
     if (room.type === "private" && !pw) { setAskPassword(true); return; }
     setJoining(true);
-    const { error } = await supabase.rpc("room_join", { _room: roomId, _password: pw ?? null });
+    const { error } = await supabase.rpc("room_join", { _room: roomId, _password: pw ?? "" });
     setJoining(false);
     if (error) {
       const msg = error.message || "";
