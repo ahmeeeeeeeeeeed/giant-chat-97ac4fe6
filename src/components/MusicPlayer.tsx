@@ -175,13 +175,22 @@ export function MusicPlayer({ roomId }: { roomId: string }) {
               aria-label="ترجيع">−5</button>
             <button
               onClick={async () => {
-                // Trigger audio inside the user gesture to bypass autoplay policy
                 const a = audioRef.current;
-                if (state.paused && a && state.current?.preview_url) {
+                const wasPaused = state.paused;
+                // Trigger audio inside the user gesture to bypass autoplay policy
+                if (a && state.current?.preview_url) {
                   if (a.src !== state.current.preview_url) { a.src = state.current.preview_url; a.load(); }
-                  a.play().catch(() => {});
+                  if (wasPaused) {
+                    try { await a.play(); } catch (err) {
+                      toast.error("تعذّر تشغيل الصوت — افتح الصفحة بنقرة على الصوت أولاً");
+                      console.error("audio.play failed", err);
+                    }
+                  } else {
+                    a.pause();
+                  }
                 }
-                await supabase.rpc(state.paused ? "music_resume" : "music_pause", { _room: roomId });
+                const { error } = await supabase.rpc(wasPaused ? "music_resume" : "music_pause", { _room: roomId });
+                if (error) toast.error(error.message);
               }}
               className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow"
               aria-label={state.paused ? "تشغيل" : "إيقاف"}>
@@ -190,11 +199,17 @@ export function MusicPlayer({ roomId }: { roomId: string }) {
             <button onClick={() => seek(5)}
               className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-xs font-bold"
               aria-label="تقديم">+5</button>
-            <button onClick={() => supabase.rpc("music_skip", { _room: roomId })}
+            <button onClick={async () => {
+                const { error } = await supabase.rpc("music_skip", { _room: roomId });
+                if (error) toast.error(error.message);
+              }}
               className="flex h-9 w-9 items-center justify-center rounded-full border border-border" aria-label="تخطي">
               <SkipForward className="h-4 w-4" />
             </button>
-            <button onClick={() => supabase.rpc("music_stop", { _room: roomId })}
+            <button onClick={async () => {
+                const { error } = await supabase.rpc("music_stop", { _room: roomId });
+                if (error) toast.error(error.message);
+              }}
               className="flex h-9 w-9 items-center justify-center rounded-full border border-destructive/40 text-destructive"
               aria-label="إيقاف">
               <X className="h-4 w-4" />
