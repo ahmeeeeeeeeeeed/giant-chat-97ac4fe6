@@ -138,7 +138,7 @@ function RoomPage() {
       user_id: user.id,
       username: user.user_metadata?.username || "مستخدم",
       content: text.trim(),
-    });
+    } as never);
 
     setSending(false);
     if (!error) {
