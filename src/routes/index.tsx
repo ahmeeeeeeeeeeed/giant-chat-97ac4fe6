@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { LogIn, Loader2, MessageCircle, Users, Music, Sparkles } from "lucide-react";
+import welcomeBg from "@/assets/welcome-bg.mp4.asset.json";
 
 
 export const Route = createFileRoute("/")({
@@ -29,10 +30,22 @@ function Welcome() {
 
   return (
     <main className="relative flex min-h-dvh flex-col overflow-hidden bg-background px-6 py-8 text-foreground">
+      {/* Video background */}
+      <video
+        src={welcomeBg.url}
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="auto"
+        className="pointer-events-none absolute inset-0 z-0 h-full w-full object-cover opacity-60"
+      />
+      <div className="pointer-events-none absolute inset-0 z-0 bg-gradient-to-b from-background/70 via-background/50 to-background/90" />
+
       {/* Decorative blobs */}
-      <div className="pointer-events-none absolute -top-24 -end-24 h-80 w-80 rounded-full bg-primary/30 blur-3xl" />
-      <div className="pointer-events-none absolute top-1/3 -start-24 h-72 w-72 rounded-full bg-accent/40 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-32 end-1/4 h-80 w-80 rounded-full bg-primary/20 blur-3xl" />
+      <div className="pointer-events-none absolute -top-24 -end-24 z-0 h-80 w-80 rounded-full bg-primary/30 blur-3xl" />
+      <div className="pointer-events-none absolute top-1/3 -start-24 z-0 h-72 w-72 rounded-full bg-accent/40 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-32 end-1/4 z-0 h-80 w-80 rounded-full bg-primary/20 blur-3xl" />
 
       {/* Animated hero illustration */}
       <div className="relative z-10 mx-auto mt-6 h-44 w-full max-w-sm" style={{ animation: "rise 0.8s ease-out both" }}>
