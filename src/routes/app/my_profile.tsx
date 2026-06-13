@@ -46,12 +46,20 @@ function ProfilePage() {
     getEquipped(user.id).then(setEquipped);
   }, [user]);
 
+  const [recoveryEmail, setRecoveryEmail] = useState("");
+  const [emailVerifiedAt, setEmailVerifiedAt] = useState<string | null>(null);
+  const [emailCode, setEmailCode] = useState("");
+  const [emailStep, setEmailStep] = useState<"idle" | "sent">("idle");
+  const [emailBusy, setEmailBusy] = useState(false);
+  const reqVerify = useServerFn(requestEmailVerification);
+  const confirmVerify = useServerFn(confirmEmailVerification);
+
   useEffect(() => {
     if (!user) return;
     (async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("username, bio, avatar_url, points, gender, country, hide_last_seen, dm_locked, profile_views")
+        .select("username, bio, avatar_url, points, gender, country, hide_last_seen, dm_locked, profile_views, recovery_email, recovery_email_verified_at")
         .eq("id", user.id).maybeSingle();
       if (data) {
         setUsername(data.username);
@@ -63,10 +71,47 @@ function ProfilePage() {
         setHideLastSeen(!!data.hide_last_seen);
         setDmLocked(!!data.dm_locked);
         setProfileViews(data.profile_views ?? 0);
+        setRecoveryEmail((data as { recovery_email?: string | null }).recovery_email ?? "");
+        setEmailVerifiedAt((data as { recovery_email_verified_at?: string | null }).recovery_email_verified_at ?? null);
       }
       setLoading(false);
     })();
   }, [user]);
+
+  const sendEmailCode = async () => {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recoveryEmail)) {
+      toast.error("بريد غير صالح"); return;
+    }
+    setEmailBusy(true);
+    try {
+      const r = await reqVerify({ data: { email: recoveryEmail } });
+      setEmailStep("sent");
+      setEmailVerifiedAt(null);
+      // Dev fallback: until email infra is configured, show the code
+      toast.success(r.code ? `تم إرسال الكود (للتجريب: ${r.code})` : "تم إرسال الكود إلى بريدك", { duration: 12000 });
+    } catch {
+      toast.error("تعذّر إرسال الكود");
+    } finally { setEmailBusy(false); }
+  };
+
+  const confirmEmail = async () => {
+    if (!/^\d{6}$/.test(emailCode)) { toast.error("الكود 6 أرقام"); return; }
+    setEmailBusy(true);
+    try {
+      const r = await confirmVerify({ data: { code: emailCode } });
+      if (r.ok) {
+        setEmailVerifiedAt(new Date().toISOString());
+        setEmailStep("idle");
+        setEmailCode("");
+        toast.success("تم تأكيد البريد ✓");
+      } else {
+        toast.error("الكود غير صحيح أو منتهي");
+      }
+    } catch {
+      toast.error("تعذّر التأكيد");
+    } finally { setEmailBusy(false); }
+  };
+
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
