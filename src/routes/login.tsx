@@ -12,10 +12,15 @@ export const Route = createFileRoute("/login")({
 function LoginPage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const [username, setUsername] = useState("");
+  const [username, setUsername] = useState(() =>
+    typeof window !== "undefined" ? localStorage.getItem("giant.remember.user") ?? "" : ""
+  );
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPwd, setShowPwd] = useState(false);
+  const [remember, setRemember] = useState(() =>
+    typeof window !== "undefined" ? localStorage.getItem("giant.remember.user") !== null : false
+  );
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,6 +28,8 @@ function LoginPage() {
     const { error } = await signInWithUsername(username, password);
     setLoading(false);
     if (error) { toast.error(error); return; }
+    if (remember) localStorage.setItem("giant.remember.user", username.trim());
+    else localStorage.removeItem("giant.remember.user");
     navigate({ to: "/app" });
   };
 
