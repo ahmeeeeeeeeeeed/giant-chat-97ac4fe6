@@ -14,6 +14,7 @@ import { AuthProvider } from "@/lib/auth";
 import { Toaster } from "@/components/ui/sonner";
 import i18n, { applyLanguageDir } from "@/lib/i18n";
 import { registerAppServiceWorker } from "@/lib/register-sw";
+import { schedulePrewarm } from "@/lib/prewarm";
 
 import appCss from "../styles.css?url";
 
@@ -110,6 +111,7 @@ function LanguageSync() {
   }, []);
   useEffect(() => {
     registerAppServiceWorker();
+    schedulePrewarm();
   }, []);
   return null;
 }
