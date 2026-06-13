@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 import { Send, Loader2, ArrowLeft, Users, Hash } from "lucide-react";
 
-export const Route = createFileRoute("/app/room/$id")({
+export const Route = createFileRoute("/app/rooms/$id")({
   component: RoomPage,
 });
 
