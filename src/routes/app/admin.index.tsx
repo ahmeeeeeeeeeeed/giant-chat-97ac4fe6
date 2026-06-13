@@ -32,7 +32,7 @@ function AdminHome() {
   const sendPoints = async () => {
     if (!target.trim() || !amount) return;
     setBusy(true);
-    const { error } = await supabase.rpc("admin_send_points", { _username: target.trim(), _amount: amount });
+    const { error } = await supabase.rpc("admin_send_points", { _target: target.trim(), _amount: amount });
     setBusy(false);
     if (error) toast.error(error.message);
     else { toast.success("تم إرسال النقاط"); setTarget(""); }
