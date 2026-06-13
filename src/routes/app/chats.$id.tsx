@@ -443,40 +443,45 @@ function DMPage() {
             <p className="text-sm text-muted-foreground">ابدأ المحادثة بإرسال رسالة 👋</p>
           </div>
         ) : (
-          <ul className="flex flex-col gap-2">
+          <ul className="flex flex-col gap-2.5">
             {messages.map(m => {
               const mine = m.sender_id === user?.id;
               const replied = m.reply_to_id ? messagesById.get(m.reply_to_id) : null;
               return (
                 <li key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-                  <div className="relative max-w-[80%] group">
-                    <MessageBubble m={m} mine={mine} replied={replied ?? null} />
-                    <div className={`mt-0.5 text-[10px] text-muted-foreground ${mine ? "text-end" : "text-start"}`} suppressHydrationWarning>
-                      {formatDateTime(m.created_at)}
+                  <div className={`flex items-end gap-1.5 max-w-[85%] ${mine ? "flex-row" : "flex-row-reverse"}`}>
+                    {/* Dots button as a sibling — never covers message text */}
+                    <div className="relative shrink-0 self-center">
+                      <button
+                        onClick={() => setMenuFor(menuFor === m.id ? null : m.id)}
+                        className="flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground/70 hover:text-foreground hover:bg-secondary transition"
+                        aria-label="خيارات الرسالة"
+                      >
+                        <MoreVertical className="h-4 w-4" />
+                      </button>
+                      {menuFor === m.id && (
+                        <>
+                          <div className="fixed inset-0 z-40" onClick={() => setMenuFor(null)} />
+                          <div className={`absolute z-50 mt-1 ${mine ? "left-0" : "right-0"} top-full w-48 overflow-hidden rounded-xl border border-border bg-card shadow-lg`}>
+                            <ActionItem icon={<Reply className="h-4 w-4" />} label="رد" onClick={() => { setReplyTo(m); setMenuFor(null); }} />
+                            {m.message_type === "text" && (
+                              <ActionItem icon={<Copy className="h-4 w-4" />} label="نسخ" onClick={() => copyMessage(m)} />
+                            )}
+                            <ActionItem icon={<Share2 className="h-4 w-4" />} label="مشاركة" onClick={() => shareMessage(m)} />
+                            <ActionItem icon={<Trash2 className="h-4 w-4" />} label="حذف لدي فقط" onClick={() => deleteForMe(m)} />
+                            {mine && (
+                              <ActionItem icon={<Trash2 className="h-4 w-4 text-destructive" />} label="حذف لدى الجميع" onClick={() => deleteForAll(m)} destructive />
+                            )}
+                          </div>
+                        </>
+                      )}
                     </div>
-                    <button
-                      onClick={() => setMenuFor(menuFor === m.id ? null : m.id)}
-                      className={`absolute top-1 ${mine ? "left-1" : "right-1"} opacity-60 hover:opacity-100 p-1 rounded-full bg-background/40`}
-                      aria-label="خيارات الرسالة"
-                    >
-                      <MoreVertical className="h-3.5 w-3.5" />
-                    </button>
-                    {menuFor === m.id && (
-                      <>
-                        <div className="fixed inset-0 z-40" onClick={() => setMenuFor(null)} />
-                        <div className={`absolute z-50 mt-1 ${mine ? "left-0" : "right-0"} top-full w-48 overflow-hidden rounded-xl border border-border bg-card shadow-lg`}>
-                          <ActionItem icon={<Reply className="h-4 w-4" />} label="رد" onClick={() => { setReplyTo(m); setMenuFor(null); }} />
-                          {m.message_type === "text" && (
-                            <ActionItem icon={<Copy className="h-4 w-4" />} label="نسخ" onClick={() => copyMessage(m)} />
-                          )}
-                          <ActionItem icon={<Share2 className="h-4 w-4" />} label="مشاركة" onClick={() => shareMessage(m)} />
-                          <ActionItem icon={<Trash2 className="h-4 w-4" />} label="حذف لدي فقط" onClick={() => deleteForMe(m)} />
-                          {mine && (
-                            <ActionItem icon={<Trash2 className="h-4 w-4 text-destructive" />} label="حذف لدى الجميع" onClick={() => deleteForAll(m)} destructive />
-                          )}
-                        </div>
-                      </>
-                    )}
+                    <div className="min-w-0 flex-1">
+                      <MessageBubble m={m} mine={mine} replied={replied ?? null} />
+                      <div className={`mt-1 text-[10px] text-muted-foreground/80 ${mine ? "text-end" : "text-start"}`} suppressHydrationWarning>
+                        {formatDateTime(m.created_at)}
+                      </div>
+                    </div>
                   </div>
                 </li>
               );
