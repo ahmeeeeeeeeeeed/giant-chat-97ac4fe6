@@ -2,11 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Music2, Pause, Play, SkipForward, X, Volume2, VolumeX, Search,
-  Loader2, Share2, ChevronDown, ChevronUp, Lock, Unlock,
+  Loader2, Share2, ChevronDown, ChevronUp, Lock, Unlock, UserPlus,
 } from "lucide-react";
 import { searchTrack, type TrackResult } from "@/lib/music.functions";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
+import { ShareTrackToUserModal } from "@/components/ShareTrackToUserModal";
 
 export type RoomMusic = {
   current: ({
@@ -29,6 +30,7 @@ export function MusicPlayer({ roomId }: { roomId: string }) {
   const [muted, setMuted] = useState(false);
   const [locked, setLocked] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const load = async () => {
@@ -172,7 +174,15 @@ export function MusicPlayer({ roomId }: { roomId: string }) {
               className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-xs font-bold"
               aria-label="ترجيع">−5</button>
             <button
-              onClick={() => supabase.rpc(state.paused ? "music_resume" : "music_pause", { _room: roomId })}
+              onClick={async () => {
+                // Trigger audio inside the user gesture to bypass autoplay policy
+                const a = audioRef.current;
+                if (state.paused && a && state.current?.preview_url) {
+                  if (a.src !== state.current.preview_url) { a.src = state.current.preview_url; a.load(); }
+                  a.play().catch(() => {});
+                }
+                await supabase.rpc(state.paused ? "music_resume" : "music_pause", { _room: roomId });
+              }}
               className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow"
               aria-label={state.paused ? "تشغيل" : "إيقاف"}>
               {state.paused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
@@ -200,9 +210,15 @@ export function MusicPlayer({ roomId }: { roomId: string }) {
               {locked ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}
             </button>
             <button
+              onClick={() => setShareOpen(true)}
+              className="ms-auto flex h-9 items-center gap-1 rounded-full bg-secondary px-3 text-[11px] font-bold"
+              aria-label="مشاركة مع مستخدم">
+              <UserPlus className="h-3.5 w-3.5" /> مشاركة
+            </button>
+            <button
               onClick={() => publish(state.current!)}
               disabled={publishing}
-              className="ms-auto flex h-9 items-center gap-1 rounded-full bg-gradient-to-r from-primary to-primary/70 px-3 text-[11px] font-bold text-primary-foreground disabled:opacity-50"
+              className="flex h-9 items-center gap-1 rounded-full bg-gradient-to-r from-primary to-primary/70 px-3 text-[11px] font-bold text-primary-foreground disabled:opacity-50"
               aria-label="نشر">
               {publishing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Share2 className="h-3.5 w-3.5" />}
               نشر
@@ -219,6 +235,10 @@ export function MusicPlayer({ roomId }: { roomId: string }) {
             )}
           </div>
         </div>
+      )}
+
+      {shareOpen && state?.current && (
+        <ShareTrackToUserModal track={state.current} onClose={() => setShareOpen(false)} />
       )}
     </div>
   );

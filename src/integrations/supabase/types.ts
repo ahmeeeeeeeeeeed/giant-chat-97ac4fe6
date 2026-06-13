@@ -948,6 +948,10 @@ export type Database = {
         Args: { _room: string; _vol: number }
         Returns: undefined
       }
+      music_share_to_user: {
+        Args: { _peer: string; _track: Json }
+        Returns: undefined
+      }
       music_skip: { Args: { _room: string }; Returns: undefined }
       music_stop: { Args: { _room: string }; Returns: undefined }
       room_bot_say: {
@@ -972,6 +976,10 @@ export type Database = {
           _room: string
           _user: string
         }
+        Returns: undefined
+      }
+      share_post_to_all_rooms: {
+        Args: { _image_url?: string; _source_room?: string; _text: string }
         Returns: undefined
       }
       shop_equip: { Args: { _item: string }; Returns: undefined }
