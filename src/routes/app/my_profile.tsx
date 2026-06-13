@@ -44,6 +44,8 @@ function ProfilePage() {
 
   useEffect(() => {
     if (!user) return;
+    // Always fetch fresh so newly purchased/equipped items appear immediately
+    import("@/lib/equipped").then(({ clearEquippedCache }) => clearEquippedCache(user.id));
     getEquipped(user.id).then(setEquipped);
   }, [user]);
 
