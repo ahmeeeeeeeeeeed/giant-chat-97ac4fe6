@@ -549,7 +549,7 @@ function ActionItem({ icon, label, onClick, destructive }: { icon: React.ReactNo
 }
 
 function MessageBubble({ m, mine, replied }: { m: DM; mine: boolean; replied: DM | null }) {
-  const base = `rounded-2xl px-3 py-2 ${mine ? "rounded-br-md bg-primary text-primary-foreground" : "rounded-bl-md bg-card border border-border"}`;
+  const base = `rounded-2xl px-3.5 py-2 shadow-sm ${mine ? "rounded-br-md bg-primary text-primary-foreground" : "rounded-bl-md bg-card border border-border"}`;
   const replyBlock = replied && (
     <div className={`mb-1 rounded-lg border-s-2 px-2 py-1 text-[11px] ${mine ? "border-primary-foreground/60 bg-primary-foreground/10" : "border-primary bg-secondary"}`}>
       <div className="font-bold opacity-80">رد</div>
