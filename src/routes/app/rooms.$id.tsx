@@ -7,6 +7,7 @@ import { Send, Loader2, ArrowLeft, Users, Hash, Lock, Settings, Shield, Ban, Use
 import { MusicPlayer } from "@/components/MusicPlayer";
 import { BroadcastCard } from "@/components/BroadcastCard";
 import { SharePostModal, SharedPostCard } from "@/components/SharePostModal";
+import { markRoomSeen } from "@/lib/notify";
 
 type Rank = "owner" | "admin" | "moderator" | "member";
 
