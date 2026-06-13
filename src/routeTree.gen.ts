@@ -14,15 +14,18 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app/index'
+import { Route as ProfileIdRouteImport } from './routes/profile.$id'
 import { Route as AppStoreRouteImport } from './routes/app/store'
 import { Route as AppSettingsRouteImport } from './routes/app/settings'
-import { Route as AppProfileRouteImport } from './routes/app/profile'
 import { Route as AppNotificationsRouteImport } from './routes/app/notifications'
+import { Route as AppMy_profileRouteImport } from './routes/app/my_profile'
 import { Route as AppGamesRouteImport } from './routes/app/games'
 import { Route as AppFriendsRouteImport } from './routes/app/friends'
-import { Route as AppAdminRouteImport } from './routes/app/admin'
+import { Route as AppCreateRoomRouteImport } from './routes/app/create-room'
+import { Route as AppAccountRouteImport } from './routes/app/account'
 import { Route as AppChatsIndexRouteImport } from './routes/app/chats.index'
 import { Route as AppRoomsIdRouteImport } from './routes/app/rooms.$id'
+import { Route as AppProfileIdRouteImport } from './routes/app/profile.$id'
 import { Route as AppChatsIdRouteImport } from './routes/app/chats.$id'
 
 const RegisterRoute = RegisterRouteImport.update({
@@ -50,6 +53,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
+const ProfileIdRoute = ProfileIdRouteImport.update({
+  id: '/profile/$id',
+  path: '/profile/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppStoreRoute = AppStoreRouteImport.update({
   id: '/store',
   path: '/store',
@@ -60,14 +68,14 @@ const AppSettingsRoute = AppSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AppRoute,
 } as any)
-const AppProfileRoute = AppProfileRouteImport.update({
-  id: '/profile',
-  path: '/profile',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppNotificationsRoute = AppNotificationsRouteImport.update({
   id: '/notifications',
   path: '/notifications',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMy_profileRoute = AppMy_profileRouteImport.update({
+  id: '/my_profile',
+  path: '/my_profile',
   getParentRoute: () => AppRoute,
 } as any)
 const AppGamesRoute = AppGamesRouteImport.update({
@@ -80,9 +88,14 @@ const AppFriendsRoute = AppFriendsRouteImport.update({
   path: '/friends',
   getParentRoute: () => AppRoute,
 } as any)
-const AppAdminRoute = AppAdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
+const AppCreateRoomRoute = AppCreateRoomRouteImport.update({
+  id: '/create-room',
+  path: '/create-room',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAccountRoute = AppAccountRouteImport.update({
+  id: '/account',
+  path: '/account',
   getParentRoute: () => AppRoute,
 } as any)
 const AppChatsIndexRoute = AppChatsIndexRouteImport.update({
@@ -93,6 +106,11 @@ const AppChatsIndexRoute = AppChatsIndexRouteImport.update({
 const AppRoomsIdRoute = AppRoomsIdRouteImport.update({
   id: '/rooms/$id',
   path: '/rooms/$id',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppProfileIdRoute = AppProfileIdRouteImport.update({
+  id: '/profile/$id',
+  path: '/profile/$id',
   getParentRoute: () => AppRoute,
 } as any)
 const AppChatsIdRoute = AppChatsIdRouteImport.update({
@@ -106,15 +124,18 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
-  '/app/admin': typeof AppAdminRoute
+  '/app/account': typeof AppAccountRoute
+  '/app/create-room': typeof AppCreateRoomRoute
   '/app/friends': typeof AppFriendsRoute
   '/app/games': typeof AppGamesRoute
+  '/app/my_profile': typeof AppMy_profileRoute
   '/app/notifications': typeof AppNotificationsRoute
-  '/app/profile': typeof AppProfileRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/store': typeof AppStoreRoute
+  '/profile/$id': typeof ProfileIdRoute
   '/app/': typeof AppIndexRoute
   '/app/chats/$id': typeof AppChatsIdRoute
+  '/app/profile/$id': typeof AppProfileIdRoute
   '/app/rooms/$id': typeof AppRoomsIdRoute
   '/app/chats/': typeof AppChatsIndexRoute
 }
@@ -122,15 +143,18 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
-  '/app/admin': typeof AppAdminRoute
+  '/app/account': typeof AppAccountRoute
+  '/app/create-room': typeof AppCreateRoomRoute
   '/app/friends': typeof AppFriendsRoute
   '/app/games': typeof AppGamesRoute
+  '/app/my_profile': typeof AppMy_profileRoute
   '/app/notifications': typeof AppNotificationsRoute
-  '/app/profile': typeof AppProfileRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/store': typeof AppStoreRoute
+  '/profile/$id': typeof ProfileIdRoute
   '/app': typeof AppIndexRoute
   '/app/chats/$id': typeof AppChatsIdRoute
+  '/app/profile/$id': typeof AppProfileIdRoute
   '/app/rooms/$id': typeof AppRoomsIdRoute
   '/app/chats': typeof AppChatsIndexRoute
 }
@@ -140,15 +164,18 @@ export interface FileRoutesById {
   '/app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
-  '/app/admin': typeof AppAdminRoute
+  '/app/account': typeof AppAccountRoute
+  '/app/create-room': typeof AppCreateRoomRoute
   '/app/friends': typeof AppFriendsRoute
   '/app/games': typeof AppGamesRoute
+  '/app/my_profile': typeof AppMy_profileRoute
   '/app/notifications': typeof AppNotificationsRoute
-  '/app/profile': typeof AppProfileRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/store': typeof AppStoreRoute
+  '/profile/$id': typeof ProfileIdRoute
   '/app/': typeof AppIndexRoute
   '/app/chats/$id': typeof AppChatsIdRoute
+  '/app/profile/$id': typeof AppProfileIdRoute
   '/app/rooms/$id': typeof AppRoomsIdRoute
   '/app/chats/': typeof AppChatsIndexRoute
 }
@@ -159,15 +186,18 @@ export interface FileRouteTypes {
     | '/app'
     | '/login'
     | '/register'
-    | '/app/admin'
+    | '/app/account'
+    | '/app/create-room'
     | '/app/friends'
     | '/app/games'
+    | '/app/my_profile'
     | '/app/notifications'
-    | '/app/profile'
     | '/app/settings'
     | '/app/store'
+    | '/profile/$id'
     | '/app/'
     | '/app/chats/$id'
+    | '/app/profile/$id'
     | '/app/rooms/$id'
     | '/app/chats/'
   fileRoutesByTo: FileRoutesByTo
@@ -175,15 +205,18 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/register'
-    | '/app/admin'
+    | '/app/account'
+    | '/app/create-room'
     | '/app/friends'
     | '/app/games'
+    | '/app/my_profile'
     | '/app/notifications'
-    | '/app/profile'
     | '/app/settings'
     | '/app/store'
+    | '/profile/$id'
     | '/app'
     | '/app/chats/$id'
+    | '/app/profile/$id'
     | '/app/rooms/$id'
     | '/app/chats'
   id:
@@ -192,15 +225,18 @@ export interface FileRouteTypes {
     | '/app'
     | '/login'
     | '/register'
-    | '/app/admin'
+    | '/app/account'
+    | '/app/create-room'
     | '/app/friends'
     | '/app/games'
+    | '/app/my_profile'
     | '/app/notifications'
-    | '/app/profile'
     | '/app/settings'
     | '/app/store'
+    | '/profile/$id'
     | '/app/'
     | '/app/chats/$id'
+    | '/app/profile/$id'
     | '/app/rooms/$id'
     | '/app/chats/'
   fileRoutesById: FileRoutesById
@@ -210,6 +246,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
+  ProfileIdRoute: typeof ProfileIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -249,6 +286,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/profile/$id': {
+      id: '/profile/$id'
+      path: '/profile/$id'
+      fullPath: '/profile/$id'
+      preLoaderRoute: typeof ProfileIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app/store': {
       id: '/app/store'
       path: '/store'
@@ -263,18 +307,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSettingsRouteImport
       parentRoute: typeof AppRoute
     }
-    '/app/profile': {
-      id: '/app/profile'
-      path: '/profile'
-      fullPath: '/app/profile'
-      preLoaderRoute: typeof AppProfileRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/app/notifications': {
       id: '/app/notifications'
       path: '/notifications'
       fullPath: '/app/notifications'
       preLoaderRoute: typeof AppNotificationsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/my_profile': {
+      id: '/app/my_profile'
+      path: '/my_profile'
+      fullPath: '/app/my_profile'
+      preLoaderRoute: typeof AppMy_profileRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/games': {
@@ -291,11 +335,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppFriendsRouteImport
       parentRoute: typeof AppRoute
     }
-    '/app/admin': {
-      id: '/app/admin'
-      path: '/admin'
-      fullPath: '/app/admin'
-      preLoaderRoute: typeof AppAdminRouteImport
+    '/app/create-room': {
+      id: '/app/create-room'
+      path: '/create-room'
+      fullPath: '/app/create-room'
+      preLoaderRoute: typeof AppCreateRoomRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/account': {
+      id: '/app/account'
+      path: '/account'
+      fullPath: '/app/account'
+      preLoaderRoute: typeof AppAccountRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/chats/': {
@@ -312,6 +363,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRoomsIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/profile/$id': {
+      id: '/app/profile/$id'
+      path: '/profile/$id'
+      fullPath: '/app/profile/$id'
+      preLoaderRoute: typeof AppProfileIdRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/chats/$id': {
       id: '/app/chats/$id'
       path: '/chats/$id'
@@ -323,29 +381,33 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppRouteChildren {
-  AppAdminRoute: typeof AppAdminRoute
+  AppAccountRoute: typeof AppAccountRoute
+  AppCreateRoomRoute: typeof AppCreateRoomRoute
   AppFriendsRoute: typeof AppFriendsRoute
   AppGamesRoute: typeof AppGamesRoute
+  AppMy_profileRoute: typeof AppMy_profileRoute
   AppNotificationsRoute: typeof AppNotificationsRoute
-  AppProfileRoute: typeof AppProfileRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppStoreRoute: typeof AppStoreRoute
   AppIndexRoute: typeof AppIndexRoute
   AppChatsIdRoute: typeof AppChatsIdRoute
+  AppProfileIdRoute: typeof AppProfileIdRoute
   AppRoomsIdRoute: typeof AppRoomsIdRoute
   AppChatsIndexRoute: typeof AppChatsIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
-  AppAdminRoute: AppAdminRoute,
+  AppAccountRoute: AppAccountRoute,
+  AppCreateRoomRoute: AppCreateRoomRoute,
   AppFriendsRoute: AppFriendsRoute,
   AppGamesRoute: AppGamesRoute,
+  AppMy_profileRoute: AppMy_profileRoute,
   AppNotificationsRoute: AppNotificationsRoute,
-  AppProfileRoute: AppProfileRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppStoreRoute: AppStoreRoute,
   AppIndexRoute: AppIndexRoute,
   AppChatsIdRoute: AppChatsIdRoute,
+  AppProfileIdRoute: AppProfileIdRoute,
   AppRoomsIdRoute: AppRoomsIdRoute,
   AppChatsIndexRoute: AppChatsIndexRoute,
 }
@@ -357,6 +419,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
+  ProfileIdRoute: ProfileIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

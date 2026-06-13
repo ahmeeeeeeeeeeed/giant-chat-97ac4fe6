@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 import { Send, Loader2, ArrowLeft, Users, Hash } from "lucide-react";
 
-export const Route = createFileRoute("/app/room/$id")({
+export const Route = createFileRoute("/app/rooms/$id")({
   component: RoomPage,
 });
 
@@ -80,7 +80,7 @@ function RoomPage() {
       room_id: roomId,
       user_id: user.id,
       username: user.user_metadata?.username || "مستخدم",
-    });
+    } as never);
 
     if (error) {
       toast.error("فشل الانضمام إلى الغرفة");
@@ -98,7 +98,7 @@ function RoomPage() {
       .from("room_members")
       .delete()
       .eq("room_id", roomId)
-      .eq("user_id", user?.id);
+      .eq("user_id", user!.id);
 
     if (error) {
       toast.error("فشل مغادرة الغرفة");
@@ -138,7 +138,7 @@ function RoomPage() {
       user_id: user.id,
       username: user.user_metadata?.username || "مستخدم",
       content: text.trim(),
-    });
+    } as never);
 
     setSending(false);
     if (!error) {
@@ -224,15 +224,23 @@ function RoomPage() {
         ) : (
           messages.map((msg) => {
             const isOwn = msg.user_id === user?.id;
+            const d = new Date(msg.created_at);
+            const time = d.toLocaleTimeString("ar", { hour: "2-digit", minute: "2-digit" });
+            const date = d.toLocaleDateString("ar", { day: "2-digit", month: "2-digit" });
             return (
               <div key={msg.id} className={`flex ${isOwn ? "justify-end" : "justify-start"}`}>
                 <div className={`max-w-[75%] rounded-2xl px-4 py-2 ${isOwn ? "bg-primary text-primary-foreground" : "bg-card border border-border"}`}>
-                  {!isOwn && (
-                    <p className="text-xs font-semibold mb-1 text-muted-foreground">{msg.username}</p>
+                  {!isOwn && msg.user_id && (
+                    <button
+                      onClick={() => navigate({ to: "/app/profile/$id", params: { id: msg.user_id } })}
+                      className="text-xs font-semibold mb-1 text-emerald-600 hover:underline"
+                    >
+                      {msg.username}
+                    </button>
                   )}
                   <p className="text-sm break-words">{msg.content}</p>
-                  <p className="text-[10px] opacity-70 mt-1 text-right">
-                    {new Date(msg.created_at).toLocaleTimeString("ar", { hour: "2-digit", minute: "2-digit" })}
+                  <p className="text-[10px] opacity-70 mt-1 text-right" suppressHydrationWarning>
+                    {date} · {time}
                   </p>
                 </div>
               </div>

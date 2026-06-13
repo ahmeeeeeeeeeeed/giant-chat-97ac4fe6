@@ -8,7 +8,7 @@ import { useTranslation } from "react-i18next";
 import { getEquipped, type EquippedSet } from "@/lib/equipped";
 import { BadgeChip } from "@/routes/app/store";
 
-export const Route = createFileRoute("/app/my-profile")({
+export const Route = createFileRoute("/app/my_profile")({
   component: ProfilePage,
 });
 
