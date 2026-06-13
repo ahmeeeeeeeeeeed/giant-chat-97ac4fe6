@@ -59,7 +59,7 @@ function ProfilePage() {
     (async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("username, bio, avatar_url, points, gender, country, hide_last_seen, dm_locked, profile_views, recovery_email, recovery_email_verified_at")
+        .select("username, bio, avatar_url, points, gender, country, hide_last_seen, dm_locked, profile_views")
         .eq("id", user.id).maybeSingle();
       if (data) {
         setUsername(data.username);
@@ -71,11 +71,16 @@ function ProfilePage() {
         setHideLastSeen(!!data.hide_last_seen);
         setDmLocked(!!data.dm_locked);
         setProfileViews(data.profile_views ?? 0);
-        setRecoveryEmail((data as { recovery_email?: string | null }).recovery_email ?? "");
-        setEmailVerifiedAt((data as { recovery_email_verified_at?: string | null }).recovery_email_verified_at ?? null);
+      }
+      const { data: rec } = await supabase.rpc("get_my_recovery_status" as never);
+      const row = Array.isArray(rec) ? rec[0] : rec;
+      if (row) {
+        setRecoveryEmail((row as { recovery_email?: string | null }).recovery_email ?? "");
+        setEmailVerifiedAt((row as { recovery_email_verified_at?: string | null }).recovery_email_verified_at ?? null);
       }
       setLoading(false);
     })();
+
   }, [user]);
 
   const sendEmailCode = async () => {
