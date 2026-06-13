@@ -107,6 +107,21 @@ function LoginPage() {
           </div>
         </label>
 
+        <div className="mt-1 flex items-center justify-between text-xs">
+          <label className="flex cursor-pointer items-center gap-2 select-none">
+            <input
+              type="checkbox"
+              checked={remember}
+              onChange={(e) => setRemember(e.target.checked)}
+              className="h-4 w-4 accent-primary"
+            />
+            <span className="text-muted-foreground">تذكّرني</span>
+          </label>
+          <Link to="/recovery" className="font-bold text-primary hover:underline">
+            استرجاع الحساب
+          </Link>
+        </div>
+
         <button
           type="submit"
           disabled={loading}
