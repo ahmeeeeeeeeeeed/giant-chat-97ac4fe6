@@ -3,7 +3,9 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
-import { Loader2, ArrowRight, MessageCircle, Ban, Flag, Globe, Lock, EyeOff } from "lucide-react";
+import { Loader2, ArrowRight, MessageCircle, Ban, Flag, Globe, Lock, EyeOff, Eye, Crown, Award } from "lucide-react";
+import { getEquipped, type EquippedSet } from "@/lib/equipped";
+import { BadgeChip } from "@/routes/app/store";
 
 export const Route = createFileRoute("/profile/$id")({
   component: OtherProfilePage,
@@ -20,7 +22,18 @@ type Profile = {
   hide_last_seen: boolean;
   dm_locked: boolean;
   last_seen_at: string | null;
+  profile_views: number;
 };
+
+function getUserLevel(points: number) {
+  if (points >= 100000) return { label: "أسطورة", color: "#9333EA" };
+  if (points >= 50000)  return { label: "خبير", color: "#2563EB" };
+  if (points >= 25000)  return { label: "محترف", color: "#0891B2" };
+  if (points >= 10000)  return { label: "شخصية مهمة", color: "#DC2626" };
+  if (points >= 5000)   return { label: "نشيط", color: "#16A34A" };
+  if (points >= 1000)   return { label: "متقدم", color: "#CA8A04" };
+  return { label: "مبتدئ", color: "#6B7280" };
+}
 
 function OtherProfilePage() {
   const { id: otherId } = Route.useParams();
@@ -31,6 +44,7 @@ function OtherProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const [isBlocked, setIsBlocked] = useState(false);
   const [isBlockedBy, setIsBlockedBy] = useState(false);
+  const [equipped, setEquipped] = useState<EquippedSet>({});
 
   // للتصحيح: طباعة الـ ID
   console.log("OtherProfilePage - otherId:", otherId);
@@ -53,7 +67,7 @@ function OtherProfilePage() {
       // جلب بيانات البروفايل
       const { data: p, error: profileError } = await supabase
         .from("profiles")
-        .select("id, username, avatar_url, bio, points, gender, country, hide_last_seen, dm_locked, last_seen_at")
+        .select("id, username, avatar_url, bio, points, gender, country, hide_last_seen, dm_locked, last_seen_at, profile_views")
         .eq("id", otherId)
         .maybeSingle();
       
@@ -77,6 +91,14 @@ function OtherProfilePage() {
       
       setProfile(p as Profile);
       console.log("تم تعيين البروفايل:", p);
+
+      // جلب الشارات المجهزة
+      try {
+        const eq = await getEquipped(otherId);
+        setEquipped(eq);
+      } catch (eqErr) {
+        console.error("خطأ في جلب الشارات:", eqErr);
+      }
 
       // جلب حالة الحظر
       try {
@@ -227,12 +249,37 @@ function OtherProfilePage() {
             <h1 className="mt-4 text-2xl font-extrabold">{profile.username}</h1>
             
             <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
+              {(() => {
+                const lvl = getUserLevel(profile.points);
+                return (
+                  <span
+                    className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-extrabold text-white shadow-sm"
+                    style={{ backgroundColor: lvl.color }}
+                    title={lvl.label}
+                  >
+                    <Award className="h-3 w-3" /> {lvl.label}
+                  </span>
+                );
+              })()}
+              {equipped.badge && (
+                <BadgeChip code={equipped.badge.code} color={equipped.badge.payload.color} name={equipped.badge.name_ar} />
+              )}
+              {profile.points > 10000 && !equipped.badge && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-white shadow-sm ring-1 ring-red-700/40">
+                  <Crown className="h-3 w-3" /> شخصية مهمة
+                </span>
+              )}
               <span className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold">
                 🪙 {profile.points} نقطة
               </span>
               <span className="rounded-full bg-secondary px-3 py-1 text-xs">
                 {formatLastSeen()}
               </span>
+            </div>
+
+            <div className="mt-1 flex items-center justify-center gap-1 text-xs text-muted-foreground">
+              <Eye className="h-3 w-3" />
+              <span>{profile.profile_views ?? 0} مشاهدة</span>
             </div>
 
             {profile.bio && (
