@@ -8,7 +8,7 @@ import { MusicPlayer } from "@/components/MusicPlayer";
 import { BroadcastCard } from "@/components/BroadcastCard";
 import { SharePostModal, SharedPostCard } from "@/components/SharePostModal";
 
-type Rank = "owner" | "admin" | "member";
+type Rank = "owner" | "admin" | "moderator" | "member";
 
 export const Route = createFileRoute("/app/rooms/$id")({
   component: RoomPage,
