@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
+import { tryParseTrackDM, TrackDMPlayer } from "@/components/TrackDMPlayer";
 
 export const Route = createFileRoute("/app/chats/$id")({
   component: DMPage,
@@ -527,6 +528,10 @@ function MessageBubble({ m, mine, replied }: { m: DM; mine: boolean; replied: DM
   }
   if (m.message_type === "voice" && m.media_url) {
     return <div className={base}>{replyBlock}<VoicePlayer url={m.media_url} durationMs={m.media_duration_ms ?? 0} mine={mine} /></div>;
+  }
+  const shared = tryParseTrackDM(m.content || "");
+  if (shared) {
+    return <div className={base}>{replyBlock}<TrackDMPlayer track={shared.track} senderName={shared.senderName} mine={mine} /></div>;
   }
   return <div className={base}>{replyBlock}<div className="whitespace-pre-wrap break-words text-[15px] leading-relaxed">{m.content}</div></div>;
 }
