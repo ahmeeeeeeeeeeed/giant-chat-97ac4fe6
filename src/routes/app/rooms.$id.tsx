@@ -3,7 +3,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
-import { Send, Loader2, ArrowLeft, Users, Hash, Lock, Settings, Shield, Ban, UserMinus, ArrowUp, ArrowDown, Crown, FileText, X, KeyRound } from "lucide-react";
+import { Send, Loader2, ArrowLeft, Users, Hash, Lock, Settings, Shield, Ban, UserMinus, ArrowUp, ArrowDown, Crown, FileText, X, KeyRound, MoreVertical } from "lucide-react";
 
 type Rank = "owner" | "admin" | "member";
 
