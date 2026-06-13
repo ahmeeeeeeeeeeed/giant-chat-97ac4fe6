@@ -286,6 +286,90 @@ function ProfilePage() {
             <Row icon={<UserIcon className="h-5 w-5" />} label={t("profile.username")} value={username} />
           </Section>
 
+          <Section title="بريد الاسترجاع">
+            <div className="space-y-3 p-4">
+              <div className="flex items-start gap-3">
+                <Mail className="mt-1 h-5 w-5 text-muted-foreground" />
+                <div className="flex-1">
+                  <div className="text-sm font-medium">
+                    بريد لاسترجاع الحساب
+                    {emailVerifiedAt && (
+                      <span className="ms-2 inline-flex items-center gap-1 rounded-full bg-success/15 px-2 py-0.5 text-[10px] font-bold text-success">
+                        <CheckCircle2 className="h-3 w-3" /> مؤكَّد
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    بعد التأكيد يمكنك استرجاع الحساب عبر هذا البريد
+                  </p>
+                </div>
+              </div>
+
+              <input
+                type="email"
+                value={recoveryEmail}
+                onChange={(e) => { setRecoveryEmail(e.target.value); setEmailVerifiedAt(null); setEmailStep("idle"); }}
+                dir="ltr"
+                placeholder="you@example.com"
+                className="h-11 w-full rounded-xl border border-input bg-background px-3 outline-none focus:border-primary"
+              />
+
+              {emailStep === "sent" && !emailVerifiedAt && (
+                <input
+                  value={emailCode}
+                  onChange={(e) => setEmailCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  dir="ltr"
+                  inputMode="numeric"
+                  placeholder="الكود (6 أرقام)"
+                  className="h-11 w-full rounded-xl border border-input bg-background px-3 outline-none focus:border-primary"
+                />
+              )}
+
+              <div className="flex gap-2">
+                {!emailVerifiedAt && emailStep === "idle" && (
+                  <button
+                    type="button"
+                    onClick={sendEmailCode}
+                    disabled={emailBusy || !recoveryEmail}
+                    className="flex h-10 flex-1 items-center justify-center rounded-xl bg-primary text-sm font-bold text-primary-foreground disabled:opacity-60"
+                  >
+                    {emailBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : "إرسال كود التأكيد"}
+                  </button>
+                )}
+                {emailStep === "sent" && !emailVerifiedAt && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={confirmEmail}
+                      disabled={emailBusy}
+                      className="flex h-10 flex-1 items-center justify-center rounded-xl bg-primary text-sm font-bold text-primary-foreground disabled:opacity-60"
+                    >
+                      {emailBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : "تأكيد الكود"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={sendEmailCode}
+                      disabled={emailBusy}
+                      className="h-10 rounded-xl border border-border bg-card px-3 text-xs font-semibold"
+                    >
+                      إعادة الإرسال
+                    </button>
+                  </>
+                )}
+                {emailVerifiedAt && (
+                  <button
+                    type="button"
+                    onClick={() => { setEmailStep("idle"); }}
+                    className="h-10 w-full rounded-xl border border-border bg-card text-sm font-semibold"
+                  >
+                    تغيير البريد
+                  </button>
+                )}
+              </div>
+            </div>
+          </Section>
+
+
           <Section title={t("profile.notifications")}>
             <ToggleRow icon={<Bell className="h-5 w-5" />} label={t("settings.notifications_on")} value={notifEnabled} onChange={toggleNotif} />
           </Section>
