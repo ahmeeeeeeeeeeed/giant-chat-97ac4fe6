@@ -7,6 +7,7 @@ import { Home, MessageSquare, User, Settings, Users as UsersIcon, Gamepad2, Bell
 import { findAdminId } from "@/lib/find-admin";
 import { toast } from "sonner";
 import { OnlineStatusBanner } from "@/components/OnlineStatusBanner";
+import { scheduleDataPrewarm } from "@/lib/data-prewarm";
 
 export const Route = createFileRoute("/app")({
   component: AppLayout,
@@ -33,6 +34,10 @@ function AppLayout() {
   useEffect(() => {
     if (!loading && !session) navigate({ to: "/" });
   }, [loading, session, navigate]);
+
+  useEffect(() => {
+    if (session?.user?.id) scheduleDataPrewarm(session.user.id);
+  }, [session?.user?.id]);
 
   if (loading || !session) {
     return (
