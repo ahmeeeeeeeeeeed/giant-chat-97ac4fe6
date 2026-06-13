@@ -42,6 +42,9 @@ function AppLayout() {
 
   const path = location.pathname;
   const hideChrome = /\/app\/rooms\/[^/]+/.test(path) || /\/app\/chats\/[^/]+/.test(path);
+  const tabRoots = new Set(["/app", "/app/friends", "/app/games", "/app/chats", "/app/my_profile", "/app/settings"]);
+  const showBack = !hideChrome && !tabRoots.has(path);
+  const router = useRouter();
 
   const openComplaints = async () => {
     const id = await findAdminId();
@@ -62,7 +65,18 @@ function AppLayout() {
       </button>
       {!hideChrome && (
         <div className="sticky top-0 z-50 flex items-center justify-between border-b border-emerald-700/40 bg-gradient-to-r from-emerald-600 to-green-600 text-white px-4 py-2 shadow-md">
-          <div className="text-sm font-extrabold tracking-tight">Giant</div>
+          <div className="flex items-center gap-2">
+            {showBack && (
+              <button
+                onClick={() => { try { router.history.back(); } catch { navigate({ to: "/app" }); } }}
+                aria-label="رجوع"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 hover:bg-white/25 transition"
+              >
+                <ArrowRight className="h-5 w-5" />
+              </button>
+            )}
+            <div className="text-sm font-extrabold tracking-tight">Giant</div>
+          </div>
           <div className="flex items-center gap-2">
             {isAdmin && (
               <Link to="/app/admin" aria-label={t("admin.title")}
