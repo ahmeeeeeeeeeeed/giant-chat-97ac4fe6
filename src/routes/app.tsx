@@ -21,7 +21,10 @@ function AppLayout() {
   const location = useLocation();
   const { t } = useTranslation();
   const { isAdmin } = useIsAdmin();
-  const unread = useUnreadDMCount();
+  const unreadDM = useUnreadDMCount();
+  const unreadRooms = useUnreadRoomCount();
+  const unread = unreadDM + unreadRooms;
+  useGlobalNotificationListener((url) => navigate({ to: url as any }));
 
   const tabs = [
     { to: "/app", label: t("nav.rooms"), icon: Home, exact: true },
