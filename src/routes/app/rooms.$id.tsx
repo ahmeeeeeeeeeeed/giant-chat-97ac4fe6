@@ -179,6 +179,8 @@ function RoomPage() {
         </div>
       </header>
 
+      <MusicPlayer roomId={roomId} />
+
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {messages.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center text-center">
@@ -195,6 +197,18 @@ function RoomPage() {
             const prof = msg.user_id ? userMap[msg.user_id] : null;
 
             if (isSystem) {
+              const meta = msg.meta as any;
+              if (meta?.kind === "music_broadcast" && meta?.broadcast_id && meta?.track) {
+                return (
+                  <BroadcastCard
+                    key={msg.id}
+                    broadcastId={meta.broadcast_id}
+                    requesterName={meta.requester_name}
+                    sourceRoomName={meta.source_room_name}
+                    track={meta.track}
+                  />
+                );
+              }
               return (
                 <div key={msg.id} className="flex justify-center">
                   <div className="rounded-full bg-muted/50 px-3 py-1 text-xs text-muted-foreground" suppressHydrationWarning>
