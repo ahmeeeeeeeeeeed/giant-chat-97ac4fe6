@@ -415,6 +415,9 @@ function DMPage() {
                 <li key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
                   <div className="relative max-w-[80%] group">
                     <MessageBubble m={m} mine={mine} replied={replied ?? null} />
+                    <div className={`mt-0.5 text-[10px] text-muted-foreground ${mine ? "text-end" : "text-start"}`} suppressHydrationWarning>
+                      {formatDateTime(m.created_at)}
+                    </div>
                     <button
                       onClick={() => setMenuFor(menuFor === m.id ? null : m.id)}
                       className={`absolute top-1 ${mine ? "left-1" : "right-1"} opacity-60 hover:opacity-100 p-1 rounded-full bg-background/40`}
