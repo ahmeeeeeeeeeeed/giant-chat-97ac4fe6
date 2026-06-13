@@ -145,7 +145,7 @@ function AppLayout() {
                       <Icon className="h-[18px] w-[18px]" strokeWidth={active ? 2.5 : 2} />
                       {showBadge && (
                         <span className="absolute -end-1.5 -top-1 flex h-[16px] min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white ring-2 ring-emerald-900">
-                          {unread > 99 ? "99+" : unread}
+                          {unreadDM > 99 ? "99+" : unreadDM}
                         </span>
                       )}
                     </span>
