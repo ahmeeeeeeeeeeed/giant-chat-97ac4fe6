@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { Search, UserPlus, Check, X, Loader2, Users as UsersIcon, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
+import { cacheGet, cacheSet, cacheKeys } from "@/lib/offline-cache";
 
 export const Route = createFileRoute("/app/friends")({
   component: FriendsPage,
@@ -28,21 +29,35 @@ function FriendsPage() {
 
   const load = async () => {
     if (!user) return;
-    setLoading(true);
-    const { data } = await supabase
-      .from("friendships")
-      .select("id, requester_id, addressee_id, status")
-      .or(`requester_id.eq.${user.id},addressee_id.eq.${user.id}`);
-    const list = (data ?? []) as Friendship[];
-    setFriendships(list);
-    const ids = Array.from(new Set(list.flatMap(f => [f.requester_id, f.addressee_id])));
-    if (ids.length) {
-      const { data: profs } = await supabase.from("profiles").select("id, username, avatar_url").in("id", ids);
-      const map: Record<string, Profile> = {};
-      profs?.forEach(p => (map[p.id] = p as Profile));
-      setProfiles(map);
+    // Seed from cache for instant render
+    const cachedF = await cacheGet<Friendship[]>(cacheKeys.friends(user.id));
+    const cachedP = await cacheGet<Record<string, Profile>>(cacheKeys.friendProfiles(user.id));
+    if (cachedF) setFriendships(cachedF);
+    if (cachedP) setProfiles(cachedP);
+    if (cachedF || cachedP) setLoading(false);
+
+    try {
+      const { data, error } = await supabase
+        .from("friendships")
+        .select("id, requester_id, addressee_id, status")
+        .or(`requester_id.eq.${user.id},addressee_id.eq.${user.id}`);
+      if (error) throw error;
+      const list = (data ?? []) as Friendship[];
+      setFriendships(list);
+      await cacheSet(cacheKeys.friends(user.id), list);
+      const ids = Array.from(new Set(list.flatMap(f => [f.requester_id, f.addressee_id])));
+      if (ids.length) {
+        const { data: profs } = await supabase.from("profiles").select("id, username, avatar_url").in("id", ids);
+        const map: Record<string, Profile> = {};
+        profs?.forEach(p => (map[p.id] = p as Profile));
+        setProfiles(map);
+        await cacheSet(cacheKeys.friendProfiles(user.id), map);
+      }
+    } catch {
+      // offline — keep cached values
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   useEffect(() => {
