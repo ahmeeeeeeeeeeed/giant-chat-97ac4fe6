@@ -348,15 +348,12 @@ function SettingsSheet({ roomId, canModerate, myRank, ownerId, onClose, ensurePr
     return act(supabase.rpc("ban_room_member", { _room: roomId, _user: uid, _reason: reason }), "تم الحظر");
   };
   const unban = (uid: string) => act(supabase.rpc("unban_room_member", { _room: roomId, _user: uid }), "تم إلغاء الحظر");
-  const promote = (uid: string) => act(supabase.rpc("set_member_rank", { _room: roomId, _user: uid, _new_rank: "admin" }), "تمت الترقية");
-  const demote = (uid: string) => act(supabase.rpc("set_member_rank", { _room: roomId, _user: uid, _new_rank: "member" }), "تم التخفيض");
-  const transfer = (uid: string) => {
-    if (!confirm("نقل ملكية الغرفة إلى هذا المستخدم؟")) return;
-    return act(supabase.rpc("transfer_room_ownership", { _room: roomId, _new_owner: uid }), "تم نقل الملكية");
-  };
+  const setRank = (uid: string, rank: "admin" | "moderator" | "member", okMsg: string) =>
+    act(supabase.rpc("set_member_rank", { _room: roomId, _user: uid, _new_rank: rank }), okMsg);
 
   const rankBadge = (r: string) => r === "owner" ? <span className="text-[10px] rounded bg-amber-500/20 text-amber-600 px-1.5 py-0.5 font-bold">مالك</span>
-    : r === "admin" ? <span className="text-[10px] rounded bg-blue-500/20 text-blue-600 px-1.5 py-0.5 font-bold">مشرف</span>
+    : r === "admin" ? <span className="text-[10px] rounded bg-blue-500/20 text-blue-600 px-1.5 py-0.5 font-bold">مسؤول</span>
+    : r === "moderator" ? <span className="text-[10px] rounded bg-emerald-500/20 text-emerald-600 px-1.5 py-0.5 font-bold">مشرف</span>
     : <span className="text-[10px] rounded bg-muted px-1.5 py-0.5 text-muted-foreground">عضو</span>;
 
   const showAdminTabs = canModerate;
