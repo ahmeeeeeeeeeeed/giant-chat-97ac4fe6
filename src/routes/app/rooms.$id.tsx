@@ -405,11 +405,11 @@ function SettingsSheet({ roomId, canModerate, myRank, ownerId, onClose, ensurePr
                     </div>
                     {canModerate && m.user_id !== ownerId && (
                       <MemberMenu
-                        canOwner={myRank === "owner"}
+                        myRank={myRank}
                         rank={m.rank}
-                        onPromote={() => promote(m.user_id)}
-                        onDemote={() => demote(m.user_id)}
-                        onTransfer={() => transfer(m.user_id)}
+                        onMakeAdmin={() => setRank(m.user_id, "admin", "تمت الترقية إلى مسؤول")}
+                        onMakeModerator={() => setRank(m.user_id, "moderator", "تمت الترقية إلى مشرف")}
+                        onMakeMember={() => setRank(m.user_id, "member", "تم التخفيض إلى عضو")}
                         onKick={() => kick(m.user_id)}
                         onBan={() => ban(m.user_id)}
                       />
