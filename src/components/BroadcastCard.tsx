@@ -68,7 +68,9 @@ export function BroadcastCard({
           <div className="truncate text-sm font-extrabold">{track.title}</div>
           <div className="truncate text-[11px] text-muted-foreground">{track.artist}</div>
           {requesterName && (
-            <div className="truncate text-[10px] text-primary">شارك بواسطة {requesterName}</div>
+            <div className="truncate text-[10px] text-primary">
+              شارك بواسطة {requesterName}{sourceRoomName ? ` من «${sourceRoomName}»` : ""}
+            </div>
           )}
         </div>
         <button onClick={togglePlay}
