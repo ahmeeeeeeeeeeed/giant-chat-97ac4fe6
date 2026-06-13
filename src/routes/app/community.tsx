@@ -49,7 +49,7 @@ function CommunityPage() {
       .order("created_at", { ascending: false })
       .limit(100);
     if (error) { toast.error(error.message); setLoading(false); return; }
-    const ids = Array.from(new Set((data ?? []).map((p: Post) => p.author_id)));
+    const ids: string[] = Array.from(new Set((data ?? []).map((p: Post) => p.author_id as string)));
     let map = new Map<string, { username: string | null; avatar_url: string | null }>();
     if (ids.length) {
       const { data: profs } = await supabase.from("profiles").select("id,username,avatar_url").in("id", ids);
@@ -368,7 +368,7 @@ function Comments({ postId, postAuthorId, currentUserId, isAdmin }: {
 
   const load = async () => {
     const { data } = await db.from("community_comments").select("*").eq("post_id", postId).order("created_at", { ascending: true });
-    const ids = Array.from(new Set((data ?? []).map((c: any) => c.author_id)));
+    const ids: string[] = Array.from(new Set((data ?? []).map((c: any) => c.author_id as string)));
     let map = new Map<string, any>();
     if (ids.length) {
       const { data: profs } = await supabase.from("profiles").select("id,username,avatar_url").in("id", ids);
