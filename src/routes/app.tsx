@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/lib/auth";
 import { useIsAdmin, useUnreadDMCount } from "@/lib/use-admin";
+import { useGlobalNotificationListener, useUnreadRoomCount } from "@/lib/use-global-notifications";
 import { Home, MessageSquare, User, Settings, Users as UsersIcon, Gamepad2, Bell, Shield, Flag, ArrowRight, Newspaper } from "lucide-react";
 import { findAdminId } from "@/lib/find-admin";
 import { toast } from "sonner";
@@ -20,7 +21,10 @@ function AppLayout() {
   const location = useLocation();
   const { t } = useTranslation();
   const { isAdmin } = useIsAdmin();
-  const unread = useUnreadDMCount();
+  const unreadDM = useUnreadDMCount();
+  const unreadRooms = useUnreadRoomCount();
+  const unread = unreadDM + unreadRooms;
+  useGlobalNotificationListener((url) => navigate({ to: url as any }));
 
   const tabs = [
     { to: "/app", label: t("nav.rooms"), icon: Home, exact: true },
@@ -124,7 +128,7 @@ function AppLayout() {
           <ul className="mx-auto flex max-w-md items-stretch justify-around rounded-[28px] border border-white/10 bg-emerald-900/85 px-2 py-2 shadow-[0_20px_50px_-15px_rgba(6,78,59,0.65)] backdrop-blur-xl">
             {tabs.map(({ to, label, icon: Icon, exact }) => {
               const active = exact ? path === to : path.startsWith(to);
-              const showBadge = to === "/app/chats" && unread > 0;
+              const showBadge = to === "/app/chats" && unreadDM > 0;
               return (
                 <li key={to} className="flex-1">
                   <Link
@@ -141,7 +145,7 @@ function AppLayout() {
                       <Icon className="h-[18px] w-[18px]" strokeWidth={active ? 2.5 : 2} />
                       {showBadge && (
                         <span className="absolute -end-1.5 -top-1 flex h-[16px] min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white ring-2 ring-emerald-900">
-                          {unread > 99 ? "99+" : unread}
+                          {unreadDM > 99 ? "99+" : unreadDM}
                         </span>
                       )}
                     </span>

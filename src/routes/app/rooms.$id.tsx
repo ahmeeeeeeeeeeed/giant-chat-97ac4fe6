@@ -7,6 +7,7 @@ import { Send, Loader2, ArrowLeft, Users, Hash, Lock, Settings, Shield, Ban, Use
 import { MusicPlayer } from "@/components/MusicPlayer";
 import { BroadcastCard } from "@/components/BroadcastCard";
 import { SharePostModal, SharedPostCard } from "@/components/SharePostModal";
+import { markRoomSeen } from "@/lib/notify";
 
 type Rank = "owner" | "admin" | "moderator" | "member";
 
@@ -96,6 +97,7 @@ function RoomPage() {
     loadMemberCount();
     loadMessages();
     if (user?.id) ensureProfiles([user.id]);
+    markRoomSeen(roomId);
 
     const ch = supabase
       .channel(`room:${roomId}`)
@@ -104,12 +106,13 @@ function RoomPage() {
           const m: any = p.new;
           setMessages((prev) => [...prev, m]);
           if (m.user_id) ensureProfiles([m.user_id]);
+          markRoomSeen(roomId);
           setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
         })
       .on("postgres_changes", { event: "*", schema: "public", table: "room_members", filter: `room_id=eq.${roomId}` },
         () => { loadMemberCount(); loadMembership(); })
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    return () => { markRoomSeen(roomId); supabase.removeChannel(ch); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomId, user?.id]);
 
