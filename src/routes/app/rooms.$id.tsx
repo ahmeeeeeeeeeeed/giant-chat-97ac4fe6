@@ -408,3 +408,49 @@ function SettingsSheet({ roomId, canModerate, myRank, ownerId, onClose, ensurePr
     </div>
   );
 }
+
+function MemberMenu({ canOwner, rank, onPromote, onDemote, onTransfer, onKick, onBan }: {
+  canOwner: boolean; rank: Rank;
+  onPromote: () => void; onDemote: () => void; onTransfer: () => void; onKick: () => void; onBan: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (!open) return;
+    const close = () => setOpen(false);
+    window.addEventListener("click", close);
+    return () => window.removeEventListener("click", close);
+  }, [open]);
+  const item = "flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-secondary text-start";
+  return (
+    <div className="relative" onClick={(e) => e.stopPropagation()}>
+      <button onClick={() => setOpen((v) => !v)} className="rounded-lg p-2 hover:bg-secondary" aria-label="خيارات">
+        <MoreVertical className="h-4 w-4" />
+      </button>
+      {open && (
+        <div className="absolute end-0 top-full z-50 mt-1 w-44 overflow-hidden rounded-xl border border-border bg-card shadow-xl">
+          {canOwner && rank === "member" && (
+            <button onClick={() => { setOpen(false); onPromote(); }} className={`${item} text-blue-600`}>
+              <Shield className="h-4 w-4" /> تعيين كمشرف
+            </button>
+          )}
+          {canOwner && rank === "admin" && (
+            <button onClick={() => { setOpen(false); onDemote(); }} className={`${item} text-orange-600`}>
+              <ArrowDown className="h-4 w-4" /> إزالة الإشراف
+            </button>
+          )}
+          {canOwner && rank !== "owner" && (
+            <button onClick={() => { setOpen(false); onTransfer(); }} className={`${item} text-amber-600`}>
+              <Crown className="h-4 w-4" /> نقل الملكية
+            </button>
+          )}
+          <button onClick={() => { setOpen(false); onKick(); }} className={`${item} text-orange-600`}>
+            <UserMinus className="h-4 w-4" /> طرد
+          </button>
+          <button onClick={() => { setOpen(false); onBan(); }} className={`${item} text-red-600`}>
+            <Ban className="h-4 w-4" /> حظر
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
