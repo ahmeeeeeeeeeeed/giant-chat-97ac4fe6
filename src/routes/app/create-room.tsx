@@ -43,7 +43,7 @@ function CreateRoomPage() {
         type: roomType,
         password: roomType === "private" ? password : null,
         max_members: maxMembers,
-        owner_id: user?.id,
+        owner_id: user!.id,
         is_active: true,
       })
       .select()
