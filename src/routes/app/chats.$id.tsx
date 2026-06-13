@@ -74,23 +74,34 @@ function DMPage() {
   useEffect(() => {
     if (!user) return;
     (async () => {
-      const [{ data: p }, { data: msgs }, { data: bl }, { data: blMe }, { data: mu }] = await Promise.all([
-        supabase.from("profiles").select("id, username, avatar_url, last_seen_at, hide_last_seen").eq("id", otherId).maybeSingle(),
-        supabase.from("direct_messages")
-          .select("id, sender_id, receiver_id, content, created_at, message_type, media_url, media_duration_ms, reply_to_id")
-          .or(`and(sender_id.eq.${user.id},receiver_id.eq.${otherId}),and(sender_id.eq.${otherId},receiver_id.eq.${user.id})`)
-          .order("created_at", { ascending: true }).limit(500),
-        supabase.from("dm_blocks").select("blocked_id").eq("blocker_id", user.id).eq("blocked_id", otherId).maybeSingle(),
-        supabase.from("dm_blocks").select("blocker_id").eq("blocker_id", otherId).eq("blocked_id", user.id).maybeSingle(),
-        supabase.from("dm_mutes").select("muted_id").eq("muter_id", user.id).eq("muted_id", otherId).maybeSingle(),
-      ]);
-      if (p) setOther(p as Profile);
-      setMessages((msgs ?? []) as DM[]);
-      setBlocked(!!bl);
-      setBlockedByOther(!!blMe);
-      setMuted(!!mu);
-      setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight }), 50);
-      await markRead();
+      const cachedMsgs = await cacheGet<DM[]>(cacheKeys.dmMessages(user.id, otherId));
+      const cachedProfile = await cacheGet<Profile>(cacheKeys.profile(otherId));
+      if (cachedMsgs) setMessages(cachedMsgs);
+      if (cachedProfile) setOther(cachedProfile);
+      if (cachedMsgs) setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight }), 50);
+      try {
+        const [{ data: p }, { data: msgs }, { data: bl }, { data: blMe }, { data: mu }] = await Promise.all([
+          supabase.from("profiles").select("id, username, avatar_url, last_seen_at, hide_last_seen").eq("id", otherId).maybeSingle(),
+          supabase.from("direct_messages")
+            .select("id, sender_id, receiver_id, content, created_at, message_type, media_url, media_duration_ms, reply_to_id")
+            .or(`and(sender_id.eq.${user.id},receiver_id.eq.${otherId}),and(sender_id.eq.${otherId},receiver_id.eq.${user.id})`)
+            .order("created_at", { ascending: true }).limit(500),
+          supabase.from("dm_blocks").select("blocked_id").eq("blocker_id", user.id).eq("blocked_id", otherId).maybeSingle(),
+          supabase.from("dm_blocks").select("blocker_id").eq("blocker_id", otherId).eq("blocked_id", user.id).maybeSingle(),
+          supabase.from("dm_mutes").select("muted_id").eq("muter_id", user.id).eq("muted_id", otherId).maybeSingle(),
+        ]);
+        if (p) { setOther(p as Profile); await cacheSet(cacheKeys.profile(otherId), p as Profile); }
+        const fresh = (msgs ?? []) as DM[];
+        setMessages(fresh);
+        await cacheSet(cacheKeys.dmMessages(user.id, otherId), fresh);
+        setBlocked(!!bl);
+        setBlockedByOther(!!blMe);
+        setMuted(!!mu);
+        setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight }), 50);
+        await markRead();
+      } catch {
+        // offline — keep cached values
+      }
     })();
   }, [otherId, user]);
 
