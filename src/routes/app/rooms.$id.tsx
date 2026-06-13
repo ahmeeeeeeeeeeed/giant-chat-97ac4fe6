@@ -305,7 +305,7 @@ function RoomPage() {
       )}
 
       {showSettings && (
-        <SettingsSheet roomId={roomId} canModerate={myRank === "owner" || myRank === "admin"} myRank={myRank}
+        <SettingsSheet roomId={roomId} canModerate={myRank === "owner" || myRank === "admin" || myRank === "moderator"} myRank={myRank}
           ownerId={room.owner_id} onClose={() => setShowSettings(false)} ensureProfiles={ensureProfiles} userMap={userMap} />
       )}
     </div>
