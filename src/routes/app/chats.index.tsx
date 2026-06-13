@@ -9,7 +9,7 @@ export const Route = createFileRoute("/app/chats/")({
   component: ChatsPage,
 });
 
-type Convo = { otherId: string; username: string; avatar_url: string | null; last: string; created_at: string };
+type Convo = { otherId: string; username: string; avatar_url: string | null; last: string; created_at: string; unread: number };
 type SearchProfile = { id: string; username: string; avatar_url: string | null };
 
 function ChatsPage() {
