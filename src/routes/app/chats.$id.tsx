@@ -177,12 +177,33 @@ function DMPage() {
     const reply = replyTo;
     setText(""); setReplyTo(null);
     broadcastActivity("idle");
+
+    if (!getOnline()) {
+      await enqueueMessage({ kind: "dm", sender_id: user.id, receiver_id: otherId, content });
+      const optimistic: DM = {
+        id: `q_${Date.now()}`,
+        sender_id: user.id, receiver_id: otherId, content,
+        created_at: new Date().toISOString(),
+        message_type: "text", media_url: null, media_duration_ms: null,
+        reply_to_id: reply?.id ?? null,
+      };
+      setMessages((old) => [...old, optimistic]);
+      setSending(false);
+      toast.message("تم حفظ الرسالة — ستُرسل عند عودة الإنترنت");
+      return;
+    }
+
     const { error } = await supabase.from("direct_messages").insert({
       sender_id: user.id, receiver_id: otherId, content, message_type: "text",
       reply_to_id: reply?.id ?? null,
     });
     setSending(false);
     if (error) {
+      if (!getOnline() || /network|fetch|Failed/i.test(error.message ?? "")) {
+        await enqueueMessage({ kind: "dm", sender_id: user.id, receiver_id: otherId, content });
+        toast.message("تم حفظ الرسالة — ستُرسل عند عودة الإنترنت");
+        return;
+      }
       if (error.message?.includes("recipient_dm_locked")) toast.error("هذا المستخدم قفل الرسائل الخاصة (متاح للأصدقاء فقط)");
       else if (error.message?.includes("dm_blocked")) toast.error("لا يمكن إرسال الرسالة (حظر)");
       else toast.error(t("common.error"));
