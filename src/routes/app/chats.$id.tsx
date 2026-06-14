@@ -672,7 +672,7 @@ function VoicePlayer({ url, durationMs, mine }: { url: string; durationMs: numbe
   }, []);
   return (
     <div className="flex items-center gap-2">
-      <button type="button" onClick={toggle} className={`flex h-8 w-8 items-center justify-center rounded-full ${mine ? "bg-primary-foreground/20" : "bg-secondary"}`}>
+      <button type="button" onClick={(e) => toggle(e)} className={`flex h-8 w-8 items-center justify-center rounded-full ${mine ? "bg-primary-foreground/20" : "bg-secondary"}`}>
         {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
       </button>
       <div className="flex h-1 w-32 items-center">
