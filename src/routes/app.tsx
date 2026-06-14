@@ -149,6 +149,15 @@ function AppLayout() {
 
             <div className="flex items-center gap-1.5">
               <Link
+                to="/app/daily-tasks"
+                aria-label="المهام اليومية"
+                title="المهام اليومية"
+                className="relative flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 via-teal-500 to-emerald-600 text-white shadow-md shadow-emerald-900/30 ring-1 ring-white/30 transition active:scale-95 hover:brightness-110"
+              >
+                <Target className="h-[18px] w-[18px]" />
+                <span className="absolute -top-0.5 -end-0.5 h-2 w-2 rounded-full bg-emerald-200 shadow-[0_0_6px_2px_rgba(167,243,208,0.7)]" />
+              </Link>
+              <Link
                 to="/app/achievements"
                 aria-label="الإنجازات"
                 title="الإنجازات الأسبوعية"
