@@ -234,9 +234,9 @@ function RoomPage() {
     const ext = kind === "image"
       ? ((file as File).name?.split(".").pop()?.toLowerCase() || "jpg")
       : (file.type.includes("mp4") ? "m4a" : "webm");
-    const path = `${roomId}/${user.id}/${Date.now()}.${ext}`;
+    const path = `${user.id}/${roomId}/${Date.now()}.${ext}`;
     const up = await supabase.storage.from("room-media").upload(path, file, { contentType: file.type, upsert: false });
-    if (up.error) { toast.error("فشل رفع الملف"); return; }
+    if (up.error) { toast.error(up.error.message || "فشل رفع الملف"); return; }
     const { data: pub } = supabase.storage.from("room-media").getPublicUrl(path);
     const url = pub.publicUrl;
     const tempId = `tmp-${Date.now()}`;
