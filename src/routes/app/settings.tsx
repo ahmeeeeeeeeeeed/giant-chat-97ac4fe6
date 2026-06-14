@@ -163,6 +163,13 @@ function SettingsPage() {
         </button>
       </div>
 
+      {/* App version */}
+      <div className="pt-2 pb-6 text-center text-xs text-muted-foreground">
+        Giant • v{APP_VERSION}
+      </div>
+
+
+
       {/* Logout confirm */}
       {showLogout && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-5" onClick={() => !signingOut && setShowLogout(false)}>
