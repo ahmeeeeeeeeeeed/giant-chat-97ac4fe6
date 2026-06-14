@@ -234,7 +234,7 @@ function DMPage() {
       });
       if (error) throw error;
       setReplyTo(null);
-      toast.success(kind === "image" ? "تم رفع الصورة بنجاح" : "تم إرسال الرسالة الصوتية");
+      
     } catch (err) {
       console.error(err);
       const msg = (err as { message?: string })?.message ?? "";
