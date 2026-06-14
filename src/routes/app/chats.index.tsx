@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { MessageSquare, Loader2, Search, X } from "lucide-react";
 import { cacheGet, cacheSet, cacheKeys } from "@/lib/offline-cache";
+import { getOnline } from "@/lib/use-online";
 
 
 export const Route = createFileRoute("/app/chats/")({
