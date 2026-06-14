@@ -34,13 +34,13 @@ function AppLayout() {
 
   const tabs = [
     { to: "/app/chats", label: t("nav.chats"), icon: MessageSquare, exact: false },
-    { to: "/app", label: t("nav.rooms"), icon: Home, exact: true },
-    { to: "/app/community", label: "المجتمع", icon: Newspaper, exact: false },
     { to: "/app/friends", label: t("nav.friends"), icon: UsersIcon, exact: false },
+    { to: "/app/community", label: "المجتمع", icon: Newspaper, exact: false },
     { to: "/app/games", label: t("nav.games"), icon: Gamepad2, exact: false },
-    { to: "/app/my_profile", label: t("nav.profile"), icon: User, exact: false },
+    { to: "/app", label: t("nav.rooms"), icon: Home, exact: true },
     { to: "/app/settings", label: t("nav.settings"), icon: Settings, exact: false },
   ] as const;
+
 
   useEffect(() => {
     if (!loading && !session) navigate({ to: "/" });
@@ -59,15 +59,16 @@ function AppLayout() {
       try {
         const CapApp = await import("@capacitor/app");
         const listener = await CapApp.App.addListener("backButton", ({ canGoBack }) => {
-          if (!canGoBack) {
-            CapApp.App.exitApp();
+          const currentPath = window.location.pathname.replace(/\/$/, "") || "/";
+          // Default landing tab — show exit confirm instead of going back further
+          if (currentPath === "/app/chats") {
+            window.dispatchEvent(new CustomEvent("giant:exit-confirm"));
             return;
           }
-          const currentPath = window.location.pathname;
-          if (currentPath === "/app" || currentPath === "/app/" || currentPath === "/app/chats" || currentPath === "/app/chats/") {
-            window.dispatchEvent(new CustomEvent("show-exit-confirm"));
-          } else {
+          if (canGoBack) {
             router.history.back();
+          } else {
+            window.dispatchEvent(new CustomEvent("giant:exit-confirm"));
           }
         });
         removeListener = () => listener.remove();
@@ -79,6 +80,7 @@ function AppLayout() {
     return () => { if (removeListener) removeListener(); };
   }, [router]);
 
+
   if (loading || !session) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
@@ -89,7 +91,7 @@ function AppLayout() {
 
   const path = location.pathname;
   const hideChrome = /\/app\/rooms\/[^/]+/.test(path) || /\/app\/chats\/[^/]+/.test(path);
-  const tabRoots = new Set(["/app/chats", "/app", "/app/community", "/app/friends", "/app/games", "/app/my_profile", "/app/settings"]);
+  const tabRoots = new Set(["/app/chats", "/app", "/app/community", "/app/friends", "/app/games", "/app/settings"]);
   const showBack = !hideChrome && !tabRoots.has(path);
 
   const pageTitle = (() => {

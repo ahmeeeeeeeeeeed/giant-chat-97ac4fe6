@@ -30,39 +30,9 @@ function RoomsPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [query, setQuery] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [showExitConfirm, setShowExitConfirm] = useState(false);
-  const [signingOut, setSigningOut] = useState(false);
   const [myRoomIds, setMyRoomIds] = useState<Set<string>>(new Set());
 
-  // اعتراض زر الرجوع وإظهار نافذة التأكيد
-  useEffect(() => {
-    window.history.pushState({ __exitGuard: true }, "");
-    const onPop = (e: PopStateEvent) => {
-      setShowExitConfirm(true);
-      window.history.pushState({ __exitGuard: true }, "");
-    };
-    window.addEventListener("popstate", onPop);
-    return () => window.removeEventListener("popstate", onPop);
-  }, []);
 
-  const doExit = () => {
-    setShowExitConfirm(false);
-    // محاولة إغلاق التطبيق/التبويب
-    window.close();
-    // كحل احتياطي: العودة لأول الصفحة
-    setTimeout(() => { try { window.history.back(); } catch {} }, 50);
-  };
-
-  const doSignOut = async () => {
-    setSigningOut(true);
-    try {
-      await supabase.auth.signOut();
-      setShowExitConfirm(false);
-      navigate({ to: "/login" });
-    } finally {
-      setSigningOut(false);
-    }
-  };
 
   // التحقق من تسجيل الدخول + إعادة توجيه تلقائية للمحادثات الخاصة كصفحة رئيسية
   useEffect(() => {
@@ -151,11 +121,6 @@ function RoomsPage() {
     return () => { supabase.removeChannel(ch); };
   }, [user]);
 
-  useEffect(() => {
-    const handler = () => setShowExitConfirm(true);
-    window.addEventListener("show-exit-confirm", handler);
-    return () => window.removeEventListener("show-exit-confirm", handler);
-  }, []);
 
   // إذا كان يتحقق من المصادقة
   if (authLoading) {
@@ -282,43 +247,6 @@ function RoomsPage() {
         />
       )}
 
-      {showExitConfirm && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
-          onClick={() => setShowExitConfirm(false)}
-        >
-          <div
-            className="w-full max-w-sm rounded-2xl bg-card p-6 shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="mb-2 text-lg font-bold">تأكيد الخروج</h3>
-            <p className="mb-5 text-sm text-muted-foreground">
-              هل تريد الخروج من التطبيق أو تسجيل الخروج من حسابك؟
-            </p>
-            <div className="flex flex-col gap-2">
-              <button
-                onClick={doSignOut}
-                disabled={signingOut}
-                className="flex h-11 items-center justify-center rounded-xl bg-destructive font-semibold text-destructive-foreground disabled:opacity-60"
-              >
-                {signingOut ? <Loader2 className="h-5 w-5 animate-spin" /> : "تسجيل الخروج"}
-              </button>
-              <button
-                onClick={doExit}
-                className="flex h-11 items-center justify-center rounded-xl bg-secondary font-semibold text-foreground"
-              >
-                خروج
-              </button>
-              <button
-                onClick={() => setShowExitConfirm(false)}
-                className="flex h-11 items-center justify-center rounded-xl border border-input font-semibold"
-              >
-                إلغاء
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </main>
   );
 }

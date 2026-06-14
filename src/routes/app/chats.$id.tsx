@@ -211,10 +211,9 @@ function DMPage() {
       else if (error.message?.includes("dm_blocked")) toast.error("لا يمكن إرسال الرسالة (حظر)");
       else toast.error(t("common.error"));
       setText(content); setReplyTo(reply);
-    } else {
-      toast.success("تم إرسال الرسالة");
     }
   };
+
 
   const uploadAndSend = async (blob: Blob, kind: "image" | "voice", durationMs?: number) => {
     if (!user) return;
@@ -235,7 +234,7 @@ function DMPage() {
       });
       if (error) throw error;
       setReplyTo(null);
-      toast.success(kind === "image" ? "تم رفع الصورة بنجاح" : "تم إرسال الرسالة الصوتية");
+      
     } catch (err) {
       console.error(err);
       const msg = (err as { message?: string })?.message ?? "";
