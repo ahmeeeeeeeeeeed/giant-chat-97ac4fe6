@@ -8,7 +8,10 @@ import type { CapacitorConfig } from "@capacitor/cli";
 const config: CapacitorConfig = {
   appId: "app.lovable.giantchat",
   appName: "Giant",
-  webDir: "dist",
+  // dist/client holds the static SPA shell (index.html + /assets) generated
+  // by scripts/generate-capacitor-index.mjs after `vite build`. dist/server/
+  // is the Cloudflare Worker bundle and must NOT be shipped inside the APK.
+  webDir: "dist/client",
   server: {
     androidScheme: "https",
   },

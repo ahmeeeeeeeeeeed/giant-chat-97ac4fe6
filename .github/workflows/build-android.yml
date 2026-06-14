@@ -41,6 +41,18 @@ jobs:
       - name: Build web app
         run: npm run build
 
+      - name: Generate Capacitor index.html
+        # TanStack Start is SSR-only and does not emit dist/client/index.html.
+        # Capacitor requires it — this script reads the build manifest and
+        # writes a static SPA shell that boots the app inside the WebView.
+        run: node scripts/generate-capacitor-index.mjs
+
+      - name: Verify Capacitor web assets
+        run: |
+          test -f dist/client/index.html || { echo "::error::dist/client/index.html missing"; exit 1; }
+          test -d dist/client/assets || { echo "::error::dist/client/assets missing"; exit 1; }
+          ls -la dist/client | head -20
+
       - name: Add Android platform
         run: |
           if [ ! -d "android" ]; then
