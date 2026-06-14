@@ -261,8 +261,68 @@ function RoomPage() {
     try { await supabase.rpc("record_daily_action", { _kind: "send_messages", _amount: 1 }); } catch { /* ignore */ }
   };
 
+  const onPickImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) { toast.error("الملف ليس صورة"); return; }
+    if (file.size > 8 * 1024 * 1024) { toast.error("حجم الصورة كبير (حد أقصى 8MB)"); return; }
+    setUploading(true);
+    await uploadAndSend(file, "image");
+    setUploading(false);
+  };
 
-  const sendAnnouncement = async () => {
+  const startRecording = async () => {
+    if (recording) return;
+    if (!myRank) { toast.error("يجب الانضمام إلى الغرفة أولاً"); return; }
+    if (isBanned) { toast.error("أنت محظور من هذه الغرفة"); return; }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mime = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm"
+        : MediaRecorder.isTypeSupported("audio/mp4") ? "audio/mp4" : "";
+      const mr = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+      recordChunksRef.current = [];
+      mr.ondataavailable = (ev) => { if (ev.data.size > 0) recordChunksRef.current.push(ev.data); };
+      mr.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop());
+        if (recordTimerRef.current) { window.clearInterval(recordTimerRef.current); recordTimerRef.current = null; }
+        const blob = new Blob(recordChunksRef.current, { type: mr.mimeType || "audio/webm" });
+        const duration = Date.now() - recordStartRef.current;
+        setRecording(false); setRecordSec(0);
+        if (blob.size > 0 && duration > 500) {
+          setUploading(true);
+          await uploadAndSend(blob, "voice", duration);
+          setUploading(false);
+        }
+      };
+      recordStartRef.current = Date.now();
+      mr.start();
+      mediaRecorderRef.current = mr;
+      setRecording(true);
+      setRecordSec(0);
+      recordTimerRef.current = window.setInterval(() => {
+        setRecordSec(Math.floor((Date.now() - recordStartRef.current) / 1000));
+      }, 250);
+    } catch {
+      toast.error("تعذّر الوصول إلى الميكروفون");
+    }
+  };
+
+  const stopRecording = (cancel = false) => {
+    const mr = mediaRecorderRef.current;
+    if (!mr) return;
+    if (cancel) {
+      mr.onstop = () => {
+        mr.stream.getTracks().forEach((t) => t.stop());
+        if (recordTimerRef.current) { window.clearInterval(recordTimerRef.current); recordTimerRef.current = null; }
+        setRecording(false); setRecordSec(0);
+        recordChunksRef.current = [];
+      };
+    }
+    try { mr.stop(); } catch { /* ignore */ }
+    mediaRecorderRef.current = null;
+  };
+
     if (!announceText.trim()) return;
     const { error } = await supabase.rpc("room_bot_say", {
       _room: roomId, _text: `📢 ${announceText.trim()}`,
