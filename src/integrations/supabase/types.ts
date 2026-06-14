@@ -351,6 +351,7 @@ export type Database = {
           content: string
           created_at: string
           deleted_for: string[]
+          delivered_at: string | null
           id: string
           media_duration_ms: number | null
           media_url: string | null
@@ -364,6 +365,7 @@ export type Database = {
           content?: string
           created_at?: string
           deleted_for?: string[]
+          delivered_at?: string | null
           id?: string
           media_duration_ms?: number | null
           media_url?: string | null
@@ -377,6 +379,7 @@ export type Database = {
           content?: string
           created_at?: string
           deleted_for?: string[]
+          delivered_at?: string | null
           id?: string
           media_duration_ms?: number | null
           media_url?: string | null
@@ -1344,6 +1347,7 @@ export type Database = {
       }
       dm_delete_for_all: { Args: { _id: string }; Returns: undefined }
       dm_delete_for_me: { Args: { _id: string }; Returns: undefined }
+      dm_mark_delivered: { Args: { _peer: string }; Returns: undefined }
       dm_mark_read: { Args: { _peer: string }; Returns: undefined }
       game_ensure_round: { Args: never; Returns: string }
       game_fill_ai: { Args: { _rid: string }; Returns: undefined }

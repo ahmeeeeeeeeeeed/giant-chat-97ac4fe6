@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/auth";
 import {
   ArrowRight, Send, Loader2, ImagePlus, Mic, Square, Play, Pause,
   MoreVertical, Reply, Copy, Trash2, Share2, BellOff, Bell, Ban, X,
+  Check, CheckCheck, Clock,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
@@ -29,7 +30,23 @@ type DM = {
   media_url: string | null;
   media_duration_ms: number | null;
   reply_to_id: string | null;
+  delivered_at?: string | null;
+  read_at?: string | null;
 };
+
+type MessageStatus = "pending" | "sent" | "delivered" | "read";
+function statusOf(m: DM): MessageStatus {
+  if (m.id.startsWith("q_")) return "pending";
+  if (m.read_at) return "read";
+  if (m.delivered_at) return "delivered";
+  return "sent";
+}
+function MessageTicks({ status }: { status: MessageStatus }) {
+  if (status === "pending") return <Clock className="h-3 w-3 opacity-70" aria-label="قيد الإرسال" />;
+  if (status === "sent") return <Check className="h-3 w-3 opacity-70" aria-label="تم الإرسال" />;
+  if (status === "delivered") return <CheckCheck className="h-3 w-3 opacity-70" aria-label="تم التسليم" />;
+  return <CheckCheck className="h-3 w-3 text-sky-400" aria-label="تمت القراءة" />;
+}
 type Profile = { id: string; username: string; avatar_url: string | null; last_seen_at: string | null; hide_last_seen: boolean };
 
 function DMPage() {
@@ -79,6 +96,10 @@ function DMPage() {
     if (!user) return;
     await supabase.rpc("dm_mark_read", { _peer: otherId });
   };
+  const markDelivered = async () => {
+    if (!user || !getOnline()) return;
+    try { await supabase.rpc("dm_mark_delivered" as never, { _peer: otherId } as never); } catch { /* ignore */ }
+  };
 
   // load profile + messages + block/mute state — local-first
   useEffect(() => {
@@ -99,7 +120,7 @@ function DMPage() {
         const [{ data: p }, { data: msgs }, { data: bl }, { data: blMe }, { data: mu }] = await Promise.all([
           supabase.from("profiles").select("id, username, avatar_url, last_seen_at, hide_last_seen").eq("id", otherId).maybeSingle(),
           supabase.from("direct_messages")
-            .select("id, sender_id, receiver_id, content, created_at, message_type, media_url, media_duration_ms, reply_to_id")
+            .select("id, sender_id, receiver_id, content, created_at, message_type, media_url, media_duration_ms, reply_to_id, delivered_at, read_at")
             .or(`and(sender_id.eq.${user.id},receiver_id.eq.${otherId}),and(sender_id.eq.${otherId},receiver_id.eq.${user.id})`)
             .order("created_at", { ascending: true }).limit(500),
           supabase.from("dm_blocks").select("blocked_id").eq("blocker_id", user.id).eq("blocked_id", otherId).maybeSingle(),
@@ -118,6 +139,7 @@ function DMPage() {
         setBlockedByOther(!!blMe);
         setMuted(!!mu);
         setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight }), 50);
+        await markDelivered();
         await markRead();
       } catch {
         // network hiccup — keep cached values, no error UI
@@ -139,7 +161,7 @@ function DMPage() {
         ) {
           setMessages((old) => (old.some(x => x.id === r.id) ? old : [...old, r]));
           setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" }), 30);
-          if (r.receiver_id === user.id) markRead();
+          if (r.receiver_id === user.id) { markDelivered(); markRead(); }
         }
       })
       .on("postgres_changes", { event: "DELETE", schema: "public", table: "direct_messages" }, (payload) => {
@@ -541,8 +563,9 @@ function DMPage() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <MessageBubble m={m} mine={mine} replied={replied ?? null} onPress={() => setMenuFor(m.id)} />
-                      <div className={`mt-1 text-[10px] text-muted-foreground/80 ${mine ? "text-end" : "text-start"}`} suppressHydrationWarning>
-                        {formatDateTime(m.created_at)}
+                      <div className={`mt-1 flex items-center gap-1 text-[10px] text-muted-foreground/80 ${mine ? "justify-end" : "justify-start"}`} suppressHydrationWarning>
+                        <span>{formatDateTime(m.created_at)}</span>
+                        {mine && <MessageTicks status={statusOf(m)} />}
                       </div>
                     </div>
                   </div>
