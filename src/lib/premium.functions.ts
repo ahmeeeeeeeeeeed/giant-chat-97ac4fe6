@@ -72,7 +72,7 @@ export const createPremiumByPoints = createServerFn({ method: "POST" })
       return await createPremiumUser(data);
     } catch (e) {
       // refund on failure
-      await context.supabase.rpc("admin_send_points", { _target: context.userId, _amount: PREMIUM_COST } as never).catch(() => {});
+      try { await context.supabase.rpc("admin_send_points", { _target: context.userId, _amount: PREMIUM_COST } as never); } catch { /* ignore */ }
       throw e;
     }
   });
