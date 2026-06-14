@@ -102,8 +102,12 @@ function DMPage() {
         ]);
         if (p) { setOther(p as Profile); await cacheSet(cacheKeys.profile(otherId), p as Profile); }
         const fresh = (msgs ?? []) as DM[];
-        setMessages(fresh);
-        await cacheSet(cacheKeys.dmMessages(user.id, otherId), fresh);
+        // Merge: keep any local-only (pending/queued) messages that haven't synced yet.
+        setMessages((prev) => {
+          const freshIds = new Set(fresh.map(m => m.id));
+          const localOnly = prev.filter(m => !freshIds.has(m.id) && m.id.startsWith("q_"));
+          return [...fresh, ...localOnly];
+        });
         setBlocked(!!bl);
         setBlockedByOther(!!blMe);
         setMuted(!!mu);
