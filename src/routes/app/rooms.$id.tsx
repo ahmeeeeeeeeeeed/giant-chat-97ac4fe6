@@ -7,6 +7,7 @@ import {
   Send, Loader2, ArrowLeft, Users, Hash, Lock, Settings, Shield, Ban, UserMinus,
   ArrowUp, ArrowDown, Crown, FileText, X, KeyRound, MoreVertical, Megaphone,
   UserPlus, AtSign, Edit3, Trash2, Power, Globe, Search, Info, Save, AlertTriangle,
+  Image as ImageIcon, Mic, Square, Play, Pause, Share2,
 } from "lucide-react";
 import { MusicPlayer } from "@/components/MusicPlayer";
 import { BroadcastCard } from "@/components/BroadcastCard";
@@ -47,6 +48,14 @@ function RoomPage() {
   const [showSearch, setShowSearch] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordChunksRef = useRef<Blob[]>([]);
+  const recordStartRef = useRef<number>(0);
+  const recordTimerRef = useRef<number | null>(null);
+  const [recording, setRecording] = useState(false);
+  const [recordSec, setRecordSec] = useState(0);
+  const [uploading, setUploading] = useState(false);
 
   const userMapRef = useRef<Record<string, { username: string; avatar_url: string | null }>>({});
   useEffect(() => { userMapRef.current = userMap; }, [userMap]);
@@ -138,7 +147,7 @@ function RoomPage() {
             markRoomSeen(roomId);
             return;
           }
-          setMessages((prev) => [...prev, m]);
+          setMessages((prev) => (prev.some((x) => x.id === m.id) ? prev : [...prev, m]));
           if (m.user_id) ensureProfiles([m.user_id]);
           markRoomSeen(roomId);
           setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
@@ -188,20 +197,130 @@ function RoomPage() {
     else { setMyRank(null); navigate({ to: "/app" }); }
   };
 
+  const insertOptimistic = (m: any) => {
+    setMessages((prev) => (prev.some((x) => x.id === m.id) ? prev : [...prev, m]));
+    setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
+  };
+
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!text.trim() || !user || sending) return;
     if (!myRank) { toast.error("يجب الانضمام إلى الغرفة أولاً"); return; }
     if (isBanned) { toast.error("أنت محظور من هذه الغرفة"); return; }
     setSending(true);
-    const { error } = await supabase.from("room_messages").insert({
-      room_id: roomId, user_id: user.id, content: text.trim(),
-    } as never);
+    const content = text.trim();
+    const tempId = `tmp-${Date.now()}`;
+    const optimistic = { id: tempId, room_id: roomId, user_id: user.id, content, message_type: "text", created_at: new Date().toISOString(), meta: null };
+    insertOptimistic(optimistic);
+    setText("");
+    const { data, error } = await supabase.from("room_messages")
+      .insert({ room_id: roomId, user_id: user.id, content } as never)
+      .select("*").single();
     setSending(false);
-    if (!error) {
-      setText("");
-      try { await supabase.rpc("record_daily_action", { _kind: "send_messages", _amount: 1 }); } catch { /* ignore */ }
-    } else toast.error("فشل إرسال الرسالة");
+    if (error) {
+      setMessages((prev) => prev.filter((m) => m.id !== tempId));
+      toast.error("فشل إرسال الرسالة");
+      setText(content);
+      return;
+    }
+    setMessages((prev) => prev.map((m) => (m.id === tempId ? data : m)));
+    try { await supabase.rpc("record_daily_action", { _kind: "send_messages", _amount: 1 }); } catch { /* ignore */ }
+  };
+
+  const uploadAndSend = async (file: Blob, kind: "image" | "voice", durationMs?: number) => {
+    if (!user) return;
+    if (!myRank) { toast.error("يجب الانضمام إلى الغرفة أولاً"); return; }
+    if (isBanned) { toast.error("أنت محظور من هذه الغرفة"); return; }
+    const ext = kind === "image"
+      ? ((file as File).name?.split(".").pop()?.toLowerCase() || "jpg")
+      : (file.type.includes("mp4") ? "m4a" : "webm");
+    const path = `${roomId}/${user.id}/${Date.now()}.${ext}`;
+    const up = await supabase.storage.from("room-media").upload(path, file, { contentType: file.type, upsert: false });
+    if (up.error) { toast.error("فشل رفع الملف"); return; }
+    const { data: pub } = supabase.storage.from("room-media").getPublicUrl(path);
+    const url = pub.publicUrl;
+    const tempId = `tmp-${Date.now()}`;
+    const optimistic = {
+      id: tempId, room_id: roomId, user_id: user.id,
+      content: kind === "image" ? "📷 صورة" : "🎤 رسالة صوتية",
+      message_type: kind, media_url: url, media_duration_ms: durationMs ?? null,
+      created_at: new Date().toISOString(), meta: null,
+    };
+    insertOptimistic(optimistic);
+    const { data, error } = await supabase.from("room_messages").insert({
+      room_id: roomId, user_id: user.id,
+      content: optimistic.content,
+      message_type: kind, media_url: url, media_duration_ms: durationMs ?? null,
+    } as never).select("*").single();
+    if (error) {
+      setMessages((prev) => prev.filter((m) => m.id !== tempId));
+      toast.error("فشل إرسال الوسائط");
+      return;
+    }
+    setMessages((prev) => prev.map((m) => (m.id === tempId ? data : m)));
+    try { await supabase.rpc("record_daily_action", { _kind: "send_messages", _amount: 1 }); } catch { /* ignore */ }
+  };
+
+  const onPickImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) { toast.error("الملف ليس صورة"); return; }
+    if (file.size > 8 * 1024 * 1024) { toast.error("حجم الصورة كبير (حد أقصى 8MB)"); return; }
+    setUploading(true);
+    await uploadAndSend(file, "image");
+    setUploading(false);
+  };
+
+  const startRecording = async () => {
+    if (recording) return;
+    if (!myRank) { toast.error("يجب الانضمام إلى الغرفة أولاً"); return; }
+    if (isBanned) { toast.error("أنت محظور من هذه الغرفة"); return; }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mime = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm"
+        : MediaRecorder.isTypeSupported("audio/mp4") ? "audio/mp4" : "";
+      const mr = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+      recordChunksRef.current = [];
+      mr.ondataavailable = (ev) => { if (ev.data.size > 0) recordChunksRef.current.push(ev.data); };
+      mr.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop());
+        if (recordTimerRef.current) { window.clearInterval(recordTimerRef.current); recordTimerRef.current = null; }
+        const blob = new Blob(recordChunksRef.current, { type: mr.mimeType || "audio/webm" });
+        const duration = Date.now() - recordStartRef.current;
+        setRecording(false); setRecordSec(0);
+        if (blob.size > 0 && duration > 500) {
+          setUploading(true);
+          await uploadAndSend(blob, "voice", duration);
+          setUploading(false);
+        }
+      };
+      recordStartRef.current = Date.now();
+      mr.start();
+      mediaRecorderRef.current = mr;
+      setRecording(true);
+      setRecordSec(0);
+      recordTimerRef.current = window.setInterval(() => {
+        setRecordSec(Math.floor((Date.now() - recordStartRef.current) / 1000));
+      }, 250);
+    } catch {
+      toast.error("تعذّر الوصول إلى الميكروفون");
+    }
+  };
+
+  const stopRecording = (cancel = false) => {
+    const mr = mediaRecorderRef.current;
+    if (!mr) return;
+    if (cancel) {
+      mr.onstop = () => {
+        mr.stream.getTracks().forEach((t) => t.stop());
+        if (recordTimerRef.current) { window.clearInterval(recordTimerRef.current); recordTimerRef.current = null; }
+        setRecording(false); setRecordSec(0);
+        recordChunksRef.current = [];
+      };
+    }
+    try { mr.stop(); } catch { /* ignore */ }
+    mediaRecorderRef.current = null;
   };
 
   const sendAnnouncement = async () => {
@@ -305,6 +424,7 @@ function RoomPage() {
         {/* Quick action chips */}
         {isMember && (
           <div className="flex gap-1.5 overflow-x-auto px-3 pb-2 scrollbar-thin">
+            <ChipBtn icon={<Share2 className="h-3 w-3" />} label="نشر" onClick={() => setShowShare(true)} highlight />
             <ChipBtn icon={<UserPlus className="h-3 w-3" />} label="دعوة" onClick={() => openSettingsAt("invite")} />
             <ChipBtn icon={<Users className="h-3 w-3" />} label={`الأعضاء (${memberCount})`} onClick={() => openSettingsAt("members")} />
             {canModerate && <ChipBtn icon={<Megaphone className="h-3 w-3" />} label="إعلان" onClick={() => setShowAnnounce(true)} highlight />}
@@ -392,13 +512,23 @@ function RoomPage() {
                     </button>
                   )}
                   <div
-                    className={`rounded-2xl px-4 py-2.5 shadow-sm ${
-                      isOwn
-                        ? "rounded-br-md bg-gradient-to-br from-emerald-500 to-emerald-600 text-white"
-                        : "rounded-bl-md border border-border bg-card text-foreground"
+                    className={`rounded-2xl shadow-sm overflow-hidden ${
+                      msg.message_type === "image"
+                        ? "p-1 bg-transparent"
+                        : `px-4 py-2.5 ${isOwn
+                            ? "rounded-br-md bg-gradient-to-br from-emerald-500 to-emerald-600 text-white"
+                            : "rounded-bl-md border border-border bg-card text-foreground"}`
                     }`}
                   >
-                    <p className="whitespace-pre-wrap break-words text-[15px] leading-relaxed">{msg.content}</p>
+                    {msg.message_type === "image" && msg.media_url ? (
+                      <a href={msg.media_url} target="_blank" rel="noreferrer">
+                        <img src={msg.media_url} alt="" className="max-h-72 w-auto rounded-xl object-cover" />
+                      </a>
+                    ) : msg.message_type === "voice" && msg.media_url ? (
+                      <audio src={msg.media_url} controls preload="metadata" className="h-10 max-w-[260px]" />
+                    ) : (
+                      <p className="whitespace-pre-wrap break-words text-[15px] leading-relaxed">{msg.content}</p>
+                    )}
                   </div>
                   <p className={`mt-1 text-[10px] ${isOwn ? "text-muted-foreground" : "text-muted-foreground/80"}`} suppressHydrationWarning>
                     {date} · {time}
@@ -424,20 +554,42 @@ function RoomPage() {
 
       {/* Composer */}
       <form onSubmit={sendMessage} className="border-t border-border bg-background/90 backdrop-blur p-3">
-        <div className="flex gap-2">
-          <button type="button" onClick={() => setShowShare(true)} disabled={!isMember || isBanned}
-            title="نشر منشور في كل الغرف"
-            className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 disabled:opacity-50 hover:bg-emerald-500/20 transition">
-            <Megaphone className="h-5 w-5" />
-          </button>
-          <input value={text} onChange={(e) => setText(e.target.value)}
-            placeholder={isMember ? (isBanned ? "أنت محظور" : "اكتب رسالة...") : "يجب الانضمام إلى الغرفة أولاً"} disabled={!isMember || isBanned}
-            className="flex-1 h-11 rounded-xl border border-input bg-background px-4 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary disabled:opacity-50 transition" />
-          <button type="submit" disabled={sending || !text.trim() || !isMember || isBanned}
-            className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-md disabled:opacity-50 transition hover:from-emerald-600 hover:to-emerald-700">
-            {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-          </button>
-        </div>
+        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={onPickImage} />
+        {recording ? (
+          <div className="flex items-center gap-2">
+            <button type="button" onClick={() => stopRecording(true)}
+              className="flex h-11 w-11 items-center justify-center rounded-xl bg-secondary text-muted-foreground hover:bg-secondary/80 transition" title="إلغاء">
+              <X className="h-5 w-5" />
+            </button>
+            <div className="flex-1 flex items-center justify-center gap-2 h-11 rounded-xl bg-red-500/10 text-red-600 font-bold text-sm">
+              <span className="inline-block h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+              جارٍ التسجيل · {String(Math.floor(recordSec / 60)).padStart(2, "0")}:{String(recordSec % 60).padStart(2, "0")}
+            </div>
+            <button type="button" onClick={() => stopRecording(false)}
+              className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-md transition" title="إرسال">
+              <Send className="h-5 w-5" />
+            </button>
+          </div>
+        ) : (
+          <div className="flex gap-2">
+            <button type="submit" disabled={sending || uploading || !text.trim() || !isMember || isBanned}
+              className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-md disabled:opacity-50 transition hover:from-emerald-600 hover:to-emerald-700"
+              title="إرسال">
+              {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            </button>
+            <input value={text} onChange={(e) => setText(e.target.value)}
+              placeholder={isMember ? (isBanned ? "أنت محظور" : "اكتب رسالة...") : "يجب الانضمام إلى الغرفة أولاً"} disabled={!isMember || isBanned}
+              className="flex-1 h-11 rounded-xl border border-input bg-background px-4 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary disabled:opacity-50 transition" />
+            <button type="button" onClick={() => fileInputRef.current?.click()} disabled={!isMember || isBanned || uploading}
+              className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 disabled:opacity-50 hover:bg-emerald-500/20 transition" title="إرسال صورة">
+              {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <ImageIcon className="h-5 w-5" />}
+            </button>
+            <button type="button" onClick={startRecording} disabled={!isMember || isBanned || uploading}
+              className="flex h-11 w-11 items-center justify-center rounded-xl bg-rose-500/10 text-rose-600 disabled:opacity-50 hover:bg-rose-500/20 transition" title="تسجيل صوتي">
+              <Mic className="h-5 w-5" />
+            </button>
+          </div>
+        )}
       </form>
 
       {showShare && <SharePostModal roomId={roomId} onClose={() => setShowShare(false)} />}
