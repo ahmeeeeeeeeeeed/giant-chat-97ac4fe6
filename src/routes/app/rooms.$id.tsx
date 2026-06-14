@@ -157,7 +157,8 @@ function RoomPage() {
       setMessages(visible);
       const ids = visible.map((m: any) => m.user_id).filter(Boolean);
       ensureProfiles(ids);
-      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 150);
+      scrollToBottom(didInitialScrollRef.current);
+      didInitialScrollRef.current = true;
     }
   };
 
