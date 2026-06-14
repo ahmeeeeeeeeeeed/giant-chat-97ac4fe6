@@ -133,7 +133,7 @@ function AppLayout() {
               ) : (
                 <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-emerald-300 to-emerald-500 p-[2px] shadow-lg shadow-emerald-900/40 ring-2 ring-white/40">
                   <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-white">
-                    <span className="text-[20px] font-black leading-none tracking-tighter bg-gradient-to-br from-emerald-600 to-emerald-800 bg-clip-text text-transparent" style={{ fontFamily: '"Cairo", "Tajawal", system-ui, sans-serif' }}>G</span>
+                    <span className="text-[20px] font-black leading-none tracking-tighter bg-gradient-to-br from-emerald-600 to-emerald-800 bg-clip-text text-transparent">G</span>
                   </div>
                 </div>
               )}

@@ -86,12 +86,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       // Speed: warm up critical origins before first paint
       { rel: "preconnect", href: "https://gfuusohydgpumgardbyn.supabase.co", crossOrigin: "anonymous" },
       { rel: "dns-prefetch", href: "https://gfuusohydgpumgardbyn.supabase.co" },
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap",
-      },
     ],
   }),
   shellComponent: RootShell,
