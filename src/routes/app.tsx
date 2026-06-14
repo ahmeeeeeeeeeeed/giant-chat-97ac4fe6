@@ -8,6 +8,7 @@ import { useBellCount } from "@/lib/bell-counter";
 import { useAnnouncementsListener } from "@/lib/use-announcements";
 import { Home, MessageSquare, User, Settings, Users as UsersIcon, Gamepad2, Bell, Shield, ShieldAlert, Trophy, ArrowRight, Newspaper, Target, Loader2 } from "lucide-react";
 import { OnlineStatusBanner } from "@/components/OnlineStatusBanner";
+import { ConnectionStatusBadge } from "@/components/ConnectionStatusBadge";
 import { ReportModal } from "@/components/ReportModal";
 import { UpdateGate } from "@/components/UpdateGate";
 import { scheduleDataPrewarm } from "@/lib/data-prewarm";
@@ -144,8 +145,11 @@ function AppLayout() {
                 </div>
               )}
               <div className="min-w-0">
-                <div className="truncate text-[17px] font-extrabold leading-tight tracking-tight text-white">
-                  Giant
+                <div className="flex items-center gap-1.5">
+                  <div className="truncate text-[17px] font-extrabold leading-tight tracking-tight text-white">
+                    Giant
+                  </div>
+                  <ConnectionStatusBadge />
                 </div>
                 <div className="flex items-center gap-1.5 text-[10px] font-semibold tracking-wider text-emerald-300/80">
                   <span className="inline-block h-1 w-1 rounded-full bg-emerald-400 shadow-[0_0_6px_2px_rgba(16,185,129,0.7)]" />
