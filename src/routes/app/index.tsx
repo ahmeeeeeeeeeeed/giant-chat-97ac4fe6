@@ -97,6 +97,13 @@ function RoomsPage() {
         .from("room_members")
         .select("room_id");
 
+      const { data: myMemberships } = await supabase
+        .from("room_members")
+        .select("room_id")
+        .eq("user_id", user.id);
+
+      setMyRoomIds(new Set((myMemberships ?? []).map((m) => m.room_id)));
+
       const map = new Map<string, number>();
       counts?.forEach((m) => map.set(m.room_id, (map.get(m.room_id) ?? 0) + 1));
 
