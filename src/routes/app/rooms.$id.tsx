@@ -605,7 +605,7 @@ function RoomPage() {
       </div>
 
       {/* Composer */}
-      <form onSubmit={sendMessage} className="border-t border-border bg-background/90 backdrop-blur p-3">
+      <form onSubmit={sendMessage} className="border-t border-border bg-background/90 backdrop-blur p-3" style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.75rem)" }}>
         <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={onPickImage} />
         {recording ? (
           <div className="flex items-center gap-2">
