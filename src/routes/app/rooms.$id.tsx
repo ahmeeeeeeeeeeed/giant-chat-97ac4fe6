@@ -608,34 +608,34 @@ function RoomPage() {
                       {(isOwn ? userMap[user!.id]?.username : prof?.username) ?? "مستخدم"}
                     </button>
                   )}
-                  <div
-                    onClick={() => {
-                      const canDelete = isOwn || myRank === "owner" || myRank === "admin";
-                      if (canDelete) setActionMsg(msg);
-                    }}
-                    className={`rounded-2xl shadow-sm overflow-hidden cursor-pointer transition active:scale-[0.98] ${
-                      msg.message_type === "image"
-                        ? "p-1 bg-transparent"
-                        : `px-4 py-2.5 ${isOwn
-                            ? "rounded-br-md bg-gradient-to-br from-emerald-500 to-emerald-600 text-white"
-                            : "rounded-bl-md border border-border bg-card text-foreground"}`
-                    }`}
-                  >
-                    {msg.message_type === "image" && msg.media_url ? (
-                      <button type="button" onClick={(e) => { e.stopPropagation(); setLightboxUrl(msg.media_url); }} className="block">
-                        <img src={msg.media_url} alt="" className="max-h-72 w-auto rounded-xl object-cover" />
-                      </button>
-                    ) : msg.message_type === "voice" && msg.media_url ? (
-                      <audio onClick={(e) => e.stopPropagation()} src={msg.media_url} controls preload="metadata" className="h-10 max-w-[260px]" />
-                    ) : (
+                  {msg.message_type === "image" && msg.media_url ? (
+                    <button
+                      type="button"
+                      onClick={() => setLightboxUrl(msg.media_url)}
+                      className="block overflow-hidden rounded-2xl shadow-sm transition active:scale-[0.98]"
+                    >
+                      <img src={msg.media_url} alt="" className="max-h-72 w-auto rounded-xl object-cover" />
+                    </button>
+                  ) : msg.message_type === "voice" && msg.media_url ? (
+                    <div className="rounded-2xl border border-border bg-card px-3 py-2 shadow-sm">
+                      <audio src={msg.media_url} controls preload="metadata" className="h-10 max-w-[260px]" />
+                    </div>
+                  ) : (
+                    <div
+                      onClick={() => {
+                        const canDelete = isOwn || myRank === "owner" || myRank === "admin";
+                        if (canDelete) setActionMsg(msg);
+                      }}
+                      className="cursor-pointer transition active:scale-[0.98]"
+                    >
                       <p
                         className="whitespace-pre-wrap break-words text-[15px] leading-relaxed"
                         style={msg.user_id && colorMap[msg.user_id]?.chat ? { color: colorMap[msg.user_id]!.chat } : undefined}
                       >
                         {msg.content}
                       </p>
-                    )}
-                  </div>
+                    </div>
+                  )}
                   <p className={`mt-1 text-[10px] ${isOwn ? "text-muted-foreground" : "text-muted-foreground/80"}`} suppressHydrationWarning>
                     {date} · {time}
                   </p>
