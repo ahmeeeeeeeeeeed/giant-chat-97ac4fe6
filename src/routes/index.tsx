@@ -29,16 +29,11 @@ function Welcome() {
   return (
     <main className="relative flex min-h-dvh flex-col overflow-hidden bg-background px-6 py-8 text-foreground">
       {needsPerms && <PermissionsGate onDone={() => setNeedsPerms(false)} />}
-      {/* Video background */}
-      <video
-        ref={videoRef}
+      {/* Image background */}
+      <img
         src={welcomeBg.url}
-        autoPlay
-        muted
-        loop
-        playsInline
-        preload="auto"
-        disableRemotePlayback
+        alt=""
+        loading="eager"
         className="pointer-events-none absolute inset-0 z-0 h-full w-full object-cover opacity-60"
       />
 
