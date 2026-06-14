@@ -378,7 +378,7 @@ const CARD_THEMES = [
   { ring: "from-rose-400/60 to-red-500/40", icon: "from-rose-500 to-red-600", glow: "shadow-rose-500/20" },
 ] as const;
 
-function RoomCard({ room, accentIndex, isOwner }: { room: Room; accentIndex: number; isOwner: boolean }) {
+function RoomCard({ room, accentIndex, isOwner, isMember, onJoin }: { room: Room; accentIndex: number; isOwner: boolean; isMember: boolean; onJoin: () => void }) {
   const [inviteOpen, setInviteOpen] = useState(false);
   const theme = CARD_THEMES[accentIndex % CARD_THEMES.length];
   const isPrivate = room.type === "private";
