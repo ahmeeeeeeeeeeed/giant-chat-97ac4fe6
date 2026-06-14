@@ -78,6 +78,20 @@ function DMPage() {
   const recTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const presenceChRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const didInitialScrollRef = useRef(false);
+
+  // Robust scroll-to-bottom: jumps instantly and retries across a few frames
+  // to handle late layout (images/avatars loading).
+  const scrollToBottom = (smooth = false) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const go = () => el.scrollTo({ top: el.scrollHeight, behavior: smooth ? "smooth" : "auto" });
+    go();
+    requestAnimationFrame(() => { go(); requestAnimationFrame(go); });
+    setTimeout(go, 120);
+    setTimeout(go, 350);
+    setTimeout(go, 800);
+  };
 
   const messagesById = useMemo(() => {
     const m = new Map<string, DM>();
@@ -110,7 +124,7 @@ function DMPage() {
       const cachedProfile = await cacheGet<Profile>(cacheKeys.profile(otherId));
       if (cachedMsgs) setMessages(cachedMsgs);
       if (cachedProfile) setOther(cachedProfile);
-      if (cachedMsgs) setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight }), 50);
+      if (cachedMsgs && cachedMsgs.length) scrollToBottom(false);
 
       // 2) If offline, do NOT touch the network — avoids browser "no internet" errors.
       if (!getOnline()) return;
@@ -138,7 +152,8 @@ function DMPage() {
         setBlocked(!!bl);
         setBlockedByOther(!!blMe);
         setMuted(!!mu);
-        setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight }), 50);
+        scrollToBottom(didInitialScrollRef.current);
+        didInitialScrollRef.current = true;
         await markDelivered();
         await markRead();
       } catch {
@@ -160,7 +175,7 @@ function DMPage() {
           (r.sender_id === otherId && r.receiver_id === user.id)
         ) {
           setMessages((old) => (old.some(x => x.id === r.id) ? old : [...old, r]));
-          setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" }), 30);
+          setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current!.scrollHeight, behavior: "smooth" }), 30);
           if (r.receiver_id === user.id) { markDelivered(); markRead(); }
         }
       })

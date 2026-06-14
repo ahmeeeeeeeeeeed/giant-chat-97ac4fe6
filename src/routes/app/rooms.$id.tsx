@@ -56,6 +56,18 @@ function RoomPage() {
   const [deleting, setDeleting] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const didInitialScrollRef = useRef(false);
+
+  const scrollToBottom = (smooth = false) => {
+    const el = messagesEndRef.current;
+    if (!el) return;
+    const go = () => el.scrollIntoView({ behavior: smooth ? "smooth" : "auto", block: "end" });
+    go();
+    requestAnimationFrame(() => { go(); requestAnimationFrame(go); });
+    setTimeout(go, 120);
+    setTimeout(go, 350);
+    setTimeout(go, 800);
+  };
   const [entryBurst, setEntryBurst] = useState<{ id: number; emoji: string; name?: string } | null>(null);
   const entryChRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -145,7 +157,8 @@ function RoomPage() {
       setMessages(visible);
       const ids = visible.map((m: any) => m.user_id).filter(Boolean);
       ensureProfiles(ids);
-      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 150);
+      scrollToBottom(didInitialScrollRef.current);
+      didInitialScrollRef.current = true;
     }
   };
 
