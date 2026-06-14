@@ -159,7 +159,11 @@ function RoomPage() {
   };
 
   const leaveRoom = async () => {
-    if (!confirm("هل تريد مغادرة الغرفة؟")) return;
+    setShowLeaveConfirm(true);
+  };
+
+  const doLeave = async () => {
+    setShowLeaveConfirm(false);
     const { error } = await supabase.from("room_members").delete().eq("room_id", roomId).eq("user_id", user!.id);
     if (error) toast.error("فشل المغادرة");
     else { setMyRank(null); navigate({ to: "/app" }); }
