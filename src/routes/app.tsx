@@ -1,13 +1,12 @@
 import { createFileRoute, Link, Outlet, useNavigate, useLocation, useRouter } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/lib/auth";
 import { useIsAdmin, useUnreadDMCount } from "@/lib/use-admin";
 import { useGlobalNotificationListener, useUnreadRoomCount } from "@/lib/use-global-notifications";
 import { Home, MessageSquare, User, Settings, Users as UsersIcon, Gamepad2, Bell, Shield, Flag, ArrowRight, Newspaper } from "lucide-react";
-import { findAdminId } from "@/lib/find-admin";
-import { toast } from "sonner";
 import { OnlineStatusBanner } from "@/components/OnlineStatusBanner";
+import { ReportModal } from "@/components/ReportModal";
 import { scheduleDataPrewarm } from "@/lib/data-prewarm";
 import giantLogo from "@/assets/giant-logo.png.asset.json";
 
@@ -58,25 +57,13 @@ function AppLayout() {
   const showBack = !hideChrome && !tabRoots.has(path);
   const router = useRouter();
 
-  const openComplaints = async () => {
-    const id = await findAdminId();
-    if (!id) { toast.error("لم يتم العثور على حساب الإدارة"); return; }
-    navigate({ to: "/app/chats/$id", params: { id } });
-  };
+  const [reportOpen, setReportOpen] = useState(false);
 
   return (
     <div className={`flex min-h-screen flex-col ${hideChrome ? "" : "pb-[calc(72px+env(safe-area-inset-bottom))]"}`}>
 
       <OnlineStatusBanner />
-      {/* Persistent floating Complaints button — shows everywhere inside the app */}
-      <button
-        onClick={openComplaints}
-        aria-label="الشكاوى والاقتراحات"
-        title="الشكاوى والاقتراحات"
-        className="fixed bottom-24 end-3 z-[60] flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-orange-500 to-red-500 text-white shadow-xl shadow-orange-500/40 ring-2 ring-background transition active:scale-95"
-      >
-        <Flag className="h-5 w-5" />
-      </button>
+      <ReportModal open={reportOpen} onClose={() => setReportOpen(false)} />
       {!hideChrome && (
         <header className="sticky top-0 z-50 pt-[env(safe-area-inset-top)] bg-gradient-to-b from-emerald-700 via-emerald-600 to-emerald-600/95 text-white shadow-[0_8px_24px_-12px_rgba(6,78,59,0.55)]">
           <div className="relative flex items-center justify-between px-3 py-2.5">
@@ -101,6 +88,14 @@ function AppLayout() {
             </div>
 
             <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => setReportOpen(true)}
+                aria-label="الإبلاغ والشكاوى"
+                title="الإبلاغ والشكاوى"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-orange-400 to-red-500 text-white shadow-md shadow-orange-900/30 ring-1 ring-white/30 transition active:scale-95 hover:brightness-110"
+              >
+                <Flag className="h-[18px] w-[18px]" />
+              </button>
               {isAdmin && (
                 <Link to="/app/admin" aria-label={t("admin.title")}
                   className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/15 backdrop-blur transition active:scale-95 hover:bg-white/20">
