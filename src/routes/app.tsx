@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/auth";
 import { useIsAdmin, useUnreadDMCount } from "@/lib/use-admin";
 import { useGlobalNotificationListener, useUnreadRoomCount } from "@/lib/use-global-notifications";
 import { useAnnouncementsListener } from "@/lib/use-announcements";
-import { Home, MessageSquare, User, Settings, Users as UsersIcon, Gamepad2, Bell, Shield, ShieldAlert, Trophy, ArrowRight, Newspaper, Target } from "lucide-react";
+import { Home, MessageSquare, User, Settings, Users as UsersIcon, Gamepad2, Bell, Shield, ShieldAlert, Trophy, ArrowRight, Newspaper, Target, Loader2 } from "lucide-react";
 import { OnlineStatusBanner } from "@/components/OnlineStatusBanner";
 import { ReportModal } from "@/components/ReportModal";
 import { UpdateGate } from "@/components/UpdateGate";
@@ -31,11 +31,11 @@ function AppLayout() {
   const [reportOpen, setReportOpen] = useState(false);
 
   const tabs = [
+    { to: "/app/chats", label: t("nav.chats"), icon: MessageSquare, exact: false },
     { to: "/app", label: t("nav.rooms"), icon: Home, exact: true },
     { to: "/app/community", label: "المجتمع", icon: Newspaper, exact: false },
     { to: "/app/friends", label: t("nav.friends"), icon: UsersIcon, exact: false },
     { to: "/app/games", label: t("nav.games"), icon: Gamepad2, exact: false },
-    { to: "/app/chats", label: t("nav.chats"), icon: MessageSquare, exact: false },
     { to: "/app/my_profile", label: t("nav.profile"), icon: User, exact: false },
     { to: "/app/settings", label: t("nav.settings"), icon: Settings, exact: false },
   ] as const;
@@ -62,7 +62,7 @@ function AppLayout() {
             return;
           }
           const currentPath = window.location.pathname;
-          if (currentPath === "/app" || currentPath === "/app/") {
+          if (currentPath === "/app" || currentPath === "/app/" || currentPath === "/app/chats" || currentPath === "/app/chats/") {
             window.dispatchEvent(new CustomEvent("show-exit-confirm"));
           } else {
             router.history.back();
@@ -87,7 +87,7 @@ function AppLayout() {
 
   const path = location.pathname;
   const hideChrome = /\/app\/rooms\/[^/]+/.test(path) || /\/app\/chats\/[^/]+/.test(path);
-  const tabRoots = new Set(["/app", "/app/community", "/app/friends", "/app/games", "/app/chats", "/app/my_profile", "/app/settings"]);
+  const tabRoots = new Set(["/app/chats", "/app", "/app/community", "/app/friends", "/app/games", "/app/my_profile", "/app/settings"]);
   const showBack = !hideChrome && !tabRoots.has(path);
 
   const pageTitle = (() => {

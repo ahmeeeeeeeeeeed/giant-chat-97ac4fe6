@@ -64,12 +64,18 @@ function RoomsPage() {
     }
   };
 
-  // التحقق من تسجيل الدخول
+  // التحقق من تسجيل الدخول + إعادة توجيه تلقائية للمحادثات الخاصة كصفحة رئيسية
   useEffect(() => {
     if (!authLoading && !user) {
       navigate({ to: "/login" });
     }
   }, [user, authLoading, navigate]);
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      navigate({ to: "/app/chats" });
+    }
+  }, [authLoading, user, navigate]);
 
   const load = async () => {
     if (!user) return;
