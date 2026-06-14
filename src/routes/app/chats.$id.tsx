@@ -9,6 +9,7 @@ import {
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { tryParseTrackDM, TrackDMPlayer } from "@/components/TrackDMPlayer";
+import { ImageLightbox } from "@/components/ImageLightbox";
 import { cacheGet, cacheSet, cacheKeys } from "@/lib/offline-cache";
 import { enqueueMessage } from "@/lib/offline-queue";
 import { getOnline } from "@/lib/use-online";
@@ -588,6 +589,7 @@ function ActionItem({ icon, label, onClick, destructive }: { icon: React.ReactNo
 }
 
 function MessageBubble({ m, mine, replied }: { m: DM; mine: boolean; replied: DM | null }) {
+  const [lightbox, setLightbox] = useState(false);
   const base = `rounded-2xl px-3.5 py-2 shadow-sm ${mine ? "rounded-br-md bg-primary text-primary-foreground" : "rounded-bl-md bg-card border border-border"}`;
   const replyBlock = replied && (
     <div className={`mb-1 rounded-lg border-s-2 px-2 py-1 text-[11px] ${mine ? "border-primary-foreground/60 bg-primary-foreground/10" : "border-primary bg-secondary"}`}>
@@ -597,12 +599,15 @@ function MessageBubble({ m, mine, replied }: { m: DM; mine: boolean; replied: DM
   );
   if (m.message_type === "image" && m.media_url) {
     return (
-      <div className="overflow-hidden rounded-2xl">
-        {replyBlock}
-        <a href={m.media_url} target="_blank" rel="noreferrer">
-          <img src={m.media_url} alt="" className="max-h-72 w-full rounded-2xl object-cover" loading="lazy" />
-        </a>
-      </div>
+      <>
+        <div className="overflow-hidden rounded-2xl">
+          {replyBlock}
+          <button type="button" onClick={() => setLightbox(true)} className="block w-full">
+            <img src={m.media_url} alt="" className="max-h-72 w-full rounded-2xl object-cover" loading="lazy" />
+          </button>
+        </div>
+        {lightbox && <ImageLightbox url={m.media_url} onClose={() => setLightbox(false)} />}
+      </>
     );
   }
   if (m.message_type === "voice" && m.media_url) {
