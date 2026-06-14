@@ -13,6 +13,7 @@ import { ReportModal } from "@/components/ReportModal";
 import { UpdateGate } from "@/components/UpdateGate";
 import { scheduleDataPrewarm } from "@/lib/data-prewarm";
 import { recordDailyAction } from "@/lib/daily-tasks";
+import { usePresenceHeartbeat } from "@/lib/use-presence-heartbeat";
 
 export const Route = createFileRoute("/app")({
   component: AppLayout,
