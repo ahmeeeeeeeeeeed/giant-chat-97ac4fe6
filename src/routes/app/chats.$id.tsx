@@ -401,7 +401,7 @@ function DMPage() {
   return (
     <main className="flex flex-col bg-background" style={{ height: "100dvh" }}>
       {/* HEADER - MODIFIED: avatar, username, and status are now clickable */}
-      <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-primary/20 bg-primary text-primary-foreground px-3 py-3 shadow-sm">
+      <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-primary/20 bg-primary text-primary-foreground px-3 py-3 shadow-sm" style={{ paddingTop: "calc(env(safe-area-inset-top) + 0.75rem)" }}>
         <button onClick={() => navigate({ to: "/app/chats" })} aria-label="رجوع" className="p-1.5 rounded-full hover:bg-primary-foreground/10">
           <ArrowRight className="h-5 w-5 rtl:rotate-180" />
         </button>
