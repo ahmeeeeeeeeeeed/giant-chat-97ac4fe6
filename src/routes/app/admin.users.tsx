@@ -239,6 +239,35 @@ function AdminUsers() {
           )}
         </div>
       )}
+        </div>
+      )}
+
+      {pointsTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setPointsTarget(null)}>
+          <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-3 flex items-center gap-2">
+              <Coins className="h-5 w-5 text-amber-500" />
+              <h3 className="font-extrabold">إرسال نقاط إلى {pointsTarget.username ?? "المستخدم"}</h3>
+            </div>
+            <p className="mb-3 text-xs text-muted-foreground">يمكن استخدام قيمة سالبة لخصم النقاط.</p>
+            <input
+              type="number"
+              value={pointsValue}
+              onChange={(e) => setPointsValue(e.target.value)}
+              autoFocus
+              dir="ltr"
+              className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm outline-none focus:border-primary"
+            />
+            <div className="mt-3 flex gap-2">
+              <button onClick={() => setPointsTarget(null)} className="h-11 flex-1 rounded-xl border border-border text-sm font-bold">إلغاء</button>
+              <button onClick={confirmSendPoints} disabled={busy === pointsTarget.id}
+                className="h-11 flex-1 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-sm font-bold text-white disabled:opacity-50">
+                إرسال
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
