@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 import { Loader2, ArrowRight, MessageCircle, Ban, Flag, Globe, Lock, EyeOff } from "lucide-react";
+import { WeeklyAchievementsBadge } from "@/components/WeeklyAchievementsBadge";
 
 export const Route = createFileRoute("/app/profile/$id")({
   component: OtherProfilePage,
@@ -194,6 +195,10 @@ function OtherProfilePage() {
                   يخفي آخر ظهور
                 </span>
               )}
+            </div>
+
+            <div className="mt-2 w-full max-w-md">
+              <WeeklyAchievementsBadge userId={profile.id} />
             </div>
 
             {/* Action Buttons */}

@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
+import { WeeklyAchievementsBadge } from "@/components/WeeklyAchievementsBadge";
 import { toast } from "sonner";
 import { Loader2, Camera, User as UserIcon, Bell, Info, Shield, ChevronLeft, Lock, EyeOff, Globe, Eye, Mail, CheckCircle2, KeyRound } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -247,6 +248,8 @@ function ProfilePage() {
             </div>
           </div>
         </div>
+
+        {user && <WeeklyAchievementsBadge userId={user.id} />}
 
         {/* Bio + identity form */}
         <form onSubmit={save} className="mt-6 flex flex-col gap-4">

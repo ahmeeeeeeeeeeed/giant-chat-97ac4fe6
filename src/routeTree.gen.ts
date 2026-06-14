@@ -26,6 +26,7 @@ import { Route as AppFriendsRouteImport } from './routes/app/friends'
 import { Route as AppCreateRoomRouteImport } from './routes/app/create-room'
 import { Route as AppCommunityRouteImport } from './routes/app/community'
 import { Route as AppAdminRouteImport } from './routes/app/admin'
+import { Route as AppAchievementsRouteImport } from './routes/app/achievements'
 import { Route as AppAccountRouteImport } from './routes/app/account'
 import { Route as AppChatsIndexRouteImport } from './routes/app/chats.index'
 import { Route as AppAdminIndexRouteImport } from './routes/app/admin.index'
@@ -121,6 +122,11 @@ const AppAdminRoute = AppAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAchievementsRoute = AppAchievementsRouteImport.update({
+  id: '/achievements',
+  path: '/achievements',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAccountRoute = AppAccountRouteImport.update({
   id: '/account',
   path: '/account',
@@ -175,6 +181,7 @@ export interface FileRoutesByFullPath {
   '/recovery': typeof RecoveryRoute
   '/register': typeof RegisterRoute
   '/app/account': typeof AppAccountRoute
+  '/app/achievements': typeof AppAchievementsRoute
   '/app/admin': typeof AppAdminRouteWithChildren
   '/app/community': typeof AppCommunityRoute
   '/app/create-room': typeof AppCreateRoomRoute
@@ -202,6 +209,7 @@ export interface FileRoutesByTo {
   '/recovery': typeof RecoveryRoute
   '/register': typeof RegisterRoute
   '/app/account': typeof AppAccountRoute
+  '/app/achievements': typeof AppAchievementsRoute
   '/app/community': typeof AppCommunityRoute
   '/app/create-room': typeof AppCreateRoomRoute
   '/app/friends': typeof AppFriendsRoute
@@ -230,6 +238,7 @@ export interface FileRoutesById {
   '/recovery': typeof RecoveryRoute
   '/register': typeof RegisterRoute
   '/app/account': typeof AppAccountRoute
+  '/app/achievements': typeof AppAchievementsRoute
   '/app/admin': typeof AppAdminRouteWithChildren
   '/app/community': typeof AppCommunityRoute
   '/app/create-room': typeof AppCreateRoomRoute
@@ -260,6 +269,7 @@ export interface FileRouteTypes {
     | '/recovery'
     | '/register'
     | '/app/account'
+    | '/app/achievements'
     | '/app/admin'
     | '/app/community'
     | '/app/create-room'
@@ -287,6 +297,7 @@ export interface FileRouteTypes {
     | '/recovery'
     | '/register'
     | '/app/account'
+    | '/app/achievements'
     | '/app/community'
     | '/app/create-room'
     | '/app/friends'
@@ -314,6 +325,7 @@ export interface FileRouteTypes {
     | '/recovery'
     | '/register'
     | '/app/account'
+    | '/app/achievements'
     | '/app/admin'
     | '/app/community'
     | '/app/create-room'
@@ -466,6 +478,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/achievements': {
+      id: '/app/achievements'
+      path: '/achievements'
+      fullPath: '/app/achievements'
+      preLoaderRoute: typeof AppAchievementsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/account': {
       id: '/app/account'
       path: '/account'
@@ -552,6 +571,7 @@ const AppAdminRouteWithChildren = AppAdminRoute._addFileChildren(
 
 interface AppRouteChildren {
   AppAccountRoute: typeof AppAccountRoute
+  AppAchievementsRoute: typeof AppAchievementsRoute
   AppAdminRoute: typeof AppAdminRouteWithChildren
   AppCommunityRoute: typeof AppCommunityRoute
   AppCreateRoomRoute: typeof AppCreateRoomRoute
@@ -570,6 +590,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppAccountRoute: AppAccountRoute,
+  AppAchievementsRoute: AppAchievementsRoute,
   AppAdminRoute: AppAdminRouteWithChildren,
   AppCommunityRoute: AppCommunityRoute,
   AppCreateRoomRoute: AppCreateRoomRoute,
