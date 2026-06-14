@@ -26,6 +26,7 @@ function AppLayout() {
   const unreadDM = useUnreadDMCount();
   const unreadRooms = useUnreadRoomCount();
   const unread = unreadDM + unreadRooms;
+  const bellCount = useBellCount();
   useGlobalNotificationListener((url) => navigate({ to: url as any }));
   useAnnouncementsListener(!!session?.user?.id);
   const router = useRouter();
