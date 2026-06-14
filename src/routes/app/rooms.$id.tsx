@@ -424,6 +424,7 @@ function RoomPage() {
         {/* Quick action chips */}
         {isMember && (
           <div className="flex gap-1.5 overflow-x-auto px-3 pb-2 scrollbar-thin">
+            <ChipBtn icon={<Share2 className="h-3 w-3" />} label="نشر" onClick={() => setShowShare(true)} highlight />
             <ChipBtn icon={<UserPlus className="h-3 w-3" />} label="دعوة" onClick={() => openSettingsAt("invite")} />
             <ChipBtn icon={<Users className="h-3 w-3" />} label={`الأعضاء (${memberCount})`} onClick={() => openSettingsAt("members")} />
             {canModerate && <ChipBtn icon={<Megaphone className="h-3 w-3" />} label="إعلان" onClick={() => setShowAnnounce(true)} highlight />}
