@@ -1180,9 +1180,9 @@ function MemberMenu({ myRank, rank, onMakeAdmin, onMakeModerator, onMakeMember, 
               <ArrowUp className="h-4 w-4" /> تعيين مشرف
             </button>
           )}
-          {canManageRanks && rank !== "member" && (
+          {(canManageRanks || (isMod && rank !== "admin" && rank !== "moderator")) && rank !== "member" && (
             <button onClick={() => { setOpen(false); onMakeMember(); }} className={`${item} text-orange-600`}>
-              <ArrowDown className="h-4 w-4" /> إعادة إلى عضو
+              <ArrowDown className="h-4 w-4" /> منح عضوية
             </button>
           )}
           {onTransfer && (
