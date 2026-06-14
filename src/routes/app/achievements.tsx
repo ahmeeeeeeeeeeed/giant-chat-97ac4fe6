@@ -1,11 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Trophy, Flame, Coins, Crown, Sparkles, Medal } from "lucide-react";
+import { Trophy, Flame, Coins, Crown, Sparkles, Medal, Gamepad2 } from "lucide-react";
 
 export const Route = createFileRoute("/app/achievements")({
   component: AchievementsPage,
 });
+
+type WinnerRow = { user_id: string; username: string; avatar_url: string | null; wins: number };
+
 
 type Row = {
   user_id: string;
