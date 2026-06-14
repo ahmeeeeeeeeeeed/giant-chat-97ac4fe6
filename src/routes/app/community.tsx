@@ -131,6 +131,7 @@ function Composer({ userId, onPosted }: { userId: string; onPosted: () => void }
       if (error) throw error;
       setContent(""); pick(null);
       toast.success("تم نشر المنشور");
+      recordDailyAction("publish_post" as any);
       onPosted();
     } catch (e: any) {
       toast.error(e.message || "فشل النشر");
