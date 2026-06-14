@@ -170,7 +170,22 @@ function RoomPage() {
             markRoomSeen(roomId);
             return;
           }
-          setMessages((prev) => (prev.some((x) => x.id === m.id) ? prev : [...prev, m]));
+          setMessages((prev) => {
+            if (prev.some((x) => x.id === m.id)) return prev;
+            // Replace any matching optimistic temp message from the same sender
+            const tmpIdx = prev.findIndex((x) =>
+              typeof x.id === "string" && x.id.startsWith("tmp-") &&
+              x.user_id === m.user_id &&
+              (x.content ?? "") === (m.content ?? "") &&
+              (x.media_url ?? null) === (m.media_url ?? null)
+            );
+            if (tmpIdx >= 0) {
+              const next = prev.slice();
+              next[tmpIdx] = m;
+              return next;
+            }
+            return [...prev, m];
+          });
           if (m.user_id) ensureProfiles([m.user_id]);
           markRoomSeen(roomId);
           setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
@@ -268,7 +283,7 @@ function RoomPage() {
     setText("");
     const { data, error } = await supabase.from("room_messages")
       .insert({ room_id: roomId, user_id: user.id, content } as never)
-      .select("*").single();
+      .select("*").maybeSingle();
     setSending(false);
     if (error) {
       setMessages((prev) => prev.filter((m) => m.id !== tempId));
@@ -276,7 +291,7 @@ function RoomPage() {
       setText(content);
       return;
     }
-    setMessages((prev) => prev.map((m) => (m.id === tempId ? data : m)));
+    if (data) setMessages((prev) => prev.map((m) => (m.id === tempId ? data : m)));
     try { await supabase.rpc("record_daily_action", { _kind: "send_messages", _amount: 1 }); } catch { /* ignore */ }
   };
 
@@ -304,13 +319,13 @@ function RoomPage() {
       room_id: roomId, user_id: user.id,
       content: optimistic.content,
       message_type: kind, media_url: url, media_duration_ms: durationMs ?? null,
-    } as never).select("*").single();
+    } as never).select("*").maybeSingle();
     if (error) {
       setMessages((prev) => prev.filter((m) => m.id !== tempId));
       toast.error("فشل إرسال الوسائط");
       return;
     }
-    setMessages((prev) => prev.map((m) => (m.id === tempId ? data : m)));
+    if (data) setMessages((prev) => prev.map((m) => (m.id === tempId ? data : m)));
     try { await supabase.rpc("record_daily_action", { _kind: "send_messages", _amount: 1 }); } catch { /* ignore */ }
   };
 
