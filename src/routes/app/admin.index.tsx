@@ -32,10 +32,22 @@ function AdminHome() {
   const sendPoints = async () => {
     if (!target.trim() || !amount) return;
     setBusy(true);
-    const { error } = await supabase.rpc("admin_send_points", { _target: target.trim(), _amount: amount });
-    setBusy(false);
-    if (error) toast.error(error.message);
-    else { toast.success("تم إرسال النقاط"); setTarget(""); }
+    try {
+      const uname = target.trim().replace(/^@/, "");
+      const { data: prof, error: pErr } = await supabase
+        .from("profiles")
+        .select("id")
+        .ilike("username", uname)
+        .maybeSingle();
+      if (pErr) { toast.error(pErr.message); return; }
+      if (!prof?.id) { toast.error("المستخدم غير موجود"); return; }
+      const { error } = await supabase.rpc("admin_send_points", { _target: prof.id, _amount: amount });
+      if (error) { toast.error(error.message); return; }
+      toast.success("تم إرسال النقاط");
+      setTarget("");
+    } finally {
+      setBusy(false);
+    }
   };
 
   const sendBroadcast = async () => {
