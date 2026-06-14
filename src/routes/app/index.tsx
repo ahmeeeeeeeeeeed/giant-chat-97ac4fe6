@@ -121,11 +121,6 @@ function RoomsPage() {
     return () => { supabase.removeChannel(ch); };
   }, [user]);
 
-  useEffect(() => {
-    const handler = () => setShowExitConfirm(true);
-    window.addEventListener("show-exit-confirm", handler);
-    return () => window.removeEventListener("show-exit-confirm", handler);
-  }, []);
 
   // إذا كان يتحقق من المصادقة
   if (authLoading) {
