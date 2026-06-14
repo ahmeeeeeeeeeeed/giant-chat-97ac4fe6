@@ -35,6 +35,9 @@ jobs:
       - name: Install dependencies
         run: npm install --legacy-peer-deps
 
+      - name: Bump app version (patch)
+        run: node scripts/bump-version.mjs patch
+
       - name: Build web app
         run: npm run build
 
@@ -49,6 +52,12 @@ jobs:
 
       - name: Patch AndroidManifest permissions
         run: node scripts/patch-android-permissions.mjs
+
+      - name: Patch Android launcher icon
+        run: node scripts/patch-android-icon.mjs
+
+      - name: Patch Android version (code/name)
+        run: node scripts/patch-android-version.mjs
 
       - name: Grant gradlew permission
         run: chmod +x android/gradlew

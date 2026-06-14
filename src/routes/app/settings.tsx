@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { SUPPORTED_LANGUAGES } from "@/lib/i18n";
 import { findAdminId } from "@/lib/find-admin";
+import { APP_VERSION } from "@/lib/version";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/settings")({
@@ -161,6 +162,13 @@ function SettingsPage() {
           {t("auth.logout")}
         </button>
       </div>
+
+      {/* App version */}
+      <div className="pt-2 pb-6 text-center text-xs text-muted-foreground">
+        Giant • v{APP_VERSION}
+      </div>
+
+
 
       {/* Logout confirm */}
       {showLogout && (
