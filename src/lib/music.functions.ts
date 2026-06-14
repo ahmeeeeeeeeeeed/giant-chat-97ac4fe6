@@ -25,36 +25,53 @@ export const searchTrack = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ q: z.string().min(1).max(200) }).parse(input))
   .handler(async ({ data }): Promise<{ track: TrackResult | null; error: string | null }> => {
     try {
+      // Use YouTube InnerTube API directly — returns clean JSON and is
+      // reliable on edge runtimes (no regex on huge HTML, no CPU timeouts).
       const res = await fetch(
-        `https://www.youtube.com/results?search_query=${encodeURIComponent(data.q)}&hl=en&persist_hl=1`,
+        "https://www.youtube.com/youtubei/v1/search?prettyPrint=false",
         {
+          method: "POST",
           headers: {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
+            "Content-Type": "application/json",
+            "User-Agent":
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
             "Accept-Language": "en-US,en;q=0.9",
           },
+          body: JSON.stringify({
+            context: {
+              client: {
+                clientName: "WEB",
+                clientVersion: "2.20240101.00.00",
+                hl: "en",
+                gl: "US",
+              },
+            },
+            query: data.q,
+            // EgIQAQ%3D%3D == filter: videos only
+            params: "EgIQAQ%3D%3D",
+          }),
         },
       );
       if (!res.ok) return { track: null, error: `search failed (${res.status})` };
-      const html = await res.text();
-      const m = html.match(/var ytInitialData = (\{[\s\S]*?\});<\/script>/);
-      if (!m) return { track: null, error: "no_results" };
-      let json: any;
-      try { json = JSON.parse(m[1]); } catch { return { track: null, error: "parse_failed" }; }
+      const json: any = await res.json();
       const sections =
-        json?.contents?.twoColumnSearchResultsRenderer?.primaryContents?.sectionListRenderer?.contents ?? [];
+        json?.contents?.twoColumnSearchResultsRenderer?.primaryContents
+          ?.sectionListRenderer?.contents ??
+        json?.onResponseReceivedCommands?.[0]?.appendContinuationItemsAction
+          ?.continuationItems ??
+        [];
       for (const sec of sections) {
         const items = sec?.itemSectionRenderer?.contents ?? [];
         for (const it of items) {
           const v = it?.videoRenderer;
           if (!v?.videoId) continue;
-          // skip live / upcoming (no playable duration)
           const lengthText: string | undefined =
-            v?.lengthText?.simpleText ??
-            v?.lengthText?.runs?.[0]?.text;
+            v?.lengthText?.simpleText ?? v?.lengthText?.runs?.[0]?.text;
           if (!lengthText) continue;
           const durMs = parseDuration(lengthText);
           if (durMs <= 0) continue;
-          const title: string = v?.title?.runs?.[0]?.text ?? v?.title?.simpleText ?? "Unknown";
+          const title: string =
+            v?.title?.runs?.[0]?.text ?? v?.title?.simpleText ?? "Unknown";
           const artist: string =
             v?.ownerText?.runs?.[0]?.text ??
             v?.longBylineText?.runs?.[0]?.text ??
