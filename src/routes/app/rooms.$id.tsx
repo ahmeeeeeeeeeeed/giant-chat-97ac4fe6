@@ -769,6 +769,7 @@ function RoomPage() {
           onDeleted={() => navigate({ to: "/app" })}
         />
       )}
+      {lightboxUrl && <ImageLightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />}
     </div>
   );
 }
