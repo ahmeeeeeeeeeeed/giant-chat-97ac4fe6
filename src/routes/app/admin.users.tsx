@@ -132,7 +132,13 @@ function AdminUsers() {
       await changePwd({ data: { userId: u.id, newPassword: v } });
       toast.success("تم تغيير كلمة المرور");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "خطأ");
+      const raw = e instanceof Error ? e.message : "";
+      let msg = "تعذّر تغيير كلمة المرور";
+      if (/pwned|weak|leaked/i.test(raw)) msg = "كلمة المرور ضعيفة جداً، اختر كلمة أقوى";
+      else if (/at least|short|6 characters/i.test(raw)) msg = "٦ أحرف على الأقل";
+      else if (/same/i.test(raw)) msg = "كلمة المرور الجديدة مطابقة للحالية";
+      else if (raw) msg = raw.length > 80 ? "تعذّر تغيير كلمة المرور" : raw;
+      toast.error(msg);
     } finally { setBusy(null); }
   };
 
