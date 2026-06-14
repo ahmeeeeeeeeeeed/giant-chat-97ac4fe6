@@ -309,88 +309,86 @@ function ProfilePage() {
             <Row icon={<UserIcon className="h-5 w-5" />} label={t("profile.username")} value={username} />
           </Section>
 
-          <Section title="بريد الاسترجاع">
+          <Section title="بريد الحساب">
             <div className="space-y-3 p-4">
               <div className="flex items-start gap-3">
                 <Mail className="mt-1 h-5 w-5 text-muted-foreground" />
                 <div className="flex-1">
                   <div className="text-sm font-medium">
-                    بريد لاسترجاع الحساب
-                    {emailVerifiedAt && (
+                    البريد المرتبط بحسابك
+                    {accountEmail && (
                       <span className="ms-2 inline-flex items-center gap-1 rounded-full bg-success/15 px-2 py-0.5 text-[10px] font-bold text-success">
                         <CheckCircle2 className="h-3 w-3" /> مؤكَّد
                       </span>
                     )}
                   </div>
                   <p className="text-[11px] text-muted-foreground">
-                    بعد التأكيد يمكنك استرجاع الحساب عبر هذا البريد
+                    يُستخدم لتسجيل الدخول واسترجاع كلمة المرور
                   </p>
                 </div>
               </div>
 
-              <input
-                type="email"
-                value={recoveryEmail}
-                onChange={(e) => { setRecoveryEmail(e.target.value); setEmailVerifiedAt(null); setEmailStep("idle"); }}
-                dir="ltr"
-                placeholder="you@example.com"
-                className="h-11 w-full rounded-xl border border-input bg-background px-3 outline-none focus:border-primary"
-              />
+              {accountEmail ? (
+                <div dir="ltr" className="rounded-xl border border-border bg-background px-3 py-2.5 text-sm font-semibold">
+                  {accountEmail}
+                </div>
+              ) : (
+                <div className="rounded-xl border border-dashed border-border bg-background px-3 py-2.5 text-xs text-muted-foreground">
+                  لا يوجد بريد مرتبط بعد
+                </div>
+              )}
 
-              {emailStep === "sent" && !emailVerifiedAt && (
+              {pendingEmail && pendingEmail !== accountEmail && (
+                <div className="rounded-xl border border-amber-400/40 bg-amber-50 dark:bg-amber-950/30 px-3 py-2 text-[11px] text-amber-700 dark:text-amber-300">
+                  بانتظار التأكيد: <span dir="ltr" className="font-semibold">{pendingEmail}</span>
+                  <div className="mt-1">افتح رابط التأكيد المُرسل إلى البريد الجديد.</div>
+                </div>
+              )}
+
+              {editingEmail && (
                 <input
-                  value={emailCode}
-                  onChange={(e) => setEmailCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  type="email"
+                  value={newEmail}
+                  onChange={(e) => setNewEmail(e.target.value)}
                   dir="ltr"
-                  inputMode="numeric"
-                  placeholder="الكود (6 أرقام)"
+                  placeholder="you@example.com"
                   className="h-11 w-full rounded-xl border border-input bg-background px-3 outline-none focus:border-primary"
                 />
               )}
 
               <div className="flex gap-2">
-                {!emailVerifiedAt && emailStep === "idle" && (
+                {!editingEmail ? (
                   <button
                     type="button"
-                    onClick={sendEmailCode}
-                    disabled={emailBusy || !recoveryEmail}
-                    className="flex h-10 flex-1 items-center justify-center rounded-xl bg-primary text-sm font-bold text-primary-foreground disabled:opacity-60"
+                    onClick={() => setEditingEmail(true)}
+                    className="h-10 w-full rounded-xl border border-border bg-card text-sm font-semibold"
                   >
-                    {emailBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : "إرسال كود التأكيد"}
+                    {accountEmail ? "تغيير البريد" : "إضافة بريد"}
                   </button>
-                )}
-                {emailStep === "sent" && !emailVerifiedAt && (
+                ) : (
                   <>
                     <button
                       type="button"
-                      onClick={confirmEmail}
-                      disabled={emailBusy}
+                      onClick={sendChangeEmail}
+                      disabled={emailBusy || !newEmail}
                       className="flex h-10 flex-1 items-center justify-center rounded-xl bg-primary text-sm font-bold text-primary-foreground disabled:opacity-60"
                     >
-                      {emailBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : "تأكيد الكود"}
+                      {emailBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : "إرسال رابط التأكيد"}
                     </button>
                     <button
                       type="button"
-                      onClick={sendEmailCode}
+                      onClick={() => { setEditingEmail(false); setNewEmail(""); }}
                       disabled={emailBusy}
                       className="h-10 rounded-xl border border-border bg-card px-3 text-xs font-semibold"
                     >
-                      إعادة الإرسال
+                      إلغاء
                     </button>
                   </>
-                )}
-                {emailVerifiedAt && (
-                  <button
-                    type="button"
-                    onClick={() => { setEmailStep("idle"); }}
-                    className="h-10 w-full rounded-xl border border-border bg-card text-sm font-semibold"
-                  >
-                    تغيير البريد
-                  </button>
                 )}
               </div>
             </div>
           </Section>
+
 
 
           <Section title={t("profile.notifications")}>
