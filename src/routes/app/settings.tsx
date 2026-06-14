@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { SUPPORTED_LANGUAGES } from "@/lib/i18n";
 import { findAdminId } from "@/lib/find-admin";
+import { APP_VERSION } from "@/lib/version";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/settings")({
