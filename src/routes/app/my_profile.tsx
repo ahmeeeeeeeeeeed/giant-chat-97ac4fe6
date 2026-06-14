@@ -1,11 +1,11 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { WeeklyAchievementsBadge } from "@/components/WeeklyAchievementsBadge";
 import { toast } from "sonner";
-import { Loader2, Camera, User as UserIcon, Bell, Info, Shield, ChevronLeft, Lock, EyeOff, Globe, Eye, Mail, CheckCircle2, KeyRound } from "lucide-react";
+import { Loader2, Camera, User as UserIcon, Bell, Info, Shield, ChevronLeft, Lock, EyeOff, Globe, Eye, Mail, CheckCircle2, KeyRound, History } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { getEquipped, type EquippedSet } from "@/lib/equipped";
 import { BadgeChip } from "@/routes/app/store";
@@ -398,6 +398,13 @@ function ProfilePage() {
           <Section title={t("profile.security")}>
             <Row icon={<Shield className="h-5 w-5" />} label={t("profile.security")} value="✓" />
             <PasswordChangeRow />
+            <Link to="/app/account" className="flex items-center justify-between p-4">
+              <div className="flex items-center gap-3">
+                <History className="h-5 w-5" />
+                <span className="font-medium">سجلّ تسجيل الدخول</span>
+              </div>
+              <ChevronLeft className="h-4 w-4 text-muted-foreground rtl:rotate-180" />
+            </Link>
           </Section>
 
           <Section title={t("profile.about")}>
