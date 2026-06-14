@@ -2,8 +2,9 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useIsAdmin } from "@/lib/use-admin";
 import { supabase } from "@/integrations/supabase/client";
-import { Shield, Coins, Megaphone, Hash, Loader2, ChevronLeft, Newspaper, Users as UsersIcon, Package } from "lucide-react";
+import { Shield, Coins, Megaphone, Hash, Loader2, ChevronLeft, Newspaper, Users as UsersIcon, Package, Crown } from "lucide-react";
 import { toast } from "sonner";
+import { PremiumCreateModal } from "@/components/PremiumCreateModal";
 
 export const Route = createFileRoute("/app/admin/")({
   component: AdminHome,
@@ -16,6 +17,7 @@ function AdminHome() {
   const [amount, setAmount] = useState<number>(100);
   const [broadcast, setBroadcast] = useState("");
   const [busy, setBusy] = useState(false);
+  const [showPremium, setShowPremium] = useState(false);
 
   useEffect(() => {
     if (loaded && !isAdmin) {
