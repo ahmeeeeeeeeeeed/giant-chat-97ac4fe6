@@ -279,7 +279,10 @@ function DMPage() {
         const blob = new Blob(recChunksRef.current, { type: "audio/webm" });
         const duration = Date.now() - recStartRef.current;
         broadcastActivity("idle");
-        await uploadAndSend(blob, "voice", duration);
+        if (blob.size > 0 && duration > 500) {
+          const previewUrl = URL.createObjectURL(blob);
+          setPendingMedia({ kind: "voice", file: blob, previewUrl, durationMs: duration });
+        }
       };
       mediaRecRef.current = mr;
       recStartRef.current = Date.now();
