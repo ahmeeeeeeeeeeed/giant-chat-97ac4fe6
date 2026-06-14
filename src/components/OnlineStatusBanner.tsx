@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, WifiOff } from "lucide-react";
 import { useOnline } from "@/lib/use-online";
 import { flushQueue, getQueue, onQueueChange, type QueuedMessage } from "@/lib/offline-queue";
 
 /**
- * System-style connectivity overlay.
- * When offline: show a subtle full-screen "loading" indicator (no offline
- * page, no buttons, no links) until the connection returns.
- * When syncing queued messages after reconnect: brief top status pill.
+ * Offline-first connectivity indicator.
+ *
+ * Behavior:
+ * - Offline: small top banner "وضع عدم الاتصال" — does NOT block navigation
+ *   so the user keeps browsing cached pages and local data.
+ * - Online + queued items being sent: brief top sync pill.
  */
 export function OnlineStatusBanner() {
   const online = useOnline();
@@ -34,11 +36,14 @@ export function OnlineStatusBanner() {
 
   if (!online) {
     return (
-      <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-background/95 backdrop-blur-sm">
-        <div className="flex flex-col items-center gap-3 text-muted-foreground">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <span className="text-sm">جاري التحميل...</span>
-        </div>
+      <div
+        className="fixed top-0 inset-x-0 z-[9999] flex items-center justify-center gap-2 bg-amber-600/95 px-3 py-1.5 text-xs font-medium text-white backdrop-blur"
+        style={{ paddingTop: "calc(env(safe-area-inset-top) + 0.375rem)" }}
+        role="status"
+        aria-live="polite"
+      >
+        <WifiOff className="h-3.5 w-3.5" />
+        <span>وضع عدم الاتصال — تتصفح بياناتك المحفوظة محليًا</span>
       </div>
     );
   }
