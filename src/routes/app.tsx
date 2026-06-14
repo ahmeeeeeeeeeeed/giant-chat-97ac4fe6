@@ -120,7 +120,7 @@ function AppLayout() {
               <Link to="/app/notifications" aria-label={t("notif.title")}
                 className="relative flex h-9 w-9 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/15 backdrop-blur transition active:scale-95 hover:bg-white/20">
                 <Bell className="h-[18px] w-[18px]" />
-                {unread > 0 && (
+                {path !== "/app/notifications" && unread > 0 && (
                   <span className="absolute -end-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white ring-2 ring-emerald-600">
                     {unread > 99 ? "99+" : unread}
                   </span>
