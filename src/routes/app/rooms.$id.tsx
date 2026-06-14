@@ -52,6 +52,8 @@ function RoomPage() {
   const [showInfo, setShowInfo] = useState(false);
   const [search, setSearch] = useState("");
   const [showSearch, setShowSearch] = useState(false);
+  const [actionMsg, setActionMsg] = useState<any | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [entryBurst, setEntryBurst] = useState<{ id: number; emoji: string; name?: string } | null>(null);
