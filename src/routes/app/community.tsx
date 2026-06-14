@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { recordDailyAction } from "@/lib/daily-tasks";
 import {
   ImagePlus, Video, X, Loader2, Send, MoreVertical, Trash2, Pencil,
-  Flag, MessageCircle, ChevronDown, ChevronUp, Heart, Smile,
+  Flag, MessageCircle, Smile, Users, Sparkles,
 } from "lucide-react";
 
 export const Route = createFileRoute("/app/community")({
@@ -72,19 +72,38 @@ function CommunityPage() {
   if (!user) return null;
 
   return (
-    <main className="flex flex-1 flex-col">
-      <header className="sticky top-0 z-10 border-b border-border bg-background/90 px-5 py-4 backdrop-blur">
-        <h1 className="text-2xl font-extrabold">المجتمع</h1>
-        <p className="text-xs text-muted-foreground">شارك صورة، فيديو، أو منشور كتابي</p>
+    <main className="relative flex flex-1 flex-col overflow-hidden">
+      {/* Decorative gradient blobs */}
+      <div aria-hidden className="pointer-events-none absolute -top-32 -end-24 h-72 w-72 rounded-full bg-gradient-to-br from-primary/40 via-fuchsia-500/25 to-transparent blur-3xl" />
+      <div aria-hidden className="pointer-events-none absolute top-40 -start-20 h-64 w-64 rounded-full bg-gradient-to-tr from-sky-500/30 via-emerald-400/20 to-transparent blur-3xl" />
+
+      <header className="sticky top-0 z-20 overflow-hidden border-b border-white/10 bg-gradient-to-l from-primary/25 via-fuchsia-500/15 to-sky-500/20 px-5 py-5 backdrop-blur-xl">
+        <div className="relative flex items-center gap-3">
+          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-primary to-fuchsia-500 text-white shadow-lg shadow-primary/30">
+            <Users className="h-6 w-6" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h1 className="bg-gradient-to-l from-primary via-fuchsia-500 to-sky-500 bg-clip-text text-2xl font-extrabold text-transparent">
+              المجتمع
+            </h1>
+            <p className="flex items-center gap-1 text-[11px] text-muted-foreground">
+              <Sparkles className="h-3 w-3 text-primary" />
+              شارك لحظاتك مع آلاف الأعضاء
+            </p>
+          </div>
+        </div>
       </header>
 
-      <div className="flex-1 px-3 py-3 space-y-3">
+      <div className="relative flex-1 px-3 py-4 space-y-4">
         <Composer userId={user.id} onPosted={load} />
 
         {loading ? (
-          <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+          <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
         ) : posts.length === 0 ? (
-          <div className="mt-12 text-center text-sm text-muted-foreground">لا توجد منشورات بعد — كن أول من ينشر!</div>
+          <div className="mt-12 rounded-3xl border border-white/10 bg-white/5 p-8 text-center text-sm text-muted-foreground backdrop-blur-xl">
+            <Sparkles className="mx-auto mb-2 h-6 w-6 text-primary" />
+            لا توجد منشورات بعد — كن أول من ينشر!
+          </div>
         ) : (
           posts.map((p) => <PostCard key={p.id} post={p} currentUserId={user.id} onChanged={load} />)
         )}
@@ -139,19 +158,20 @@ function Composer({ userId, onPosted }: { userId: string; onPosted: () => void }
   };
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-3 space-y-2">
+    <div className="group relative overflow-hidden rounded-3xl border border-white/15 bg-white/5 p-4 shadow-xl shadow-black/5 backdrop-blur-2xl space-y-3 transition hover:border-white/25">
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 -top-px h-px bg-gradient-to-l from-transparent via-primary/60 to-transparent" />
       <textarea
         value={content} onChange={(e) => setContent(e.target.value)}
-        placeholder="ما الذي تفكر فيه؟" rows={3} maxLength={4000}
-        className="w-full resize-none rounded-xl border border-input bg-background p-3 text-sm outline-none focus:border-primary"
+        placeholder="✨ ما الذي تفكر فيه؟" rows={3} maxLength={4000}
+        className="w-full resize-none rounded-2xl border border-white/10 bg-background/40 p-3 text-sm outline-none transition focus:border-primary focus:bg-background/70 focus:ring-2 focus:ring-primary/20"
       />
       {preview && file && (
-        <div className="relative overflow-hidden rounded-xl border border-border">
+        <div className="relative overflow-hidden rounded-2xl border border-white/15 shadow-lg">
           {file.type.startsWith("video")
             ? <video src={preview} controls className="max-h-64 w-full" />
             : <img src={preview} className="max-h-64 w-full object-cover" alt="" />}
           <button onClick={() => pick(null)}
-            className="absolute end-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-black/60 text-white">
+            className="absolute end-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-black/70 text-white backdrop-blur transition hover:bg-black/90">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -163,16 +183,16 @@ function Composer({ userId, onPosted }: { userId: string; onPosted: () => void }
           <input ref={videoRef} type="file" accept="video/*" className="hidden"
             onChange={(e) => pick(e.target.files?.[0] ?? null)} />
           <button onClick={() => fileRef.current?.click()}
-            className="flex h-9 items-center gap-1 rounded-xl bg-emerald-500/10 px-3 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+            className="flex h-9 items-center gap-1.5 rounded-xl border border-emerald-400/30 bg-emerald-500/10 px-3 text-xs font-semibold text-emerald-700 backdrop-blur transition hover:bg-emerald-500/20 dark:text-emerald-300">
             <ImagePlus className="h-4 w-4" /> صورة
           </button>
           <button onClick={() => videoRef.current?.click()}
-            className="flex h-9 items-center gap-1 rounded-xl bg-blue-500/10 px-3 text-xs font-semibold text-blue-700 dark:text-blue-400">
+            className="flex h-9 items-center gap-1.5 rounded-xl border border-sky-400/30 bg-sky-500/10 px-3 text-xs font-semibold text-sky-700 backdrop-blur transition hover:bg-sky-500/20 dark:text-sky-300">
             <Video className="h-4 w-4" /> فيديو
           </button>
         </div>
         <button onClick={submit} disabled={busy}
-          className="flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50">
+          className="relative flex h-10 items-center gap-2 overflow-hidden rounded-xl bg-gradient-to-l from-primary via-fuchsia-500 to-sky-500 px-5 text-sm font-bold text-white shadow-lg shadow-primary/30 transition hover:shadow-xl hover:shadow-primary/40 active:scale-95 disabled:opacity-50">
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           نشر
         </button>
@@ -251,14 +271,18 @@ function PostCard({ post, currentUserId, onChanged }: { post: Post; currentUserI
   const total = reactions.length;
 
   return (
-    <article className="rounded-2xl border border-border bg-card p-3 space-y-2">
+    <article className="group relative overflow-hidden rounded-3xl border border-white/15 bg-white/5 p-4 shadow-lg shadow-black/5 backdrop-blur-2xl space-y-3 transition hover:border-white/25 hover:shadow-xl">
+      <div aria-hidden className="pointer-events-none absolute inset-x-4 -top-px h-px bg-gradient-to-l from-transparent via-primary/40 to-transparent" />
       <header className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          {post.author?.avatar_url
-            ? <img src={post.author.avatar_url} className="h-9 w-9 rounded-full object-cover" alt="" />
-            : <div className="h-9 w-9 rounded-full bg-secondary" />}
-          <div>
-            <div className="text-sm font-bold">{post.author?.username || "مستخدم"}</div>
+        <div className="flex min-w-0 items-center gap-2.5">
+          <div className="relative shrink-0">
+            <div className="absolute -inset-0.5 rounded-full bg-gradient-to-tr from-primary via-fuchsia-500 to-sky-500 opacity-70 blur-sm" />
+            {post.author?.avatar_url
+              ? <img src={post.author.avatar_url} className="relative h-10 w-10 rounded-full object-cover ring-2 ring-background" alt="" />
+              : <div className="relative h-10 w-10 rounded-full bg-secondary ring-2 ring-background" />}
+          </div>
+          <div className="min-w-0">
+            <div className="truncate text-sm font-bold">{post.author?.username || "مستخدم"}</div>
             <div className="text-[11px] text-muted-foreground">
               {new Date(post.created_at).toLocaleString("ar")}{post.edited ? " · معدّل" : ""}
             </div>
@@ -325,13 +349,15 @@ function PostCard({ post, currentUserId, onChanged }: { post: Post; currentUserI
         </>
       )}
 
-      <div className="flex items-center gap-2 border-t border-border pt-2">
+      <div className="flex items-center gap-2 border-t border-white/10 pt-3">
         <div className="relative">
           <button
             onMouseEnter={() => setShowReactions(true)}
             onClick={() => react(myReaction || "like")}
-            className={`flex h-9 items-center gap-1.5 rounded-xl px-3 text-xs font-bold transition ${
-              myReaction ? "bg-primary/15 text-primary" : "bg-secondary hover:bg-secondary/70"
+            className={`flex h-9 items-center gap-1.5 rounded-xl border px-3 text-xs font-bold backdrop-blur transition active:scale-95 ${
+              myReaction
+                ? "border-primary/40 bg-gradient-to-l from-primary/20 to-fuchsia-500/20 text-primary shadow-sm shadow-primary/20"
+                : "border-white/10 bg-white/5 hover:bg-white/10"
             }`}
           >
             {myReaction ? REACTIONS.find(r => r.key === myReaction)?.emoji : <Smile className="h-4 w-4" />}
@@ -339,21 +365,21 @@ function PostCard({ post, currentUserId, onChanged }: { post: Post; currentUserI
           </button>
           {showReactions && (
             <div onMouseLeave={() => setShowReactions(false)}
-              className="absolute bottom-full start-0 mb-2 flex items-center gap-1 rounded-full border border-border bg-popover p-1.5 shadow-xl z-30">
+              className="absolute bottom-full start-0 mb-2 flex items-center gap-1 rounded-full border border-white/20 bg-popover/90 p-1.5 shadow-2xl backdrop-blur-xl z-30">
               {REACTIONS.map(r => (
                 <button key={r.key} title={r.label} onClick={() => react(r.key)}
-                  className="text-2xl transition hover:scale-125">{r.emoji}</button>
+                  className="text-2xl transition hover:scale-150 hover:-translate-y-1">{r.emoji}</button>
               ))}
             </div>
           )}
         </div>
         <button onClick={() => setShowComments(v => !v)}
-          className="flex h-9 items-center gap-1.5 rounded-xl bg-secondary px-3 text-xs font-bold hover:bg-secondary/70">
+          className="flex h-9 items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3 text-xs font-bold backdrop-blur transition hover:bg-white/10 active:scale-95">
           <MessageCircle className="h-4 w-4" /> تعليق
         </button>
-        <div className="ms-auto flex items-center gap-1 text-xs text-muted-foreground">
+        <div className="ms-auto flex items-center gap-1 rounded-full bg-white/5 px-2 py-1 text-xs text-muted-foreground backdrop-blur">
           {reactionCounts.slice(0, 3).map(r => <span key={r.key}>{r.emoji}</span>)}
-          {total > 0 && <span className="ms-1">{total}</span>}
+          {total > 0 && <span className="ms-1 font-bold text-foreground">{total}</span>}
         </div>
       </div>
 
