@@ -173,6 +173,12 @@ function RoomPage() {
           markRoomSeen(roomId);
           setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
         })
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "room_messages", filter: `room_id=eq.${roomId}` },
+        (p) => {
+          const old: any = p.old;
+          if (!old?.id) return;
+          setMessages((prev) => prev.filter((x) => x.id !== old.id));
+        })
       .on("postgres_changes", { event: "*", schema: "public", table: "room_members", filter: `room_id=eq.${roomId}` },
         () => { loadMemberCount(); loadMembership(); })
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "rooms", filter: `id=eq.${roomId}` },
