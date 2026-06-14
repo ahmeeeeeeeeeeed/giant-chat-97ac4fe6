@@ -147,7 +147,7 @@ function RoomPage() {
             markRoomSeen(roomId);
             return;
           }
-          setMessages((prev) => [...prev, m]);
+          setMessages((prev) => (prev.some((x) => x.id === m.id) ? prev : [...prev, m]));
           if (m.user_id) ensureProfiles([m.user_id]);
           markRoomSeen(roomId);
           setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
