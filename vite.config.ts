@@ -12,18 +12,26 @@ const pkg = JSON.parse(readFileSync(new URL("./package.json", import.meta.url), 
 const APP_VERSION = pkg.version ?? "1.0.0";
 
 export default defineConfig({
+// When building the Capacitor APK we need a real prerendered SPA shell so
+// the WebView has hydratable HTML. TanStack Start's prerenderer spawns a
+// preview server that imports `dist/server/server.js` — that file only
+// exists with a Node-style Nitro preset, not the Cloudflare worker preset.
+// Set CAPACITOR_BUILD=1 in the GitHub Actions workflow to switch presets.
+const isCapacitorBuild = process.env.CAPACITOR_BUILD === "1";
+
+export default defineConfig({
   tanstackStart: {
     server: { entry: "server" },
-    // Emit a real SPA shell at dist/client/index.html via TanStack Start's
-    // built-in prerenderer. Capacitor packages dist/client into the APK, so
-    // the WebView always has a hydratable HTML document to boot the SPA —
-    // no network required. outputPath "/index.html" overrides the default
-    // "/_shell" so the file lands where the WebView expects.
-    spa: {
-      enabled: true,
-      prerender: { outputPath: "/index.html", crawlLinks: false },
-    },
+    // Emit dist/client/index.html via SPA prerender. Capacitor packages
+    // dist/client into the APK so the WebView always has a hydratable
+    // HTML document to boot the SPA — no network required.
+    spa: isCapacitorBuild
+      ? { enabled: true, prerender: { outputPath: "/index.html", crawlLinks: false } }
+      : undefined,
   },
+  // Node preset for Capacitor builds so prerender can boot the SSR server.
+  // Production web hosting still uses the default Cloudflare preset.
+  nitro: isCapacitorBuild ? { preset: "node-server" } : undefined,
   vite: {
     define: {
       __APP_VERSION__: JSON.stringify(APP_VERSION),
