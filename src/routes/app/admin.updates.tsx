@@ -36,6 +36,7 @@ function AdminUpdates() {
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [uploaded, setUploaded] = useState(0); // bytes
 
   useEffect(() => {
     if (loaded && !isAdmin) {
@@ -67,16 +68,44 @@ function AdminUpdates() {
     if (!/^\d+\.\d+\.\d+$/.test(minVersion)) { toast.error("صيغة الحد الأدنى: 1.2.3"); return; }
     setBusy(true);
     setProgress(0);
+    setUploaded(0);
     try {
       const path = `apk/giant-${version}-${Date.now()}.apk`;
-      const { error: upErr } = await supabase.storage
-        .from("app-updates")
-        .upload(path, file, {
-          contentType: "application/vnd.android.package-archive",
-          upsert: false,
-        });
-      if (upErr) throw new Error(upErr.message);
-      setProgress(60);
+      const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
+      const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token || SUPABASE_KEY;
+
+      // Real upload with progress via XHR (supabase-js doesn't expose progress events)
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        const url = `${SUPABASE_URL}/storage/v1/object/app-updates/${encodeURI(path)}`;
+        xhr.open("POST", url, true);
+        xhr.setRequestHeader("Authorization", `Bearer ${accessToken}`);
+        xhr.setRequestHeader("apikey", SUPABASE_KEY);
+        xhr.setRequestHeader("Content-Type", "application/vnd.android.package-archive");
+        xhr.setRequestHeader("x-upsert", "false");
+        xhr.upload.onprogress = (ev) => {
+          if (ev.lengthComputable) {
+            setUploaded(ev.loaded);
+            setProgress(Math.round((ev.loaded / ev.total) * 100));
+          }
+        };
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            setUploaded(file.size);
+            setProgress(100);
+            resolve();
+          } else {
+            let msg = `فشل الرفع (${xhr.status})`;
+            try { const j = JSON.parse(xhr.responseText); msg = j.message || j.error || msg; } catch { /* ignore */ }
+            reject(new Error(msg));
+          }
+        };
+        xhr.onerror = () => reject(new Error("انقطع الاتصال أثناء الرفع"));
+        xhr.onabort = () => reject(new Error("تم إلغاء الرفع"));
+        xhr.send(file);
+      });
 
       // Create a long-lived signed URL (10 years) so users can download.
       const TEN_YEARS = 60 * 60 * 24 * 365 * 10;
@@ -84,7 +113,6 @@ function AdminUpdates() {
         .from("app-updates")
         .createSignedUrl(path, TEN_YEARS);
       if (sErr || !signed?.signedUrl) throw new Error(sErr?.message || "فشل إنشاء رابط التنزيل");
-      setProgress(85);
 
       const { data: { user } } = await supabase.auth.getUser();
       const { error: insErr } = await supabase.from("app_updates").insert({
@@ -101,7 +129,6 @@ function AdminUpdates() {
       });
       if (insErr) throw new Error(insErr.message);
 
-      setProgress(100);
       toast.success("تم رفع التحديث ونشره");
       setVersion(""); setMessage(""); setFile(null);
       const input = document.getElementById("apk-input") as HTMLInputElement | null;
@@ -111,7 +138,7 @@ function AdminUpdates() {
       toast.error(e?.message || "فشل الرفع");
     } finally {
       setBusy(false);
-      setTimeout(() => setProgress(0), 1500);
+      setTimeout(() => { setProgress(0); setUploaded(0); }, 1500);
     }
   };
 
@@ -187,9 +214,15 @@ function AdminUpdates() {
           {file && <p className="mt-1 text-xs text-muted-foreground">{file.name} — {(file.size / 1024 / 1024).toFixed(2)} MB</p>}
         </div>
 
-        {progress > 0 && (
-          <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
-            <div className="h-full bg-emerald-500 transition-all" style={{ width: `${progress}%` }} />
+        {(busy || progress > 0) && file && (
+          <div className="space-y-1">
+            <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
+              <div className="h-full bg-emerald-500 transition-all" style={{ width: `${progress}%` }} />
+            </div>
+            <div className="flex justify-between text-[11px] text-muted-foreground tabular-nums">
+              <span>{(uploaded / 1024 / 1024).toFixed(2)} / {(file.size / 1024 / 1024).toFixed(2)} MB</span>
+              <span>{progress}%</span>
+            </div>
           </div>
         )}
 
