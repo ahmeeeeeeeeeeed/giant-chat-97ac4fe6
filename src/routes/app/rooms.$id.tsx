@@ -16,6 +16,7 @@ import { FlyingEffect } from "@/components/FlyingEffect";
 import { getEquipped } from "@/lib/equipped";
 import { markRoomSeen } from "@/lib/notify";
 import { ImageLightbox } from "@/components/ImageLightbox";
+import { ensureMediaLibraryPermission } from "@/lib/app-permissions";
 
 type Rank = "owner" | "admin" | "moderator" | "member";
 
@@ -316,6 +317,13 @@ function RoomPage() {
     setPendingMedia(null);
   };
 
+  const openImagePicker = async () => {
+    if (!isMember || isBanned || uploading) return;
+    const ok = await ensureMediaLibraryPermission();
+    if (!ok) { toast.error("صلاحية الصور مطلوبة", { description: "فعّلها من إعدادات التطبيق لاختيار صورة" }); return; }
+    fileInputRef.current?.click();
+  };
+
   const startRecording = async () => {
     if (recording) return;
     if (!myRank) { toast.error("يجب الانضمام إلى الغرفة أولاً"); return; }
@@ -332,7 +340,7 @@ function RoomPage() {
     } catch (err: any) {
       const name = err?.name || "";
       if (name === "NotAllowedError" || name === "SecurityError") {
-        toast.error("تم رفض إذن الميكروفون — فعّله من إعدادات التطبيق/المتصفح");
+        toast.error("صلاحية المايكروفون مطلوبة", { description: "فعّلها من إعدادات التطبيق لإرسال رسائل صوتية" });
       } else if (name === "NotFoundError" || name === "OverconstrainedError") {
         toast.error("لا يوجد ميكروفون متاح على الجهاز");
       } else if (name === "NotReadableError") {
@@ -667,7 +675,7 @@ function RoomPage() {
             <input value={text} onChange={(e) => setText(e.target.value)}
               placeholder={isMember ? (isBanned ? "أنت محظور" : "اكتب رسالة...") : "يجب الانضمام إلى الغرفة أولاً"} disabled={!isMember || isBanned}
               className="flex-1 h-11 rounded-xl border border-input bg-background px-4 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary disabled:opacity-50 transition" />
-            <button type="button" onClick={() => fileInputRef.current?.click()} disabled={!isMember || isBanned || uploading}
+            <button type="button" onClick={openImagePicker} disabled={!isMember || isBanned || uploading}
               className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 disabled:opacity-50 hover:bg-emerald-500/20 transition" title="إرسال صورة">
               {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <ImageIcon className="h-5 w-5" />}
             </button>

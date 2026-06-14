@@ -39,7 +39,6 @@ export default function PermissionsGate({ onDone }: { onDone: () => void }) {
       next.camera = await ensureCameraPermission().catch(() => false);
       next.media = await ensureMediaLibraryPermission().catch(() => false);
       next.mic = await ensureMicPermission().catch(() => false);
-      // Location: best-effort via browser API (Capacitor plugin optional)
       try {
         if (typeof navigator !== "undefined" && navigator.geolocation) {
           await new Promise<void>((resolve) => {
@@ -52,17 +51,18 @@ export default function PermissionsGate({ onDone }: { onDone: () => void }) {
         }
       } catch { /* ignore */ }
       setGranted(next);
-
-      const essentialOk = next.notifications || next.camera || next.media || next.mic;
-      if (!essentialOk) {
-        toast.error("يجب الموافقة على صلاحية واحدة على الأقل للمتابعة");
-        return;
-      }
       localStorage.setItem(PERMISSIONS_GATE_KEY, "1");
+      toast.success("تم تفعيل الصلاحيات");
       onDone();
     } finally {
       setLoading(false);
     }
+  };
+
+  const skipAll = () => {
+    localStorage.setItem(PERMISSIONS_GATE_KEY, "1");
+    toast("سيتم طلب الصلاحيات عند الحاجة", { description: "بعض الميزات قد لا تعمل حتى يتم منح الإذن" });
+    onDone();
   };
 
   return (
@@ -104,8 +104,17 @@ export default function PermissionsGate({ onDone }: { onDone: () => void }) {
           {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "موافقة على الكل والمتابعة"}
         </button>
 
+        <button
+          type="button"
+          disabled={loading}
+          onClick={skipAll}
+          className="mt-2 flex h-11 w-full items-center justify-center rounded-2xl border border-border bg-card text-sm font-semibold text-muted-foreground transition active:scale-[0.98] hover:text-foreground disabled:opacity-60"
+        >
+          تجاهل وطلبها لاحقاً عند الحاجة
+        </button>
+
         <p className="mt-3 text-center text-[11px] leading-relaxed text-muted-foreground">
-          يمكنك تعديل الأذونات لاحقاً من إعدادات نظام التشغيل في أي وقت.
+          إذا تجاهلت الآن، سنطلب كل صلاحية تلقائياً عند استخدام الميزة المرتبطة بها.
         </p>
       </div>
     </main>

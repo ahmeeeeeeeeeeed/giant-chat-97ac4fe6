@@ -13,6 +13,7 @@ import { ImageLightbox } from "@/components/ImageLightbox";
 import { cacheGet, cacheSet, cacheKeys } from "@/lib/offline-cache";
 import { enqueueMessage } from "@/lib/offline-queue";
 import { getOnline } from "@/lib/use-online";
+import { ensureMediaLibraryPermission, ensureMicPermission } from "@/lib/app-permissions";
 
 export const Route = createFileRoute("/app/chats/$id")({
   component: DMPage,
@@ -268,10 +269,37 @@ function DMPage() {
     setPendingMedia(null);
   };
 
+  const openImagePicker = async () => {
+    const ok = await ensureMediaLibraryPermission();
+    if (!ok) {
+      toast.error("صلاحية الصور مطلوبة", { description: "فعّلها من إعدادات التطبيق لاختيار صورة" });
+      return;
+    }
+    fileInputRef.current?.click();
+  };
+
   const startRecording = async () => {
     if (blocked) { toast.error("تم حظر المستخدم"); return; }
+    if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
+      toast.error("المتصفح لا يدعم تسجيل الصوت"); return;
+    }
+    let stream: MediaStream;
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (err: any) {
+      const name = err?.name || "";
+      if (name === "NotAllowedError" || name === "SecurityError") {
+        toast.error("صلاحية المايكروفون مطلوبة", { description: "فعّلها من إعدادات التطبيق لإرسال رسائل صوتية" });
+      } else if (name === "NotFoundError") {
+        toast.error("لا يوجد ميكروفون متاح على الجهاز");
+      } else if (name === "NotReadableError") {
+        toast.error("الميكروفون مشغول بواسطة تطبيق آخر");
+      } else {
+        toast.error("تعذّر الوصول إلى الميكروفون");
+      }
+      return;
+    }
+    try {
       const mr = new MediaRecorder(stream);
       recChunksRef.current = [];
       mr.ondataavailable = (ev) => { if (ev.data.size > 0) recChunksRef.current.push(ev.data); };
@@ -292,7 +320,7 @@ function DMPage() {
       mr.start();
       setRecording(true);
       broadcastActivity("recording");
-    } catch { toast.error("تعذر الوصول إلى الميكروفون"); }
+    } catch { toast.error("تعذر بدء التسجيل"); }
   };
   const stopRecording = () => {
     mediaRecRef.current?.stop();
@@ -552,7 +580,7 @@ function DMPage() {
       ) : (
         <form onSubmit={send} className="sticky bottom-0 z-20 flex items-center gap-2 border-t border-border bg-card px-3 py-2.5" style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.625rem)" }}>
           <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={onPickImage} />
-          <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading || blocked || blockedByOther}
+          <button type="button" onClick={openImagePicker} disabled={uploading || blocked || blockedByOther}
             className="flex h-11 w-11 items-center justify-center rounded-full bg-secondary text-foreground disabled:opacity-50" aria-label="صورة">
             {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-5 w-5" />}
           </button>
