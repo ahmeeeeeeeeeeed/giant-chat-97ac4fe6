@@ -6,12 +6,19 @@
 // You can pass additional config via defineConfig({ vite: { ... } }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 import { VitePWA } from "vite-plugin-pwa";
+import { readFileSync } from "node:fs";
+
+const pkg = JSON.parse(readFileSync(new URL("./package.json", import.meta.url), "utf8")) as { version?: string };
+const APP_VERSION = pkg.version ?? "1.0.0";
 
 export default defineConfig({
   tanstackStart: {
     server: { entry: "server" },
   },
   vite: {
+    define: {
+      __APP_VERSION__: JSON.stringify(APP_VERSION),
+    },
     plugins: [
       VitePWA({
         registerType: "autoUpdate",
