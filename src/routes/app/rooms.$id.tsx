@@ -595,6 +595,7 @@ function RoomPage() {
                     <button
                       onClick={() => navigate({ to: "/app/profile/$id", params: { id: msg.user_id } })}
                       className="flex items-center gap-1.5 px-1 text-xs font-bold text-emerald-600 hover:underline"
+                      style={colorMap[msg.user_id]?.name ? { color: colorMap[msg.user_id]!.name, textShadow: `0 0 10px ${colorMap[msg.user_id]!.name}55` } : undefined}
                     >
                       {(isOwn ? userMap[user!.id]?.username : prof?.username) ?? "مستخدم"}
                     </button>
@@ -615,7 +616,12 @@ function RoomPage() {
                     ) : msg.message_type === "voice" && msg.media_url ? (
                       <audio src={msg.media_url} controls preload="metadata" className="h-10 max-w-[260px]" />
                     ) : (
-                      <p className="whitespace-pre-wrap break-words text-[15px] leading-relaxed">{msg.content}</p>
+                      <p
+                        className="whitespace-pre-wrap break-words text-[15px] leading-relaxed"
+                        style={msg.user_id && colorMap[msg.user_id]?.chat ? { color: colorMap[msg.user_id]!.chat } : undefined}
+                      >
+                        {msg.content}
+                      </p>
                     )}
                   </div>
                   <p className={`mt-1 text-[10px] ${isOwn ? "text-muted-foreground" : "text-muted-foreground/80"}`} suppressHydrationWarning>
