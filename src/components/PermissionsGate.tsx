@@ -39,7 +39,6 @@ export default function PermissionsGate({ onDone }: { onDone: () => void }) {
       next.camera = await ensureCameraPermission().catch(() => false);
       next.media = await ensureMediaLibraryPermission().catch(() => false);
       next.mic = await ensureMicPermission().catch(() => false);
-      // Location: best-effort via browser API (Capacitor plugin optional)
       try {
         if (typeof navigator !== "undefined" && navigator.geolocation) {
           await new Promise<void>((resolve) => {
@@ -52,17 +51,18 @@ export default function PermissionsGate({ onDone }: { onDone: () => void }) {
         }
       } catch { /* ignore */ }
       setGranted(next);
-
-      const essentialOk = next.notifications || next.camera || next.media || next.mic;
-      if (!essentialOk) {
-        toast.error("يجب الموافقة على صلاحية واحدة على الأقل للمتابعة");
-        return;
-      }
       localStorage.setItem(PERMISSIONS_GATE_KEY, "1");
+      toast.success("تم تفعيل الصلاحيات");
       onDone();
     } finally {
       setLoading(false);
     }
+  };
+
+  const skipAll = () => {
+    localStorage.setItem(PERMISSIONS_GATE_KEY, "1");
+    toast("سيتم طلب الصلاحيات عند الحاجة", { description: "بعض الميزات قد لا تعمل حتى يتم منح الإذن" });
+    onDone();
   };
 
   return (
