@@ -152,7 +152,8 @@ function DMPage() {
         setBlocked(!!bl);
         setBlockedByOther(!!blMe);
         setMuted(!!mu);
-        setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight }), 50);
+        scrollToBottom(didInitialScrollRef.current);
+        didInitialScrollRef.current = true;
         await markDelivered();
         await markRead();
       } catch {
