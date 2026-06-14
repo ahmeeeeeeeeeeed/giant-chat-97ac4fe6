@@ -2,44 +2,81 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 export type TrackResult = {
+  videoId: string;
   title: string;
   artist: string;
   artwork: string;
-  preview_url: string;
   duration_ms: number;
+  preview_url: string; // youtube watch URL — kept for backwards compat
 };
 
-// Deezer public search — free, no key. Returns 30s preview MP3 + artwork.
+function parseDuration(text: string | undefined | null): number {
+  if (!text) return 0;
+  const parts = text.split(":").map((p) => Number(p));
+  if (parts.some((n) => !isFinite(n))) return 0;
+  let s = 0;
+  for (const p of parts) s = s * 60 + p;
+  return s * 1000;
+}
+
+// YouTube search — scrapes ytInitialData from the public search page so we
+// don't need an API key. Returns the first watchable video.
 export const searchTrack = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ q: z.string().min(1).max(200) }).parse(input))
   .handler(async ({ data }): Promise<{ track: TrackResult | null; error: string | null }> => {
     try {
       const res = await fetch(
-        `https://api.deezer.com/search?q=${encodeURIComponent(data.q)}&limit=1`,
-        { headers: { Accept: "application/json" } },
+        `https://www.youtube.com/results?search_query=${encodeURIComponent(data.q)}&hl=en&persist_hl=1`,
+        {
+          headers: {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
+            "Accept-Language": "en-US,en;q=0.9",
+          },
+        },
       );
       if (!res.ok) return { track: null, error: `search failed (${res.status})` };
-      const json = (await res.json()) as {
-        data?: Array<{
-          title: string;
-          preview: string;
-          duration: number;
-          artist: { name: string };
-          album: { cover_medium: string; cover_big: string };
-        }>;
-      };
-      const t = json.data?.[0];
-      if (!t || !t.preview) return { track: null, error: "no_results" };
-      return {
-        track: {
-          title: t.title,
-          artist: t.artist.name,
-          artwork: t.album.cover_big || t.album.cover_medium,
-          preview_url: t.preview,
-          duration_ms: (t.duration || 30) * 1000,
-        },
-        error: null,
-      };
+      const html = await res.text();
+      const m = html.match(/var ytInitialData = (\{[\s\S]*?\});<\/script>/);
+      if (!m) return { track: null, error: "no_results" };
+      let json: any;
+      try { json = JSON.parse(m[1]); } catch { return { track: null, error: "parse_failed" }; }
+      const sections =
+        json?.contents?.twoColumnSearchResultsRenderer?.primaryContents?.sectionListRenderer?.contents ?? [];
+      for (const sec of sections) {
+        const items = sec?.itemSectionRenderer?.contents ?? [];
+        for (const it of items) {
+          const v = it?.videoRenderer;
+          if (!v?.videoId) continue;
+          // skip live / upcoming (no playable duration)
+          const lengthText: string | undefined =
+            v?.lengthText?.simpleText ??
+            v?.lengthText?.runs?.[0]?.text;
+          if (!lengthText) continue;
+          const durMs = parseDuration(lengthText);
+          if (durMs <= 0) continue;
+          const title: string = v?.title?.runs?.[0]?.text ?? v?.title?.simpleText ?? "Unknown";
+          const artist: string =
+            v?.ownerText?.runs?.[0]?.text ??
+            v?.longBylineText?.runs?.[0]?.text ??
+            "Unknown";
+          const thumbs = v?.thumbnail?.thumbnails ?? [];
+          const artwork =
+            thumbs[thumbs.length - 1]?.url ||
+            `https://i.ytimg.com/vi/${v.videoId}/hqdefault.jpg`;
+          return {
+            track: {
+              videoId: v.videoId,
+              title,
+              artist,
+              artwork,
+              duration_ms: durMs,
+              preview_url: `https://www.youtube.com/watch?v=${v.videoId}`,
+            },
+            error: null,
+          };
+        }
+      }
+      return { track: null, error: "no_results" };
     } catch (e) {
       return { track: null, error: e instanceof Error ? e.message : "unknown" };
     }
