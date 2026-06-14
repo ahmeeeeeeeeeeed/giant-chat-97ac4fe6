@@ -405,6 +405,7 @@ function ProfilePage() {
               </div>
               <ChevronLeft className="h-4 w-4 text-muted-foreground rtl:rotate-180" />
             </Link>
+            <DeleteAccountRow email={accountEmail} username={username} />
           </Section>
 
           <Section title={t("profile.about")}>
