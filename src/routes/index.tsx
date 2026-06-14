@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { LogIn, Loader2, MessageCircle, Users, Music, Sparkles } from "lucide-react";
+import { LogIn, MessageCircle, Users, Music, Sparkles } from "lucide-react";
 import welcomeBg from "@/assets/welcome-bg.mp4.asset.json";
 
 
@@ -11,35 +11,43 @@ export const Route = createFileRoute("/")({
 
 function Welcome() {
   const navigate = useNavigate();
-  const [checking, setChecking] = useState(true);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
+    // Check session in background; don't block render so the video can start instantly
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) navigate({ to: "/app/friends" });
-      else setChecking(false);
     });
   }, [navigate]);
 
-  if (checking) {
-    return (
-      <div className="flex min-h-dvh items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    const tryPlay = () => { v.play().catch(() => {}); };
+    tryPlay();
+    v.addEventListener("loadeddata", tryPlay, { once: true });
+    v.addEventListener("canplay", tryPlay, { once: true });
+    return () => {
+      v.removeEventListener("loadeddata", tryPlay);
+      v.removeEventListener("canplay", tryPlay);
+    };
+  }, []);
 
   return (
     <main className="relative flex min-h-dvh flex-col overflow-hidden bg-background px-6 py-8 text-foreground">
       {/* Video background */}
       <video
+        ref={videoRef}
         src={welcomeBg.url}
         autoPlay
         muted
         loop
         playsInline
         preload="auto"
+        disableRemotePlayback
         className="pointer-events-none absolute inset-0 z-0 h-full w-full object-cover opacity-60"
       />
+
       <div className="pointer-events-none absolute inset-0 z-0 bg-gradient-to-b from-background/70 via-background/50 to-background/90" />
 
       {/* Decorative blobs */}
