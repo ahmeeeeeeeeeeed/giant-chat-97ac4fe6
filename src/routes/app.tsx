@@ -145,8 +145,11 @@ function AppLayout() {
                 </div>
               )}
               <div className="min-w-0">
-                <div className="truncate text-[17px] font-extrabold leading-tight tracking-tight text-white">
-                  Giant
+                <div className="flex items-center gap-1.5">
+                  <div className="truncate text-[17px] font-extrabold leading-tight tracking-tight text-white">
+                    Giant
+                  </div>
+                  <ConnectionStatusBadge />
                 </div>
                 <div className="flex items-center gap-1.5 text-[10px] font-semibold tracking-wider text-emerald-300/80">
                   <span className="inline-block h-1 w-1 rounded-full bg-emerald-400 shadow-[0_0_6px_2px_rgba(16,185,129,0.7)]" />
