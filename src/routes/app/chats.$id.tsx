@@ -175,7 +175,7 @@ function DMPage() {
           (r.sender_id === otherId && r.receiver_id === user.id)
         ) {
           setMessages((old) => (old.some(x => x.id === r.id) ? old : [...old, r]));
-          setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" }), 30);
+          setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current!.scrollHeight, behavior: "smooth" }), 30);
           if (r.receiver_id === user.id) { markDelivered(); markRead(); }
         }
       })
