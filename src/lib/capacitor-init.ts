@@ -25,15 +25,18 @@ export async function initCapacitorChrome() {
     } catch { /* optional */ }
     try {
       const { App } = await import("@capacitor/app");
+      const { requestExitConfirm } = await import("@/components/ExitConfirmDialog");
+      const ROOT_PATHS = new Set(["/", "/app", "/app/", "/app/index"]);
       await App.addListener("backButton", ({ canGoBack }) => {
-        if (canGoBack && window.history.length > 1) {
+        const path = window.location.pathname;
+        const atRoot = ROOT_PATHS.has(path);
+        // If we have in-app history and we're not at a root page, go back inside the SPA.
+        if (!atRoot && (canGoBack || window.history.length > 1)) {
           window.history.back();
           return;
         }
-        const ok = window.confirm("هل تريد الخروج من التطبيق؟");
-        if (ok) {
-          void App.exitApp();
-        }
+        // At root (or no history): never auto-exit. Show confirm dialog.
+        requestExitConfirm();
       });
     } catch { /* App plugin missing */ }
     // Defer permission prompts slightly so the UI shows first.
