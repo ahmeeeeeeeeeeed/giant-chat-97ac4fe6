@@ -6,15 +6,24 @@ import {
   Rewind, FastForward,
 } from "lucide-react";
 import { searchTrack, type TrackResult } from "@/lib/music.functions";
+import { loadYouTubeAPI } from "@/lib/youtube-iframe";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { ShareTrackToUserModal } from "@/components/ShareTrackToUserModal";
 
+type Track = {
+  videoId?: string;
+  title: string;
+  artist: string;
+  artwork: string;
+  preview_url: string;
+  duration_ms: number;
+  requester_name?: string;
+  requester_id?: string;
+};
+
 export type RoomMusic = {
-  current: ({
-    title: string; artist: string; artwork: string; preview_url: string;
-    duration_ms: number; requester_name?: string; requester_id?: string;
-  }) | null;
+  current: Track | null;
   queue: Array<{ title: string; artist: string }>;
   started_at: string | null;
   paused: boolean;
@@ -30,6 +39,16 @@ function fmt(ms: number) {
   return `${m}:${r.toString().padStart(2, "0")}`;
 }
 
+// Extract a YouTube video id from a watch URL when the row was saved before
+// the YouTube migration stored it as a separate field.
+function extractVideoId(t: Track | null): string | null {
+  if (!t) return null;
+  if (t.videoId) return t.videoId;
+  if (!t.preview_url) return null;
+  const m = t.preview_url.match(/(?:youtu\.be\/|v=|\/embed\/)([\w-]{11})/);
+  return m?.[1] ?? null;
+}
+
 export function MusicPlayer({ roomId }: { roomId: string }) {
   const { user } = useAuth();
   const [state, setState] = useState<RoomMusic | null>(null);
@@ -40,10 +59,15 @@ export function MusicPlayer({ roomId }: { roomId: string }) {
   const [locked, setLocked] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
-  const [loadingAudio, setLoadingAudio] = useState(false);
+  const [playerReady, setPlayerReady] = useState(false);
+  const [buffering, setBuffering] = useState(false);
   const [posMs, setPosMs] = useState(0);
   const [scrubbing, setScrubbing] = useState<number | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [needsGesture, setNeedsGesture] = useState(false);
+
+  const playerRef = useRef<any>(null);
+  const playerHostRef = useRef<HTMLDivElement | null>(null);
+  const loadedVideoIdRef = useRef<string | null>(null);
 
   const load = useCallback(async () => {
     const { data } = await supabase
@@ -65,71 +89,120 @@ export function MusicPlayer({ roomId }: { roomId: string }) {
     return () => { supabase.removeChannel(ch); };
   }, [roomId, load]);
 
-  // Cleanup on unmount
-  useEffect(() => () => {
-    const a = audioRef.current;
-    if (a) { try { a.pause(); } catch { /* ignore */ } a.removeAttribute("src"); a.load(); }
+  // Initialize YouTube IFrame player once.
+  useEffect(() => {
+    let cancelled = false;
+    let player: any = null;
+    loadYouTubeAPI().then((YT) => {
+      if (cancelled || !playerHostRef.current) return;
+      player = new YT.Player(playerHostRef.current, {
+        height: "1", width: "1",
+        playerVars: { autoplay: 0, controls: 0, modestbranding: 1, playsinline: 1, rel: 0, fs: 0, iv_load_policy: 3 },
+        events: {
+          onReady: () => { playerRef.current = player; setPlayerReady(true); },
+          onStateChange: (e: any) => {
+            // 3 = buffering, 1 = playing, 2 = paused, 0 = ended
+            setBuffering(e.data === 3);
+            if (e.data === 0) {
+              supabase.rpc("music_advance_if_ended", { _room: roomId }).catch(() => {/*ignore*/});
+            }
+          },
+          onError: () => {
+            toast.error("تعذّر تشغيل هذا المقطع — جاري التخطي");
+            supabase.rpc("music_skip", { _room: roomId }).catch(() => {/*ignore*/});
+          },
+        },
+      });
+    }).catch((err) => {
+      console.error("YT load failed", err);
+      toast.error("تعذّر تحميل مشغّل YouTube");
+    });
+    return () => {
+      cancelled = true;
+      try { player?.destroy?.(); } catch { /* ignore */ }
+      playerRef.current = null;
+      setPlayerReady(false);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Sync audio element with shared state
+  // Sync the shared room state -> player
   useEffect(() => {
-    const a = audioRef.current;
-    if (!a) return;
-    if (!state?.current?.preview_url) {
-      try { a.pause(); } catch { /* ignore */ }
-      a.removeAttribute("src");
-      setLoadingAudio(false);
+    const p = playerRef.current;
+    if (!p || !playerReady) return;
+    const vid = extractVideoId(state?.current ?? null);
+    if (!vid) {
+      try { p.stopVideo?.(); } catch { /* ignore */ }
+      loadedVideoIdRef.current = null;
       setPosMs(0);
       return;
     }
-    const url = state.current.preview_url;
-    if (a.src !== url) {
-      setLoadingAudio(true);
-      a.src = url;
-      a.preload = "auto";
-      a.load();
-    }
-    a.volume = muted ? 0 : Math.max(0, Math.min(1, (state.volume ?? 70) / 100));
-    a.muted = muted;
-    const targetSec = state.paused
-      ? state.paused_pos_ms / 1000
-      : Math.max(0, ((Date.now() - new Date(state.started_at ?? Date.now()).getTime()) + state.paused_pos_ms) / 1000);
-    if (isFinite(targetSec) && Math.abs(a.currentTime - targetSec) > 0.6) {
-      try { a.currentTime = targetSec; } catch { /* ignore */ }
-    }
-    if (state.paused) {
-      try { a.pause(); } catch { /* ignore */ }
-    } else {
-      a.play().catch(() => {/* needs user gesture */});
-    }
-  }, [state, muted]);
+    const vol = muted ? 0 : Math.max(0, Math.min(100, state?.volume ?? 70));
+    try { muted ? p.mute?.() : p.unMute?.(); } catch { /* ignore */ }
+    try { p.setVolume?.(vol); } catch { /* ignore */ }
 
-  // Tick the progress bar
+    const startSec = state?.paused
+      ? (state.paused_pos_ms / 1000)
+      : Math.max(0, ((Date.now() - new Date(state?.started_at ?? Date.now()).getTime()) + (state?.paused_pos_ms ?? 0)) / 1000);
+
+    if (loadedVideoIdRef.current !== vid) {
+      loadedVideoIdRef.current = vid;
+      try {
+        if (state?.paused) {
+          p.cueVideoById({ videoId: vid, startSeconds: startSec });
+        } else {
+          p.loadVideoById({ videoId: vid, startSeconds: startSec });
+        }
+      } catch (e) { console.error(e); }
+      return;
+    }
+    // same video — apply pause/seek delta
+    try {
+      const cur = p.getCurrentTime?.() ?? 0;
+      if (Math.abs(cur - startSec) > 1.0) p.seekTo(startSec, true);
+      if (state?.paused) p.pauseVideo?.();
+      else {
+        const ps = p.getPlayerState?.();
+        // 1 playing, 3 buffering, 5 cued — only call play if not already
+        if (ps !== 1 && ps !== 3) {
+          const playPromise = p.playVideo?.();
+          // Detect blocked autoplay (mobile / no gesture)
+          setTimeout(() => {
+            const s = p.getPlayerState?.();
+            if (s !== 1 && s !== 3) setNeedsGesture(true);
+          }, 800);
+          // playVideo doesn't return a promise but call defensively
+          if (playPromise?.catch) playPromise.catch(() => setNeedsGesture(true));
+        }
+      }
+    } catch (e) { console.error(e); }
+  }, [state, muted, playerReady]);
+
+  // Cleanup on unmount handled in init effect.
+
+  // Tick progress
   useEffect(() => {
     if (!state?.current) { setPosMs(0); return; }
     const dur = state.current.duration_ms;
     let raf = 0;
     const tick = () => {
       if (scrubbing !== null) { raf = requestAnimationFrame(tick); return; }
-      const a = audioRef.current;
-      let p: number;
-      if (state.paused) p = state.paused_pos_ms;
-      else if (a && a.currentTime > 0) p = a.currentTime * 1000;
-      else if (state.started_at) p = (Date.now() - new Date(state.started_at).getTime()) + state.paused_pos_ms;
-      else p = 0;
-      setPosMs(Math.min(p, dur));
+      const p = playerRef.current;
+      let pos: number;
+      if (state.paused) pos = state.paused_pos_ms;
+      else if (p?.getCurrentTime) {
+        try { pos = (p.getCurrentTime() || 0) * 1000; } catch { pos = 0; }
+        if (pos === 0 && state.started_at) {
+          pos = (Date.now() - new Date(state.started_at).getTime()) + state.paused_pos_ms;
+        }
+      } else if (state.started_at) pos = (Date.now() - new Date(state.started_at).getTime()) + state.paused_pos_ms;
+      else pos = 0;
+      setPosMs(Math.min(pos, dur));
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
   }, [state, scrubbing]);
-
-  const onAudioReady = () => setLoadingAudio(false);
-  const onAudioError = () => { setLoadingAudio(false); toast.error("تعذّر تحميل الصوت"); };
-  const onEnded = async () => {
-    setPosMs(state?.current?.duration_ms ?? 0);
-    await supabase.rpc("music_advance_if_ended", { _room: roomId });
-  };
 
   const onSearchAndQueue = async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -158,27 +231,21 @@ export function MusicPlayer({ roomId }: { roomId: string }) {
     if (!state?.current) return;
     const clamped = Math.max(0, Math.min(state.current.duration_ms - 250, newPosMs));
     setPosMs(clamped);
-    const a = audioRef.current;
-    if (a) { try { a.currentTime = clamped / 1000; } catch { /* ignore */ } }
+    try { playerRef.current?.seekTo?.(clamped / 1000, true); } catch { /* ignore */ }
     const { error } = await (supabase.rpc as any)("music_seek", { _room: roomId, _pos_ms: Math.round(clamped) });
     if (error) toast.error(error.message);
   };
 
   const togglePlay = async () => {
     if (!state?.current) return;
-    const a = audioRef.current;
     const wasPaused = state.paused;
-    // Preserve user gesture for autoplay policy
-    if (a && state.current.preview_url) {
-      if (a.src !== state.current.preview_url) { a.src = state.current.preview_url; a.load(); }
-      if (wasPaused) {
-        try { await a.play(); } catch (err) {
-          toast.error("اضغط مرة أخرى لتشغيل الصوت");
-          console.error("audio.play failed", err);
-        }
-      } else {
-        try { a.pause(); } catch { /* ignore */ }
-      }
+    setNeedsGesture(false);
+    const p = playerRef.current;
+    if (p) {
+      try {
+        if (wasPaused) p.playVideo?.();
+        else p.pauseVideo?.();
+      } catch (err) { console.error(err); }
     }
     const { error } = await supabase.rpc(wasPaused ? "music_resume" : "music_pause", { _room: roomId });
     if (error) toast.error(error.message);
@@ -201,26 +268,17 @@ export function MusicPlayer({ roomId }: { roomId: string }) {
 
   return (
     <div className="border-b border-border bg-gradient-to-b from-primary/10 to-card">
-      <audio
-        ref={audioRef}
-        onEnded={onEnded}
-        onCanPlayThrough={onAudioReady}
-        onCanPlay={onAudioReady}
-        onLoadedData={onAudioReady}
-        onError={onAudioError}
-        onWaiting={() => setLoadingAudio(true)}
-        onPlaying={() => setLoadingAudio(false)}
-        preload="auto"
-        playsInline
-        crossOrigin="anonymous"
-      />
+      {/* Hidden YouTube IFrame — audio-only experience */}
+      <div style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", opacity: 0, pointerEvents: "none" }}>
+        <div ref={playerHostRef} />
+      </div>
 
       <form onSubmit={onSearchAndQueue} className="flex items-center gap-2 px-3 py-2">
         <Music2 className="h-4 w-4 shrink-0 text-primary" />
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="ابحث عن أغنية…"
+          placeholder="ابحث عن أغنية على YouTube…"
           className="h-9 flex-1 rounded-full border border-input bg-background px-3 text-[13px] outline-none focus:border-primary"
         />
         <button
@@ -246,7 +304,7 @@ export function MusicPlayer({ roomId }: { roomId: string }) {
           <div className="flex items-center gap-3 rounded-2xl border border-border bg-card p-2">
             <div className="relative">
               <img src={state.current.artwork} alt="" className="h-14 w-14 rounded-lg object-cover" />
-              {loadingAudio && (
+              {(buffering || !playerReady) && (
                 <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/50">
                   <Loader2 className="h-5 w-5 animate-spin text-white" />
                 </div>
@@ -259,20 +317,27 @@ export function MusicPlayer({ roomId }: { roomId: string }) {
                 {state.current.requester_name ? ` · طلبها ${state.current.requester_name}` : ""}
               </div>
               <div className="mt-0.5 text-[10px] text-primary font-semibold">
-                {state.paused ? "⏸ متوقفة" : "▶️ قيد التشغيل"}
-                {dur <= 30500 ? " · معاينة 30 ثانية" : ""}
+                {state.paused ? "⏸ متوقفة" : "▶️ قيد التشغيل عبر YouTube"}
               </div>
             </div>
           </div>
 
-          {/* Progress / scrubber */}
+          {needsGesture && !state.paused && (
+            <button
+              onClick={togglePlay}
+              className="rounded-xl bg-amber-500/15 border border-amber-500/40 px-3 py-2 text-[12px] font-bold text-amber-600"
+            >
+              👆 اضغط هنا لبدء تشغيل الصوت (المتصفح يحجب التشغيل التلقائي)
+            </button>
+          )}
+
           <div className="flex items-center gap-2 px-1">
             <span className="w-10 text-[10px] tabular-nums text-muted-foreground">{fmt(displayPos)}</span>
             <input
               type="range"
               min={0}
               max={dur || 1}
-              step={250}
+              step={500}
               value={displayPos}
               onChange={(e) => setScrubbing(Number(e.target.value))}
               onMouseUp={() => { const v = scrubbing; setScrubbing(null); if (v !== null) seekTo(v); }}
@@ -284,19 +349,19 @@ export function MusicPlayer({ roomId }: { roomId: string }) {
           </div>
 
           <div className="flex items-center gap-1.5">
-            <button onClick={() => seekTo(displayPos - 5000)}
+            <button onClick={() => seekTo(displayPos - 10000)}
               className="flex h-9 w-9 items-center justify-center rounded-full border border-border"
-              aria-label="ترجيع 5 ثوان"><Rewind className="h-4 w-4" /></button>
+              aria-label="ترجيع 10 ثوان"><Rewind className="h-4 w-4" /></button>
             <button
               onClick={togglePlay}
-              disabled={loadingAudio}
+              disabled={!playerReady}
               className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow disabled:opacity-50"
               aria-label={state.paused ? "تشغيل" : "إيقاف"}>
-              {loadingAudio ? <Loader2 className="h-4 w-4 animate-spin" /> : state.paused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
+              {!playerReady ? <Loader2 className="h-4 w-4 animate-spin" /> : state.paused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
             </button>
-            <button onClick={() => seekTo(displayPos + 5000)}
+            <button onClick={() => seekTo(displayPos + 10000)}
               className="flex h-9 w-9 items-center justify-center rounded-full border border-border"
-              aria-label="تقديم 5 ثوان"><FastForward className="h-4 w-4" /></button>
+              aria-label="تقديم 10 ثوان"><FastForward className="h-4 w-4" /></button>
             <button onClick={async () => {
                 const { error } = await supabase.rpc("music_skip", { _room: roomId });
                 if (error) toast.error(error.message);
