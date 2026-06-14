@@ -24,6 +24,8 @@ function AppLayout() {
   const unreadRooms = useUnreadRoomCount();
   const unread = unreadDM + unreadRooms;
   useGlobalNotificationListener((url) => navigate({ to: url as any }));
+  const router = useRouter();
+  const [reportOpen, setReportOpen] = useState(false);
 
   const tabs = [
     { to: "/app", label: t("nav.rooms"), icon: Home, exact: true },
@@ -55,9 +57,6 @@ function AppLayout() {
   const hideChrome = /\/app\/rooms\/[^/]+/.test(path) || /\/app\/chats\/[^/]+/.test(path);
   const tabRoots = new Set(["/app", "/app/community", "/app/friends", "/app/games", "/app/chats", "/app/my_profile", "/app/settings"]);
   const showBack = !hideChrome && !tabRoots.has(path);
-  const router = useRouter();
-
-  const [reportOpen, setReportOpen] = useState(false);
 
   return (
     <div className={`flex min-h-screen flex-col ${hideChrome ? "" : "pb-[calc(72px+env(safe-area-inset-bottom))]"}`}>
