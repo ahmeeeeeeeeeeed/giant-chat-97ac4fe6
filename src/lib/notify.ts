@@ -64,9 +64,12 @@ export function getRoomLastSeen(roomId: string): string {
   try {
     const v = localStorage.getItem(ROOM_SEEN_PREFIX + roomId);
     if (v) return v;
+    // First time we see this room on this device: treat everything before now as already seen
+    const nowIso = new Date().toISOString();
+    try { localStorage.setItem(ROOM_SEEN_PREFIX + roomId, nowIso); } catch { /* ignore */ }
+    return nowIso;
   } catch { /* ignore */ }
-  // Default to "now - 7 days" so we don't blow up on first run
-  return new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  return new Date().toISOString();
 }
 
 // Native tap → route mapping
