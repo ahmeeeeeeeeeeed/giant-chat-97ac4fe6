@@ -57,25 +57,13 @@ function AppLayout() {
   const showBack = !hideChrome && !tabRoots.has(path);
   const router = useRouter();
 
-  const openComplaints = async () => {
-    const id = await findAdminId();
-    if (!id) { toast.error("لم يتم العثور على حساب الإدارة"); return; }
-    navigate({ to: "/app/chats/$id", params: { id } });
-  };
+  const [reportOpen, setReportOpen] = useState(false);
 
   return (
     <div className={`flex min-h-screen flex-col ${hideChrome ? "" : "pb-[calc(72px+env(safe-area-inset-bottom))]"}`}>
 
       <OnlineStatusBanner />
-      {/* Persistent floating Complaints button — shows everywhere inside the app */}
-      <button
-        onClick={openComplaints}
-        aria-label="الشكاوى والاقتراحات"
-        title="الشكاوى والاقتراحات"
-        className="fixed bottom-24 end-3 z-[60] flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-orange-500 to-red-500 text-white shadow-xl shadow-orange-500/40 ring-2 ring-background transition active:scale-95"
-      >
-        <Flag className="h-5 w-5" />
-      </button>
+      <ReportModal open={reportOpen} onClose={() => setReportOpen(false)} />
       {!hideChrome && (
         <header className="sticky top-0 z-50 pt-[env(safe-area-inset-top)] bg-gradient-to-b from-emerald-700 via-emerald-600 to-emerald-600/95 text-white shadow-[0_8px_24px_-12px_rgba(6,78,59,0.55)]">
           <div className="relative flex items-center justify-between px-3 py-2.5">
