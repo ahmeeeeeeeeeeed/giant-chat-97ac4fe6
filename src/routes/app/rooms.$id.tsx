@@ -319,13 +319,13 @@ function RoomPage() {
       room_id: roomId, user_id: user.id,
       content: optimistic.content,
       message_type: kind, media_url: url, media_duration_ms: durationMs ?? null,
-    } as never).select("*").single();
+    } as never).select("*").maybeSingle();
     if (error) {
       setMessages((prev) => prev.filter((m) => m.id !== tempId));
       toast.error("فشل إرسال الوسائط");
       return;
     }
-    setMessages((prev) => prev.map((m) => (m.id === tempId ? data : m)));
+    if (data) setMessages((prev) => prev.map((m) => (m.id === tempId ? data : m)));
     try { await supabase.rpc("record_daily_action", { _kind: "send_messages", _amount: 1 }); } catch { /* ignore */ }
   };
 
