@@ -44,6 +44,32 @@ function AppLayout() {
     if (session?.user?.id) scheduleDataPrewarm(session.user.id);
   }, [session?.user?.id]);
 
+  useEffect(() => {
+    let removeListener: (() => void) | undefined;
+    const setup = async () => {
+      try {
+        const CapApp = await import("@capacitor/app");
+        const listener = await CapApp.App.addListener("backButton", ({ canGoBack }) => {
+          if (!canGoBack) {
+            CapApp.App.exitApp();
+            return;
+          }
+          const currentPath = window.location.pathname;
+          if (currentPath === "/app" || currentPath === "/app/") {
+            window.dispatchEvent(new CustomEvent("show-exit-confirm"));
+          } else {
+            router.history.back();
+          }
+        });
+        removeListener = () => listener.remove();
+      } catch {
+        // Not running in Capacitor native context
+      }
+    };
+    setup();
+    return () => { if (removeListener) removeListener(); };
+  }, [router]);
+
   if (loading || !session) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
