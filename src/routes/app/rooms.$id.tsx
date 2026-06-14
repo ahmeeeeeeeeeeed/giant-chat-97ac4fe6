@@ -37,18 +37,21 @@ function RoomPage() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  const userMapRef = useRef<Record<string, { username: string; avatar_url: string | null }>>({});
+  useEffect(() => { userMapRef.current = userMap; }, [userMap]);
+
   const ensureProfiles = useCallback(async (ids: string[]) => {
-    const need = Array.from(new Set(ids.filter((id) => id && !userMap[id])));
+    const need = Array.from(new Set(ids.filter((id) => id && !userMapRef.current[id])));
     if (need.length === 0) return;
     const { data } = await supabase.from("profiles").select("id, username, avatar_url").in("id", need);
-    if (data) {
+    if (data && data.length) {
       setUserMap((prev) => {
         const next = { ...prev };
         data.forEach((p: any) => { next[p.id] = { username: p.username, avatar_url: p.avatar_url }; });
         return next;
       });
     }
-  }, [userMap]);
+  }, []);
 
   const loadRoom = async () => {
     const { data, error } = await supabase.from("rooms").select("*").eq("id", roomId).single();
