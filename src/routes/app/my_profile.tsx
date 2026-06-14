@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
+
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { WeeklyAchievementsBadge } from "@/components/WeeklyAchievementsBadge";
@@ -9,7 +9,7 @@ import { Loader2, Camera, User as UserIcon, Bell, Info, Shield, ChevronLeft, Loc
 import { useTranslation } from "react-i18next";
 import { getEquipped, type EquippedSet } from "@/lib/equipped";
 import { BadgeChip } from "@/routes/app/store";
-import { requestEmailVerification, confirmEmailVerification } from "@/lib/recovery.functions";
+
 import { cacheGet, cacheSet, cacheKeys } from "@/lib/offline-cache";
 
 export const Route = createFileRoute("/app/my_profile")({
@@ -50,13 +50,11 @@ function ProfilePage() {
     getEquipped(user.id).then(setEquipped);
   }, [user]);
 
-  const [recoveryEmail, setRecoveryEmail] = useState("");
-  const [emailVerifiedAt, setEmailVerifiedAt] = useState<string | null>(null);
-  const [emailCode, setEmailCode] = useState("");
-  const [emailStep, setEmailStep] = useState<"idle" | "sent">("idle");
+  const [accountEmail, setAccountEmail] = useState<string>("");
+  const [pendingEmail, setPendingEmail] = useState<string>("");
+  const [newEmail, setNewEmail] = useState("");
   const [emailBusy, setEmailBusy] = useState(false);
-  const reqVerify = useServerFn(requestEmailVerification);
-  const confirmVerify = useServerFn(confirmEmailVerification);
+  const [editingEmail, setEditingEmail] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -97,12 +95,15 @@ function ProfilePage() {
           setProfileViews(data.profile_views ?? 0);
           await cacheSet(cacheKeys.profile(user.id), data as CachedProfile);
         }
-        const { data: rec } = await supabase.rpc("get_my_recovery_status" as never);
-        const row = Array.isArray(rec) ? rec[0] : rec;
-        if (row) {
-          setRecoveryEmail((row as { recovery_email?: string | null }).recovery_email ?? "");
-          setEmailVerifiedAt((row as { recovery_email_verified_at?: string | null }).recovery_email_verified_at ?? null);
-        }
+        // Load the auth account's email (Supabase Auth) + any pending change.
+        try {
+          const { data: au } = await supabase.auth.getUser();
+          if (au?.user) {
+            setAccountEmail(au.user.email ?? "");
+            const pend = (au.user as any).new_email as string | undefined;
+            setPendingEmail(pend ?? "");
+          }
+        } catch { /* ignore */ }
       } catch {
         // offline — keep cached values
       }
@@ -111,39 +112,26 @@ function ProfilePage() {
 
   }, [user]);
 
-  const sendEmailCode = async () => {
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recoveryEmail)) {
+  const sendChangeEmail = async () => {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) {
       toast.error("بريد غير صالح"); return;
     }
     setEmailBusy(true);
     try {
-      const r = await reqVerify({ data: { email: recoveryEmail } });
-      setEmailStep("sent");
-      setEmailVerifiedAt(null);
-      // Dev fallback: until email infra is configured, show the code
-      toast.success(r.code ? `تم إرسال الكود (للتجريب: ${r.code})` : "تم إرسال الكود إلى بريدك", { duration: 12000 });
-    } catch {
-      toast.error("تعذّر إرسال الكود");
+      const { error } = await supabase.auth.updateUser(
+        { email: newEmail.trim() },
+        { emailRedirectTo: `${window.location.origin}/app` },
+      );
+      if (error) throw error;
+      setPendingEmail(newEmail.trim());
+      setEditingEmail(false);
+      setNewEmail("");
+      toast.success("تم إرسال رابط التأكيد إلى بريدك الجديد", { duration: 8000 });
+    } catch (err: any) {
+      toast.error(err?.message || "تعذّر إرسال رابط التأكيد");
     } finally { setEmailBusy(false); }
   };
 
-  const confirmEmail = async () => {
-    if (!/^\d{6}$/.test(emailCode)) { toast.error("الكود 6 أرقام"); return; }
-    setEmailBusy(true);
-    try {
-      const r = await confirmVerify({ data: { code: emailCode } });
-      if (r.ok) {
-        setEmailVerifiedAt(new Date().toISOString());
-        setEmailStep("idle");
-        setEmailCode("");
-        toast.success("تم تأكيد البريد ✓");
-      } else {
-        toast.error("الكود غير صحيح أو منتهي");
-      }
-    } catch {
-      toast.error("تعذّر التأكيد");
-    } finally { setEmailBusy(false); }
-  };
 
 
   const save = async (e: React.FormEvent) => {
@@ -321,88 +309,86 @@ function ProfilePage() {
             <Row icon={<UserIcon className="h-5 w-5" />} label={t("profile.username")} value={username} />
           </Section>
 
-          <Section title="بريد الاسترجاع">
+          <Section title="بريد الحساب">
             <div className="space-y-3 p-4">
               <div className="flex items-start gap-3">
                 <Mail className="mt-1 h-5 w-5 text-muted-foreground" />
                 <div className="flex-1">
                   <div className="text-sm font-medium">
-                    بريد لاسترجاع الحساب
-                    {emailVerifiedAt && (
+                    البريد المرتبط بحسابك
+                    {accountEmail && (
                       <span className="ms-2 inline-flex items-center gap-1 rounded-full bg-success/15 px-2 py-0.5 text-[10px] font-bold text-success">
                         <CheckCircle2 className="h-3 w-3" /> مؤكَّد
                       </span>
                     )}
                   </div>
                   <p className="text-[11px] text-muted-foreground">
-                    بعد التأكيد يمكنك استرجاع الحساب عبر هذا البريد
+                    يُستخدم لتسجيل الدخول واسترجاع كلمة المرور
                   </p>
                 </div>
               </div>
 
-              <input
-                type="email"
-                value={recoveryEmail}
-                onChange={(e) => { setRecoveryEmail(e.target.value); setEmailVerifiedAt(null); setEmailStep("idle"); }}
-                dir="ltr"
-                placeholder="you@example.com"
-                className="h-11 w-full rounded-xl border border-input bg-background px-3 outline-none focus:border-primary"
-              />
+              {accountEmail ? (
+                <div dir="ltr" className="rounded-xl border border-border bg-background px-3 py-2.5 text-sm font-semibold">
+                  {accountEmail}
+                </div>
+              ) : (
+                <div className="rounded-xl border border-dashed border-border bg-background px-3 py-2.5 text-xs text-muted-foreground">
+                  لا يوجد بريد مرتبط بعد
+                </div>
+              )}
 
-              {emailStep === "sent" && !emailVerifiedAt && (
+              {pendingEmail && pendingEmail !== accountEmail && (
+                <div className="rounded-xl border border-amber-400/40 bg-amber-50 dark:bg-amber-950/30 px-3 py-2 text-[11px] text-amber-700 dark:text-amber-300">
+                  بانتظار التأكيد: <span dir="ltr" className="font-semibold">{pendingEmail}</span>
+                  <div className="mt-1">افتح رابط التأكيد المُرسل إلى البريد الجديد.</div>
+                </div>
+              )}
+
+              {editingEmail && (
                 <input
-                  value={emailCode}
-                  onChange={(e) => setEmailCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  type="email"
+                  value={newEmail}
+                  onChange={(e) => setNewEmail(e.target.value)}
                   dir="ltr"
-                  inputMode="numeric"
-                  placeholder="الكود (6 أرقام)"
+                  placeholder="you@example.com"
                   className="h-11 w-full rounded-xl border border-input bg-background px-3 outline-none focus:border-primary"
                 />
               )}
 
               <div className="flex gap-2">
-                {!emailVerifiedAt && emailStep === "idle" && (
+                {!editingEmail ? (
                   <button
                     type="button"
-                    onClick={sendEmailCode}
-                    disabled={emailBusy || !recoveryEmail}
-                    className="flex h-10 flex-1 items-center justify-center rounded-xl bg-primary text-sm font-bold text-primary-foreground disabled:opacity-60"
+                    onClick={() => setEditingEmail(true)}
+                    className="h-10 w-full rounded-xl border border-border bg-card text-sm font-semibold"
                   >
-                    {emailBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : "إرسال كود التأكيد"}
+                    {accountEmail ? "تغيير البريد" : "إضافة بريد"}
                   </button>
-                )}
-                {emailStep === "sent" && !emailVerifiedAt && (
+                ) : (
                   <>
                     <button
                       type="button"
-                      onClick={confirmEmail}
-                      disabled={emailBusy}
+                      onClick={sendChangeEmail}
+                      disabled={emailBusy || !newEmail}
                       className="flex h-10 flex-1 items-center justify-center rounded-xl bg-primary text-sm font-bold text-primary-foreground disabled:opacity-60"
                     >
-                      {emailBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : "تأكيد الكود"}
+                      {emailBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : "إرسال رابط التأكيد"}
                     </button>
                     <button
                       type="button"
-                      onClick={sendEmailCode}
+                      onClick={() => { setEditingEmail(false); setNewEmail(""); }}
                       disabled={emailBusy}
                       className="h-10 rounded-xl border border-border bg-card px-3 text-xs font-semibold"
                     >
-                      إعادة الإرسال
+                      إلغاء
                     </button>
                   </>
-                )}
-                {emailVerifiedAt && (
-                  <button
-                    type="button"
-                    onClick={() => { setEmailStep("idle"); }}
-                    className="h-10 w-full rounded-xl border border-border bg-card text-sm font-semibold"
-                  >
-                    تغيير البريد
-                  </button>
                 )}
               </div>
             </div>
           </Section>
+
 
 
           <Section title={t("profile.notifications")}>

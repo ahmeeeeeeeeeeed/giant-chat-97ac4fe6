@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as RecoveryRouteImport } from './routes/recovery'
 import { Route as OfflineRouteImport } from './routes/offline'
@@ -37,6 +38,11 @@ import { Route as AppAdminUsersRouteImport } from './routes/app/admin.users'
 import { Route as AppAdminRoomsRouteImport } from './routes/app/admin.rooms'
 import { Route as AppAdminCommunityRouteImport } from './routes/app/admin.community'
 
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
   path: '/register',
@@ -180,6 +186,7 @@ export interface FileRoutesByFullPath {
   '/offline': typeof OfflineRoute
   '/recovery': typeof RecoveryRoute
   '/register': typeof RegisterRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/app/account': typeof AppAccountRoute
   '/app/achievements': typeof AppAchievementsRoute
   '/app/admin': typeof AppAdminRouteWithChildren
@@ -208,6 +215,7 @@ export interface FileRoutesByTo {
   '/offline': typeof OfflineRoute
   '/recovery': typeof RecoveryRoute
   '/register': typeof RegisterRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/app/account': typeof AppAccountRoute
   '/app/achievements': typeof AppAchievementsRoute
   '/app/community': typeof AppCommunityRoute
@@ -237,6 +245,7 @@ export interface FileRoutesById {
   '/offline': typeof OfflineRoute
   '/recovery': typeof RecoveryRoute
   '/register': typeof RegisterRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/app/account': typeof AppAccountRoute
   '/app/achievements': typeof AppAchievementsRoute
   '/app/admin': typeof AppAdminRouteWithChildren
@@ -268,6 +277,7 @@ export interface FileRouteTypes {
     | '/offline'
     | '/recovery'
     | '/register'
+    | '/reset-password'
     | '/app/account'
     | '/app/achievements'
     | '/app/admin'
@@ -296,6 +306,7 @@ export interface FileRouteTypes {
     | '/offline'
     | '/recovery'
     | '/register'
+    | '/reset-password'
     | '/app/account'
     | '/app/achievements'
     | '/app/community'
@@ -324,6 +335,7 @@ export interface FileRouteTypes {
     | '/offline'
     | '/recovery'
     | '/register'
+    | '/reset-password'
     | '/app/account'
     | '/app/achievements'
     | '/app/admin'
@@ -354,11 +366,19 @@ export interface RootRouteChildren {
   OfflineRoute: typeof OfflineRoute
   RecoveryRoute: typeof RecoveryRoute
   RegisterRoute: typeof RegisterRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   ProfileIdRoute: typeof ProfileIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/register': {
       id: '/register'
       path: '/register'
@@ -616,6 +636,7 @@ const rootRouteChildren: RootRouteChildren = {
   OfflineRoute: OfflineRoute,
   RecoveryRoute: RecoveryRoute,
   RegisterRoute: RegisterRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   ProfileIdRoute: ProfileIdRoute,
 }
 export const routeTree = rootRouteImport
