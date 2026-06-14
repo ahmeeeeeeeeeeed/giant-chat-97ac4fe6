@@ -197,6 +197,10 @@ function OtherProfilePage() {
               )}
             </div>
 
+            <div className="mt-2 w-full max-w-md">
+              <WeeklyAchievementsBadge userId={profile.id} />
+            </div>
+
             {/* Action Buttons */}
             {!isOwnProfile && (
               <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
