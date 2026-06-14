@@ -38,13 +38,15 @@ jobs:
       - name: Bump app version (patch)
         run: node scripts/bump-version.mjs patch
 
-      - name: Build web app
+      - name: Build web app (SPA preset for Capacitor)
+        # CAPACITOR_BUILD=1 switches vite.config.ts to nitro node-server preset
+        # and enables TanStack Start's SPA prerender so dist/client/index.html
+        # is a real hydratable HTML shell (not an empty body).
+        env:
+          CAPACITOR_BUILD: "1"
         run: npm run build
 
-      - name: Generate Capacitor index.html
-        # TanStack Start is SSR-only and does not emit dist/client/index.html.
-        # Capacitor requires it — this script reads the build manifest and
-        # writes a static SPA shell that boots the app inside the WebView.
+      - name: Verify Capacitor index.html
         run: node scripts/generate-capacitor-index.mjs
 
       - name: Verify Capacitor web assets
