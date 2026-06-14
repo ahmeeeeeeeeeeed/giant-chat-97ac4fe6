@@ -128,6 +128,21 @@ function AdminHome() {
           <ChevronLeft className="h-5 w-5 text-muted-foreground" />
         </Link>
 
+        <button onClick={() => setShowPremium(true)}
+          className="flex items-center justify-between rounded-2xl border border-border bg-card p-4 hover:bg-secondary/40 transition text-start">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/15 text-amber-600">
+              <Crown className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="font-bold">إنشاء حساب مميز</div>
+              <div className="text-xs text-muted-foreground">إنشاء مباشر بدون خصم نقاط</div>
+            </div>
+          </div>
+          <ChevronLeft className="h-5 w-5 text-muted-foreground" />
+        </button>
+
+
         <section className="rounded-2xl border border-border bg-card p-4">
           <div className="mb-3 flex items-center gap-2">
             <Coins className="h-5 w-5 text-amber-500" />
