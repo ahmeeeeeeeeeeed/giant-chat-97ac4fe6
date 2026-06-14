@@ -48,6 +48,14 @@ function RoomPage() {
   const [showSearch, setShowSearch] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordChunksRef = useRef<Blob[]>([]);
+  const recordStartRef = useRef<number>(0);
+  const recordTimerRef = useRef<number | null>(null);
+  const [recording, setRecording] = useState(false);
+  const [recordSec, setRecordSec] = useState(0);
+  const [uploading, setUploading] = useState(false);
 
   const userMapRef = useRef<Record<string, { username: string; avatar_url: string | null }>>({});
   useEffect(() => { userMapRef.current = userMap; }, [userMap]);
