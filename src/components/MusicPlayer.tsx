@@ -104,12 +104,12 @@ export function MusicPlayer({ roomId }: { roomId: string }) {
             // 3 = buffering, 1 = playing, 2 = paused, 0 = ended
             setBuffering(e.data === 3);
             if (e.data === 0) {
-              supabase.rpc("music_advance_if_ended", { _room: roomId }).catch(() => {/*ignore*/});
+              void (async () => { try { await supabase.rpc("music_advance_if_ended", { _room: roomId }); } catch { /* ignore */ } })();
             }
           },
           onError: () => {
             toast.error("تعذّر تشغيل هذا المقطع — جاري التخطي");
-            supabase.rpc("music_skip", { _room: roomId }).catch(() => {/*ignore*/});
+            void (async () => { try { await supabase.rpc("music_skip", { _room: roomId }); } catch { /* ignore */ } })();
           },
         },
       });
