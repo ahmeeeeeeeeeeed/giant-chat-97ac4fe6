@@ -274,12 +274,12 @@ function RoomPage() {
                   </button>
                 )}
                 <div className={`flex max-w-[78%] flex-col ${isOwn ? "items-end" : "items-start"}`}>
-                  {!isOwn && msg.user_id && (
+                  {msg.user_id && (
                     <button
                       onClick={() => navigate({ to: "/app/profile/$id", params: { id: msg.user_id } })}
                       className="mb-1 px-1 text-xs font-bold text-emerald-600 hover:underline"
                     >
-                      {prof?.username ?? "مستخدم"}
+                      {(isOwn ? userMap[user!.id]?.username : prof?.username) ?? "مستخدم"}
                     </button>
                   )}
                   <div
