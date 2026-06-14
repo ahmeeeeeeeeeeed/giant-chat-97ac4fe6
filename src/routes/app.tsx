@@ -59,15 +59,16 @@ function AppLayout() {
       try {
         const CapApp = await import("@capacitor/app");
         const listener = await CapApp.App.addListener("backButton", ({ canGoBack }) => {
-          if (!canGoBack) {
-            CapApp.App.exitApp();
+          const currentPath = window.location.pathname.replace(/\/$/, "") || "/";
+          // Default landing tab — show exit confirm instead of going back further
+          if (currentPath === "/app/chats") {
+            window.dispatchEvent(new CustomEvent("giant:exit-confirm"));
             return;
           }
-          const currentPath = window.location.pathname;
-          if (currentPath === "/app" || currentPath === "/app/" || currentPath === "/app/chats" || currentPath === "/app/chats/") {
-            window.dispatchEvent(new CustomEvent("show-exit-confirm"));
-          } else {
+          if (canGoBack) {
             router.history.back();
+          } else {
+            window.dispatchEvent(new CustomEvent("giant:exit-confirm"));
           }
         });
         removeListener = () => listener.remove();
@@ -78,6 +79,7 @@ function AppLayout() {
     setup();
     return () => { if (removeListener) removeListener(); };
   }, [router]);
+
 
   if (loading || !session) {
     return (
