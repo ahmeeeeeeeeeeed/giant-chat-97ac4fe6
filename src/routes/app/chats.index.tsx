@@ -76,6 +76,12 @@ function ChatsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
+  // Keep local cache in sync with the latest convo list state.
+  useEffect(() => {
+    if (!user) return;
+    void cacheSet(cacheKeys.chatsList(user.id), convos);
+  }, [convos, user]);
+
   useEffect(() => {
     const q = query.trim();
     if (!q || !user) { setResults([]); return; }
