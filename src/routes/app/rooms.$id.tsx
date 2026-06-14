@@ -50,6 +50,8 @@ function RoomPage() {
   const [showSearch, setShowSearch] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [entryBurst, setEntryBurst] = useState<{ id: number; emoji: string; name?: string } | null>(null);
+  const entryChRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordChunksRef = useRef<Blob[]>([]);
