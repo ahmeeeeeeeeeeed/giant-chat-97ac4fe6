@@ -104,6 +104,9 @@
     background-attachment: fixed;
     background-repeat: no-repeat;
   }
+  .dark body {
+    background-image: none;
+  }
 }
 
 /* subtle bubble animations */
