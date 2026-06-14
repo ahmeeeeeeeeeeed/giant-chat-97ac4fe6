@@ -211,10 +211,9 @@ function DMPage() {
       else if (error.message?.includes("dm_blocked")) toast.error("لا يمكن إرسال الرسالة (حظر)");
       else toast.error(t("common.error"));
       setText(content); setReplyTo(reply);
-    } else {
-      toast.success("تم إرسال الرسالة");
     }
   };
+
 
   const uploadAndSend = async (blob: Blob, kind: "image" | "voice", durationMs?: number) => {
     if (!user) return;
