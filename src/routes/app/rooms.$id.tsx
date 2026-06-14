@@ -554,20 +554,42 @@ function RoomPage() {
 
       {/* Composer */}
       <form onSubmit={sendMessage} className="border-t border-border bg-background/90 backdrop-blur p-3">
-        <div className="flex gap-2">
-          <button type="button" onClick={() => setShowShare(true)} disabled={!isMember || isBanned}
-            title="نشر منشور في كل الغرف"
-            className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 disabled:opacity-50 hover:bg-emerald-500/20 transition">
-            <Megaphone className="h-5 w-5" />
-          </button>
-          <input value={text} onChange={(e) => setText(e.target.value)}
-            placeholder={isMember ? (isBanned ? "أنت محظور" : "اكتب رسالة...") : "يجب الانضمام إلى الغرفة أولاً"} disabled={!isMember || isBanned}
-            className="flex-1 h-11 rounded-xl border border-input bg-background px-4 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary disabled:opacity-50 transition" />
-          <button type="submit" disabled={sending || !text.trim() || !isMember || isBanned}
-            className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-md disabled:opacity-50 transition hover:from-emerald-600 hover:to-emerald-700">
-            {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-          </button>
-        </div>
+        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={onPickImage} />
+        {recording ? (
+          <div className="flex items-center gap-2">
+            <button type="button" onClick={() => stopRecording(true)}
+              className="flex h-11 w-11 items-center justify-center rounded-xl bg-secondary text-muted-foreground hover:bg-secondary/80 transition" title="إلغاء">
+              <X className="h-5 w-5" />
+            </button>
+            <div className="flex-1 flex items-center justify-center gap-2 h-11 rounded-xl bg-red-500/10 text-red-600 font-bold text-sm">
+              <span className="inline-block h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+              جارٍ التسجيل · {String(Math.floor(recordSec / 60)).padStart(2, "0")}:{String(recordSec % 60).padStart(2, "0")}
+            </div>
+            <button type="button" onClick={() => stopRecording(false)}
+              className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-md transition" title="إرسال">
+              <Send className="h-5 w-5" />
+            </button>
+          </div>
+        ) : (
+          <div className="flex gap-2">
+            <button type="submit" disabled={sending || uploading || !text.trim() || !isMember || isBanned}
+              className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-md disabled:opacity-50 transition hover:from-emerald-600 hover:to-emerald-700"
+              title="إرسال">
+              {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            </button>
+            <input value={text} onChange={(e) => setText(e.target.value)}
+              placeholder={isMember ? (isBanned ? "أنت محظور" : "اكتب رسالة...") : "يجب الانضمام إلى الغرفة أولاً"} disabled={!isMember || isBanned}
+              className="flex-1 h-11 rounded-xl border border-input bg-background px-4 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary disabled:opacity-50 transition" />
+            <button type="button" onClick={() => fileInputRef.current?.click()} disabled={!isMember || isBanned || uploading}
+              className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 disabled:opacity-50 hover:bg-emerald-500/20 transition" title="إرسال صورة">
+              {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <ImageIcon className="h-5 w-5" />}
+            </button>
+            <button type="button" onClick={startRecording} disabled={!isMember || isBanned || uploading}
+              className="flex h-11 w-11 items-center justify-center rounded-xl bg-rose-500/10 text-rose-600 disabled:opacity-50 hover:bg-rose-500/20 transition" title="تسجيل صوتي">
+              <Mic className="h-5 w-5" />
+            </button>
+          </div>
+        )}
       </form>
 
       {showShare && <SharePostModal roomId={roomId} onClose={() => setShowShare(false)} />}
