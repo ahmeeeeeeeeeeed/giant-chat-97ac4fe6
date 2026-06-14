@@ -188,21 +188,70 @@ function RoomPage() {
     else { setMyRank(null); navigate({ to: "/app" }); }
   };
 
+  const insertOptimistic = (m: any) => {
+    setMessages((prev) => (prev.some((x) => x.id === m.id) ? prev : [...prev, m]));
+    setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
+  };
+
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!text.trim() || !user || sending) return;
     if (!myRank) { toast.error("يجب الانضمام إلى الغرفة أولاً"); return; }
     if (isBanned) { toast.error("أنت محظور من هذه الغرفة"); return; }
     setSending(true);
-    const { error } = await supabase.from("room_messages").insert({
-      room_id: roomId, user_id: user.id, content: text.trim(),
-    } as never);
+    const content = text.trim();
+    const tempId = `tmp-${Date.now()}`;
+    const optimistic = { id: tempId, room_id: roomId, user_id: user.id, content, message_type: "text", created_at: new Date().toISOString(), meta: null };
+    insertOptimistic(optimistic);
+    setText("");
+    const { data, error } = await supabase.from("room_messages")
+      .insert({ room_id: roomId, user_id: user.id, content } as never)
+      .select("*").single();
     setSending(false);
-    if (!error) {
-      setText("");
-      try { await supabase.rpc("record_daily_action", { _kind: "send_messages", _amount: 1 }); } catch { /* ignore */ }
-    } else toast.error("فشل إرسال الرسالة");
+    if (error) {
+      setMessages((prev) => prev.filter((m) => m.id !== tempId));
+      toast.error("فشل إرسال الرسالة");
+      setText(content);
+      return;
+    }
+    setMessages((prev) => prev.map((m) => (m.id === tempId ? data : m)));
+    try { await supabase.rpc("record_daily_action", { _kind: "send_messages", _amount: 1 }); } catch { /* ignore */ }
   };
+
+  const uploadAndSend = async (file: Blob, kind: "image" | "voice", durationMs?: number) => {
+    if (!user) return;
+    if (!myRank) { toast.error("يجب الانضمام إلى الغرفة أولاً"); return; }
+    if (isBanned) { toast.error("أنت محظور من هذه الغرفة"); return; }
+    const ext = kind === "image"
+      ? ((file as File).name?.split(".").pop()?.toLowerCase() || "jpg")
+      : (file.type.includes("mp4") ? "m4a" : "webm");
+    const path = `${roomId}/${user.id}/${Date.now()}.${ext}`;
+    const up = await supabase.storage.from("room-media").upload(path, file, { contentType: file.type, upsert: false });
+    if (up.error) { toast.error("فشل رفع الملف"); return; }
+    const { data: pub } = supabase.storage.from("room-media").getPublicUrl(path);
+    const url = pub.publicUrl;
+    const tempId = `tmp-${Date.now()}`;
+    const optimistic = {
+      id: tempId, room_id: roomId, user_id: user.id,
+      content: kind === "image" ? "📷 صورة" : "🎤 رسالة صوتية",
+      message_type: kind, media_url: url, media_duration_ms: durationMs ?? null,
+      created_at: new Date().toISOString(), meta: null,
+    };
+    insertOptimistic(optimistic);
+    const { data, error } = await supabase.from("room_messages").insert({
+      room_id: roomId, user_id: user.id,
+      content: optimistic.content,
+      message_type: kind, media_url: url, media_duration_ms: durationMs ?? null,
+    } as never).select("*").single();
+    if (error) {
+      setMessages((prev) => prev.filter((m) => m.id !== tempId));
+      toast.error("فشل إرسال الوسائط");
+      return;
+    }
+    setMessages((prev) => prev.map((m) => (m.id === tempId ? data : m)));
+    try { await supabase.rpc("record_daily_action", { _kind: "send_messages", _amount: 1 }); } catch { /* ignore */ }
+  };
+
 
   const sendAnnouncement = async () => {
     if (!announceText.trim()) return;
