@@ -29,7 +29,7 @@ function AdminRooms() {
 
   const load = async () => {
     setLoading(true);
-    const { data } = await supabase.from("rooms").select("*").order("created_at", { ascending: false }).limit(200);
+    const { data } = await supabase.from("rooms").select("id, name, description, owner_id, created_at, type, max_members, is_active").order("created_at", { ascending: false }).limit(200);
     if (data) {
       const ownerIds = Array.from(new Set(data.map((r: any) => r.owner_id).filter(Boolean)));
       const [{ data: profs }, counts] = await Promise.all([

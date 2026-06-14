@@ -41,7 +41,7 @@ function mark(userId: string) {
 async function warmProfile(userId: string) {
   const { data } = await supabase
     .from("profiles")
-    .select("*")
+    .select("id, username, avatar_url, bio, last_seen_at, created_at, points, gender, country, hide_last_seen, dm_locked, profile_views, equipped_badge, equipped_name_color, equipped_chat_color, equipped_effect, is_banned, is_bot, game_wins")
     .eq("id", userId)
     .maybeSingle();
   if (data) await cacheSet(cacheKeys.profile(userId), data);
@@ -148,7 +148,7 @@ async function warmChatsAndRecentMessages(userId: string) {
             )
             .order("created_at", { ascending: false })
             .limit(MESSAGES_PER_PEER),
-          supabase.from("profiles").select("*").eq("id", peer.otherId).maybeSingle(),
+          supabase.from("profiles").select("id, username, avatar_url, bio, last_seen_at, created_at, points, gender, country, hide_last_seen, dm_locked, profile_views, equipped_badge, equipped_name_color, equipped_chat_color, equipped_effect, is_banned, is_bot, game_wins").eq("id", peer.otherId).maybeSingle(),
         ]);
         if (dm) {
           await cacheSet(
