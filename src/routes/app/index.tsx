@@ -32,6 +32,7 @@ function RoomsPage() {
   const [error, setError] = useState<string | null>(null);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+  const [myRoomIds, setMyRoomIds] = useState<Set<string>>(new Set());
 
   // اعتراض زر الرجوع وإظهار نافذة التأكيد
   useEffect(() => {
