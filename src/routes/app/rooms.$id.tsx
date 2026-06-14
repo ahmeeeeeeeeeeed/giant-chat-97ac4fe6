@@ -33,6 +33,7 @@ function RoomPage() {
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [messages, setMessages] = useState<any[]>([]);
   const [userMap, setUserMap] = useState<Record<string, { username: string; avatar_url: string | null }>>({});
+  const [colorMap, setColorMap] = useState<Record<string, { name?: string; chat?: string }>>({});
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -79,6 +80,18 @@ function RoomPage() {
         return next;
       });
     }
+    // Fetch equipped colors (name/chat) in parallel — applied live in room messages.
+    try {
+      const sets = await Promise.all(need.map((id) => getEquipped(id).catch(() => ({} as any))));
+      setColorMap((prev) => {
+        const next = { ...prev };
+        need.forEach((id, i) => {
+          const s: any = sets[i] ?? {};
+          next[id] = { name: s.name_color?.color ?? undefined, chat: s.chat_color?.color ?? undefined };
+        });
+        return next;
+      });
+    } catch { /* ignore */ }
   }, []);
 
   const loadRoom = async () => {
@@ -582,6 +595,7 @@ function RoomPage() {
                     <button
                       onClick={() => navigate({ to: "/app/profile/$id", params: { id: msg.user_id } })}
                       className="flex items-center gap-1.5 px-1 text-xs font-bold text-emerald-600 hover:underline"
+                      style={colorMap[msg.user_id]?.name ? { color: colorMap[msg.user_id]!.name, textShadow: `0 0 10px ${colorMap[msg.user_id]!.name}55` } : undefined}
                     >
                       {(isOwn ? userMap[user!.id]?.username : prof?.username) ?? "مستخدم"}
                     </button>
@@ -602,7 +616,12 @@ function RoomPage() {
                     ) : msg.message_type === "voice" && msg.media_url ? (
                       <audio src={msg.media_url} controls preload="metadata" className="h-10 max-w-[260px]" />
                     ) : (
-                      <p className="whitespace-pre-wrap break-words text-[15px] leading-relaxed">{msg.content}</p>
+                      <p
+                        className="whitespace-pre-wrap break-words text-[15px] leading-relaxed"
+                        style={msg.user_id && colorMap[msg.user_id]?.chat ? { color: colorMap[msg.user_id]!.chat } : undefined}
+                      >
+                        {msg.content}
+                      </p>
                     )}
                   </div>
                   <p className={`mt-1 text-[10px] ${isOwn ? "text-muted-foreground" : "text-muted-foreground/80"}`} suppressHydrationWarning>
