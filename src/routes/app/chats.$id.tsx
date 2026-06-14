@@ -525,7 +525,7 @@ function DMPage() {
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <MessageBubble m={m} mine={mine} replied={replied ?? null} />
+                      <MessageBubble m={m} mine={mine} replied={replied ?? null} onPress={() => setMenuFor(m.id)} />
                       <div className={`mt-1 text-[10px] text-muted-foreground/80 ${mine ? "text-end" : "text-start"}`} suppressHydrationWarning>
                         {formatDateTime(m.created_at)}
                       </div>
