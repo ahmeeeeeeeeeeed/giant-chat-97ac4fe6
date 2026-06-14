@@ -103,6 +103,7 @@ function AppLayout() {
     if (path.startsWith("/app/rooms/")) return "الغرفة";
     if (path === "/app/notifications") return "الإشعارات";
     if (path === "/app/achievements") return "الإنجازات";
+    if (path === "/app/daily-tasks") return "المهام اليومية";
     if (path === "/app/store") return "المتجر";
     if (path.startsWith("/app/profile/")) return "الملف الشخصي";
     if (path === "/app/create-room") return "إنشاء غرفة";
