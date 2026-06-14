@@ -49,6 +49,7 @@ function DMPage() {
   const [muted, setMuted] = useState(false);
   const [blocked, setBlocked] = useState(false); // I blocked them
   const [blockedByOther, setBlockedByOther] = useState(false);
+  const [pendingMedia, setPendingMedia] = useState<{ kind: "image" | "voice"; file: Blob; previewUrl: string; durationMs?: number } | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -248,7 +249,22 @@ function DMPage() {
     e.target.value = "";
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) { toast.error("الحد الأقصى 5 ميجابايت"); return; }
-    await uploadAndSend(file, "image");
+    const previewUrl = URL.createObjectURL(file);
+    setPendingMedia({ kind: "image", file, previewUrl });
+  };
+
+  const confirmPendingMedia = async () => {
+    if (!pendingMedia || !user) return;
+    setUploading(true);
+    await uploadAndSend(pendingMedia.file, pendingMedia.kind, pendingMedia.durationMs);
+    URL.revokeObjectURL(pendingMedia.previewUrl);
+    setPendingMedia(null);
+    setUploading(false);
+  };
+
+  const cancelPendingMedia = () => {
+    if (pendingMedia?.previewUrl) URL.revokeObjectURL(pendingMedia.previewUrl);
+    setPendingMedia(null);
   };
 
   const startRecording = async () => {
@@ -263,7 +279,10 @@ function DMPage() {
         const blob = new Blob(recChunksRef.current, { type: "audio/webm" });
         const duration = Date.now() - recStartRef.current;
         broadcastActivity("idle");
-        await uploadAndSend(blob, "voice", duration);
+        if (blob.size > 0 && duration > 500) {
+          const previewUrl = URL.createObjectURL(blob);
+          setPendingMedia({ kind: "voice", file: blob, previewUrl, durationMs: duration });
+        }
       };
       mediaRecRef.current = mr;
       recStartRef.current = Date.now();
@@ -501,7 +520,27 @@ function DMPage() {
         </div>
       )}
 
-      {recording ? (
+      {pendingMedia ? (
+        <div className="sticky bottom-0 z-20 flex flex-col gap-2 border-t border-border bg-card px-3 py-3" style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.75rem)" }}>
+          <div className="flex items-center justify-center gap-2 rounded-xl bg-secondary/50 p-2">
+            {pendingMedia.kind === "image" ? (
+              <img src={pendingMedia.previewUrl} alt="معاينة" className="max-h-40 rounded-xl object-cover" />
+            ) : (
+              <audio src={pendingMedia.previewUrl} controls className="h-10 flex-1" />
+            )}
+          </div>
+          <div className="flex gap-2">
+            <button onClick={confirmPendingMedia} disabled={uploading}
+              className="flex-1 h-11 rounded-full bg-primary text-primary-foreground font-bold disabled:opacity-50 transition">
+              {uploading ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : "إرسال"}
+            </button>
+            <button onClick={cancelPendingMedia}
+              className="flex-1 h-11 rounded-full border border-border font-medium hover:bg-secondary transition">
+              إلغاء
+            </button>
+          </div>
+        </div>
+      ) : recording ? (
         <div className="sticky bottom-0 z-20 flex items-center gap-3 border-t border-border bg-card px-3 py-3" style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.75rem)" }}>
           <span className="flex h-3 w-3 animate-pulse rounded-full bg-destructive" />
           <span className="flex-1 text-sm font-medium">جاري التسجيل… {formatTime(recordSeconds)}</span>

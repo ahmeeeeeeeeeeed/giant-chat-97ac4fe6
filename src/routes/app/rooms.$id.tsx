@@ -60,6 +60,7 @@ function RoomPage() {
   const [recording, setRecording] = useState(false);
   const [recordSec, setRecordSec] = useState(0);
   const [uploading, setUploading] = useState(false);
+  const [pendingMedia, setPendingMedia] = useState<{ kind: "image" | "voice"; file: Blob; previewUrl: string; durationMs?: number } | null>(null);
 
   const userMapRef = useRef<Record<string, { username: string; avatar_url: string | null }>>({});
   useEffect(() => { userMapRef.current = userMap; }, [userMap]);
@@ -295,9 +296,22 @@ function RoomPage() {
     if (!file) return;
     if (!file.type.startsWith("image/")) { toast.error("الملف ليس صورة"); return; }
     if (file.size > 8 * 1024 * 1024) { toast.error("حجم الصورة كبير (حد أقصى 8MB)"); return; }
+    const previewUrl = URL.createObjectURL(file);
+    setPendingMedia({ kind: "image", file, previewUrl });
+  };
+
+  const confirmPendingMedia = async () => {
+    if (!pendingMedia || !user) return;
     setUploading(true);
-    await uploadAndSend(file, "image");
+    await uploadAndSend(pendingMedia.file, pendingMedia.kind, pendingMedia.durationMs);
+    URL.revokeObjectURL(pendingMedia.previewUrl);
+    setPendingMedia(null);
     setUploading(false);
+  };
+
+  const cancelPendingMedia = () => {
+    if (pendingMedia?.previewUrl) URL.revokeObjectURL(pendingMedia.previewUrl);
+    setPendingMedia(null);
   };
 
   const startRecording = async () => {
@@ -340,9 +354,8 @@ function RoomPage() {
         const duration = Date.now() - recordStartRef.current;
         setRecording(false); setRecordSec(0);
         if (blob.size > 0 && duration > 500) {
-          setUploading(true);
-          await uploadAndSend(blob, "voice", duration);
-          setUploading(false);
+          const previewUrl = URL.createObjectURL(blob);
+          setPendingMedia({ kind: "voice", file: blob, previewUrl, durationMs: duration });
         }
       };
       recordStartRef.current = Date.now();
@@ -607,7 +620,27 @@ function RoomPage() {
       {/* Composer */}
       <form onSubmit={sendMessage} className="border-t border-border bg-background/90 backdrop-blur p-3" style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.75rem)" }}>
         <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={onPickImage} />
-        {recording ? (
+        {pendingMedia ? (
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-center gap-2 rounded-xl bg-secondary/50 p-2">
+              {pendingMedia.kind === "image" ? (
+                <img src={pendingMedia.previewUrl} alt="معاينة" className="max-h-40 rounded-xl object-cover" />
+              ) : (
+                <audio src={pendingMedia.previewUrl} controls className="h-10 flex-1" />
+              )}
+            </div>
+            <div className="flex gap-2">
+              <button type="button" onClick={confirmPendingMedia} disabled={uploading}
+                className="flex-1 h-11 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-white font-bold shadow-md disabled:opacity-50 transition hover:from-emerald-600 hover:to-emerald-700">
+                {uploading ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : "إرسال"}
+              </button>
+              <button type="button" onClick={cancelPendingMedia}
+                className="flex-1 h-11 rounded-xl border border-border font-medium hover:bg-secondary transition">
+                إلغاء
+              </button>
+            </div>
+          </div>
+        ) : recording ? (
           <div className="flex items-center gap-2">
             <button type="button" onClick={() => stopRecording(true)}
               className="flex h-11 w-11 items-center justify-center rounded-xl bg-secondary text-muted-foreground hover:bg-secondary/80 transition" title="إلغاء">
