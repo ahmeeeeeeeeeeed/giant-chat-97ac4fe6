@@ -214,9 +214,15 @@ function AdminUpdates() {
           {file && <p className="mt-1 text-xs text-muted-foreground">{file.name} — {(file.size / 1024 / 1024).toFixed(2)} MB</p>}
         </div>
 
-        {progress > 0 && (
-          <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
-            <div className="h-full bg-emerald-500 transition-all" style={{ width: `${progress}%` }} />
+        {(busy || progress > 0) && file && (
+          <div className="space-y-1">
+            <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
+              <div className="h-full bg-emerald-500 transition-all" style={{ width: `${progress}%` }} />
+            </div>
+            <div className="flex justify-between text-[11px] text-muted-foreground tabular-nums">
+              <span>{(uploaded / 1024 / 1024).toFixed(2)} / {(file.size / 1024 / 1024).toFixed(2)} MB</span>
+              <span>{progress}%</span>
+            </div>
           </div>
         )}
 
