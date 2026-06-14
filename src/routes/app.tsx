@@ -88,6 +88,15 @@ function AppLayout() {
             </div>
 
             <div className="flex items-center gap-1.5">
+              <Link
+                to="/app/achievements"
+                aria-label="الإنجازات"
+                title="الإنجازات الأسبوعية"
+                className="relative flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 via-yellow-500 to-amber-600 text-white shadow-md shadow-amber-900/30 ring-1 ring-white/30 transition active:scale-95 hover:brightness-110"
+              >
+                <Trophy className="h-[18px] w-[18px]" />
+                <span className="absolute -top-0.5 -end-0.5 h-2 w-2 rounded-full bg-amber-200 shadow-[0_0_6px_2px_rgba(253,224,71,0.7)]" />
+              </Link>
               <button
                 onClick={() => setReportOpen(true)}
                 aria-label="الإبلاغ والشكاوى"
