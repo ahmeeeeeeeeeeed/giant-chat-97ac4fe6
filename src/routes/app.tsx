@@ -76,13 +76,20 @@ function AppLayout() {
                   <ArrowRight className="h-[18px] w-[18px]" />
                 </button>
               ) : (
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white shadow-md shadow-emerald-900/30 ring-1 ring-white/40">
-                  <img src={giantLogo.url} alt="Giant" className="h-full w-full object-cover" />
+                <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-emerald-300 to-emerald-500 p-[2px] shadow-lg shadow-emerald-900/40 ring-2 ring-white/40">
+                  <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-white">
+                    <img src={giantLogo.url} alt="Giant" className="h-[160%] w-[160%] object-cover" />
+                  </div>
                 </div>
               )}
               <div className="min-w-0">
-                <div className="truncate text-[15px] font-extrabold leading-tight tracking-tight">Giant</div>
-                <div className="text-[10px] font-medium uppercase tracking-[0.15em] text-emerald-100/80">chat · مجتمعات</div>
+                <div className="truncate text-[18px] font-black leading-tight tracking-tight bg-gradient-to-r from-white via-emerald-50 to-amber-200 bg-clip-text text-transparent drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)]">
+                  Giant
+                </div>
+                <div className="flex items-center gap-1.5 text-[10px] font-semibold tracking-[0.18em] text-emerald-50/90">
+                  <span className="inline-block h-1 w-1 rounded-full bg-amber-300 shadow-[0_0_6px_2px_rgba(252,211,77,0.7)]" />
+                  <span>CHAT · مجتمعات</span>
+                </div>
               </div>
             </div>
 
