@@ -24,6 +24,8 @@ function AppLayout() {
   const unreadRooms = useUnreadRoomCount();
   const unread = unreadDM + unreadRooms;
   useGlobalNotificationListener((url) => navigate({ to: url as any }));
+  const router = useRouter();
+  const [reportOpen, setReportOpen] = useState(false);
 
   const tabs = [
     { to: "/app", label: t("nav.rooms"), icon: Home, exact: true },
