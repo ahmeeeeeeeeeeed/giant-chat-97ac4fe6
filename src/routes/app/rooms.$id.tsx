@@ -52,6 +52,8 @@ function RoomPage() {
   const [showInfo, setShowInfo] = useState(false);
   const [search, setSearch] = useState("");
   const [showSearch, setShowSearch] = useState(false);
+  const [actionMsg, setActionMsg] = useState<any | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [entryBurst, setEntryBurst] = useState<{ id: number; emoji: string; name?: string } | null>(null);
@@ -172,6 +174,12 @@ function RoomPage() {
           if (m.user_id) ensureProfiles([m.user_id]);
           markRoomSeen(roomId);
           setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+        })
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "room_messages", filter: `room_id=eq.${roomId}` },
+        (p) => {
+          const old: any = p.old;
+          if (!old?.id) return;
+          setMessages((prev) => prev.filter((x) => x.id !== old.id));
         })
       .on("postgres_changes", { event: "*", schema: "public", table: "room_members", filter: `room_id=eq.${roomId}` },
         () => { loadMemberCount(); loadMembership(); })
@@ -601,7 +609,11 @@ function RoomPage() {
                     </button>
                   )}
                   <div
-                    className={`rounded-2xl shadow-sm overflow-hidden ${
+                    onClick={() => {
+                      const canDelete = isOwn || myRank === "owner" || myRank === "admin";
+                      if (canDelete) setActionMsg(msg);
+                    }}
+                    className={`rounded-2xl shadow-sm overflow-hidden cursor-pointer transition active:scale-[0.98] ${
                       msg.message_type === "image"
                         ? "p-1 bg-transparent"
                         : `px-4 py-2.5 ${isOwn
@@ -610,11 +622,11 @@ function RoomPage() {
                     }`}
                   >
                     {msg.message_type === "image" && msg.media_url ? (
-                      <button type="button" onClick={() => setLightboxUrl(msg.media_url)} className="block">
+                      <button type="button" onClick={(e) => { e.stopPropagation(); setLightboxUrl(msg.media_url); }} className="block">
                         <img src={msg.media_url} alt="" className="max-h-72 w-auto rounded-xl object-cover" />
                       </button>
                     ) : msg.message_type === "voice" && msg.media_url ? (
-                      <audio src={msg.media_url} controls preload="metadata" className="h-10 max-w-[260px]" />
+                      <audio onClick={(e) => e.stopPropagation()} src={msg.media_url} controls preload="metadata" className="h-10 max-w-[260px]" />
                     ) : (
                       <p
                         className="whitespace-pre-wrap break-words text-[15px] leading-relaxed"
@@ -797,6 +809,55 @@ function RoomPage() {
         />
       )}
       {lightboxUrl && <ImageLightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />}
+
+      {/* Elegant message action sheet */}
+      {actionMsg && (
+        <div className="fixed inset-0 z-[60] flex items-end justify-center" onClick={() => !deleting && setActionMsg(null)}>
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200" />
+          <div
+            dir="rtl"
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-full max-w-md mx-3 mb-3 rounded-3xl border border-white/10 bg-slate-900/95 text-white shadow-[0_30px_80px_-20px_rgba(0,0,0,0.8)] ring-1 ring-emerald-400/15 backdrop-blur-2xl overflow-hidden animate-in slide-in-from-bottom-4 fade-in duration-300"
+            style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.5rem)" }}
+          >
+            <div className="flex justify-center pt-2.5">
+              <span className="h-1.5 w-12 rounded-full bg-white/20" />
+            </div>
+            <div className="px-5 pt-3 pb-2">
+              <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-300/80 mb-1">رسالة</div>
+              <div className="line-clamp-2 text-[13.5px] text-white/80">
+                {actionMsg.message_type === "image" ? "🖼️ صورة" : actionMsg.message_type === "voice" ? "🎙️ رسالة صوتية" : (actionMsg.content ?? "")}
+              </div>
+            </div>
+            <div className="px-3 pb-3 space-y-2">
+              <button
+                disabled={deleting}
+                onClick={async () => {
+                  setDeleting(true);
+                  const id = actionMsg.id;
+                  const { error } = await supabase.from("room_messages").delete().eq("id", id);
+                  setDeleting(false);
+                  if (error) { toast.error("تعذّر حذف الرسالة: " + error.message); return; }
+                  setMessages((prev) => prev.filter((x) => x.id !== id));
+                  setActionMsg(null);
+                  toast.success("تم حذف الرسالة");
+                }}
+                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-br from-rose-500 to-rose-600 px-4 py-3.5 text-[15px] font-bold text-white shadow-[0_10px_30px_-10px_rgba(244,63,94,0.7)] ring-1 ring-rose-300/30 transition active:scale-[0.98] hover:from-rose-600 hover:to-rose-700 disabled:opacity-60"
+              >
+                {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                <span>حذف الرسالة للجميع</span>
+              </button>
+              <button
+                disabled={deleting}
+                onClick={() => setActionMsg(null)}
+                className="flex w-full items-center justify-center rounded-2xl bg-white/8 px-4 py-3 text-[14px] font-semibold text-white/90 ring-1 ring-white/10 transition active:scale-[0.98] hover:bg-white/12"
+              >
+                إلغاء
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
