@@ -71,6 +71,7 @@ function ChatsPage() {
   useEffect(() => {
     load();
     if (!user) return;
+    if (!getOnline()) return;
     const ch = supabase
       .channel("dm-list")
       .on("postgres_changes", { event: "*", schema: "public", table: "direct_messages" }, () => load())
