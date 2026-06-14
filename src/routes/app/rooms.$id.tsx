@@ -33,6 +33,7 @@ function RoomPage() {
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [messages, setMessages] = useState<any[]>([]);
   const [userMap, setUserMap] = useState<Record<string, { username: string; avatar_url: string | null }>>({});
+  const [colorMap, setColorMap] = useState<Record<string, { name?: string; chat?: string }>>({});
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
