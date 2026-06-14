@@ -68,6 +68,13 @@ function DMPage() {
     return m;
   }, [messages]);
 
+  // Persist messages locally on every change (offline-first cache).
+  // Cloud (direct_messages) remains the source of truth; nothing is deleted from it.
+  useEffect(() => {
+    if (!user) return;
+    void cacheSet(cacheKeys.dmMessages(user.id, otherId), messages);
+  }, [messages, user, otherId]);
+
   const markRead = async () => {
     if (!user) return;
     await supabase.rpc("dm_mark_read", { _peer: otherId });
