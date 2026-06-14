@@ -49,6 +49,7 @@ function DMPage() {
   const [muted, setMuted] = useState(false);
   const [blocked, setBlocked] = useState(false); // I blocked them
   const [blockedByOther, setBlockedByOther] = useState(false);
+  const [pendingMedia, setPendingMedia] = useState<{ kind: "image" | "voice"; file: Blob; previewUrl: string; durationMs?: number } | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
