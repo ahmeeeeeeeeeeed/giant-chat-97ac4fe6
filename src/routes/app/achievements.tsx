@@ -24,6 +24,7 @@ const TABS = [
   { key: "overall", label: "الأكثر تفاعلًا", icon: Crown, gradient: "from-amber-500 via-orange-500 to-rose-500", desc: "غرف • منشورات • تفاعل • إنفاق" },
   { key: "posters", label: "نجوم المنشورات", icon: Flame, gradient: "from-fuchsia-500 via-pink-500 to-rose-500", desc: "نشر • تعليقات • إعجابات على منشوراتك" },
   { key: "spenders", label: "أكبر المشترين", icon: Coins, gradient: "from-emerald-500 via-teal-500 to-cyan-500", desc: "النقاط المنفقة في المتجر هذا الأسبوع" },
+  { key: "winners", label: "أبطال الألعاب", icon: Gamepad2, gradient: "from-violet-500 via-purple-500 to-indigo-600", desc: "الأكثر فوزاً في ألعاب التطبيق" },
 ] as const;
 
 function AchievementsPage() {
