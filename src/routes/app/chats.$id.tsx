@@ -249,7 +249,22 @@ function DMPage() {
     e.target.value = "";
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) { toast.error("الحد الأقصى 5 ميجابايت"); return; }
-    await uploadAndSend(file, "image");
+    const previewUrl = URL.createObjectURL(file);
+    setPendingMedia({ kind: "image", file, previewUrl });
+  };
+
+  const confirmPendingMedia = async () => {
+    if (!pendingMedia || !user) return;
+    setUploading(true);
+    await uploadAndSend(pendingMedia.file, pendingMedia.kind, pendingMedia.durationMs);
+    URL.revokeObjectURL(pendingMedia.previewUrl);
+    setPendingMedia(null);
+    setUploading(false);
+  };
+
+  const cancelPendingMedia = () => {
+    if (pendingMedia?.previewUrl) URL.revokeObjectURL(pendingMedia.previewUrl);
+    setPendingMedia(null);
   };
 
   const startRecording = async () => {
