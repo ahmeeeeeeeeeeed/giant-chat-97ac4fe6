@@ -108,7 +108,9 @@ function AppLayout() {
                 </div>
                 <div className="flex items-center gap-1.5 text-[10px] font-semibold tracking-[0.18em] text-emerald-50/90">
                   <span className="inline-block h-1 w-1 rounded-full bg-amber-300 shadow-[0_0_6px_2px_rgba(252,211,77,0.7)]" />
-                  <span>CHAT · مجتمعات</span>
+                  <span className="truncate max-w-[140px] bg-gradient-to-r from-amber-200 via-white to-emerald-100 bg-clip-text text-transparent drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)]">
+                    {pageTitle || "CHAT · مجتمعات"}
+                  </span>
                 </div>
               </div>
             </div>
