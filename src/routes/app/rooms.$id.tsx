@@ -323,6 +323,7 @@ function RoomPage() {
     mediaRecorderRef.current = null;
   };
 
+  const sendAnnouncement = async () => {
     if (!announceText.trim()) return;
     const { error } = await supabase.rpc("room_bot_say", {
       _room: roomId, _text: `📢 ${announceText.trim()}`,
