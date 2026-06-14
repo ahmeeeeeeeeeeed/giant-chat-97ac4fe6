@@ -100,9 +100,10 @@ function AppLayout() {
                 onClick={() => setReportOpen(true)}
                 aria-label="الإبلاغ والشكاوى"
                 title="الإبلاغ والشكاوى"
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-orange-400 to-red-500 text-white shadow-md shadow-orange-900/30 ring-1 ring-white/30 transition active:scale-95 hover:brightness-110"
+                className="relative flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-rose-500 via-red-500 to-orange-500 text-white shadow-lg shadow-red-900/30 ring-1 ring-white/30 transition active:scale-95 hover:brightness-110"
               >
-                <Flag className="h-[18px] w-[18px]" />
+                <ShieldAlert className="h-[18px] w-[18px]" />
+                <span className="absolute -top-0.5 -end-0.5 h-2 w-2 rounded-full bg-red-200 shadow-[0_0_6px_2px_rgba(254,202,202,0.7)]" />
               </button>
               {isAdmin && (
                 <Link to="/app/admin" aria-label={t("admin.title")}
