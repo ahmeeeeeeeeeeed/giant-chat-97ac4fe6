@@ -34,6 +34,7 @@ function RoomPage() {
   const [joinPw, setJoinPw] = useState("");
   const [joining, setJoining] = useState(false);
   const [isBanned, setIsBanned] = useState(false);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
