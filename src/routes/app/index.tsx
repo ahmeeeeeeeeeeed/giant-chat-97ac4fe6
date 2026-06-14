@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
-import { Plus, Users, Hash, Loader2, X, Search, UserPlus, Lock, Crown, Sparkles, AtSign } from "lucide-react";
+import { Plus, Users, Hash, Loader2, X, Search, UserPlus, Lock, Crown, Sparkles, AtSign, LogIn } from "lucide-react";
 import { toast } from "sonner";
 import { cacheGet, cacheSet, cacheKeys } from "@/lib/offline-cache";
 
@@ -32,6 +32,7 @@ function RoomsPage() {
   const [error, setError] = useState<string | null>(null);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+  const [myRoomIds, setMyRoomIds] = useState<Set<string>>(new Set());
 
   // اعتراض زر الرجوع وإظهار نافذة التأكيد
   useEffect(() => {
@@ -96,6 +97,13 @@ function RoomsPage() {
         .from("room_members")
         .select("room_id");
 
+      const { data: myMemberships } = await supabase
+        .from("room_members")
+        .select("room_id")
+        .eq("user_id", user.id);
+
+      setMyRoomIds(new Set((myMemberships ?? []).map((m) => m.room_id)));
+
       const map = new Map<string, number>();
       counts?.forEach((m) => map.set(m.room_id, (map.get(m.room_id) ?? 0) + 1));
 
@@ -128,6 +136,12 @@ function RoomsPage() {
     return () => { supabase.removeChannel(ch); };
   }, [user]);
 
+  useEffect(() => {
+    const handler = () => setShowExitConfirm(true);
+    window.addEventListener("show-exit-confirm", handler);
+    return () => window.removeEventListener("show-exit-confirm", handler);
+  }, []);
+
   // إذا كان يتحقق من المصادقة
   if (authLoading) {
     return (
@@ -152,6 +166,29 @@ function RoomsPage() {
 
   const goToCreateRoom = () => {
     navigate({ to: "/app/create-room" });
+  };
+
+  const handleJoin = async (roomId: string) => {
+    const room = rooms.find((r) => r.id === roomId);
+    if (!room) return;
+    if (room.type === "private") {
+      navigate({ to: "/app/rooms/$id", params: { id: roomId } });
+      return;
+    }
+    const { error } = await supabase.rpc("room_join" as never, { _room: roomId, _password: "" } as never);
+    if (error) {
+      const msg = error.message || "";
+      if (msg.includes("wrong_password")) toast.error("كلمة المرور غير صحيحة");
+      else if (msg.includes("banned")) toast.error("أنت محظور من هذه الغرفة");
+      else if (msg.includes("room_full")) toast.error("الغرفة ممتلئة");
+      else if (msg.includes("room_inactive")) toast.error("الغرفة موقوفة");
+      else if (msg.includes("room_not_found")) toast.error("الغرفة غير موجودة");
+      else toast.error("فشل الانضمام: " + msg);
+      return;
+    }
+    toast.success("تم الانضمام");
+    setMyRoomIds((prev) => new Set([...prev, roomId]));
+    navigate({ to: "/app/rooms/$id", params: { id: roomId } });
   };
 
   if (error) {
@@ -215,7 +252,7 @@ function RoomsPage() {
           <ul className="grid grid-cols-1 gap-3">
             {filtered.map((r, idx) => (
               <li key={r.id}>
-                <RoomCard room={r} accentIndex={idx} isOwner={r.owner_id === user.id} />
+                <RoomCard room={r} accentIndex={idx} isOwner={r.owner_id === user.id} isMember={myRoomIds.has(r.id)} onJoin={() => handleJoin(r.id)} />
               </li>
             ))}
           </ul>
@@ -347,7 +384,7 @@ const CARD_THEMES = [
   { ring: "from-rose-400/60 to-red-500/40", icon: "from-rose-500 to-red-600", glow: "shadow-rose-500/20" },
 ] as const;
 
-function RoomCard({ room, accentIndex, isOwner }: { room: Room; accentIndex: number; isOwner: boolean }) {
+function RoomCard({ room, accentIndex, isOwner, isMember, onJoin }: { room: Room; accentIndex: number; isOwner: boolean; isMember: boolean; onJoin: () => void }) {
   const [inviteOpen, setInviteOpen] = useState(false);
   const theme = CARD_THEMES[accentIndex % CARD_THEMES.length];
   const isPrivate = room.type === "private";
@@ -401,14 +438,24 @@ function RoomCard({ room, accentIndex, isOwner }: { room: Room; accentIndex: num
             </div>
           </div>
 
-          <button
-            onClick={openInvite}
-            aria-label="دعوة الأصدقاء"
-            title="دعوة الأصدقاء"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-sm transition hover:brightness-110 active:scale-90"
-          >
-            <UserPlus className="h-4 w-4" />
-          </button>
+          {isMember ? (
+            <button
+              onClick={openInvite}
+              aria-label="دعوة الأصدقاء"
+              title="دعوة الأصدقاء"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-sm transition hover:brightness-110 active:scale-90"
+            >
+              <UserPlus className="h-4 w-4" />
+            </button>
+          ) : (
+            <button
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onJoin(); }}
+              className="flex shrink-0 items-center gap-1 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 px-3 py-2 text-xs font-bold text-white shadow-md transition hover:from-emerald-600 hover:to-emerald-700 active:scale-95"
+            >
+              <LogIn className="h-3.5 w-3.5" />
+              انضمام
+            </button>
+          )}
         </Link>
       </div>
 

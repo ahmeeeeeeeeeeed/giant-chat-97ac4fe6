@@ -1,5 +1,5 @@
 import { createFileRoute, Link, Outlet, useNavigate, useLocation, useRouter } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/lib/auth";
 import { useIsAdmin, useUnreadDMCount } from "@/lib/use-admin";
@@ -43,6 +43,32 @@ function AppLayout() {
   useEffect(() => {
     if (session?.user?.id) scheduleDataPrewarm(session.user.id);
   }, [session?.user?.id]);
+
+  useEffect(() => {
+    let removeListener: (() => void) | undefined;
+    const setup = async () => {
+      try {
+        const CapApp = await import("@capacitor/app");
+        const listener = await CapApp.App.addListener("backButton", ({ canGoBack }) => {
+          if (!canGoBack) {
+            CapApp.App.exitApp();
+            return;
+          }
+          const currentPath = window.location.pathname;
+          if (currentPath === "/app" || currentPath === "/app/") {
+            window.dispatchEvent(new CustomEvent("show-exit-confirm"));
+          } else {
+            router.history.back();
+          }
+        });
+        removeListener = () => listener.remove();
+      } catch {
+        // Not running in Capacitor native context
+      }
+    };
+    setup();
+    return () => { if (removeListener) removeListener(); };
+  }, [router]);
 
   if (loading || !session) {
     return (
