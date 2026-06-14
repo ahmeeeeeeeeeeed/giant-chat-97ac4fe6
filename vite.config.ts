@@ -30,7 +30,12 @@ export default defineConfig({
   },
   // Node preset for Capacitor builds so prerender can boot the SSR server.
   // Production web hosting still uses the default Cloudflare preset.
-  nitro: isCapacitorBuild ? { preset: "node-server" } : undefined,
+  nitro: isCapacitorBuild
+    ? {
+        preset: "node-server",
+        output: { dir: "dist", serverDir: "dist/server", publicDir: "dist/client" },
+      }
+    : undefined,
   vite: {
     define: {
       __APP_VERSION__: JSON.stringify(APP_VERSION),
