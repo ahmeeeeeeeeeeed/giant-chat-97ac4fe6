@@ -1210,6 +1210,7 @@ export type Database = {
         Args: { _kind?: string; _meta?: Json; _room: string; _text: string }
         Returns: undefined
       }
+      room_invite_friends: { Args: { _room: string }; Returns: number }
       room_join: {
         Args: { _password?: string; _room: string }
         Returns: undefined
