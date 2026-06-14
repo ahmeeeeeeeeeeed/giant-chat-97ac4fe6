@@ -8,6 +8,7 @@ import { useAnnouncementsListener } from "@/lib/use-announcements";
 import { Home, MessageSquare, User, Settings, Users as UsersIcon, Gamepad2, Bell, Shield, ShieldAlert, Trophy, ArrowRight, Newspaper, Target } from "lucide-react";
 import { OnlineStatusBanner } from "@/components/OnlineStatusBanner";
 import { ReportModal } from "@/components/ReportModal";
+import { UpdateGate } from "@/components/UpdateGate";
 import { scheduleDataPrewarm } from "@/lib/data-prewarm";
 import { recordDailyAction } from "@/lib/daily-tasks";
 
@@ -115,6 +116,7 @@ function AppLayout() {
     <div className={`flex min-h-screen flex-col ${hideChrome ? "" : "pb-[calc(72px+env(safe-area-inset-bottom))]"}`}>
 
       <OnlineStatusBanner />
+      <UpdateGate />
       <ReportModal open={reportOpen} onClose={() => setReportOpen(false)} />
       {!hideChrome && (
         <header className="sticky top-0 z-50 pt-[env(safe-area-inset-top)] bg-gradient-to-b from-emerald-700 via-emerald-600 to-emerald-600/95 text-white shadow-[0_8px_24px_-12px_rgba(6,78,59,0.55)]">
