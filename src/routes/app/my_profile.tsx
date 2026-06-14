@@ -248,6 +248,8 @@ function ProfilePage() {
           </div>
         </div>
 
+        {user && <WeeklyAchievementsBadge userId={user.id} />}
+
         {/* Bio + identity form */}
         <form onSubmit={save} className="mt-6 flex flex-col gap-4">
           <label className="flex flex-col gap-2">
