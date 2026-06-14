@@ -648,6 +648,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          auth_email: string | null
           avatar_url: string | null
           ban_reason: string | null
           bio: string | null
@@ -664,6 +665,7 @@ export type Database = {
           id: string
           is_banned: boolean
           is_bot: boolean
+          is_premium: boolean
           last_seen_at: string
           points: number
           profile_views: number
@@ -672,6 +674,7 @@ export type Database = {
           username: string
         }
         Insert: {
+          auth_email?: string | null
           avatar_url?: string | null
           ban_reason?: string | null
           bio?: string | null
@@ -688,6 +691,7 @@ export type Database = {
           id: string
           is_banned?: boolean
           is_bot?: boolean
+          is_premium?: boolean
           last_seen_at?: string
           points?: number
           profile_views?: number
@@ -696,6 +700,7 @@ export type Database = {
           username: string
         }
         Update: {
+          auth_email?: string | null
           avatar_url?: string | null
           ban_reason?: string | null
           bio?: string | null
@@ -712,6 +717,7 @@ export type Database = {
           id?: string
           is_banned?: boolean
           is_bot?: boolean
+          is_premium?: boolean
           last_seen_at?: string
           points?: number
           profile_views?: number
@@ -1332,6 +1338,11 @@ export type Database = {
         Args: { _room: string; _user: string }
         Returns: undefined
       }
+      lookup_auth_email: { Args: { _username: string }; Returns: string }
+      mark_profile_premium: {
+        Args: { _email: string; _target: string; _username: string }
+        Returns: undefined
+      }
       music_advance_if_ended: { Args: { _room: string }; Returns: undefined }
       music_broadcast_publish:
         | { Args: { _track: Json }; Returns: string }
@@ -1357,6 +1368,7 @@ export type Database = {
       }
       music_skip: { Args: { _room: string }; Returns: undefined }
       music_stop: { Args: { _room: string }; Returns: undefined }
+      premium_charge_points: { Args: { _cost?: number }; Returns: undefined }
       record_daily_action: {
         Args: { _amount?: number; _kind: string }
         Returns: undefined

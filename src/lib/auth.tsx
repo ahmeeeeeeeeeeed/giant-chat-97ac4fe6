@@ -59,10 +59,14 @@ export async function signUpWithUsername(username: string, password: string) {
 }
 
 export async function signInWithUsername(username: string, password: string) {
-  const { error } = await supabase.auth.signInWithPassword({
-    email: usernameToEmail(username),
-    password,
-  });
+  const clean = username.trim();
+  // Prefer the real auth email stored in profiles (supports Arabic/decorated premium names).
+  let email = usernameToEmail(clean);
+  try {
+    const { data } = await supabase.rpc("lookup_auth_email", { _username: clean } as never);
+    if (typeof data === "string" && data.includes("@")) email = data;
+  } catch { /* fall back to synthetic email */ }
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) return { error: "اسم المستخدم أو كلمة المرور غير صحيحة" };
   return { error: null };
 }

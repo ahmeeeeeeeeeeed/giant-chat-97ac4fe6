@@ -2,8 +2,9 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useIsAdmin } from "@/lib/use-admin";
 import { supabase } from "@/integrations/supabase/client";
-import { Shield, Coins, Megaphone, Hash, Loader2, ChevronLeft, Newspaper, Users as UsersIcon, Package } from "lucide-react";
+import { Shield, Coins, Megaphone, Hash, Loader2, ChevronLeft, Newspaper, Users as UsersIcon, Package, Crown } from "lucide-react";
 import { toast } from "sonner";
+import { PremiumCreateModal } from "@/components/PremiumCreateModal";
 
 export const Route = createFileRoute("/app/admin/")({
   component: AdminHome,
@@ -16,6 +17,7 @@ function AdminHome() {
   const [amount, setAmount] = useState<number>(100);
   const [broadcast, setBroadcast] = useState("");
   const [busy, setBusy] = useState(false);
+  const [showPremium, setShowPremium] = useState(false);
 
   useEffect(() => {
     if (loaded && !isAdmin) {
@@ -126,6 +128,21 @@ function AdminHome() {
           <ChevronLeft className="h-5 w-5 text-muted-foreground" />
         </Link>
 
+        <button onClick={() => setShowPremium(true)}
+          className="flex items-center justify-between rounded-2xl border border-border bg-card p-4 hover:bg-secondary/40 transition text-start">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/15 text-amber-600">
+              <Crown className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="font-bold">إنشاء حساب مميز</div>
+              <div className="text-xs text-muted-foreground">إنشاء مباشر بدون خصم نقاط</div>
+            </div>
+          </div>
+          <ChevronLeft className="h-5 w-5 text-muted-foreground" />
+        </button>
+
+
         <section className="rounded-2xl border border-border bg-card p-4">
           <div className="mb-3 flex items-center gap-2">
             <Coins className="h-5 w-5 text-amber-500" />
@@ -159,6 +176,8 @@ function AdminHome() {
           </button>
         </section>
       </div>
+
+      <PremiumCreateModal open={showPremium} onClose={() => setShowPremium(false)} mode="admin" />
     </main>
   );
 }

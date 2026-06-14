@@ -8,12 +8,13 @@ import {
   Moon, Sun, LogOut, ChevronLeft, Globe, Check,
   ShoppingBag, Flag, User, Bell, Users as UsersIcon,
   Trophy, MessageSquare, Shield, Info, HelpCircle,
-  Star, Share2, Lock, Newspaper, Gamepad2,
+  Star, Share2, Lock, Newspaper, Gamepad2, Crown,
 } from "lucide-react";
 import { SUPPORTED_LANGUAGES } from "@/lib/i18n";
 import { findAdminId } from "@/lib/find-admin";
 import { APP_VERSION } from "@/lib/version";
 import { toast } from "sonner";
+import { PremiumCreateModal } from "@/components/PremiumCreateModal";
 
 export const Route = createFileRoute("/app/settings")({
   component: SettingsPage,
@@ -28,6 +29,7 @@ function SettingsPage() {
   const [showLang, setShowLang] = useState(false);
   const [showLogout, setShowLogout] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+  const [showPremium, setShowPremium] = useState(false);
 
   const doLogout = async () => {
     setSigningOut(true);
@@ -76,6 +78,16 @@ function SettingsPage() {
           <Row to="/app/my_profile" icon={User} label="ملفي الشخصي" />
           <Row to="/app/account" icon={Lock} label="إدارة الحساب وكلمة السر" />
           <Row to="/app/notifications" icon={Bell} label={t("notif.title")} />
+          <button onClick={() => setShowPremium(true)} className="flex w-full items-center justify-between p-4 active:bg-secondary/60 text-start">
+            <div className="flex items-center gap-3">
+              <IconBox color="bg-amber-500"><Crown className="h-4 w-4" /></IconBox>
+              <div className="flex flex-col items-start">
+                <span className="font-medium">إنشاء حساب مميز</span>
+                <span className="text-[11px] text-muted-foreground">50,000 نقطة • اسم عربي أو مزخرف</span>
+              </div>
+            </div>
+            <ChevronLeft className="h-4 w-4 text-muted-foreground rtl:rotate-180" />
+          </button>
         </Section>
 
         {/* Social */}
@@ -214,6 +226,8 @@ function SettingsPage() {
           </div>
         </div>
       )}
+
+      <PremiumCreateModal open={showPremium} onClose={() => setShowPremium(false)} mode="points" />
     </main>
   );
 }
