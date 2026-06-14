@@ -176,6 +176,8 @@ function AdminHome() {
           </button>
         </section>
       </div>
+
+      <PremiumCreateModal open={showPremium} onClose={() => setShowPremium(false)} mode="admin" />
     </main>
   );
 }
