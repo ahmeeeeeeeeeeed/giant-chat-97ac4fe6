@@ -15,6 +15,7 @@ import { SharePostModal, SharedPostCard } from "@/components/SharePostModal";
 import { FlyingEffect } from "@/components/FlyingEffect";
 import { getEquipped } from "@/lib/equipped";
 import { markRoomSeen } from "@/lib/notify";
+import { ImageLightbox } from "@/components/ImageLightbox";
 
 type Rank = "owner" | "admin" | "moderator" | "member";
 
@@ -28,6 +29,7 @@ function RoomPage() {
   const navigate = useNavigate();
 
   const [room, setRoom] = useState<any>(null);
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [messages, setMessages] = useState<any[]>([]);
   const [userMap, setUserMap] = useState<Record<string, { username: string; avatar_url: string | null }>>({});
   const [text, setText] = useState("");
@@ -586,9 +588,9 @@ function RoomPage() {
                     }`}
                   >
                     {msg.message_type === "image" && msg.media_url ? (
-                      <a href={msg.media_url} target="_blank" rel="noreferrer">
+                      <button type="button" onClick={() => setLightboxUrl(msg.media_url)} className="block">
                         <img src={msg.media_url} alt="" className="max-h-72 w-auto rounded-xl object-cover" />
-                      </a>
+                      </button>
                     ) : msg.message_type === "voice" && msg.media_url ? (
                       <audio src={msg.media_url} controls preload="metadata" className="h-10 max-w-[260px]" />
                     ) : (
