@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/auth";
 import { useIsAdmin, useUnreadDMCount } from "@/lib/use-admin";
 import { useGlobalNotificationListener, useUnreadRoomCount } from "@/lib/use-global-notifications";
 import { Home, MessageSquare, User, Settings, Users as UsersIcon, Gamepad2, Bell, Shield, ShieldAlert, Trophy, ArrowRight, Newspaper } from "lucide-react";
+import giantLogo from "@/assets/giant-logo.png.asset.json";
 import { OnlineStatusBanner } from "@/components/OnlineStatusBanner";
 import { ReportModal } from "@/components/ReportModal";
 import { scheduleDataPrewarm } from "@/lib/data-prewarm";
