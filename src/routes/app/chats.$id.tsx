@@ -125,9 +125,10 @@ function DMPage() {
     })();
   }, [otherId, user]);
 
-  // realtime: messages
+  // realtime: messages — only when online (avoids browser network errors offline)
   useEffect(() => {
     if (!user) return;
+    if (!getOnline()) return;
     const ch = supabase
       .channel(`dm-msg:${[user.id, otherId].sort().join(":")}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "direct_messages" }, (payload) => {
