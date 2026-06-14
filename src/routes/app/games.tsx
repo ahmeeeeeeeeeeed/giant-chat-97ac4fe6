@@ -11,7 +11,7 @@ export const Route = createFileRoute("/app/games")({
 });
 
 type Round = {
-  id: string; status: "open" | "finished"; secret: number;
+  id: string; status: "open" | "finished";
   started_at: string; deadline_at: string; ended_at: string | null;
   winner_id: string | null; winner_name: string | null; winner_value: number | null;
 };
@@ -67,7 +67,7 @@ function GamesPage() {
   const loadAll = async () => {
     const { data: rounds } = await supabase
       .from("game_rounds")
-      .select("*")
+      .select("id,status,started_at,deadline_at,ended_at,winner_id,winner_name,winner_value")
       .order("started_at", { ascending: false })
       .limit(1);
     const r = (rounds?.[0] as Round | undefined) ?? null;
