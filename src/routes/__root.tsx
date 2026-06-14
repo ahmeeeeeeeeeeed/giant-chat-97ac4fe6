@@ -19,6 +19,7 @@ import { schedulePrewarm } from "@/lib/prewarm";
 import { initCapacitorChrome } from "@/lib/capacitor-init";
 
 import appCss from "../styles.css?url";
+import welcomeBg from "@/assets/welcome-bg.mp4.asset.json";
 
 function NotFoundComponent() {
   const { t } = useTranslation();
