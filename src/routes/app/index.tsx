@@ -29,6 +29,38 @@ function RoomsPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [query, setQuery] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
+
+  // اعتراض زر الرجوع وإظهار نافذة التأكيد
+  useEffect(() => {
+    window.history.pushState({ __exitGuard: true }, "");
+    const onPop = (e: PopStateEvent) => {
+      setShowExitConfirm(true);
+      window.history.pushState({ __exitGuard: true }, "");
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
+  const doExit = () => {
+    setShowExitConfirm(false);
+    // محاولة إغلاق التطبيق/التبويب
+    window.close();
+    // كحل احتياطي: العودة لأول الصفحة
+    setTimeout(() => { try { window.history.back(); } catch {} }, 50);
+  };
+
+  const doSignOut = async () => {
+    setSigningOut(true);
+    try {
+      await supabase.auth.signOut();
+      setShowExitConfirm(false);
+      navigate({ to: "/login" });
+    } finally {
+      setSigningOut(false);
+    }
+  };
 
   // التحقق من تسجيل الدخول
   useEffect(() => {
