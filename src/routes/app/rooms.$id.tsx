@@ -257,11 +257,11 @@ function RoomPage() {
               );
             }
             return (
-              <div key={msg.id} className={`flex items-end gap-2 ${isOwn ? "justify-end" : "justify-start"}`}>
+              <div key={msg.id} className={`flex items-start gap-2 ${isOwn ? "justify-end" : "justify-start"}`}>
                 {!isOwn && msg.user_id && (
                   <button
                     onClick={() => navigate({ to: "/app/profile/$id", params: { id: msg.user_id } })}
-                    className="shrink-0 transition active:scale-95"
+                    className="mt-0.5 shrink-0 transition active:scale-95"
                     aria-label="عرض البروفايل"
                   >
                     {prof?.avatar_url ? (
@@ -277,7 +277,7 @@ function RoomPage() {
                   {msg.user_id && (
                     <button
                       onClick={() => navigate({ to: "/app/profile/$id", params: { id: msg.user_id } })}
-                      className="mb-1 px-1 text-xs font-bold text-emerald-600 hover:underline"
+                      className="flex items-center gap-1.5 px-1 text-xs font-bold text-emerald-600 hover:underline"
                     >
                       {(isOwn ? userMap[user!.id]?.username : prof?.username) ?? "مستخدم"}
                     </button>
@@ -296,7 +296,7 @@ function RoomPage() {
                   </p>
                 </div>
                 {isOwn && (
-                  <div className="shrink-0">
+                  <div className="mt-0.5 shrink-0">
                     {prof?.avatar_url || userMap[user!.id]?.avatar_url ? (
                       <img src={prof?.avatar_url ?? userMap[user!.id]?.avatar_url ?? ""} alt="" className="h-9 w-9 rounded-full object-cover ring-2 ring-emerald-500/30" />
                     ) : (
