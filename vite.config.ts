@@ -28,14 +28,10 @@ export default defineConfig({
       ? { enabled: true, prerender: { outputPath: "/index.html", crawlLinks: false } }
       : undefined,
   },
-  // Node preset for Capacitor builds so prerender can boot the SSR server.
-  // Production web hosting still uses the default Cloudflare preset.
-  nitro: isCapacitorBuild
-    ? {
-        preset: "node-server",
-        output: { dir: "dist", serverDir: "dist/server", publicDir: "dist/client" },
-      }
-    : undefined,
+  // For Capacitor builds, disable the Lovable Nitro/Cloudflare wrapper so
+  // TanStack Start emits the standard SSR `dist/server/server.js` that its
+  // prerender plugin expects. Production web hosting keeps default Nitro.
+  nitro: isCapacitorBuild ? false : undefined,
   vite: {
     define: {
       __APP_VERSION__: JSON.stringify(APP_VERSION),
