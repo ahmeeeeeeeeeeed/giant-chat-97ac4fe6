@@ -95,49 +95,49 @@ function ChatsPage() {
 
   return (
     <main className="flex flex-1 flex-col">
-      <header className="sticky top-0 z-10 border-b border-border bg-background/90 px-5 py-4 backdrop-blur">
-        <h1 className="text-2xl font-extrabold">{t("chats.title")}</h1>
-        <p className="text-xs text-muted-foreground">{t("chats.subtitle")}</p>
+      <header className="sticky top-0 z-10 border-b border-emerald-500/10 bg-slate-950/70 px-5 py-4 backdrop-blur-xl">
+        <h1 className="text-2xl font-extrabold text-white">{t("chats.title")}</h1>
+        <p className="text-xs text-emerald-300/60">{t("chats.subtitle")}</p>
       </header>
 
-      <div className="px-4 pt-3">
-        <div className="relative">
-          <Search className="pointer-events-none absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+      <div className="px-4 pt-4">
+        <div className="relative group">
+          <Search className="pointer-events-none absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 text-emerald-500/50 group-focus-within:text-emerald-400 transition-colors" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="ابحث عن مستخدم لبدء محادثة…"
-            className="h-11 w-full rounded-2xl border border-input bg-card pr-10 pl-10 text-sm outline-none focus:border-primary"
+            className="h-12 w-full rounded-2xl border border-emerald-500/15 bg-emerald-950/20 pr-10 pl-10 text-sm text-foreground placeholder:text-emerald-700 outline-none transition focus:border-emerald-500/50 focus:bg-emerald-950/30 focus:ring-2 focus:ring-emerald-500/20"
           />
           {query && (
-            <button onClick={() => setQuery("")} className="absolute top-1/2 left-3 -translate-y-1/2 text-muted-foreground">
+            <button onClick={() => setQuery("")} className="absolute top-1/2 left-3 -translate-y-1/2 text-emerald-400/70 hover:text-emerald-300">
               <X className="h-4 w-4" />
             </button>
           )}
         </div>
         {query.trim() && (
-          <div className="mt-2 overflow-hidden rounded-2xl border border-border bg-card">
+          <div className="mt-2 overflow-hidden rounded-2xl border border-emerald-500/15 bg-slate-950/60 backdrop-blur-xl">
             {searching ? (
-              <div className="flex justify-center py-4"><Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /></div>
+              <div className="flex justify-center py-4"><Loader2 className="h-4 w-4 animate-spin text-emerald-400" /></div>
             ) : results.length === 0 ? (
               <p className="py-4 text-center text-xs text-muted-foreground">لا نتائج</p>
             ) : (
-              <ul className="divide-y divide-border">
+              <ul className="divide-y divide-emerald-500/10">
                 {results.map(p => (
                   <li key={p.id}>
                     <button
                       onClick={() => navigate({ to: "/app/chats/$id", params: { id: p.id } })}
-                      className="flex w-full items-center gap-3 p-3 text-start active:bg-secondary"
+                      className="flex w-full items-center gap-3 p-3 text-start transition active:bg-emerald-900/30 hover:bg-emerald-900/20"
                     >
                       {p.avatar_url ? (
-                        <img src={p.avatar_url} alt="" className="h-10 w-10 rounded-full object-cover" />
+                        <img src={p.avatar_url} alt="" className="h-10 w-10 rounded-xl object-cover ring-1 ring-emerald-500/30" />
                       ) : (
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary font-bold">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/15 font-bold text-emerald-300 ring-1 ring-emerald-500/30">
                           {p.username.charAt(0).toUpperCase()}
                         </div>
                       )}
-                      <div className="flex-1 truncate font-semibold">{p.username}</div>
-                      <span className="rounded-full bg-primary px-3 py-1 text-xs font-bold text-primary-foreground">دردشة</span>
+                      <div className="flex-1 truncate font-semibold text-foreground">{p.username}</div>
+                      <span className="rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 px-3 py-1 text-xs font-bold text-white shadow-[0_4px_12px_-2px_rgba(16,185,129,0.5)]">دردشة</span>
                     </button>
                   </li>
                 ))}
@@ -149,40 +149,50 @@ function ChatsPage() {
 
       <div className="flex-1 px-4 py-4">
         {loading ? (
-          <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+          <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-emerald-400" /></div>
         ) : convos.length === 0 ? (
           <div className="mt-12 flex flex-col items-center text-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-secondary">
-              <MessageSquare className="h-7 w-7 text-muted-foreground" />
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-500/10 ring-1 ring-emerald-500/20">
+              <MessageSquare className="h-7 w-7 text-emerald-400" />
             </div>
             <p className="mt-3 text-sm text-muted-foreground">{t("chats.empty")}</p>
             <p className="mt-1 text-xs text-muted-foreground">ابحث عن مستخدم في الأعلى لبدء محادثة جديدة</p>
           </div>
         ) : (
-          <ul className="flex flex-col gap-2">
-            {convos.map(c => (
-              <li key={c.otherId}>
-                <Link to="/app/chats/$id" params={{ id: c.otherId }}
-                  className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3 transition active:scale-[0.99]">
-                  {c.avatar_url ? (
-                    <img src={c.avatar_url} alt="" className="h-12 w-12 rounded-full object-cover" />
-                  ) : (
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary font-bold">
-                      {c.username.charAt(0).toUpperCase()}
+          <ul className="flex flex-col gap-2.5">
+            {convos.map(c => {
+              const unreadActive = c.unread > 0;
+              return (
+                <li key={c.otherId}>
+                  <Link to="/app/chats/$id" params={{ id: c.otherId }}
+                    className={`relative flex items-center gap-3 overflow-hidden rounded-2xl border p-3 transition active:scale-[0.99] ${
+                      unreadActive
+                        ? "border-emerald-400/30 bg-emerald-950/40 shadow-[0_6px_20px_-12px_rgba(16,185,129,0.5)]"
+                        : "border-emerald-500/10 bg-gradient-to-l from-emerald-950/15 to-transparent hover:bg-emerald-900/15"
+                    }`}>
+                    {unreadActive && (
+                      <span className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-emerald-400 to-emerald-600" />
+                    )}
+                    {c.avatar_url ? (
+                      <img src={c.avatar_url} alt="" className="h-12 w-12 rounded-xl object-cover ring-1 ring-emerald-500/30" />
+                    ) : (
+                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/15 font-bold text-emerald-300 ring-1 ring-emerald-500/30 shadow-inner">
+                        {c.username.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate font-bold text-foreground">{c.username}</div>
+                      <div className={`truncate text-sm ${unreadActive ? "text-emerald-200/80" : "text-muted-foreground"}`}>{c.last}</div>
                     </div>
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate font-semibold">{c.username}</div>
-                    <div className="truncate text-sm text-muted-foreground">{c.last}</div>
-                  </div>
-                  {c.unread > 0 && (
-                    <span className="flex h-6 min-w-[24px] items-center justify-center rounded-full bg-destructive px-2 text-[11px] font-bold text-destructive-foreground">
-                      {c.unread > 99 ? "99+" : c.unread}
-                    </span>
-                  )}
-                </Link>
-              </li>
-            ))}
+                    {unreadActive && (
+                      <span className="flex h-6 min-w-[24px] items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 px-2 text-[11px] font-bold text-white shadow-[0_4px_10px_-2px_rgba(16,185,129,0.6)]">
+                        {c.unread > 99 ? "99+" : c.unread}
+                      </span>
+                    )}
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>
