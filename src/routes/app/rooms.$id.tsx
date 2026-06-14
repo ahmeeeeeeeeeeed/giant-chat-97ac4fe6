@@ -94,11 +94,24 @@ function RoomPage() {
     if (count !== null) setMemberCount(count);
   };
 
+  // Plain system messages (kick/ban/mute/role…) are ephemeral toasts —
+  // not announcements, broadcasts, or shared posts.
+  const isPlainSystem = (m: any) => {
+    if (!(m?.message_type === "system" || !m?.user_id)) return false;
+    const meta = m?.meta as any;
+    if (meta?.kind === "music_broadcast" || meta?.kind === "user_share") return false;
+    if ((m?.content ?? "").startsWith("📢")) return false;
+    return true;
+  };
+
   const loadMessages = async () => {
     const { data } = await supabase.from("room_messages").select("*").eq("room_id", roomId).order("created_at", { ascending: true }).limit(200);
     if (data) {
-      setMessages(data);
-      const ids = data.map((m: any) => m.user_id).filter(Boolean);
+      // Drop historical plain system messages from the visible list — they
+      // were already shown as floating notices when they happened.
+      const visible = data.filter((m: any) => !isPlainSystem(m));
+      setMessages(visible);
+      const ids = visible.map((m: any) => m.user_id).filter(Boolean);
       ensureProfiles(ids);
       setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 150);
     }
@@ -118,6 +131,13 @@ function RoomPage() {
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "room_messages", filter: `room_id=eq.${roomId}` },
         (p) => {
           const m: any = p.new;
+          // Plain system messages float as a transient notice instead of
+          // joining the chat history.
+          if (isPlainSystem(m)) {
+            toast(m.content ?? "", { duration: 4000 });
+            markRoomSeen(roomId);
+            return;
+          }
           setMessages((prev) => [...prev, m]);
           if (m.user_id) ensureProfiles([m.user_id]);
           markRoomSeen(roomId);
