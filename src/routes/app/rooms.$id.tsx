@@ -296,9 +296,22 @@ function RoomPage() {
     if (!file) return;
     if (!file.type.startsWith("image/")) { toast.error("الملف ليس صورة"); return; }
     if (file.size > 8 * 1024 * 1024) { toast.error("حجم الصورة كبير (حد أقصى 8MB)"); return; }
+    const previewUrl = URL.createObjectURL(file);
+    setPendingMedia({ kind: "image", file, previewUrl });
+  };
+
+  const confirmPendingMedia = async () => {
+    if (!pendingMedia || !user) return;
     setUploading(true);
-    await uploadAndSend(file, "image");
+    await uploadAndSend(pendingMedia.file, pendingMedia.kind, pendingMedia.durationMs);
+    URL.revokeObjectURL(pendingMedia.previewUrl);
+    setPendingMedia(null);
     setUploading(false);
+  };
+
+  const cancelPendingMedia = () => {
+    if (pendingMedia?.previewUrl) URL.revokeObjectURL(pendingMedia.previewUrl);
+    setPendingMedia(null);
   };
 
   const startRecording = async () => {
