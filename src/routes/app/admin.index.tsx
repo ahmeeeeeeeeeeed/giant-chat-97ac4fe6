@@ -177,9 +177,118 @@ function AdminHome() {
             {busy ? "..." : "إرسال الإعلان"}
           </button>
         </section>
+
+        <DeletionRequestsSection />
       </div>
 
       <PremiumCreateModal open={showPremium} onClose={() => setShowPremium(false)} mode="admin" />
     </main>
   );
 }
+
+type DeletionRequest = {
+  id: string;
+  user_id: string;
+  username_snapshot: string | null;
+  email_snapshot: string | null;
+  reason: string | null;
+  created_at: string;
+};
+
+function DeletionRequestsSection() {
+  const [items, setItems] = useState<DeletionRequest[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [actingId, setActingId] = useState<string | null>(null);
+  const approveFn = useServerFn(approveAccountDeletion);
+  const rejectFn = useServerFn(rejectAccountDeletion);
+
+  const load = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("account_deletion_requests")
+      .select("id, user_id, username_snapshot, email_snapshot, reason, created_at")
+      .eq("status", "pending")
+      .order("created_at", { ascending: false });
+    setLoading(false);
+    if (error) { toast.error(error.message); return; }
+    setItems((data ?? []) as DeletionRequest[]);
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const approve = async (id: string) => {
+    if (!confirm("سيتم حذف الحساب نهائيًا. متابعة؟")) return;
+    setActingId(id);
+    try {
+      await approveFn({ data: { requestId: id } });
+      toast.success("تم حذف الحساب");
+      setItems((xs) => xs.filter((x) => x.id !== id));
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "فشل التنفيذ");
+    } finally {
+      setActingId(null);
+    }
+  };
+
+  const reject = async (id: string) => {
+    setActingId(id);
+    try {
+      await rejectFn({ data: { requestId: id } });
+      toast.success("تم رفض الطلب");
+      setItems((xs) => xs.filter((x) => x.id !== id));
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "فشل التنفيذ");
+    } finally {
+      setActingId(null);
+    }
+  };
+
+  return (
+    <section className="rounded-2xl border border-border bg-card p-4">
+      <div className="mb-3 flex items-center gap-2">
+        <Trash2 className="h-5 w-5 text-red-600" />
+        <h2 className="font-bold">طلبات حذف الحساب</h2>
+        <span className="ms-auto text-xs text-muted-foreground">{items.length}</span>
+      </div>
+      {loading ? (
+        <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+      ) : items.length === 0 ? (
+        <div className="py-4 text-center text-sm text-muted-foreground">لا توجد طلبات حالياً</div>
+      ) : (
+        <div className="space-y-2">
+          {items.map((r) => (
+            <div key={r.id} className="rounded-xl border border-border bg-background p-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="font-semibold truncate">@{r.username_snapshot || "—"}</div>
+                  <div className="text-xs text-muted-foreground truncate">{r.email_snapshot}</div>
+                  {r.reason && <div className="mt-1 text-xs">{r.reason}</div>}
+                  <div className="mt-1 text-[10px] text-muted-foreground">
+                    {new Date(r.created_at).toLocaleString("ar")}
+                  </div>
+                </div>
+                <div className="flex shrink-0 gap-1">
+                  <button
+                    onClick={() => approve(r.id)}
+                    disabled={actingId === r.id}
+                    className="flex h-9 items-center gap-1 rounded-lg bg-red-600 px-3 text-xs font-bold text-white disabled:opacity-60"
+                  >
+                    <Check className="h-3.5 w-3.5" /> موافقة
+                  </button>
+                  <button
+                    onClick={() => reject(r.id)}
+                    disabled={actingId === r.id}
+                    className="flex h-9 items-center gap-1 rounded-lg border border-border bg-card px-3 text-xs font-bold disabled:opacity-60"
+                  >
+                    <X className="h-3.5 w-3.5" /> رفض
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
