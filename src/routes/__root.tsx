@@ -20,7 +20,7 @@ import { schedulePrewarm } from "@/lib/prewarm";
 import { initCapacitorChrome } from "@/lib/capacitor-init";
 
 import appCss from "../styles.css?url";
-import welcomeBg from "@/assets/welcome-bg.mp4.asset.json";
+import welcomeBg from "@/assets/welcome-bg.png.asset.json";
 
 function NotFoundComponent() {
   const { t } = useTranslation();
@@ -77,8 +77,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     links: [
       { rel: "stylesheet", href: appCss },
-      // Preload the welcome video so it's ready before the route mounts
-      { rel: "preload", as: "video", href: welcomeBg.url, type: "video/mp4" },
+      // Preload the welcome background image so it's ready before the route mounts
+      { rel: "preload", as: "image", href: welcomeBg.url, type: "image/png" },
       { rel: "manifest", href: "/manifest.webmanifest" },
       { rel: "icon", type: "image/png", sizes: "192x192", href: "/icons/icon-192.png" },
       { rel: "icon", type: "image/png", sizes: "512x512", href: "/icons/icon-512.png" },

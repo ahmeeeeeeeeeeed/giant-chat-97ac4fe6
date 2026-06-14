@@ -1,8 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { LogIn, MessageCircle, Users, Music, Sparkles } from "lucide-react";
-import welcomeBg from "@/assets/welcome-bg.mp4.asset.json";
+import welcomeBg from "@/assets/welcome-bg.png.asset.json";
 import PermissionsGate, { hasCompletedPermissionsGate } from "@/components/PermissionsGate";
 
 
@@ -12,7 +12,6 @@ export const Route = createFileRoute("/")({
 
 function Welcome() {
   const navigate = useNavigate();
-  const videoRef = useRef<HTMLVideoElement>(null);
   const [needsPerms, setNeedsPerms] = useState(false);
   useEffect(() => { setNeedsPerms(!hasCompletedPermissionsGate()); }, []);
 
@@ -22,38 +21,19 @@ function Welcome() {
   };
 
   useEffect(() => {
-    // Check session in background; don't block render so the video can start instantly
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) navigate({ to: "/app/friends" });
     });
   }, [navigate]);
 
-  useEffect(() => {
-    const v = videoRef.current;
-    if (!v) return;
-    const tryPlay = () => { v.play().catch(() => {}); };
-    tryPlay();
-    v.addEventListener("loadeddata", tryPlay, { once: true });
-    v.addEventListener("canplay", tryPlay, { once: true });
-    return () => {
-      v.removeEventListener("loadeddata", tryPlay);
-      v.removeEventListener("canplay", tryPlay);
-    };
-  }, []);
-
   return (
     <main className="relative flex min-h-dvh flex-col overflow-hidden bg-background px-6 py-8 text-foreground">
       {needsPerms && <PermissionsGate onDone={() => setNeedsPerms(false)} />}
-      {/* Video background */}
-      <video
-        ref={videoRef}
+      {/* Image background */}
+      <img
         src={welcomeBg.url}
-        autoPlay
-        muted
-        loop
-        playsInline
-        preload="auto"
-        disableRemotePlayback
+        alt=""
+        loading="eager"
         className="pointer-events-none absolute inset-0 z-0 h-full w-full object-cover opacity-60"
       />
 
