@@ -132,7 +132,7 @@ function Welcome() {
       <div className="relative z-10 mx-auto w-full max-w-sm space-y-3" style={{ animation: "rise 0.8s ease-out 0.3s both" }}>
         <button
           type="button"
-          onClick={() => navigate({ to: "/login" })}
+          onClick={() => guardedNavigate("/login")}
           className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-primary to-success text-base font-bold text-primary-foreground shadow-lg shadow-primary/30 transition active:scale-[0.98]"
         >
           <LogIn className="h-5 w-5" />
@@ -147,7 +147,7 @@ function Welcome() {
 
         <button
           type="button"
-          onClick={() => navigate({ to: "/register" })}
+          onClick={() => guardedNavigate("/register")}
           className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl border border-border bg-card text-base font-bold text-foreground transition active:scale-[0.98] hover:bg-accent"
         >
           إنشاء حساب جديد
