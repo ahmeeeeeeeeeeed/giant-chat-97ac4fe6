@@ -622,11 +622,11 @@ function RoomPage() {
                     }`}
                   >
                     {msg.message_type === "image" && msg.media_url ? (
-                      <button type="button" onClick={() => setLightboxUrl(msg.media_url)} className="block">
+                      <button type="button" onClick={(e) => { e.stopPropagation(); setLightboxUrl(msg.media_url); }} className="block">
                         <img src={msg.media_url} alt="" className="max-h-72 w-auto rounded-xl object-cover" />
                       </button>
                     ) : msg.message_type === "voice" && msg.media_url ? (
-                      <audio src={msg.media_url} controls preload="metadata" className="h-10 max-w-[260px]" />
+                      <audio onClick={(e) => e.stopPropagation()} src={msg.media_url} controls preload="metadata" className="h-10 max-w-[260px]" />
                     ) : (
                       <p
                         className="whitespace-pre-wrap break-words text-[15px] leading-relaxed"
