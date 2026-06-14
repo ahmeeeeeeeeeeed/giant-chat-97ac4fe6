@@ -60,6 +60,7 @@ function RoomPage() {
   const [recording, setRecording] = useState(false);
   const [recordSec, setRecordSec] = useState(0);
   const [uploading, setUploading] = useState(false);
+  const [pendingMedia, setPendingMedia] = useState<{ kind: "image" | "voice"; file: Blob; previewUrl: string; durationMs?: number } | null>(null);
 
   const userMapRef = useRef<Record<string, { username: string; avatar_url: string | null }>>({});
   useEffect(() => { userMapRef.current = userMap; }, [userMap]);
