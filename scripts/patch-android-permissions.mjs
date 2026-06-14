@@ -28,16 +28,22 @@ const REQUIRED = [
   "android.permission.MODIFY_AUDIO_SETTINGS",
   "android.permission.CAMERA",
   "android.permission.READ_EXTERNAL_STORAGE",
+  "android.permission.WRITE_EXTERNAL_STORAGE",
   "android.permission.READ_MEDIA_IMAGES",
   "android.permission.READ_MEDIA_VIDEO",
   "android.permission.READ_MEDIA_AUDIO",
+  "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
   "android.permission.REQUEST_INSTALL_PACKAGES",
+  "android.permission.ACCESS_FINE_LOCATION",
+  "android.permission.ACCESS_COARSE_LOCATION",
 ];
 
 const FEATURES = [
   { name: "android.hardware.camera", required: "false" },
   { name: "android.hardware.camera.autofocus", required: "false" },
   { name: "android.hardware.microphone", required: "false" },
+  { name: "android.hardware.location", required: "false" },
+  { name: "android.hardware.location.gps", required: "false" },
 ];
 
 let xml = readFileSync(manifestPath, "utf8");
