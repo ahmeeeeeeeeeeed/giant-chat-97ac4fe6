@@ -77,18 +77,21 @@ function AdminUpdates() {
       const accessToken = session?.access_token || SUPABASE_KEY;
 
       // Real upload with progress via XHR (supabase-js doesn't expose progress events)
+      // Use PUT + x-upsert: true — Supabase Storage's POST with raw binary is unreliable.
+      setProgress(1); // show bar immediately
       await new Promise<void>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         const url = `${SUPABASE_URL}/storage/v1/object/app-updates/${encodeURI(path)}`;
-        xhr.open("POST", url, true);
+        xhr.open("PUT", url, true);
         xhr.setRequestHeader("Authorization", `Bearer ${accessToken}`);
         xhr.setRequestHeader("apikey", SUPABASE_KEY);
         xhr.setRequestHeader("Content-Type", "application/vnd.android.package-archive");
-        xhr.setRequestHeader("x-upsert", "false");
+        xhr.setRequestHeader("x-upsert", "true");
+        xhr.setRequestHeader("cache-control", "max-age=3600");
         xhr.upload.onprogress = (ev) => {
           if (ev.lengthComputable) {
             setUploaded(ev.loaded);
-            setProgress(Math.round((ev.loaded / ev.total) * 100));
+            setProgress(Math.max(1, Math.round((ev.loaded / ev.total) * 100)));
           }
         };
         xhr.onload = () => {
