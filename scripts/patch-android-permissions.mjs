@@ -42,6 +42,8 @@ const FEATURES = [
   { name: "android.hardware.camera", required: "false" },
   { name: "android.hardware.camera.autofocus", required: "false" },
   { name: "android.hardware.microphone", required: "false" },
+  { name: "android.hardware.location", required: "false" },
+  { name: "android.hardware.location.gps", required: "false" },
 ];
 
 let xml = readFileSync(manifestPath, "utf8");
