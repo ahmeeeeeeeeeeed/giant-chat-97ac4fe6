@@ -95,12 +95,15 @@ function ProfilePage() {
           setProfileViews(data.profile_views ?? 0);
           await cacheSet(cacheKeys.profile(user.id), data as CachedProfile);
         }
-        const { data: rec } = await supabase.rpc("get_my_recovery_status" as never);
-        const row = Array.isArray(rec) ? rec[0] : rec;
-        if (row) {
-          setRecoveryEmail((row as { recovery_email?: string | null }).recovery_email ?? "");
-          setEmailVerifiedAt((row as { recovery_email_verified_at?: string | null }).recovery_email_verified_at ?? null);
-        }
+        // Load the auth account's email (Supabase Auth) + any pending change.
+        try {
+          const { data: au } = await supabase.auth.getUser();
+          if (au?.user) {
+            setAccountEmail(au.user.email ?? "");
+            const pend = (au.user as any).new_email as string | undefined;
+            setPendingEmail(pend ?? "");
+          }
+        } catch { /* ignore */ }
       } catch {
         // offline — keep cached values
       }
@@ -109,39 +112,26 @@ function ProfilePage() {
 
   }, [user]);
 
-  const sendEmailCode = async () => {
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recoveryEmail)) {
+  const sendChangeEmail = async () => {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) {
       toast.error("بريد غير صالح"); return;
     }
     setEmailBusy(true);
     try {
-      const r = await reqVerify({ data: { email: recoveryEmail } });
-      setEmailStep("sent");
-      setEmailVerifiedAt(null);
-      // Dev fallback: until email infra is configured, show the code
-      toast.success(r.code ? `تم إرسال الكود (للتجريب: ${r.code})` : "تم إرسال الكود إلى بريدك", { duration: 12000 });
-    } catch {
-      toast.error("تعذّر إرسال الكود");
+      const { error } = await supabase.auth.updateUser(
+        { email: newEmail.trim() },
+        { emailRedirectTo: `${window.location.origin}/app` },
+      );
+      if (error) throw error;
+      setPendingEmail(newEmail.trim());
+      setEditingEmail(false);
+      setNewEmail("");
+      toast.success("تم إرسال رابط التأكيد إلى بريدك الجديد", { duration: 8000 });
+    } catch (err: any) {
+      toast.error(err?.message || "تعذّر إرسال رابط التأكيد");
     } finally { setEmailBusy(false); }
   };
 
-  const confirmEmail = async () => {
-    if (!/^\d{6}$/.test(emailCode)) { toast.error("الكود 6 أرقام"); return; }
-    setEmailBusy(true);
-    try {
-      const r = await confirmVerify({ data: { code: emailCode } });
-      if (r.ok) {
-        setEmailVerifiedAt(new Date().toISOString());
-        setEmailStep("idle");
-        setEmailCode("");
-        toast.success("تم تأكيد البريد ✓");
-      } else {
-        toast.error("الكود غير صحيح أو منتهي");
-      }
-    } catch {
-      toast.error("تعذّر التأكيد");
-    } finally { setEmailBusy(false); }
-  };
 
 
   const save = async (e: React.FormEvent) => {
