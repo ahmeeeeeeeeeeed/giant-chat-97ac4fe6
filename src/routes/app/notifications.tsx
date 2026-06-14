@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { Bell, Check, Loader2 } from "lucide-react";
+import { resetBellCount } from "@/lib/bell-counter";
 
 export const Route = createFileRoute("/app/notifications")({
   component: NotificationsPage,
@@ -25,6 +26,10 @@ function NotificationsPage() {
   const { t } = useTranslation();
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => { resetBellCount(); }, []);
+
+
 
   const load = async () => {
     if (!user) return;

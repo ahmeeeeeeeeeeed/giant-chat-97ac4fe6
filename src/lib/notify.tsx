@@ -1,5 +1,6 @@
 // Cross-platform notification helpers (Capacitor on native, Web Notification API in browser).
 import { toast } from "sonner";
+import { bumpBellCount } from "@/lib/bell-counter";
 
 let _idCounter = 1;
 
@@ -12,38 +13,49 @@ async function isNative(): Promise<boolean> {
   }
 }
 
-/** Professional in-app "system message" style toast that auto-dismisses after 1s. */
+/** Elegant "system banner" style toast — auto-dismisses after 2s, includes a "حسناً" dismiss button. */
 function showInAppSystemToast(opts: { title: string; body: string; url?: string }): void {
   try {
     toast.custom(
       (id) => (
         <div
-          onClick={() => {
-            try {
-              if (opts.url && typeof window !== "undefined") {
-                window.history.pushState({}, "", opts.url);
-                window.dispatchEvent(new PopStateEvent("popstate"));
-              }
-            } catch { /* ignore */ }
-            toast.dismiss(id);
-          }}
-          className="pointer-events-auto flex w-[min(92vw,380px)] items-start gap-3 rounded-2xl border border-emerald-400/30 bg-gradient-to-br from-emerald-900/95 via-emerald-800/95 to-emerald-900/95 px-3.5 py-2.5 text-white shadow-[0_18px_40px_-12px_rgba(6,78,59,0.7)] ring-1 ring-white/10 backdrop-blur-xl cursor-pointer active:scale-[0.98] transition"
           dir="rtl"
+          className="pointer-events-auto w-[min(94vw,420px)] overflow-hidden rounded-2xl border border-white/10 bg-slate-900/90 text-white shadow-[0_24px_60px_-20px_rgba(0,0,0,0.75)] ring-1 ring-emerald-400/20 backdrop-blur-2xl animate-in slide-in-from-top-4 fade-in duration-300"
         >
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-amber-300 to-amber-500 text-emerald-900 shadow-lg shadow-amber-900/30 ring-2 ring-white/30 text-[15px]">
-            🔔
-          </div>
-          <div className="min-w-0 flex-1">
+          {/* Status-bar-like top strip */}
+          <div className="flex items-center justify-between px-3 py-1.5 bg-gradient-to-l from-emerald-500/10 to-transparent border-b border-white/5">
             <div className="flex items-center gap-1.5">
-              <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-amber-200/90">النظام</span>
-              <span className="h-1 w-1 rounded-full bg-emerald-300/70" />
-              <span className="truncate text-[13px] font-bold text-white">{opts.title}</span>
+              <span className="flex h-4 w-4 items-center justify-center rounded-md bg-gradient-to-br from-emerald-400 to-emerald-600 text-[9px] font-black text-emerald-950 shadow-sm">G</span>
+              <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-300/90">Giant</span>
             </div>
-            <div className="mt-0.5 truncate text-[12.5px] leading-snug text-emerald-50/90">{opts.body}</div>
+            <span className="text-[10px] font-medium text-white/40">الآن</span>
+          </div>
+          <div
+            onClick={() => {
+              try {
+                if (opts.url && typeof window !== "undefined") {
+                  window.history.pushState({}, "", opts.url);
+                  window.dispatchEvent(new PopStateEvent("popstate"));
+                }
+              } catch { /* ignore */ }
+              toast.dismiss(id);
+            }}
+            className="flex cursor-pointer items-start gap-3 px-3.5 py-3 transition active:bg-white/5"
+          >
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-[14px] font-bold text-white">{opts.title}</div>
+              <div className="mt-0.5 line-clamp-2 text-[12.5px] leading-snug text-white/75">{opts.body}</div>
+            </div>
+            <button
+              onClick={(e) => { e.stopPropagation(); toast.dismiss(id); }}
+              className="shrink-0 rounded-full bg-white/10 px-3 py-1.5 text-[11px] font-bold text-white/90 ring-1 ring-white/15 backdrop-blur transition hover:bg-white/15 active:scale-95"
+            >
+              حسناً
+            </button>
           </div>
         </div>
       ),
-      { duration: 1000, position: "top-center" }
+      { duration: 2000, position: "top-center" }
     );
   } catch { /* ignore */ }
 }
@@ -61,9 +73,12 @@ export async function showLocalNotification(opts: {
     }
   } catch { /* ignore */ }
 
+  // Always bump the bell counter for every incoming notification
+  try { bumpBellCount(); } catch { /* ignore */ }
+
   const visible = typeof document !== "undefined" && document.visibilityState === "visible";
 
-  // Always show in-app system-style toast when the tab is visible (1s, then disappears)
+  // Always show in-app system-style banner when the tab is visible (2s)
   if (visible) {
     showInAppSystemToast({ title: opts.title, body: opts.body, url: opts.url });
     return;

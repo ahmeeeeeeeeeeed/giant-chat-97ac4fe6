@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "@/lib/auth";
 import { useIsAdmin, useUnreadDMCount } from "@/lib/use-admin";
 import { useGlobalNotificationListener, useUnreadRoomCount } from "@/lib/use-global-notifications";
+import { useBellCount } from "@/lib/bell-counter";
 import { useAnnouncementsListener } from "@/lib/use-announcements";
 import { Home, MessageSquare, User, Settings, Users as UsersIcon, Gamepad2, Bell, Shield, ShieldAlert, Trophy, ArrowRight, Newspaper, Target, Loader2 } from "lucide-react";
 import { OnlineStatusBanner } from "@/components/OnlineStatusBanner";
@@ -24,7 +25,8 @@ function AppLayout() {
   const { isAdmin } = useIsAdmin();
   const unreadDM = useUnreadDMCount();
   const unreadRooms = useUnreadRoomCount();
-  const unread = unreadDM + unreadRooms;
+  void unreadRooms;
+  const bellCount = useBellCount();
   useGlobalNotificationListener((url) => navigate({ to: url as any }));
   useAnnouncementsListener(!!session?.user?.id);
   const router = useRouter();
@@ -189,9 +191,9 @@ function AppLayout() {
                 className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900/60 border border-emerald-500/20 text-emerald-200/90 backdrop-blur transition active:scale-95 hover:bg-slate-800/60"
               >
                 <Bell className="h-[17px] w-[17px]" />
-                {unread > 0 && (
+                {bellCount > 0 && (
                   <span className="absolute -top-1 -end-1 flex h-[16px] min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white ring-2 ring-emerald-950">
-                    {unread > 99 ? "99+" : unread}
+                    {bellCount > 99 ? "99+" : bellCount}
                   </span>
                 )}
               </Link>
