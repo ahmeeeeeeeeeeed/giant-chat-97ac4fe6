@@ -162,6 +162,29 @@ function RoomsPage() {
     navigate({ to: "/app/create-room" });
   };
 
+  const handleJoin = async (roomId: string) => {
+    const room = rooms.find((r) => r.id === roomId);
+    if (!room) return;
+    if (room.type === "private") {
+      navigate({ to: "/app/rooms/$id", params: { id: roomId } });
+      return;
+    }
+    const { error } = await supabase.rpc("room_join" as never, { _room: roomId, _password: "" } as never);
+    if (error) {
+      const msg = error.message || "";
+      if (msg.includes("wrong_password")) toast.error("كلمة المرور غير صحيحة");
+      else if (msg.includes("banned")) toast.error("أنت محظور من هذه الغرفة");
+      else if (msg.includes("room_full")) toast.error("الغرفة ممتلئة");
+      else if (msg.includes("room_inactive")) toast.error("الغرفة موقوفة");
+      else if (msg.includes("room_not_found")) toast.error("الغرفة غير موجودة");
+      else toast.error("فشل الانضمام: " + msg);
+      return;
+    }
+    toast.success("تم الانضمام");
+    setMyRoomIds((prev) => new Set([...prev, roomId]));
+    navigate({ to: "/app/rooms/$id", params: { id: roomId } });
+  };
+
   if (error) {
     return (
       <main className="flex flex-1 flex-col">
