@@ -62,7 +62,7 @@ function AppLayout() {
             return;
           }
           const currentPath = window.location.pathname;
-          if (currentPath === "/app" || currentPath === "/app/") {
+          if (currentPath === "/app" || currentPath === "/app/" || currentPath === "/app/chats" || currentPath === "/app/chats/") {
             window.dispatchEvent(new CustomEvent("show-exit-confirm"));
           } else {
             router.history.back();
