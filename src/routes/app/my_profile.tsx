@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { WeeklyAchievementsBadge } from "@/components/WeeklyAchievementsBadge";
 import { toast } from "sonner";
-import { Loader2, Camera, User as UserIcon, Bell, Info, Shield, ChevronLeft, Lock, EyeOff, Globe, Eye, Mail, CheckCircle2, KeyRound, History } from "lucide-react";
+import { Loader2, Camera, User as UserIcon, Bell, Info, Shield, ChevronLeft, Lock, EyeOff, Globe, Eye, Mail, CheckCircle2, KeyRound, History, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { getEquipped, type EquippedSet } from "@/lib/equipped";
 import { BadgeChip } from "@/routes/app/store";
@@ -405,6 +405,7 @@ function ProfilePage() {
               </div>
               <ChevronLeft className="h-4 w-4 text-muted-foreground rtl:rotate-180" />
             </Link>
+            <DeleteAccountRow email={accountEmail} username={username} />
           </Section>
 
           <Section title={t("profile.about")}>
@@ -537,6 +538,114 @@ function PasswordChangeRow() {
           >
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "حفظ كلمة المرور الجديدة"}
           </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DeleteAccountRow({ email, username }: { email: string; username: string }) {
+  const [open, setOpen] = useState(false);
+  const [pw, setPw] = useState("");
+  const [reason, setReason] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [pending, setPending] = useState<boolean>(false);
+
+  useEffect(() => {
+    (async () => {
+      const { data: au } = await supabase.auth.getUser();
+      const uid = au.user?.id;
+      if (!uid) return;
+      const { data } = await supabase
+        .from("account_deletion_requests")
+        .select("id")
+        .eq("user_id", uid)
+        .eq("status", "pending")
+        .maybeSingle();
+      setPending(!!data);
+    })();
+  }, []);
+
+  const submit = async () => {
+    if (!email) { toast.error("لا يوجد بريد للحساب"); return; }
+    if (!pw) { toast.error("أدخل كلمة المرور"); return; }
+    setBusy(true);
+    try {
+      // Verify password by attempting sign in (does not change current session)
+      const { error: vErr } = await supabase.auth.signInWithPassword({ email, password: pw });
+      if (vErr) { toast.error("كلمة المرور غير صحيحة"); return; }
+
+      const { data: au } = await supabase.auth.getUser();
+      const uid = au.user?.id;
+      if (!uid) { toast.error("غير مسجّل دخول"); return; }
+
+      const { error } = await supabase.from("account_deletion_requests").insert({
+        user_id: uid,
+        username_snapshot: username,
+        email_snapshot: email,
+        reason: reason.trim() || null,
+      });
+      if (error) {
+        if (error.code === "23505") toast.error("لديك طلب قيد المراجعة بالفعل");
+        else toast.error(error.message || "تعذّر إرسال الطلب");
+        return;
+      }
+      toast.success("تم إرسال طلب حذف الحساب إلى الإدارة");
+      setPw(""); setReason(""); setOpen(false); setPending(true);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="p-4">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between text-start"
+      >
+        <div className="flex items-center gap-3">
+          <Trash2 className="h-5 w-5 text-red-600" />
+          <span className="font-medium text-red-600">حذف الحساب</span>
+        </div>
+        <ChevronLeft className={`h-4 w-4 text-muted-foreground transition ${open ? "rotate-90" : "rtl:rotate-180"}`} />
+      </button>
+      {open && (
+        <div className="mt-3 space-y-2">
+          {pending ? (
+            <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-700">
+              طلبك قيد المراجعة من قِبل الإدارة.
+            </div>
+          ) : (
+            <>
+              <p className="text-xs text-muted-foreground">
+                سيُرسل طلب حذف حسابك إلى الإدارة. أدخل كلمة المرور للتأكيد.
+              </p>
+              <input
+                type="password"
+                value={pw}
+                onChange={(e) => setPw(e.target.value)}
+                placeholder="كلمة المرور"
+                dir="ltr"
+                className="h-11 w-full rounded-xl border border-input bg-background px-3 outline-none focus:border-primary"
+              />
+              <textarea
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                placeholder="سبب الحذف (اختياري)"
+                rows={2}
+                className="w-full rounded-xl border border-input bg-background p-3 text-sm outline-none focus:border-primary"
+              />
+              <button
+                type="button"
+                onClick={submit}
+                disabled={busy || !pw}
+                className="flex h-10 w-full items-center justify-center rounded-xl bg-red-600 text-sm font-bold text-white disabled:opacity-60"
+              >
+                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "إرسال الطلب"}
+              </button>
+            </>
+          )}
         </div>
       )}
     </div>
