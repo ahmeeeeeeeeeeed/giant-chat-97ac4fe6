@@ -33,6 +33,7 @@ function AppLayout() {
   useAnnouncementsListener(!!session?.user?.id);
   const router = useRouter();
   const [reportOpen, setReportOpen] = useState(false);
+  usePresenceHeartbeat(session?.user?.id);
 
   const tabs = [
     { to: "/app/chats", label: t("nav.chats"), icon: MessageSquare, exact: false },
