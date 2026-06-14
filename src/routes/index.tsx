@@ -1,8 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { LogIn, MessageCircle, Users, Music, Sparkles } from "lucide-react";
 import welcomeBg from "@/assets/welcome-bg.mp4.asset.json";
+import PermissionsGate, { hasCompletedPermissionsGate } from "@/components/PermissionsGate";
 
 
 export const Route = createFileRoute("/")({
@@ -12,6 +13,13 @@ export const Route = createFileRoute("/")({
 function Welcome() {
   const navigate = useNavigate();
   const videoRef = useRef<HTMLVideoElement>(null);
+  const [needsPerms, setNeedsPerms] = useState(false);
+  useEffect(() => { setNeedsPerms(!hasCompletedPermissionsGate()); }, []);
+
+  const guardedNavigate = (to: "/login" | "/register") => {
+    if (!hasCompletedPermissionsGate()) { setNeedsPerms(true); return; }
+    navigate({ to });
+  };
 
   useEffect(() => {
     // Check session in background; don't block render so the video can start instantly
@@ -35,6 +43,7 @@ function Welcome() {
 
   return (
     <main className="relative flex min-h-dvh flex-col overflow-hidden bg-background px-6 py-8 text-foreground">
+      {needsPerms && <PermissionsGate onDone={() => setNeedsPerms(false)} />}
       {/* Video background */}
       <video
         ref={videoRef}
@@ -123,7 +132,7 @@ function Welcome() {
       <div className="relative z-10 mx-auto w-full max-w-sm space-y-3" style={{ animation: "rise 0.8s ease-out 0.3s both" }}>
         <button
           type="button"
-          onClick={() => navigate({ to: "/login" })}
+          onClick={() => guardedNavigate("/login")}
           className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-primary to-success text-base font-bold text-primary-foreground shadow-lg shadow-primary/30 transition active:scale-[0.98]"
         >
           <LogIn className="h-5 w-5" />
@@ -138,7 +147,7 @@ function Welcome() {
 
         <button
           type="button"
-          onClick={() => navigate({ to: "/register" })}
+          onClick={() => guardedNavigate("/register")}
           className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl border border-border bg-card text-base font-bold text-foreground transition active:scale-[0.98] hover:bg-accent"
         >
           إنشاء حساب جديد
