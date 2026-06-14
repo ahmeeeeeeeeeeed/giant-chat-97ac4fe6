@@ -29,6 +29,8 @@ function ChatsPage() {
     if (!user) return;
     const cached = await cacheGet<Convo[]>(cacheKeys.chatsList(user.id));
     if (cached) { setConvos(cached); setLoading(false); } else { setLoading(true); }
+    // Offline → skip the network entirely; cached list is authoritative for the UI.
+    if (!getOnline()) { setLoading(false); return; }
     try {
       const { data, error } = await supabase
         .from("direct_messages")
