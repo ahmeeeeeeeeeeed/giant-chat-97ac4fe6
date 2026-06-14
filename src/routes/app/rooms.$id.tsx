@@ -283,7 +283,7 @@ function RoomPage() {
     setText("");
     const { data, error } = await supabase.from("room_messages")
       .insert({ room_id: roomId, user_id: user.id, content } as never)
-      .select("*").single();
+      .select("*").maybeSingle();
     setSending(false);
     if (error) {
       setMessages((prev) => prev.filter((m) => m.id !== tempId));
@@ -291,7 +291,7 @@ function RoomPage() {
       setText(content);
       return;
     }
-    setMessages((prev) => prev.map((m) => (m.id === tempId ? data : m)));
+    if (data) setMessages((prev) => prev.map((m) => (m.id === tempId ? data : m)));
     try { await supabase.rpc("record_daily_action", { _kind: "send_messages", _amount: 1 }); } catch { /* ignore */ }
   };
 
