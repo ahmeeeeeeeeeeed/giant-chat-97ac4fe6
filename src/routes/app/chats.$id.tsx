@@ -80,15 +80,21 @@ function DMPage() {
     await supabase.rpc("dm_mark_read", { _peer: otherId });
   };
 
-  // load profile + messages + block/mute state
+  // load profile + messages + block/mute state — local-first
   useEffect(() => {
     if (!user) return;
     (async () => {
+      // 1) Render from local store immediately (works fully offline).
       const cachedMsgs = await cacheGet<DM[]>(cacheKeys.dmMessages(user.id, otherId));
       const cachedProfile = await cacheGet<Profile>(cacheKeys.profile(otherId));
       if (cachedMsgs) setMessages(cachedMsgs);
       if (cachedProfile) setOther(cachedProfile);
       if (cachedMsgs) setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight }), 50);
+
+      // 2) If offline, do NOT touch the network — avoids browser "no internet" errors.
+      if (!getOnline()) return;
+
+      // 3) Background sync from cloud (backup only). Failures are swallowed silently.
       try {
         const [{ data: p }, { data: msgs }, { data: bl }, { data: blMe }, { data: mu }] = await Promise.all([
           supabase.from("profiles").select("id, username, avatar_url, last_seen_at, hide_last_seen").eq("id", otherId).maybeSingle(),
@@ -114,7 +120,7 @@ function DMPage() {
         setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight }), 50);
         await markRead();
       } catch {
-        // offline — keep cached values
+        // network hiccup — keep cached values, no error UI
       }
     })();
   }, [otherId, user]);
