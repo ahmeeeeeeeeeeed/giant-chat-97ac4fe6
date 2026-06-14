@@ -616,7 +616,7 @@ function ActionItem({ icon, label, onClick, destructive }: { icon: React.ReactNo
   );
 }
 
-function MessageBubble({ m, mine, replied }: { m: DM; mine: boolean; replied: DM | null }) {
+function MessageBubble({ m, mine, replied, onPress }: { m: DM; mine: boolean; replied: DM | null; onPress?: () => void }) {
   const [lightbox, setLightbox] = useState(false);
   const base = `rounded-2xl px-3.5 py-2 shadow-sm ${mine ? "rounded-br-md bg-primary text-primary-foreground" : "rounded-bl-md bg-card border border-border"}`;
   const replyBlock = replied && (
@@ -628,9 +628,9 @@ function MessageBubble({ m, mine, replied }: { m: DM; mine: boolean; replied: DM
   if (m.message_type === "image" && m.media_url) {
     return (
       <>
-        <div className="overflow-hidden rounded-2xl">
+        <div className="overflow-hidden rounded-2xl" onClick={onPress}>
           {replyBlock}
-          <button type="button" onClick={() => setLightbox(true)} className="block w-full">
+          <button type="button" onClick={(e) => { e.stopPropagation(); setLightbox(true); }} className="block w-full">
             <img src={m.media_url} alt="" className="max-h-72 w-full rounded-2xl object-cover" loading="lazy" />
           </button>
         </div>
@@ -639,13 +639,23 @@ function MessageBubble({ m, mine, replied }: { m: DM; mine: boolean; replied: DM
     );
   }
   if (m.message_type === "voice" && m.media_url) {
-    return <div className={base}>{replyBlock}<VoicePlayer url={m.media_url} durationMs={m.media_duration_ms ?? 0} mine={mine} /></div>;
+    return (
+      <div className={base} onClick={onPress}>
+        {replyBlock}
+        <VoicePlayer url={m.media_url} durationMs={m.media_duration_ms ?? 0} mine={mine} />
+      </div>
+    );
   }
   const shared = tryParseTrackDM(m.content || "");
   if (shared) {
-    return <div className={base}>{replyBlock}<TrackDMPlayer track={shared.track} senderName={shared.senderName} mine={mine} /></div>;
+    return <div className={base} onClick={onPress}>{replyBlock}<TrackDMPlayer track={shared.track} senderName={shared.senderName} mine={mine} /></div>;
   }
-  return <div className={base}>{replyBlock}<div className="whitespace-pre-wrap break-words text-[15px] leading-relaxed">{m.content}</div></div>;
+  return (
+    <div className={base} onClick={onPress}>
+      {replyBlock}
+      <div className="whitespace-pre-wrap break-words text-[15px] leading-relaxed">{m.content}</div>
+    </div>
+  );
 }
 
 function VoicePlayer({ url, durationMs, mine }: { url: string; durationMs: number; mine: boolean }) {
