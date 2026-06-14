@@ -609,7 +609,11 @@ function RoomPage() {
                     </button>
                   )}
                   <div
-                    className={`rounded-2xl shadow-sm overflow-hidden ${
+                    onClick={() => {
+                      const canDelete = isOwn || myRank === "owner" || myRank === "admin";
+                      if (canDelete) setActionMsg(msg);
+                    }}
+                    className={`rounded-2xl shadow-sm overflow-hidden cursor-pointer transition active:scale-[0.98] ${
                       msg.message_type === "image"
                         ? "p-1 bg-transparent"
                         : `px-4 py-2.5 ${isOwn
