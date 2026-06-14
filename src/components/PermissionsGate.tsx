@@ -104,8 +104,17 @@ export default function PermissionsGate({ onDone }: { onDone: () => void }) {
           {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "موافقة على الكل والمتابعة"}
         </button>
 
+        <button
+          type="button"
+          disabled={loading}
+          onClick={skipAll}
+          className="mt-2 flex h-11 w-full items-center justify-center rounded-2xl border border-border bg-card text-sm font-semibold text-muted-foreground transition active:scale-[0.98] hover:text-foreground disabled:opacity-60"
+        >
+          تجاهل وطلبها لاحقاً عند الحاجة
+        </button>
+
         <p className="mt-3 text-center text-[11px] leading-relaxed text-muted-foreground">
-          يمكنك تعديل الأذونات لاحقاً من إعدادات نظام التشغيل في أي وقت.
+          إذا تجاهلت الآن، سنطلب كل صلاحية تلقائياً عند استخدام الميزة المرتبطة بها.
         </p>
       </div>
     </main>
