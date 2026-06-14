@@ -338,3 +338,197 @@ function CreateRoomSheet({ ownerId, onClose, onCreated }: { ownerId: string; onC
     </div>
   );
 }
+
+const CARD_THEMES = [
+  { ring: "from-emerald-400/60 to-teal-500/40", icon: "from-emerald-500 to-teal-600", glow: "shadow-emerald-500/20" },
+  { ring: "from-amber-400/60 to-orange-500/40", icon: "from-amber-500 to-orange-600", glow: "shadow-amber-500/20" },
+  { ring: "from-sky-400/60 to-indigo-500/40", icon: "from-sky-500 to-indigo-600", glow: "shadow-sky-500/20" },
+  { ring: "from-fuchsia-400/60 to-pink-500/40", icon: "from-fuchsia-500 to-pink-600", glow: "shadow-fuchsia-500/20" },
+  { ring: "from-rose-400/60 to-red-500/40", icon: "from-rose-500 to-red-600", glow: "shadow-rose-500/20" },
+] as const;
+
+function RoomCard({ room, accentIndex, isOwner }: { room: Room; accentIndex: number; isOwner: boolean }) {
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const theme = CARD_THEMES[accentIndex % CARD_THEMES.length];
+  const isPrivate = room.type === "private";
+  const initial = (room.name?.trim()?.[0] ?? "#").toUpperCase();
+
+  const shareUrl = typeof window !== "undefined"
+    ? `${window.location.origin}/app/rooms/${room.id}`
+    : `/app/rooms/${room.id}`;
+
+  const openInvite = (e: React.MouseEvent) => {
+    e.preventDefault(); e.stopPropagation();
+    setInviteOpen(true);
+  };
+
+  const quickShare = async (e: React.MouseEvent) => {
+    e.preventDefault(); e.stopPropagation();
+    const text = `🎉 انضم إليّ في غرفة «${room.name}»`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: room.name, text, url: shareUrl });
+      } else {
+        await navigator.clipboard.writeText(`${text}\n${shareUrl}`);
+        toast.success("تم نسخ رابط الغرفة");
+      }
+    } catch { /* user cancelled */ }
+  };
+
+  return (
+    <>
+      <div className={`group relative overflow-hidden rounded-3xl bg-gradient-to-br ${theme.ring} p-[1.5px] shadow-lg ${theme.glow} transition active:scale-[0.99]`}>
+        <Link
+          to="/app/rooms/$id"
+          params={{ id: room.id }}
+          className="relative flex items-center gap-3 rounded-[calc(1.5rem-1.5px)] bg-card/95 backdrop-blur p-3.5"
+        >
+          {/* decorative sparkle */}
+          <span className="pointer-events-none absolute -top-6 -end-6 h-20 w-20 rounded-full bg-white/5 blur-2xl" />
+
+          <div className={`relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${theme.icon} text-white shadow-md`}>
+            <span className="text-lg font-black tracking-tight">{initial}</span>
+            {isPrivate && (
+              <span className="absolute -bottom-1 -end-1 flex h-5 w-5 items-center justify-center rounded-full bg-background ring-2 ring-card">
+                <Lock className="h-3 w-3 text-amber-500" />
+              </span>
+            )}
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5">
+              <span className="truncate text-[15px] font-bold">{room.name}</span>
+              {isOwner && (
+                <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-bold text-amber-600">
+                  <Crown className="h-2.5 w-2.5" /> مالك
+                </span>
+              )}
+            </div>
+            <div className="mt-0.5 truncate text-xs text-muted-foreground">
+              {room.description || "اضغط للدخول والمحادثة"}
+            </div>
+            <div className="mt-1.5 flex items-center gap-1.5">
+              <span className="inline-flex items-center gap-1 rounded-full bg-secondary/70 px-2 py-0.5 text-[11px] font-semibold text-foreground/80">
+                <Users className="h-3 w-3" />
+                {room.member_count ?? 0}
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-600">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.7)]" />
+                نشطة
+              </span>
+            </div>
+          </div>
+
+          <div className="flex shrink-0 flex-col gap-1.5">
+            <button
+              onClick={openInvite}
+              aria-label="دعوة الأصدقاء"
+              title="دعوة الأصدقاء"
+              className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-sm transition hover:brightness-110 active:scale-90"
+            >
+              <UserPlus className="h-4 w-4" />
+            </button>
+            <button
+              onClick={quickShare}
+              aria-label="مشاركة الرابط"
+              title="مشاركة الرابط"
+              className="flex h-9 w-9 items-center justify-center rounded-xl bg-secondary text-foreground/80 transition hover:bg-secondary/80 active:scale-90"
+            >
+              <Share2 className="h-4 w-4" />
+            </button>
+          </div>
+        </Link>
+      </div>
+
+      {inviteOpen && (
+        <InviteModal room={room} shareUrl={shareUrl} onClose={() => setInviteOpen(false)} />
+      )}
+    </>
+  );
+}
+
+function InviteModal({ room, shareUrl, onClose }: { room: Room; shareUrl: string; onClose: () => void }) {
+  const [sending, setSending] = useState(false);
+
+  const sendToFriends = async () => {
+    setSending(true);
+    try {
+      const { data, error } = await supabase.rpc("room_invite_friends" as never, { _room: room.id } as never);
+      if (error) throw error;
+      const count = (typeof data === "number" ? data : 0);
+      if (count === 0) toast("لا يوجد أصدقاء لإرسال الدعوة إليهم");
+      else toast.success(`📨 تم إرسال الدعوة إلى ${count} ${count === 1 ? "صديق" : "صديقًا"}`);
+      onClose();
+    } catch (e) {
+      toast.error("تعذر إرسال الدعوات");
+      console.error(e);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const shareLink = async () => {
+    const text = `🎉 انضم إليّ في غرفة «${room.name}»`;
+    try {
+      if (navigator.share) await navigator.share({ title: room.name, text, url: shareUrl });
+      else { await navigator.clipboard.writeText(`${text}\n${shareUrl}`); toast.success("تم نسخ الرابط"); }
+      onClose();
+    } catch { /* cancelled */ }
+  };
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      toast.success("تم نسخ الرابط");
+    } catch { toast.error("تعذر النسخ"); }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm sm:items-center" onClick={onClose}>
+      <div
+        className="w-full max-w-md rounded-t-3xl border-t border-border bg-card p-6 pb-8 shadow-2xl sm:rounded-3xl sm:border"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-muted sm:hidden" />
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md">
+              <Sparkles className="h-5 w-5" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold leading-tight">دعوة إلى «{room.name}»</h3>
+              <p className="text-xs text-muted-foreground">اختر طريقة الدعوة المناسبة</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="text-muted-foreground"><X className="h-5 w-5" /></button>
+        </div>
+
+        <div className="mb-3 flex items-center gap-2 rounded-2xl border border-input bg-background px-3 py-2">
+          <Hash className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <input
+            readOnly value={shareUrl}
+            className="flex-1 truncate bg-transparent text-xs outline-none"
+            onFocus={(e) => e.currentTarget.select()}
+          />
+          <button onClick={copyLink} className="rounded-lg bg-secondary px-2.5 py-1 text-[11px] font-bold">نسخ</button>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <button
+            onClick={sendToFriends}
+            disabled={sending}
+            className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-600 font-bold text-white shadow-md transition active:scale-95 disabled:opacity-60"
+          >
+            {sending ? <Loader2 className="h-5 w-5 animate-spin" /> : (<><UserPlus className="h-4 w-4" /> دعوة كل الأصدقاء</>)}
+          </button>
+          <button
+            onClick={shareLink}
+            className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-secondary font-bold text-foreground transition active:scale-95"
+          >
+            <Share2 className="h-4 w-4" /> مشاركة عبر التطبيقات
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
