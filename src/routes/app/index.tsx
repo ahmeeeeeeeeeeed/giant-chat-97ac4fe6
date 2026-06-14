@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
-import { Plus, Users, Hash, Loader2, X, Search, Share2, UserPlus, Lock, Crown, Sparkles } from "lucide-react";
+import { Plus, Users, Hash, Loader2, X, Search, UserPlus, Lock, Crown, Sparkles, AtSign } from "lucide-react";
 import { toast } from "sonner";
 import { cacheGet, cacheSet, cacheKeys } from "@/lib/offline-cache";
 
@@ -353,26 +353,9 @@ function RoomCard({ room, accentIndex, isOwner }: { room: Room; accentIndex: num
   const isPrivate = room.type === "private";
   const initial = (room.name?.trim()?.[0] ?? "#").toUpperCase();
 
-  const shareUrl = typeof window !== "undefined"
-    ? `${window.location.origin}/app/rooms/${room.id}`
-    : `/app/rooms/${room.id}`;
-
   const openInvite = (e: React.MouseEvent) => {
     e.preventDefault(); e.stopPropagation();
     setInviteOpen(true);
-  };
-
-  const quickShare = async (e: React.MouseEvent) => {
-    e.preventDefault(); e.stopPropagation();
-    const text = `🎉 انضم إليّ في غرفة «${room.name}»`;
-    try {
-      if (navigator.share) {
-        await navigator.share({ title: room.name, text, url: shareUrl });
-      } else {
-        await navigator.clipboard.writeText(`${text}\n${shareUrl}`);
-        toast.success("تم نسخ رابط الغرفة");
-      }
-    } catch { /* user cancelled */ }
   };
 
   return (
@@ -383,7 +366,6 @@ function RoomCard({ room, accentIndex, isOwner }: { room: Room; accentIndex: num
           params={{ id: room.id }}
           className="relative flex items-center gap-3 rounded-[calc(1.5rem-1.5px)] bg-card/95 backdrop-blur p-3.5"
         >
-          {/* decorative sparkle */}
           <span className="pointer-events-none absolute -top-6 -end-6 h-20 w-20 rounded-full bg-white/5 blur-2xl" />
 
           <div className={`relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${theme.icon} text-white shadow-md`}>
@@ -419,36 +401,28 @@ function RoomCard({ room, accentIndex, isOwner }: { room: Room; accentIndex: num
             </div>
           </div>
 
-          <div className="flex shrink-0 flex-col gap-1.5">
-            <button
-              onClick={openInvite}
-              aria-label="دعوة الأصدقاء"
-              title="دعوة الأصدقاء"
-              className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-sm transition hover:brightness-110 active:scale-90"
-            >
-              <UserPlus className="h-4 w-4" />
-            </button>
-            <button
-              onClick={quickShare}
-              aria-label="مشاركة الرابط"
-              title="مشاركة الرابط"
-              className="flex h-9 w-9 items-center justify-center rounded-xl bg-secondary text-foreground/80 transition hover:bg-secondary/80 active:scale-90"
-            >
-              <Share2 className="h-4 w-4" />
-            </button>
-          </div>
+          <button
+            onClick={openInvite}
+            aria-label="دعوة الأصدقاء"
+            title="دعوة الأصدقاء"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-sm transition hover:brightness-110 active:scale-90"
+          >
+            <UserPlus className="h-4 w-4" />
+          </button>
         </Link>
       </div>
 
       {inviteOpen && (
-        <InviteModal room={room} shareUrl={shareUrl} onClose={() => setInviteOpen(false)} />
+        <InviteModal room={room} onClose={() => setInviteOpen(false)} />
       )}
     </>
   );
 }
 
-function InviteModal({ room, shareUrl, onClose }: { room: Room; shareUrl: string; onClose: () => void }) {
+function InviteModal({ room, onClose }: { room: Room; onClose: () => void }) {
   const [sending, setSending] = useState(false);
+  const [username, setUsername] = useState("");
+  const [sendingUser, setSendingUser] = useState(false);
 
   const sendToFriends = async () => {
     setSending(true);
@@ -467,20 +441,23 @@ function InviteModal({ room, shareUrl, onClose }: { room: Room; shareUrl: string
     }
   };
 
-  const shareLink = async () => {
-    const text = `🎉 انضم إليّ في غرفة «${room.name}»`;
+  const inviteByUsername = async () => {
+    const name = username.trim();
+    if (!name) { toast("أدخل اسم المستخدم"); return; }
+    setSendingUser(true);
     try {
-      if (navigator.share) await navigator.share({ title: room.name, text, url: shareUrl });
-      else { await navigator.clipboard.writeText(`${text}\n${shareUrl}`); toast.success("تم نسخ الرابط"); }
-      onClose();
-    } catch { /* cancelled */ }
-  };
-
-  const copyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(shareUrl);
-      toast.success("تم نسخ الرابط");
-    } catch { toast.error("تعذر النسخ"); }
+      const { error } = await supabase.rpc("room_invite_username" as never, { _room: room.id, _username: name } as never);
+      if (error) throw error;
+      toast.success(`📨 تم إرسال الدعوة إلى @${name}`);
+      setUsername("");
+    } catch (e: any) {
+      const msg = e?.message || "";
+      if (msg.includes("user_not_found")) toast.error("لا يوجد مستخدم بهذا الاسم");
+      else if (msg.includes("cannot_invite_self")) toast.error("لا يمكنك دعوة نفسك");
+      else toast.error("تعذر إرسال الدعوة");
+    } finally {
+      setSendingUser(false);
+    }
   };
 
   return (
@@ -497,37 +474,40 @@ function InviteModal({ room, shareUrl, onClose }: { room: Room; shareUrl: string
             </div>
             <div>
               <h3 className="text-base font-bold leading-tight">دعوة إلى «{room.name}»</h3>
-              <p className="text-xs text-muted-foreground">اختر طريقة الدعوة المناسبة</p>
+              <p className="text-xs text-muted-foreground">ادعُ أصدقاءك أو مستخدمًا بعينه</p>
             </div>
           </div>
           <button onClick={onClose} className="text-muted-foreground"><X className="h-5 w-5" /></button>
         </div>
 
-        <div className="mb-3 flex items-center gap-2 rounded-2xl border border-input bg-background px-3 py-2">
-          <Hash className="h-4 w-4 shrink-0 text-muted-foreground" />
-          <input
-            readOnly value={shareUrl}
-            className="flex-1 truncate bg-transparent text-xs outline-none"
-            onFocus={(e) => e.currentTarget.select()}
-          />
-          <button onClick={copyLink} className="rounded-lg bg-secondary px-2.5 py-1 text-[11px] font-bold">نسخ</button>
+        <div className="mb-3">
+          <label className="mb-1.5 block text-[11px] font-bold text-muted-foreground">دعوة باسم المستخدم</label>
+          <div className="flex items-center gap-2 rounded-2xl border border-input bg-background px-3 py-2">
+            <AtSign className="h-4 w-4 shrink-0 text-muted-foreground" />
+            <input
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") inviteByUsername(); }}
+              placeholder="اسم المستخدم"
+              className="flex-1 bg-transparent text-sm outline-none"
+            />
+            <button
+              onClick={inviteByUsername}
+              disabled={sendingUser}
+              className="rounded-lg bg-primary px-3 py-1.5 text-[12px] font-bold text-primary-foreground disabled:opacity-60"
+            >
+              {sendingUser ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "دعوة"}
+            </button>
+          </div>
         </div>
 
-        <div className="flex flex-col gap-2">
-          <button
-            onClick={sendToFriends}
-            disabled={sending}
-            className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-600 font-bold text-white shadow-md transition active:scale-95 disabled:opacity-60"
-          >
-            {sending ? <Loader2 className="h-5 w-5 animate-spin" /> : (<><UserPlus className="h-4 w-4" /> دعوة كل الأصدقاء</>)}
-          </button>
-          <button
-            onClick={shareLink}
-            className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-secondary font-bold text-foreground transition active:scale-95"
-          >
-            <Share2 className="h-4 w-4" /> مشاركة عبر التطبيقات
-          </button>
-        </div>
+        <button
+          onClick={sendToFriends}
+          disabled={sending}
+          className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-600 font-bold text-white shadow-md transition active:scale-95 disabled:opacity-60"
+        >
+          {sending ? <Loader2 className="h-5 w-5 animate-spin" /> : (<><UserPlus className="h-4 w-4" /> دعوة كل الأصدقاء</>)}
+        </button>
       </div>
     </div>
   );
