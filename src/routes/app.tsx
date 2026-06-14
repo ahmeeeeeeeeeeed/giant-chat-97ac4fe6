@@ -8,6 +8,7 @@ import { useBellCount } from "@/lib/bell-counter";
 import { useAnnouncementsListener } from "@/lib/use-announcements";
 import { Home, MessageSquare, User, Settings, Users as UsersIcon, Gamepad2, Bell, Shield, ShieldAlert, Trophy, ArrowRight, Newspaper, Target, Loader2 } from "lucide-react";
 import { OnlineStatusBanner } from "@/components/OnlineStatusBanner";
+import { ConnectionStatusBadge } from "@/components/ConnectionStatusBadge";
 import { ReportModal } from "@/components/ReportModal";
 import { UpdateGate } from "@/components/UpdateGate";
 import { scheduleDataPrewarm } from "@/lib/data-prewarm";
