@@ -213,6 +213,7 @@ function PostCard({ post, currentUserId, onChanged }: { post: Post; currentUserI
       await db.from("community_reactions").update({ reaction: key }).eq("post_id", post.id).eq("user_id", currentUserId);
     } else {
       await db.from("community_reactions").insert({ post_id: post.id, user_id: currentUserId, reaction: key });
+      try { await db.rpc("record_daily_action", { _kind: "react_messages", _amount: 1 }); } catch { /* ignore */ }
     }
     setShowReactions(false);
   };
