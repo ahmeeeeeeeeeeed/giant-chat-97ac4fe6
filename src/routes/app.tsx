@@ -201,8 +201,8 @@ function AppLayout() {
       )}
       <Outlet />
       {!hideChrome && (
-        <nav className="fixed inset-x-0 bottom-0 z-40 px-3 pt-2 pb-[calc(0.6rem+env(safe-area-inset-bottom))]">
-          <ul className="mx-auto flex max-w-md items-stretch justify-around rounded-[28px] border border-white/10 bg-emerald-900/85 px-2 py-2 shadow-[0_20px_50px_-15px_rgba(6,78,59,0.65)] backdrop-blur-xl">
+        <nav className="fixed inset-x-0 bottom-0 z-40 px-2 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
+          <ul className="mx-auto flex max-w-md items-stretch justify-around rounded-[24px] border border-emerald-500/15 bg-slate-950/85 px-1.5 py-2 shadow-[0_-8px_40px_-12px_rgba(0,0,0,0.6),0_20px_50px_-15px_rgba(6,78,59,0.5)] backdrop-blur-xl">
             {tabs.map(({ to, label, icon: Icon, exact }) => {
               const active = exact ? path === to : path.startsWith(to);
               const showBadge = to === "/app/chats" && unreadDM > 0;
@@ -212,23 +212,26 @@ function AppLayout() {
                     to={to}
                     className="group relative flex flex-col items-center gap-1 py-1 text-[10px] font-semibold transition"
                   >
+                    {active && (
+                      <span aria-hidden className="absolute -top-1 left-1/2 h-8 w-8 -translate-x-1/2 rounded-full bg-emerald-500/30 blur-xl" />
+                    )}
                     <span
                       className={`relative flex h-9 w-9 items-center justify-center rounded-2xl transition-all duration-300 ${
                         active
-                          ? "bg-gradient-to-br from-emerald-400 to-emerald-600 text-white shadow-lg shadow-emerald-500/40 ring-1 ring-emerald-300/40 -translate-y-0.5"
-                          : "text-emerald-100/80 group-active:scale-90"
+                          ? "bg-gradient-to-br from-emerald-400 to-emerald-600 text-white shadow-[0_6px_20px_-4px_rgba(16,185,129,0.7)] ring-1 ring-emerald-300/50 -translate-y-1"
+                          : "text-emerald-200/40 group-hover:text-emerald-200/80 group-active:scale-90"
                       }`}
                     >
                       <Icon className="h-[18px] w-[18px]" strokeWidth={active ? 2.5 : 2} />
                       {showBadge && (
-                        <span className="absolute -end-1.5 -top-1 flex h-[16px] min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white ring-2 ring-emerald-900">
+                        <span className="absolute -end-1.5 -top-1 flex h-[16px] min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white ring-2 ring-slate-950">
                           {unreadDM > 99 ? "99+" : unreadDM}
                         </span>
                       )}
                     </span>
-                    <span className={`leading-none transition ${active ? "text-white" : "text-emerald-100/70"}`}>{label}</span>
+                    <span className={`leading-none transition ${active ? "text-emerald-300 font-bold" : "text-emerald-200/40"}`}>{label}</span>
                     {active && (
-                      <span className="absolute -bottom-0.5 h-1 w-1 rounded-full bg-emerald-300 shadow-[0_0_6px_2px_rgba(110,231,183,0.6)]" />
+                      <span className="absolute -bottom-0.5 h-1 w-1 rounded-full bg-emerald-400 shadow-[0_0_8px_2px_rgba(16,185,129,0.9)]" />
                     )}
                   </Link>
                 </li>
