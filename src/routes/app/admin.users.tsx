@@ -33,6 +33,8 @@ function AdminUsers() {
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
+  const [pointsTarget, setPointsTarget] = useState<AdminUser | null>(null);
+  const [pointsValue, setPointsValue] = useState<string>("100");
 
   useEffect(() => {
     if (loaded && !isAdmin) {
@@ -89,12 +91,19 @@ function AdminUsers() {
   };
 
   const sendPoints = (u: AdminUser) => {
-    const v = prompt(`عدد النقاط لإرسالها إلى ${u.username ?? "المستخدم"} (يمكن سالب):`, "100");
-    if (!v) return;
-    const n = Number(v);
-    if (!Number.isFinite(n) || n === 0) { toast.error("قيمة غير صالحة"); return; }
-    wrap(u.id, () => supabase.rpc("admin_send_points", { _target: u.id, _amount: n }));
+    setPointsValue("100");
+    setPointsTarget(u);
   };
+
+  const confirmSendPoints = async () => {
+    if (!pointsTarget) return;
+    const n = Number(pointsValue);
+    if (!Number.isFinite(n) || n === 0) { toast.error("قيمة غير صالحة"); return; }
+    const u = pointsTarget;
+    setPointsTarget(null);
+    await wrap(u.id, () => supabase.rpc("admin_send_points", { _target: u.id, _amount: n }));
+  };
+
 
   const rename = (u: AdminUser) => {
     const v = prompt("اسم المستخدم الجديد:", u.username ?? "");
@@ -228,6 +237,34 @@ function AdminUsers() {
           {filtered.length === 0 && (
             <div className="py-10 text-center text-sm text-muted-foreground">لا نتائج</div>
           )}
+        </div>
+      )}
+
+
+      {pointsTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setPointsTarget(null)}>
+          <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-3 flex items-center gap-2">
+              <Coins className="h-5 w-5 text-amber-500" />
+              <h3 className="font-extrabold">إرسال نقاط إلى {pointsTarget.username ?? "المستخدم"}</h3>
+            </div>
+            <p className="mb-3 text-xs text-muted-foreground">يمكن استخدام قيمة سالبة لخصم النقاط.</p>
+            <input
+              type="number"
+              value={pointsValue}
+              onChange={(e) => setPointsValue(e.target.value)}
+              autoFocus
+              dir="ltr"
+              className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm outline-none focus:border-primary"
+            />
+            <div className="mt-3 flex gap-2">
+              <button onClick={() => setPointsTarget(null)} className="h-11 flex-1 rounded-xl border border-border text-sm font-bold">إلغاء</button>
+              <button onClick={confirmSendPoints} disabled={busy === pointsTarget.id}
+                className="h-11 flex-1 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-sm font-bold text-white disabled:opacity-50">
+                إرسال
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </main>
