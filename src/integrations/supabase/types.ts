@@ -1151,6 +1151,8 @@ export type Database = {
           recovery_email_verified_at: string
         }[]
       }
+      get_weekly_leaderboards: { Args: { _limit?: number }; Returns: Json }
+      get_weekly_user_stats: { Args: { _user: string }; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
