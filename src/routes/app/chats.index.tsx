@@ -86,6 +86,14 @@ function ChatsPage() {
     void cacheSet(cacheKeys.chatsList(user.id), convos);
   }, [convos, user]);
 
+  // Re-sync as soon as connectivity returns.
+  useEffect(() => {
+    const onUp = () => { void load(); };
+    window.addEventListener("online", onUp);
+    return () => window.removeEventListener("online", onUp);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
   useEffect(() => {
     const q = query.trim();
     if (!q || !user) { setResults([]); return; }
