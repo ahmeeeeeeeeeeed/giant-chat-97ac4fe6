@@ -7,7 +7,7 @@ import {
   Send, Loader2, ArrowLeft, Users, Hash, Lock, Settings, Shield, Ban, UserMinus,
   ArrowUp, ArrowDown, Crown, FileText, X, KeyRound, MoreVertical, Megaphone,
   UserPlus, AtSign, Edit3, Trash2, Power, Globe, Search, Info, Save, AlertTriangle,
-  Image as ImageIcon, Mic, Square, Play, Pause, Share2,
+  Image as ImageIcon, Mic, Square, Play, Pause, Share2, Copy,
 } from "lucide-react";
 import { MusicPlayer } from "@/components/MusicPlayer";
 import { BroadcastCard } from "@/components/BroadcastCard";
@@ -830,6 +830,18 @@ function RoomPage() {
               </div>
             </div>
             <div className="px-3 pb-3 space-y-2">
+              <button
+                onClick={async () => {
+                  const txt = actionMsg.content || actionMsg.media_url || "";
+                  try { await navigator.clipboard.writeText(txt); toast.success("تم النسخ"); }
+                  catch { toast.error("تعذّر النسخ"); }
+                  setActionMsg(null);
+                }}
+                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-white/8 px-4 py-3.5 text-[15px] font-bold text-white/90 ring-1 ring-white/10 transition active:scale-[0.98] hover:bg-white/12"
+              >
+                <Copy className="h-4 w-4" />
+                <span>نسخ الرسالة</span>
+              </button>
               <button
                 disabled={deleting}
                 onClick={async () => {

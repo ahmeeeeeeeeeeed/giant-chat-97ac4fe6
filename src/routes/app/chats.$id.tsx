@@ -512,9 +512,7 @@ function DMPage() {
                           <div className="fixed inset-0 z-40" onClick={() => setMenuFor(null)} />
                           <div className={`absolute z-50 mt-1 ${mine ? "left-0" : "right-0"} top-full w-48 overflow-hidden rounded-xl border border-border bg-card shadow-lg`}>
                             <ActionItem icon={<Reply className="h-4 w-4" />} label="رد" onClick={() => { setReplyTo(m); setMenuFor(null); }} />
-                            {m.message_type === "text" && (
-                              <ActionItem icon={<Copy className="h-4 w-4" />} label="نسخ" onClick={() => copyMessage(m)} />
-                            )}
+                            <ActionItem icon={<Copy className="h-4 w-4" />} label="نسخ" onClick={() => copyMessage(m)} />
                             <ActionItem icon={<Share2 className="h-4 w-4" />} label="مشاركة" onClick={() => shareMessage(m)} />
                             <ActionItem icon={<Trash2 className="h-4 w-4" />} label="حذف لدي فقط" onClick={() => deleteForMe(m)} />
                             {mine && (
@@ -525,7 +523,7 @@ function DMPage() {
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <MessageBubble m={m} mine={mine} replied={replied ?? null} />
+                      <MessageBubble m={m} mine={mine} replied={replied ?? null} onPress={() => setMenuFor(m.id)} />
                       <div className={`mt-1 text-[10px] text-muted-foreground/80 ${mine ? "text-end" : "text-start"}`} suppressHydrationWarning>
                         {formatDateTime(m.created_at)}
                       </div>
@@ -616,7 +614,7 @@ function ActionItem({ icon, label, onClick, destructive }: { icon: React.ReactNo
   );
 }
 
-function MessageBubble({ m, mine, replied }: { m: DM; mine: boolean; replied: DM | null }) {
+function MessageBubble({ m, mine, replied, onPress }: { m: DM; mine: boolean; replied: DM | null; onPress?: () => void }) {
   const [lightbox, setLightbox] = useState(false);
   const base = `rounded-2xl px-3.5 py-2 shadow-sm ${mine ? "rounded-br-md bg-primary text-primary-foreground" : "rounded-bl-md bg-card border border-border"}`;
   const replyBlock = replied && (
@@ -628,9 +626,9 @@ function MessageBubble({ m, mine, replied }: { m: DM; mine: boolean; replied: DM
   if (m.message_type === "image" && m.media_url) {
     return (
       <>
-        <div className="overflow-hidden rounded-2xl">
+        <div className="overflow-hidden rounded-2xl" onClick={onPress}>
           {replyBlock}
-          <button type="button" onClick={() => setLightbox(true)} className="block w-full">
+          <button type="button" onClick={(e) => { e.stopPropagation(); setLightbox(true); }} className="block w-full">
             <img src={m.media_url} alt="" className="max-h-72 w-full rounded-2xl object-cover" loading="lazy" />
           </button>
         </div>
@@ -639,19 +637,29 @@ function MessageBubble({ m, mine, replied }: { m: DM; mine: boolean; replied: DM
     );
   }
   if (m.message_type === "voice" && m.media_url) {
-    return <div className={base}>{replyBlock}<VoicePlayer url={m.media_url} durationMs={m.media_duration_ms ?? 0} mine={mine} /></div>;
+    return (
+      <div className={base} onClick={onPress}>
+        {replyBlock}
+        <VoicePlayer url={m.media_url} durationMs={m.media_duration_ms ?? 0} mine={mine} />
+      </div>
+    );
   }
   const shared = tryParseTrackDM(m.content || "");
   if (shared) {
-    return <div className={base}>{replyBlock}<TrackDMPlayer track={shared.track} senderName={shared.senderName} mine={mine} /></div>;
+    return <div className={base} onClick={onPress}>{replyBlock}<TrackDMPlayer track={shared.track} senderName={shared.senderName} mine={mine} /></div>;
   }
-  return <div className={base}>{replyBlock}<div className="whitespace-pre-wrap break-words text-[15px] leading-relaxed">{m.content}</div></div>;
+  return (
+    <div className={base} onClick={onPress}>
+      {replyBlock}
+      <div className="whitespace-pre-wrap break-words text-[15px] leading-relaxed">{m.content}</div>
+    </div>
+  );
 }
 
 function VoicePlayer({ url, durationMs, mine }: { url: string; durationMs: number; mine: boolean }) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
-  const toggle = () => { const a = audioRef.current; if (!a) return; if (playing) a.pause(); else a.play(); };
+  const toggle = (e?: React.MouseEvent) => { e?.stopPropagation(); const a = audioRef.current; if (!a) return; if (playing) a.pause(); else a.play(); };
   useEffect(() => {
     const a = audioRef.current; if (!a) return;
     const onPlay = () => setPlaying(true);
@@ -662,7 +670,7 @@ function VoicePlayer({ url, durationMs, mine }: { url: string; durationMs: numbe
   }, []);
   return (
     <div className="flex items-center gap-2">
-      <button type="button" onClick={toggle} className={`flex h-8 w-8 items-center justify-center rounded-full ${mine ? "bg-primary-foreground/20" : "bg-secondary"}`}>
+      <button type="button" onClick={(e) => toggle(e)} className={`flex h-8 w-8 items-center justify-center rounded-full ${mine ? "bg-primary-foreground/20" : "bg-secondary"}`}>
         {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
       </button>
       <div className="flex h-1 w-32 items-center">
