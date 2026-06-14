@@ -34,13 +34,13 @@ function AppLayout() {
 
   const tabs = [
     { to: "/app/chats", label: t("nav.chats"), icon: MessageSquare, exact: false },
-    { to: "/app", label: t("nav.rooms"), icon: Home, exact: true },
-    { to: "/app/community", label: "المجتمع", icon: Newspaper, exact: false },
     { to: "/app/friends", label: t("nav.friends"), icon: UsersIcon, exact: false },
+    { to: "/app/community", label: "المجتمع", icon: Newspaper, exact: false },
     { to: "/app/games", label: t("nav.games"), icon: Gamepad2, exact: false },
-    { to: "/app/my_profile", label: t("nav.profile"), icon: User, exact: false },
+    { to: "/app", label: t("nav.rooms"), icon: Home, exact: true },
     { to: "/app/settings", label: t("nav.settings"), icon: Settings, exact: false },
   ] as const;
+
 
   useEffect(() => {
     if (!loading && !session) navigate({ to: "/" });
