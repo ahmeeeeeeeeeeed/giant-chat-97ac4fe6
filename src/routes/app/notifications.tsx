@@ -27,6 +27,10 @@ function NotificationsPage() {
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
 
+  useEffect(() => { resetBellCount(); }, []);
+
+
+
   const load = async () => {
     if (!user) return;
     setLoading(true);
