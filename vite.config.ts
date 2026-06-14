@@ -14,6 +14,20 @@ const APP_VERSION = pkg.version ?? "1.0.0";
 export default defineConfig({
   tanstackStart: {
     server: { entry: "server" },
+    // Prerender critical shell pages so dist/client contains real index.html files.
+    // Capacitor (Android APK) requires dist/client/index.html to package the WebView;
+    // the PWA Service Worker also needs an HTML file for `navigateFallback: "/offline"`.
+    prerender: {
+      enabled: true,
+      crawlLinks: false,
+      autoSubfolderIndex: false,
+    },
+    pages: [
+      { path: "/" },
+      { path: "/offline" },
+      { path: "/login" },
+      { path: "/register" },
+    ],
   },
   vite: {
     define: {
