@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { useIsAdmin } from "@/lib/use-admin";
 import { toast } from "sonner";
+import { recordDailyAction } from "@/lib/daily-tasks";
 import {
   ImagePlus, Video, X, Loader2, Send, MoreVertical, Trash2, Pencil,
   Flag, MessageCircle, ChevronDown, ChevronUp, Heart, Smile,
@@ -130,6 +131,7 @@ function Composer({ userId, onPosted }: { userId: string; onPosted: () => void }
       if (error) throw error;
       setContent(""); pick(null);
       toast.success("تم نشر المنشور");
+      recordDailyAction("publish_post" as any);
       onPosted();
     } catch (e: any) {
       toast.error(e.message || "فشل النشر");
