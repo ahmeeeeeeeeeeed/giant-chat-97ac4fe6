@@ -1,8 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { LogIn, MessageCircle, Users, Music, Sparkles } from "lucide-react";
 import welcomeBg from "@/assets/welcome-bg.mp4.asset.json";
+import PermissionsGate, { hasCompletedPermissionsGate } from "@/components/PermissionsGate";
 
 
 export const Route = createFileRoute("/")({
@@ -12,6 +13,13 @@ export const Route = createFileRoute("/")({
 function Welcome() {
   const navigate = useNavigate();
   const videoRef = useRef<HTMLVideoElement>(null);
+  const [needsPerms, setNeedsPerms] = useState(false);
+  useEffect(() => { setNeedsPerms(!hasCompletedPermissionsGate()); }, []);
+
+  const guardedNavigate = (to: "/login" | "/register") => {
+    if (!hasCompletedPermissionsGate()) { setNeedsPerms(true); return; }
+    navigate({ to });
+  };
 
   useEffect(() => {
     // Check session in background; don't block render so the video can start instantly
