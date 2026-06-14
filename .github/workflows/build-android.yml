@@ -59,6 +59,9 @@ jobs:
       - name: Patch Android version (code/name)
         run: node scripts/patch-android-version.mjs
 
+      - name: Patch Android immersive navigation bar
+        run: node scripts/patch-android-immersive.mjs
+
       - name: Grant gradlew permission
         run: chmod +x android/gradlew
 
