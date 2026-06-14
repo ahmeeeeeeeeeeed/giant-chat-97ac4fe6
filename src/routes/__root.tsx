@@ -78,6 +78,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "icon", type: "image/png", sizes: "192x192", href: "/icons/icon-192.png" },
       { rel: "icon", type: "image/png", sizes: "512x512", href: "/icons/icon-512.png" },
       { rel: "apple-touch-icon", sizes: "180x180", href: "/icons/apple-touch-icon.png" },
+      // Speed: warm up critical origins before first paint
+      { rel: "preconnect", href: "https://gfuusohydgpumgardbyn.supabase.co", crossOrigin: "anonymous" },
+      { rel: "dns-prefetch", href: "https://gfuusohydgpumgardbyn.supabase.co" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
