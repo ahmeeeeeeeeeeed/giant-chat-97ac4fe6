@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/lib/theme";
 import { signOut, useAuth } from "@/lib/auth";
+import { supabase } from "@/integrations/supabase/client";
 import { useIsAdmin } from "@/lib/use-admin";
 import {
   Moon, Sun, LogOut, ChevronLeft, Globe, Check,
