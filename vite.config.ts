@@ -11,7 +11,6 @@ import { readFileSync } from "node:fs";
 const pkg = JSON.parse(readFileSync(new URL("./package.json", import.meta.url), "utf8")) as { version?: string };
 const APP_VERSION = pkg.version ?? "1.0.0";
 
-export default defineConfig({
 // When building the Capacitor APK we need a real prerendered SPA shell so
 // the WebView has hydratable HTML. TanStack Start's prerenderer spawns a
 // preview server that imports `dist/server/server.js` — that file only
