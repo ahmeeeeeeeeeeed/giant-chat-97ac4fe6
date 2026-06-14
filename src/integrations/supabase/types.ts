@@ -1211,6 +1211,10 @@ export type Database = {
         Returns: undefined
       }
       room_invite_friends: { Args: { _room: string }; Returns: number }
+      room_invite_username: {
+        Args: { _room: string; _username: string }
+        Returns: boolean
+      }
       room_join: {
         Args: { _password?: string; _room: string }
         Returns: undefined
