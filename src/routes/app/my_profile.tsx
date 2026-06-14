@@ -329,8 +329,8 @@ function ProfilePage() {
               </div>
 
               {accountEmail ? (
-                <div dir="ltr" className="rounded-xl border border-border bg-background px-3 py-2.5 text-sm font-semibold">
-                  {accountEmail}
+                <div className="rounded-xl border border-border bg-background px-3 py-2.5 text-sm font-semibold">
+                  @{username}
                 </div>
               ) : (
                 <div className="rounded-xl border border-dashed border-border bg-background px-3 py-2.5 text-xs text-muted-foreground">
