@@ -161,7 +161,22 @@ function RoomPage() {
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "rooms", filter: `id=eq.${roomId}` },
         (p) => setRoom(p.new))
       .subscribe();
-    return () => { markRoomSeen(roomId); supabase.removeChannel(ch); };
+
+    const entryCh = supabase
+      .channel(`room-entry:${roomId}`, { config: { broadcast: { self: false } } })
+      .on("broadcast", { event: "entry" }, (p) => {
+        const payload = (p.payload ?? {}) as { emoji?: string; name?: string };
+        setEntryBurst({ id: Date.now() + Math.random(), emoji: payload.emoji || "✨", name: payload.name });
+      })
+      .subscribe();
+    entryChRef.current = entryCh;
+
+    return () => {
+      markRoomSeen(roomId);
+      supabase.removeChannel(ch);
+      supabase.removeChannel(entryCh);
+      entryChRef.current = null;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomId, user?.id]);
 
