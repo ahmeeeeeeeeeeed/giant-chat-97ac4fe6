@@ -124,7 +124,7 @@ function DMPage() {
       const cachedProfile = await cacheGet<Profile>(cacheKeys.profile(otherId));
       if (cachedMsgs) setMessages(cachedMsgs);
       if (cachedProfile) setOther(cachedProfile);
-      if (cachedMsgs) setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight }), 50);
+      if (cachedMsgs && cachedMsgs.length) scrollToBottom(false);
 
       // 2) If offline, do NOT touch the network — avoids browser "no internet" errors.
       if (!getOnline()) return;
