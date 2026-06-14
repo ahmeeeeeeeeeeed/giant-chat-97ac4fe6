@@ -432,14 +432,24 @@ function RoomCard({ room, accentIndex, isOwner, isMember, onJoin }: { room: Room
             </div>
           </div>
 
-          <button
-            onClick={openInvite}
-            aria-label="دعوة الأصدقاء"
-            title="دعوة الأصدقاء"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-sm transition hover:brightness-110 active:scale-90"
-          >
-            <UserPlus className="h-4 w-4" />
-          </button>
+          {isMember ? (
+            <button
+              onClick={openInvite}
+              aria-label="دعوة الأصدقاء"
+              title="دعوة الأصدقاء"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-sm transition hover:brightness-110 active:scale-90"
+            >
+              <UserPlus className="h-4 w-4" />
+            </button>
+          ) : (
+            <button
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onJoin(); }}
+              className="flex shrink-0 items-center gap-1 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 px-3 py-2 text-xs font-bold text-white shadow-md transition hover:from-emerald-600 hover:to-emerald-700 active:scale-95"
+            >
+              <LogIn className="h-3.5 w-3.5" />
+              انضمام
+            </button>
+          )}
         </Link>
       </div>
 
