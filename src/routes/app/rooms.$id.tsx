@@ -170,7 +170,22 @@ function RoomPage() {
             markRoomSeen(roomId);
             return;
           }
-          setMessages((prev) => (prev.some((x) => x.id === m.id) ? prev : [...prev, m]));
+          setMessages((prev) => {
+            if (prev.some((x) => x.id === m.id)) return prev;
+            // Replace any matching optimistic temp message from the same sender
+            const tmpIdx = prev.findIndex((x) =>
+              typeof x.id === "string" && x.id.startsWith("tmp-") &&
+              x.user_id === m.user_id &&
+              (x.content ?? "") === (m.content ?? "") &&
+              (x.media_url ?? null) === (m.media_url ?? null)
+            );
+            if (tmpIdx >= 0) {
+              const next = prev.slice();
+              next[tmpIdx] = m;
+              return next;
+            }
+            return [...prev, m];
+          });
           if (m.user_id) ensureProfiles([m.user_id]);
           markRoomSeen(roomId);
           setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
