@@ -354,6 +354,21 @@ function RoomPage() {
         </div>
       )}
 
+      {showLeaveConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setShowLeaveConfirm(false)}>
+          <div className="w-full max-w-sm rounded-2xl bg-card p-6 text-center" onClick={(e) => e.stopPropagation()}>
+            <h3 className="font-bold text-lg mb-2">تأكيد الخروج</h3>
+            <p className="text-sm text-muted-foreground mb-6">هل تريد مغادرة الغرفة؟</p>
+            <div className="flex gap-2">
+              <button onClick={() => setShowLeaveConfirm(false)} className="flex-1 h-11 rounded-xl border border-border font-medium">إلغاء</button>
+              <button onClick={doLeave} className="flex-1 h-11 rounded-xl bg-destructive text-destructive-foreground font-medium hover:bg-destructive/90 transition">
+                تأكيد
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showSettings && (
         <SettingsSheet roomId={roomId} canModerate={myRank === "owner" || myRank === "admin" || myRank === "moderator"} myRank={myRank}
           ownerId={room.owner_id} onClose={() => setShowSettings(false)} ensureProfiles={ensureProfiles} userMap={userMap} />
