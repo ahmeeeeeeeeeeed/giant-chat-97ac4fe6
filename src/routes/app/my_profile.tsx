@@ -398,6 +398,13 @@ function ProfilePage() {
           <Section title={t("profile.security")}>
             <Row icon={<Shield className="h-5 w-5" />} label={t("profile.security")} value="✓" />
             <PasswordChangeRow />
+            <Link to="/app/account" className="flex items-center justify-between p-4">
+              <div className="flex items-center gap-3">
+                <History className="h-5 w-5" />
+                <span className="font-medium">سجلّ تسجيل الدخول</span>
+              </div>
+              <ChevronLeft className="h-4 w-4 text-muted-foreground rtl:rotate-180" />
+            </Link>
           </Section>
 
           <Section title={t("profile.about")}>
