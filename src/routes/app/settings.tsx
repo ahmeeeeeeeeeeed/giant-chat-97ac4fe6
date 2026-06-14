@@ -31,6 +31,7 @@ function SettingsPage() {
   const [showLogout, setShowLogout] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [showPremium, setShowPremium] = useState(false);
+  const [username, setUsername] = useState("");
 
   const doLogout = async () => {
     setSigningOut(true);
