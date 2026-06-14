@@ -78,6 +78,20 @@ function DMPage() {
   const recTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const presenceChRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const didInitialScrollRef = useRef(false);
+
+  // Robust scroll-to-bottom: jumps instantly and retries across a few frames
+  // to handle late layout (images/avatars loading).
+  const scrollToBottom = (smooth = false) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const go = () => el.scrollTo({ top: el.scrollHeight, behavior: smooth ? "smooth" : "auto" });
+    go();
+    requestAnimationFrame(() => { go(); requestAnimationFrame(go); });
+    setTimeout(go, 120);
+    setTimeout(go, 350);
+    setTimeout(go, 800);
+  };
 
   const messagesById = useMemo(() => {
     const m = new Map<string, DM>();
