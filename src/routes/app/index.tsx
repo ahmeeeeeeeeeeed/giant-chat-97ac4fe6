@@ -246,7 +246,7 @@ function RoomsPage() {
           <ul className="grid grid-cols-1 gap-3">
             {filtered.map((r, idx) => (
               <li key={r.id}>
-                <RoomCard room={r} accentIndex={idx} isOwner={r.owner_id === user.id} />
+                <RoomCard room={r} accentIndex={idx} isOwner={r.owner_id === user.id} isMember={myRoomIds.has(r.id)} onJoin={() => handleJoin(r.id)} />
               </li>
             ))}
           </ul>
