@@ -13,6 +13,7 @@ import { ThemeProvider } from "@/lib/theme";
 import { AuthProvider } from "@/lib/auth";
 import { Toaster } from "@/components/ui/sonner";
 import i18n, { applyLanguageDir } from "@/lib/i18n";
+import { setAutoTranslateLanguage } from "@/lib/auto-translate";
 import { registerAppServiceWorker } from "@/lib/register-sw";
 import { schedulePrewarm } from "@/lib/prewarm";
 import { initCapacitorChrome } from "@/lib/capacitor-init";
@@ -112,7 +113,11 @@ function RootShell({ children }: { children: React.ReactNode }) {
 function LanguageSync() {
   useEffect(() => {
     applyLanguageDir(i18n.language);
-    const onChange = (lng: string) => applyLanguageDir(lng);
+    setAutoTranslateLanguage(i18n.language);
+    const onChange = (lng: string) => {
+      applyLanguageDir(lng);
+      setAutoTranslateLanguage(lng);
+    };
     i18n.on("languageChanged", onChange);
     return () => { i18n.off("languageChanged", onChange); };
   }, []);
