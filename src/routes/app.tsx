@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "@/lib/auth";
 import { useIsAdmin, useUnreadDMCount } from "@/lib/use-admin";
 import { useGlobalNotificationListener, useUnreadRoomCount } from "@/lib/use-global-notifications";
+import { useAnnouncementsListener } from "@/lib/use-announcements";
 import { Home, MessageSquare, User, Settings, Users as UsersIcon, Gamepad2, Bell, Shield, ShieldAlert, Trophy, ArrowRight, Newspaper } from "lucide-react";
 import { OnlineStatusBanner } from "@/components/OnlineStatusBanner";
 import { ReportModal } from "@/components/ReportModal";
