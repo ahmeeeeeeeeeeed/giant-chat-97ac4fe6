@@ -1,13 +1,12 @@
 import { createFileRoute, Link, Outlet, useNavigate, useLocation, useRouter } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/lib/auth";
 import { useIsAdmin, useUnreadDMCount } from "@/lib/use-admin";
 import { useGlobalNotificationListener, useUnreadRoomCount } from "@/lib/use-global-notifications";
 import { Home, MessageSquare, User, Settings, Users as UsersIcon, Gamepad2, Bell, Shield, Flag, ArrowRight, Newspaper } from "lucide-react";
-import { findAdminId } from "@/lib/find-admin";
-import { toast } from "sonner";
 import { OnlineStatusBanner } from "@/components/OnlineStatusBanner";
+import { ReportModal } from "@/components/ReportModal";
 import { scheduleDataPrewarm } from "@/lib/data-prewarm";
 import giantLogo from "@/assets/giant-logo.png.asset.json";
 
