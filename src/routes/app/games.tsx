@@ -203,7 +203,7 @@ function QuizGame({ onWin }: { onWin: () => void }) {
 
 // ============ 🧩 فك الحروف ============
 const WORDS = ["برمجة", "كرسي", "نهار", "جامعة", "كتاب", "مطر", "شمس", "نجوم", "قمر", "صديق", "محبة", "حلم", "وردة", "بحر", "جبل"];
-function shuffle(s: string) {
+function shuffle(s: string): string {
   const a = s.split("");
   for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
   const out = a.join("");
