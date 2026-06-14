@@ -354,9 +354,8 @@ function RoomPage() {
         const duration = Date.now() - recordStartRef.current;
         setRecording(false); setRecordSec(0);
         if (blob.size > 0 && duration > 500) {
-          setUploading(true);
-          await uploadAndSend(blob, "voice", duration);
-          setUploading(false);
+          const previewUrl = URL.createObjectURL(blob);
+          setPendingMedia({ kind: "voice", file: blob, previewUrl, durationMs: duration });
         }
       };
       recordStartRef.current = Date.now();
