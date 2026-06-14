@@ -1,11 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Trophy, Flame, Coins, Crown, Sparkles, Medal } from "lucide-react";
+import { Trophy, Flame, Coins, Crown, Sparkles, Medal, Gamepad2 } from "lucide-react";
 
 export const Route = createFileRoute("/app/achievements")({
   component: AchievementsPage,
 });
+
+type WinnerRow = { user_id: string; username: string; avatar_url: string | null; wins: number };
+
 
 type Row = {
   user_id: string;
@@ -21,10 +24,12 @@ const TABS = [
   { key: "overall", label: "الأكثر تفاعلًا", icon: Crown, gradient: "from-amber-500 via-orange-500 to-rose-500", desc: "غرف • منشورات • تفاعل • إنفاق" },
   { key: "posters", label: "نجوم المنشورات", icon: Flame, gradient: "from-fuchsia-500 via-pink-500 to-rose-500", desc: "نشر • تعليقات • إعجابات على منشوراتك" },
   { key: "spenders", label: "أكبر المشترين", icon: Coins, gradient: "from-emerald-500 via-teal-500 to-cyan-500", desc: "النقاط المنفقة في المتجر هذا الأسبوع" },
+  { key: "winners", label: "أبطال الألعاب", icon: Gamepad2, gradient: "from-violet-500 via-purple-500 to-indigo-600", desc: "الأكثر فوزاً في ألعاب التطبيق" },
 ] as const;
 
 function AchievementsPage() {
   const [board, setBoard] = useState<Board | null>(null);
+  const [winners, setWinners] = useState<WinnerRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<(typeof TABS)[number]["key"]>("overall");
 
@@ -32,16 +37,22 @@ function AchievementsPage() {
     let mounted = true;
     (async () => {
       setLoading(true);
-      const { data, error } = await supabase.rpc("get_weekly_leaderboards", { _limit: 20 });
+      const [{ data, error }, { data: w }] = await Promise.all([
+        supabase.rpc("get_weekly_leaderboards", { _limit: 20 }),
+        supabase.rpc("get_top_game_winners", { _limit: 20 }),
+      ]);
       if (mounted) {
         if (!error && data) setBoard(data as Board);
+        if (w) setWinners(w as WinnerRow[]);
         setLoading(false);
       }
     })();
     return () => { mounted = false; };
   }, []);
 
-  const rows = (board?.[tab] ?? []) as Row[];
+  const rows: Row[] = tab === "winners"
+    ? winners.map(w => ({ user_id: w.user_id, username: w.username, avatar_url: w.avatar_url, score: w.wins, breakdown: { wins: w.wins } }))
+    : ((board?.[tab] ?? []) as Row[]);
   const weekEnd = board?.week_end ? new Date(board.week_end) : null;
   const daysLeft = weekEnd ? Math.max(0, Math.ceil((weekEnd.getTime() - Date.now()) / 86400000)) : null;
 
@@ -159,7 +170,7 @@ function RankRow({ row, rank, tab }: { row: Row; rank: number; tab: string }) {
       <div className="min-w-0 flex-1">
         <div className="truncate text-sm font-bold">{row.username}</div>
         <div className="truncate text-[11px] text-muted-foreground">
-          {tab === "spenders" ? `${row.breakdown?.items ?? 0} عنصر` : tab === "posters" ? `${row.breakdown?.posts ?? 0} منشور` : `${row.breakdown?.room_messages ?? 0} رسالة`}
+          {tab === "winners" ? `${row.breakdown?.wins ?? 0} فوز` : tab === "spenders" ? `${row.breakdown?.items ?? 0} عنصر` : tab === "posters" ? `${row.breakdown?.posts ?? 0} منشور` : `${row.breakdown?.room_messages ?? 0} رسالة`}
         </div>
       </div>
       <div className="flex items-center gap-1 text-sm font-extrabold text-primary">

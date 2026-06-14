@@ -571,6 +571,7 @@ export type Database = {
           equipped_chat_color: string | null
           equipped_effect: string | null
           equipped_name_color: string | null
+          game_wins: number
           gender: string | null
           hide_last_seen: boolean
           id: string
@@ -594,6 +595,7 @@ export type Database = {
           equipped_chat_color?: string | null
           equipped_effect?: string | null
           equipped_name_color?: string | null
+          game_wins?: number
           gender?: string | null
           hide_last_seen?: boolean
           id: string
@@ -617,6 +619,7 @@ export type Database = {
           equipped_chat_color?: string | null
           equipped_effect?: string | null
           equipped_name_color?: string | null
+          game_wins?: number
           gender?: string | null
           hide_last_seen?: boolean
           id?: string
@@ -1151,6 +1154,15 @@ export type Database = {
           recovery_email_verified_at: string
         }[]
       }
+      get_top_game_winners: {
+        Args: { _limit?: number }
+        Returns: {
+          avatar_url: string
+          user_id: string
+          username: string
+          wins: number
+        }[]
+      }
       get_weekly_leaderboards: { Args: { _limit?: number }; Returns: Json }
       get_weekly_user_stats: { Args: { _user: string }; Returns: Json }
       has_role: {
@@ -1206,6 +1218,10 @@ export type Database = {
       }
       music_skip: { Args: { _room: string }; Returns: undefined }
       music_stop: { Args: { _room: string }; Returns: undefined }
+      record_game_win: {
+        Args: { _game: string; _points?: number }
+        Returns: undefined
+      }
       room_bot_say: {
         Args: { _kind?: string; _meta?: Json; _room: string; _text: string }
         Returns: undefined
