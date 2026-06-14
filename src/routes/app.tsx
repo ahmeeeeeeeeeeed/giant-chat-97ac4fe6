@@ -57,6 +57,27 @@ function AppLayout() {
   const tabRoots = new Set(["/app", "/app/community", "/app/friends", "/app/games", "/app/chats", "/app/my_profile", "/app/settings"]);
   const showBack = !hideChrome && !tabRoots.has(path);
 
+  const pageTitle = (() => {
+    if (path === "/app" || path === "/app/") return "الغرف";
+    if (path === "/app/community") return "المجتمع";
+    if (path === "/app/friends") return "الأصدقاء";
+    if (path === "/app/games") return "الألعاب";
+    if (path === "/app/chats") return "الدردشات";
+    if (path.startsWith("/app/chats/")) return "دردشة خاصة";
+    if (path === "/app/my_profile") return "حسابي";
+    if (path === "/app/settings") return "الإعدادات";
+    if (path === "/app/admin") return "لوحة الإدارة";
+    if (path.startsWith("/app/admin/")) return "لوحة الإدارة";
+    if (path.startsWith("/app/rooms/")) return "الغرفة";
+    if (path === "/app/notifications") return "الإشعارات";
+    if (path === "/app/achievements") return "الإنجازات";
+    if (path === "/app/store") return "المتجر";
+    if (path.startsWith("/app/profile/")) return "الملف الشخصي";
+    if (path === "/app/create-room") return "إنشاء غرفة";
+    if (path === "/app/account") return "إدارة الحساب";
+    return "";
+  })();
+
   return (
     <div className={`flex min-h-screen flex-col ${hideChrome ? "" : "pb-[calc(72px+env(safe-area-inset-bottom))]"}`}>
 
@@ -87,7 +108,9 @@ function AppLayout() {
                 </div>
                 <div className="flex items-center gap-1.5 text-[10px] font-semibold tracking-[0.18em] text-emerald-50/90">
                   <span className="inline-block h-1 w-1 rounded-full bg-amber-300 shadow-[0_0_6px_2px_rgba(252,211,77,0.7)]" />
-                  <span>CHAT · مجتمعات</span>
+                  <span className="truncate max-w-[140px] bg-gradient-to-r from-amber-200 via-white to-emerald-100 bg-clip-text text-transparent drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)]">
+                    {pageTitle || "CHAT · مجتمعات"}
+                  </span>
                 </div>
               </div>
             </div>
