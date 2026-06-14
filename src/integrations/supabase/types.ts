@@ -53,6 +53,54 @@ export type Database = {
         }
         Relationships: []
       }
+      app_updates: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          file_size: number | null
+          file_url: string
+          id: string
+          is_active: boolean
+          minimum_required_code: number
+          minimum_required_version: string
+          update_message: string
+          update_type: string
+          updated_at: string
+          version: string
+          version_code: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          file_size?: number | null
+          file_url: string
+          id?: string
+          is_active?: boolean
+          minimum_required_code?: number
+          minimum_required_version?: string
+          update_message?: string
+          update_type?: string
+          updated_at?: string
+          version: string
+          version_code: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          file_size?: number | null
+          file_url?: string
+          id?: string
+          is_active?: boolean
+          minimum_required_code?: number
+          minimum_required_version?: string
+          update_message?: string
+          update_type?: string
+          updated_at?: string
+          version?: string
+          version_code?: number
+        }
+        Relationships: []
+      }
       badges: {
         Row: {
           badge_type: string | null
