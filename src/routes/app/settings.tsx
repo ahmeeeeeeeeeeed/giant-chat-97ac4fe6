@@ -43,6 +43,13 @@ function SettingsPage() {
     }
   };
 
+  useEffect(() => {
+    if (!user?.id) return;
+    supabase.from("profiles").select("username").eq("id", user.id).maybeSingle().then(({ data }) => {
+      if (data?.username) setUsername(data.username);
+    });
+  }, [user?.id]);
+
   const openReports = async () => {
     const id = await findAdminId();
     if (!id) { toast.error("لم يتم العثور على حساب الإدارة"); return; }
