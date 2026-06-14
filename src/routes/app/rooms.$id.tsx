@@ -80,6 +80,18 @@ function RoomPage() {
         return next;
       });
     }
+    // Fetch equipped colors (name/chat) in parallel — applied live in room messages.
+    try {
+      const sets = await Promise.all(need.map((id) => getEquipped(id).catch(() => ({} as any))));
+      setColorMap((prev) => {
+        const next = { ...prev };
+        need.forEach((id, i) => {
+          const s: any = sets[i] ?? {};
+          next[id] = { name: s.name_color?.color ?? undefined, chat: s.chat_color?.color ?? undefined };
+        });
+        return next;
+      });
+    } catch { /* ignore */ }
   }, []);
 
   const loadRoom = async () => {
