@@ -23,6 +23,19 @@ export async function initCapacitorChrome() {
       const { SplashScreen } = await import("@capacitor/splash-screen");
       await SplashScreen.hide();
     } catch { /* optional */ }
+    try {
+      const { App } = await import("@capacitor/app");
+      await App.addListener("backButton", ({ canGoBack }) => {
+        if (canGoBack && window.history.length > 1) {
+          window.history.back();
+          return;
+        }
+        const ok = window.confirm("هل تريد الخروج من التطبيق؟");
+        if (ok) {
+          void App.exitApp();
+        }
+      });
+    } catch { /* App plugin missing */ }
     // Defer permission prompts slightly so the UI shows first.
     setTimeout(() => { void requestAllAppPermissions(); }, 1500);
   } catch {
