@@ -88,6 +88,14 @@ function AppLayout() {
             </div>
 
             <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => setReportOpen(true)}
+                aria-label="الإبلاغ والشكاوى"
+                title="الإبلاغ والشكاوى"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-orange-400 to-red-500 text-white shadow-md shadow-orange-900/30 ring-1 ring-white/30 transition active:scale-95 hover:brightness-110"
+              >
+                <Flag className="h-[18px] w-[18px]" />
+              </button>
               {isAdmin && (
                 <Link to="/app/admin" aria-label={t("admin.title")}
                   className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/15 backdrop-blur transition active:scale-95 hover:bg-white/20">
