@@ -211,7 +211,7 @@ function AdminUpdates() {
 
         <div>
           <label className="text-xs text-muted-foreground">ملف APK</label>
-          <input id="apk-input" type="file" accept=".apk,application/vnd.android.package-archive"
+          <input id="apk-input" type="file" accept="*/*"
             onChange={(e) => setFile(e.target.files?.[0] || null)}
             className="mt-1 block w-full text-sm file:mr-3 file:rounded-xl file:border-0 file:bg-secondary file:px-4 file:py-2 file:text-sm file:font-semibold" />
           {file && <p className="mt-1 text-xs text-muted-foreground">{file.name} — {(file.size / 1024 / 1024).toFixed(2)} MB</p>}
