@@ -1,8 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/lib/theme";
 import { signOut, useAuth } from "@/lib/auth";
+import { supabase } from "@/integrations/supabase/client";
 import { useIsAdmin } from "@/lib/use-admin";
 import {
   Moon, Sun, LogOut, ChevronLeft, Globe, Check,
@@ -30,6 +31,7 @@ function SettingsPage() {
   const [showLogout, setShowLogout] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [showPremium, setShowPremium] = useState(false);
+  const [username, setUsername] = useState("");
 
   const doLogout = async () => {
     setSigningOut(true);
@@ -40,6 +42,13 @@ function SettingsPage() {
       setSigningOut(false);
     }
   };
+
+  useEffect(() => {
+    if (!user?.id) return;
+    supabase.from("profiles").select("username").eq("id", user.id).maybeSingle().then(({ data }) => {
+      if (data?.username) setUsername(data.username);
+    });
+  }, [user?.id]);
 
   const openReports = async () => {
     const id = await findAdminId();
@@ -61,7 +70,7 @@ function SettingsPage() {
     <main className="flex flex-1 flex-col bg-gradient-to-b from-background to-secondary/30 pb-8">
       <header className="sticky top-0 z-10 border-b border-border bg-background/90 px-5 py-4 backdrop-blur">
         <h1 className="text-2xl font-extrabold">{t("settings.title")}</h1>
-        {user?.email && <p className="mt-0.5 text-[12px] text-muted-foreground truncate">{user.email}</p>}
+        {username && <p className="mt-0.5 text-[12px] text-muted-foreground truncate">@{username}</p>}
       </header>
 
       <div className="flex flex-col gap-4 px-4 py-5">
