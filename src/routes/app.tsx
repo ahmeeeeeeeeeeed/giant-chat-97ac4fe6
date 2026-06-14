@@ -24,6 +24,7 @@ function AppLayout() {
   const unreadRooms = useUnreadRoomCount();
   const unread = unreadDM + unreadRooms;
   useGlobalNotificationListener((url) => navigate({ to: url as any }));
+  useAnnouncementsListener(!!session?.user?.id);
   const router = useRouter();
   const [reportOpen, setReportOpen] = useState(false);
 
