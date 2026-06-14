@@ -142,6 +142,7 @@ function RootComponent() {
           <LanguageSync />
           <Outlet />
           <Toaster position="top-center" richColors />
+          <ExitConfirmDialog />
         </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>
