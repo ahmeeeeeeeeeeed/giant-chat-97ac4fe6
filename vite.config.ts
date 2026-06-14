@@ -14,6 +14,15 @@ const APP_VERSION = pkg.version ?? "1.0.0";
 export default defineConfig({
   tanstackStart: {
     server: { entry: "server" },
+    // Emit a real SPA shell at dist/client/index.html via TanStack Start's
+    // built-in prerenderer. Capacitor packages dist/client into the APK, so
+    // the WebView always has a hydratable HTML document to boot the SPA —
+    // no network required. outputPath "/index.html" overrides the default
+    // "/_shell" so the file lands where the WebView expects.
+    spa: {
+      enabled: true,
+      prerender: { outputPath: "/index.html", crawlLinks: false },
+    },
   },
   vite: {
     define: {
