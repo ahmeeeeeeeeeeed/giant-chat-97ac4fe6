@@ -33,6 +33,8 @@ function AdminUsers() {
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
+  const [pointsTarget, setPointsTarget] = useState<AdminUser | null>(null);
+  const [pointsValue, setPointsValue] = useState<string>("100");
 
   useEffect(() => {
     if (loaded && !isAdmin) {
