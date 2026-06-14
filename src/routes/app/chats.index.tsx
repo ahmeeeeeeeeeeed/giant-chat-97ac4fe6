@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { MessageSquare, Loader2, Search, X } from "lucide-react";
 import { cacheGet, cacheSet, cacheKeys } from "@/lib/offline-cache";
+import { getOnline } from "@/lib/use-online";
 
 
 export const Route = createFileRoute("/app/chats/")({
@@ -28,6 +29,8 @@ function ChatsPage() {
     if (!user) return;
     const cached = await cacheGet<Convo[]>(cacheKeys.chatsList(user.id));
     if (cached) { setConvos(cached); setLoading(false); } else { setLoading(true); }
+    // Offline → skip the network entirely; cached list is authoritative for the UI.
+    if (!getOnline()) { setLoading(false); return; }
     try {
       const { data, error } = await supabase
         .from("direct_messages")
@@ -68,6 +71,7 @@ function ChatsPage() {
   useEffect(() => {
     load();
     if (!user) return;
+    if (!getOnline()) return;
     const ch = supabase
       .channel("dm-list")
       .on("postgres_changes", { event: "*", schema: "public", table: "direct_messages" }, () => load())
@@ -81,6 +85,14 @@ function ChatsPage() {
     if (!user) return;
     void cacheSet(cacheKeys.chatsList(user.id), convos);
   }, [convos, user]);
+
+  // Re-sync as soon as connectivity returns.
+  useEffect(() => {
+    const onUp = () => { void load(); };
+    window.addEventListener("online", onUp);
+    return () => window.removeEventListener("online", onUp);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   useEffect(() => {
     const q = query.trim();
