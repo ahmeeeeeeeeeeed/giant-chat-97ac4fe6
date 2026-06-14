@@ -9,7 +9,7 @@ import { Loader2, Camera, User as UserIcon, Bell, Info, Shield, ChevronLeft, Loc
 import { useTranslation } from "react-i18next";
 import { getEquipped, type EquippedSet } from "@/lib/equipped";
 import { BadgeChip } from "@/routes/app/store";
-import { requestEmailVerification, confirmEmailVerification } from "@/lib/recovery.functions";
+
 import { cacheGet, cacheSet, cacheKeys } from "@/lib/offline-cache";
 
 export const Route = createFileRoute("/app/my_profile")({
