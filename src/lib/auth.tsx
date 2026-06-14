@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Session, User } from "@supabase/supabase-js";
+import { backupSession, clearSessionBackup, restoreSessionFromBackup } from "./session-store";
 
 type AuthCtx = {
   session: Session | null;
@@ -17,6 +18,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((evt, s) => {
       setSession(s);
       setLoading(false);
+      // Mirror session to native secure storage (Capacitor Preferences on Android).
+      // No-op on web — Supabase already persists to localStorage there.
+      void backupSession(s);
+      if (evt === "SIGNED_OUT") {
+        void clearSessionBackup();
+      }
       if (evt === "SIGNED_IN" && s?.user) {
         // Fire-and-forget login record (country + timestamp + IP via server fn)
         import("./login-history.functions")
@@ -24,10 +31,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .catch((e) => console.warn("[login-history] record failed", e));
       }
     });
-    supabase.auth.getSession().then(({ data }) => {
+    // First try to restore from native backup (offline-safe), then read current session.
+    (async () => {
+      await restoreSessionFromBackup();
+      const { data } = await supabase.auth.getSession();
       setSession(data.session);
       setLoading(false);
-    });
+    })();
     return () => subscription.unsubscribe();
   }, []);
 
