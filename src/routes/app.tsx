@@ -119,7 +119,8 @@ function AppLayout() {
       <UpdateGate />
       <ReportModal open={reportOpen} onClose={() => setReportOpen(false)} />
       {!hideChrome && (
-        <header className="sticky top-0 z-50 pt-[env(safe-area-inset-top)] bg-gradient-to-b from-emerald-700 via-emerald-600 to-emerald-600/95 text-white shadow-[0_8px_24px_-12px_rgba(6,78,59,0.55)]">
+        <header className="sticky top-0 z-50 pt-[env(safe-area-inset-top)] bg-[linear-gradient(180deg,#052e22_0%,#073d2c_60%,#073d2c_100%)] text-white shadow-[0_10px_30px_-18px_rgba(0,0,0,0.6)] border-b border-emerald-500/15 backdrop-blur-xl">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_60%_at_50%_-20%,rgba(16,185,129,0.25),transparent_60%)]" />
           <div className="relative flex items-center justify-between px-3 py-2.5">
             <div className="flex min-w-0 items-center gap-2.5">
               {showBack ? (
@@ -131,21 +132,20 @@ function AppLayout() {
                   <ArrowRight className="h-[18px] w-[18px]" />
                 </button>
               ) : (
-                <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-emerald-300 to-emerald-500 p-[2px] shadow-lg shadow-emerald-900/40 ring-2 ring-white/40">
-                  <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-white">
-                    <span className="text-[20px] font-black leading-none tracking-tighter bg-gradient-to-br from-emerald-600 to-emerald-800 bg-clip-text text-transparent">G</span>
+                <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-400 to-emerald-700 p-[2px] shadow-[0_8px_20px_-8px_rgba(16,185,129,0.7)] ring-1 ring-emerald-300/30">
+                  <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-[14px] bg-emerald-950/80 backdrop-blur">
+                    <span className="text-[18px] font-black leading-none tracking-tight text-emerald-300">G</span>
                   </div>
+                  <span className="absolute -bottom-0.5 -end-0.5 h-2.5 w-2.5 rounded-full bg-emerald-400 ring-2 ring-emerald-950 shadow-[0_0_8px_2px_rgba(16,185,129,0.6)]" />
                 </div>
               )}
               <div className="min-w-0">
-                <div className="truncate text-[18px] font-black leading-tight tracking-tight bg-gradient-to-r from-white via-emerald-50 to-amber-200 bg-clip-text text-transparent drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)]">
+                <div className="truncate text-[17px] font-extrabold leading-tight tracking-tight text-white">
                   Giant
                 </div>
-                <div className="flex items-center gap-1.5 text-[10px] font-semibold tracking-[0.18em] text-emerald-50/90">
-                  <span className="inline-block h-1 w-1 rounded-full bg-amber-300 shadow-[0_0_6px_2px_rgba(252,211,77,0.7)]" />
-                  <span className="truncate max-w-[140px] bg-gradient-to-r from-amber-200 via-white to-emerald-100 bg-clip-text text-transparent drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)]">
-                    {pageTitle || "CHAT · مجتمعات"}
-                  </span>
+                <div className="flex items-center gap-1.5 text-[10px] font-semibold tracking-wider text-emerald-300/80">
+                  <span className="inline-block h-1 w-1 rounded-full bg-emerald-400 shadow-[0_0_6px_2px_rgba(16,185,129,0.7)]" />
+                  <span className="truncate max-w-[160px]">{pageTitle || "CHAT · مجتمعات"}</span>
                 </div>
               </div>
             </div>
@@ -155,48 +155,48 @@ function AppLayout() {
                 to="/app/daily-tasks"
                 aria-label="المهام اليومية"
                 title="المهام اليومية"
-                className="relative flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 via-teal-500 to-emerald-600 text-white shadow-md shadow-emerald-900/30 ring-1 ring-white/30 transition active:scale-95 hover:brightness-110"
+                className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-950/60 border border-emerald-500/30 text-emerald-300 backdrop-blur transition active:scale-95 hover:bg-emerald-900/60 hover:text-emerald-200"
               >
-                <Target className="h-[18px] w-[18px]" />
-                <span className="absolute -top-0.5 -end-0.5 h-2 w-2 rounded-full bg-emerald-200 shadow-[0_0_6px_2px_rgba(167,243,208,0.7)]" />
+                <Target className="h-[17px] w-[17px]" />
+                <span className="absolute -top-0.5 -end-0.5 h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_6px_2px_rgba(16,185,129,0.6)]" />
               </Link>
               <Link
                 to="/app/achievements"
                 aria-label="الإنجازات"
                 title="الإنجازات الأسبوعية"
-                className="relative flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 via-yellow-500 to-amber-600 text-white shadow-md shadow-amber-900/30 ring-1 ring-white/30 transition active:scale-95 hover:brightness-110"
+                className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-amber-950/40 border border-amber-500/30 text-amber-300 backdrop-blur transition active:scale-95 hover:bg-amber-900/40"
               >
-                <Trophy className="h-[18px] w-[18px]" />
-                <span className="absolute -top-0.5 -end-0.5 h-2 w-2 rounded-full bg-amber-200 shadow-[0_0_6px_2px_rgba(253,224,71,0.7)]" />
+                <Trophy className="h-[17px] w-[17px]" />
               </Link>
               <button
                 onClick={() => setReportOpen(true)}
                 aria-label="الإبلاغ والشكاوى"
                 title="الإبلاغ والشكاوى"
-                className="relative flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-rose-500 via-red-500 to-orange-500 text-white shadow-lg shadow-red-900/30 ring-1 ring-white/30 transition active:scale-95 hover:brightness-110"
+                className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-rose-950/40 border border-rose-500/30 text-rose-300 backdrop-blur transition active:scale-95 hover:bg-rose-900/40"
               >
-                <ShieldAlert className="h-[18px] w-[18px]" />
-                <span className="absolute -top-0.5 -end-0.5 h-2 w-2 rounded-full bg-red-200 shadow-[0_0_6px_2px_rgba(254,202,202,0.7)]" />
+                <ShieldAlert className="h-[17px] w-[17px]" />
               </button>
               {isAdmin && (
                 <Link to="/app/admin" aria-label={t("admin.title")}
-                  className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/15 backdrop-blur transition active:scale-95 hover:bg-white/20">
-                  <Shield className="h-[18px] w-[18px]" />
+                  className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-sky-950/40 border border-sky-500/30 text-sky-300 backdrop-blur transition active:scale-95 hover:bg-sky-900/40">
+                  <Shield className="h-[17px] w-[17px]" />
                 </Link>
               )}
-              <Link to="/app/notifications" aria-label={t("notif.title")}
-                className="relative flex h-9 w-9 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/15 backdrop-blur transition active:scale-95 hover:bg-white/20">
-                <Bell className="h-[18px] w-[18px]" />
-                {path !== "/app/notifications" && unread > 0 && (
-                  <span className="absolute -end-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white ring-2 ring-emerald-600">
+              <Link
+                to="/app/notifications"
+                aria-label="الإشعارات"
+                title="الإشعارات"
+                className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900/60 border border-emerald-500/20 text-emerald-200/90 backdrop-blur transition active:scale-95 hover:bg-slate-800/60"
+              >
+                <Bell className="h-[17px] w-[17px]" />
+                {unread > 0 && (
+                  <span className="absolute -top-1 -end-1 flex h-[16px] min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white ring-2 ring-emerald-950">
                     {unread > 99 ? "99+" : unread}
                   </span>
                 )}
               </Link>
             </div>
           </div>
-          {/* subtle bottom accent line */}
-          <div className="h-px w-full bg-gradient-to-r from-transparent via-white/25 to-transparent" />
         </header>
       )}
       <Outlet />
