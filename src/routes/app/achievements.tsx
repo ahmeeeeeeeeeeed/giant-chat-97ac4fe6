@@ -29,6 +29,7 @@ const TABS = [
 
 function AchievementsPage() {
   const [board, setBoard] = useState<Board | null>(null);
+  const [winners, setWinners] = useState<WinnerRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<(typeof TABS)[number]["key"]>("overall");
 
@@ -36,16 +37,22 @@ function AchievementsPage() {
     let mounted = true;
     (async () => {
       setLoading(true);
-      const { data, error } = await supabase.rpc("get_weekly_leaderboards", { _limit: 20 });
+      const [{ data, error }, { data: w }] = await Promise.all([
+        supabase.rpc("get_weekly_leaderboards", { _limit: 20 }),
+        supabase.rpc("get_top_game_winners", { _limit: 20 }),
+      ]);
       if (mounted) {
         if (!error && data) setBoard(data as Board);
+        if (w) setWinners(w as WinnerRow[]);
         setLoading(false);
       }
     })();
     return () => { mounted = false; };
   }, []);
 
-  const rows = (board?.[tab] ?? []) as Row[];
+  const rows: Row[] = tab === "winners"
+    ? winners.map(w => ({ user_id: w.user_id, username: w.username, avatar_url: w.avatar_url, score: w.wins, breakdown: { wins: w.wins } }))
+    : ((board?.[tab] ?? []) as Row[]);
   const weekEnd = board?.week_end ? new Date(board.week_end) : null;
   const daysLeft = weekEnd ? Math.max(0, Math.ceil((weekEnd.getTime() - Date.now()) / 86400000)) : null;
 
