@@ -12,6 +12,8 @@ import {
 import { MusicPlayer } from "@/components/MusicPlayer";
 import { BroadcastCard } from "@/components/BroadcastCard";
 import { SharePostModal, SharedPostCard } from "@/components/SharePostModal";
+import { FlyingEffect } from "@/components/FlyingEffect";
+import { getEquipped } from "@/lib/equipped";
 import { markRoomSeen } from "@/lib/notify";
 
 type Rank = "owner" | "admin" | "moderator" | "member";
