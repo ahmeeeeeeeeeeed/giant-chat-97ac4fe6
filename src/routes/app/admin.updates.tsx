@@ -36,6 +36,7 @@ function AdminUpdates() {
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [uploaded, setUploaded] = useState(0); // bytes
 
   useEffect(() => {
     if (loaded && !isAdmin) {
