@@ -44,7 +44,10 @@ function AppLayout() {
   }, [loading, session, navigate]);
 
   useEffect(() => {
-    if (session?.user?.id) scheduleDataPrewarm(session.user.id);
+    if (session?.user?.id) {
+      scheduleDataPrewarm(session.user.id);
+      void recordDailyAction("daily_login", 1);
+    }
   }, [session?.user?.id]);
 
   useEffect(() => {
