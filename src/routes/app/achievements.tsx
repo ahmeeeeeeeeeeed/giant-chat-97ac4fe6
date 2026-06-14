@@ -170,7 +170,7 @@ function RankRow({ row, rank, tab }: { row: Row; rank: number; tab: string }) {
       <div className="min-w-0 flex-1">
         <div className="truncate text-sm font-bold">{row.username}</div>
         <div className="truncate text-[11px] text-muted-foreground">
-          {tab === "spenders" ? `${row.breakdown?.items ?? 0} عنصر` : tab === "posters" ? `${row.breakdown?.posts ?? 0} منشور` : `${row.breakdown?.room_messages ?? 0} رسالة`}
+          {tab === "winners" ? `${row.breakdown?.wins ?? 0} فوز` : tab === "spenders" ? `${row.breakdown?.items ?? 0} عنصر` : tab === "posters" ? `${row.breakdown?.posts ?? 0} منشور` : `${row.breakdown?.room_messages ?? 0} رسالة`}
         </div>
       </div>
       <div className="flex items-center gap-1 text-sm font-extrabold text-primary">
