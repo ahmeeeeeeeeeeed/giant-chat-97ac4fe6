@@ -71,9 +71,18 @@ function RoomsPage() {
     }
   }, [user, authLoading, navigate]);
 
+  // Redirect to chats only on first app launch in this session, not on every visit to /app
   useEffect(() => {
     if (!authLoading && user) {
-      navigate({ to: "/app/chats" });
+      try {
+        const launched = sessionStorage.getItem("app_launched");
+        if (!launched) {
+          sessionStorage.setItem("app_launched", "1");
+          navigate({ to: "/app/chats" });
+        }
+      } catch {
+        // ignore storage errors
+      }
     }
   }, [authLoading, user, navigate]);
 
