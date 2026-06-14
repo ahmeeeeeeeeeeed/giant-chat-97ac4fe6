@@ -244,6 +244,8 @@ function ProfilePage() {
             <Row icon={<Shield className="h-5 w-5" />} label={t("profile.security")} value="✓" />
           </Section>
 
+          <LoginHistorySection />
+
           <Section title={t("profile.about")}>
             <Row icon={<Info className="h-5 w-5" />} label="Giant" value="v1.0" />
           </Section>
