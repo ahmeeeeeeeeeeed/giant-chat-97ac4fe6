@@ -7,7 +7,7 @@ import {
   Send, Loader2, ArrowLeft, Users, Hash, Lock, Settings, Shield, Ban, UserMinus,
   ArrowUp, ArrowDown, Crown, FileText, X, KeyRound, MoreVertical, Megaphone,
   UserPlus, AtSign, Edit3, Trash2, Power, Globe, Search, Info, Save, AlertTriangle,
-  Image as ImageIcon, Mic, Square, Play, Pause, Share2,
+  Image as ImageIcon, Mic, Square, Play, Pause, Share2, Copy,
 } from "lucide-react";
 import { MusicPlayer } from "@/components/MusicPlayer";
 import { BroadcastCard } from "@/components/BroadcastCard";
