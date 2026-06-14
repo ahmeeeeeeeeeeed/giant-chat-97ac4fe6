@@ -1295,6 +1295,10 @@ export type Database = {
       music_pause: { Args: { _room: string }; Returns: undefined }
       music_play: { Args: { _room: string; _track: Json }; Returns: undefined }
       music_resume: { Args: { _room: string }; Returns: undefined }
+      music_seek: {
+        Args: { _pos_ms: number; _room: string }
+        Returns: undefined
+      }
       music_set_volume: {
         Args: { _room: string; _vol: number }
         Returns: undefined
