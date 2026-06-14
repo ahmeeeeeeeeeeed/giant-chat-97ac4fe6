@@ -50,13 +50,11 @@ function ProfilePage() {
     getEquipped(user.id).then(setEquipped);
   }, [user]);
 
-  const [recoveryEmail, setRecoveryEmail] = useState("");
-  const [emailVerifiedAt, setEmailVerifiedAt] = useState<string | null>(null);
-  const [emailCode, setEmailCode] = useState("");
-  const [emailStep, setEmailStep] = useState<"idle" | "sent">("idle");
+  const [accountEmail, setAccountEmail] = useState<string>("");
+  const [pendingEmail, setPendingEmail] = useState<string>("");
+  const [newEmail, setNewEmail] = useState("");
   const [emailBusy, setEmailBusy] = useState(false);
-  const reqVerify = useServerFn(requestEmailVerification);
-  const confirmVerify = useServerFn(confirmEmailVerification);
+  const [editingEmail, setEditingEmail] = useState(false);
 
   useEffect(() => {
     if (!user) return;
