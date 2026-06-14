@@ -71,8 +71,12 @@ export const createPremiumByPoints = createServerFn({ method: "POST" })
     try {
       return await createPremiumUser(data);
     } catch (e) {
-      // refund on failure
-      try { await context.supabase.rpc("admin_send_points", { _target: context.userId, _amount: PREMIUM_COST } as never); } catch { /* ignore */ }
+      // refund on failure using admin client (caller is not admin)
+      try {
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const { data: prof } = await supabaseAdmin.from("profiles").select("points").eq("id", context.userId).maybeSingle();
+        if (prof) await supabaseAdmin.from("profiles").update({ points: (prof.points ?? 0) + PREMIUM_COST }).eq("id", context.userId);
+      } catch { /* ignore */ }
       throw e;
     }
   });
