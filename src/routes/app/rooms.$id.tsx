@@ -65,7 +65,7 @@ function RoomPage() {
   }, []);
 
   const loadRoom = async () => {
-    const { data, error } = await supabase.from("rooms").select("*").eq("id", roomId).single();
+    const { data, error } = await supabase.from("rooms").select("id, name, description, owner_id, created_at, type, max_members, is_active").eq("id", roomId).single();
     if (error || !data) {
       toast.error("الغرفة غير موجودة");
       navigate({ to: "/app" });
