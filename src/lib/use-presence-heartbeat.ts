@@ -41,7 +41,7 @@ export function usePresenceHeartbeat(userId: string | undefined) {
         const url = `${(import.meta as any).env.VITE_SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}`;
         const key = (import.meta as any).env.VITE_SUPABASE_PUBLISHABLE_KEY ?? (import.meta as any).env.VITE_SUPABASE_ANON_KEY;
         const token = (supabase as any).auth?.currentSession?.access_token;
-        if (navigator.sendBeacon && key) {
+        if (key) {
           const headers = new Blob([JSON.stringify({ last_seen_at: new Date().toISOString() })], { type: "application/json" });
           // sendBeacon can't set custom headers — fall back to fetch keepalive
           void fetch(url, {
