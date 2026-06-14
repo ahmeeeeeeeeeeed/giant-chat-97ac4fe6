@@ -5,10 +5,11 @@ import { useAuth } from "@/lib/auth";
 import { useIsAdmin, useUnreadDMCount } from "@/lib/use-admin";
 import { useGlobalNotificationListener, useUnreadRoomCount } from "@/lib/use-global-notifications";
 import { useAnnouncementsListener } from "@/lib/use-announcements";
-import { Home, MessageSquare, User, Settings, Users as UsersIcon, Gamepad2, Bell, Shield, ShieldAlert, Trophy, ArrowRight, Newspaper } from "lucide-react";
+import { Home, MessageSquare, User, Settings, Users as UsersIcon, Gamepad2, Bell, Shield, ShieldAlert, Trophy, ArrowRight, Newspaper, Target } from "lucide-react";
 import { OnlineStatusBanner } from "@/components/OnlineStatusBanner";
 import { ReportModal } from "@/components/ReportModal";
 import { scheduleDataPrewarm } from "@/lib/data-prewarm";
+import { recordDailyAction } from "@/lib/daily-tasks";
 
 export const Route = createFileRoute("/app")({
   component: AppLayout,
@@ -43,7 +44,10 @@ function AppLayout() {
   }, [loading, session, navigate]);
 
   useEffect(() => {
-    if (session?.user?.id) scheduleDataPrewarm(session.user.id);
+    if (session?.user?.id) {
+      scheduleDataPrewarm(session.user.id);
+      void recordDailyAction("daily_login", 1);
+    }
   }, [session?.user?.id]);
 
   useEffect(() => {
@@ -99,6 +103,7 @@ function AppLayout() {
     if (path.startsWith("/app/rooms/")) return "الغرفة";
     if (path === "/app/notifications") return "الإشعارات";
     if (path === "/app/achievements") return "الإنجازات";
+    if (path === "/app/daily-tasks") return "المهام اليومية";
     if (path === "/app/store") return "المتجر";
     if (path.startsWith("/app/profile/")) return "الملف الشخصي";
     if (path === "/app/create-room") return "إنشاء غرفة";
@@ -144,6 +149,15 @@ function AppLayout() {
             </div>
 
             <div className="flex items-center gap-1.5">
+              <Link
+                to="/app/daily-tasks"
+                aria-label="المهام اليومية"
+                title="المهام اليومية"
+                className="relative flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 via-teal-500 to-emerald-600 text-white shadow-md shadow-emerald-900/30 ring-1 ring-white/30 transition active:scale-95 hover:brightness-110"
+              >
+                <Target className="h-[18px] w-[18px]" />
+                <span className="absolute -top-0.5 -end-0.5 h-2 w-2 rounded-full bg-emerald-200 shadow-[0_0_6px_2px_rgba(167,243,208,0.7)]" />
+              </Link>
               <Link
                 to="/app/achievements"
                 aria-label="الإنجازات"

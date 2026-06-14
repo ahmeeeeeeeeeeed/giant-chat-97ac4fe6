@@ -24,6 +24,7 @@ import { Route as AppNotificationsRouteImport } from './routes/app/notifications
 import { Route as AppMy_profileRouteImport } from './routes/app/my_profile'
 import { Route as AppGamesRouteImport } from './routes/app/games'
 import { Route as AppFriendsRouteImport } from './routes/app/friends'
+import { Route as AppDailyTasksRouteImport } from './routes/app/daily-tasks'
 import { Route as AppCreateRoomRouteImport } from './routes/app/create-room'
 import { Route as AppCommunityRouteImport } from './routes/app/community'
 import { Route as AppAdminRouteImport } from './routes/app/admin'
@@ -113,6 +114,11 @@ const AppFriendsRoute = AppFriendsRouteImport.update({
   path: '/friends',
   getParentRoute: () => AppRoute,
 } as any)
+const AppDailyTasksRoute = AppDailyTasksRouteImport.update({
+  id: '/daily-tasks',
+  path: '/daily-tasks',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppCreateRoomRoute = AppCreateRoomRouteImport.update({
   id: '/create-room',
   path: '/create-room',
@@ -192,6 +198,7 @@ export interface FileRoutesByFullPath {
   '/app/admin': typeof AppAdminRouteWithChildren
   '/app/community': typeof AppCommunityRoute
   '/app/create-room': typeof AppCreateRoomRoute
+  '/app/daily-tasks': typeof AppDailyTasksRoute
   '/app/friends': typeof AppFriendsRoute
   '/app/games': typeof AppGamesRoute
   '/app/my_profile': typeof AppMy_profileRoute
@@ -220,6 +227,7 @@ export interface FileRoutesByTo {
   '/app/achievements': typeof AppAchievementsRoute
   '/app/community': typeof AppCommunityRoute
   '/app/create-room': typeof AppCreateRoomRoute
+  '/app/daily-tasks': typeof AppDailyTasksRoute
   '/app/friends': typeof AppFriendsRoute
   '/app/games': typeof AppGamesRoute
   '/app/my_profile': typeof AppMy_profileRoute
@@ -251,6 +259,7 @@ export interface FileRoutesById {
   '/app/admin': typeof AppAdminRouteWithChildren
   '/app/community': typeof AppCommunityRoute
   '/app/create-room': typeof AppCreateRoomRoute
+  '/app/daily-tasks': typeof AppDailyTasksRoute
   '/app/friends': typeof AppFriendsRoute
   '/app/games': typeof AppGamesRoute
   '/app/my_profile': typeof AppMy_profileRoute
@@ -283,6 +292,7 @@ export interface FileRouteTypes {
     | '/app/admin'
     | '/app/community'
     | '/app/create-room'
+    | '/app/daily-tasks'
     | '/app/friends'
     | '/app/games'
     | '/app/my_profile'
@@ -311,6 +321,7 @@ export interface FileRouteTypes {
     | '/app/achievements'
     | '/app/community'
     | '/app/create-room'
+    | '/app/daily-tasks'
     | '/app/friends'
     | '/app/games'
     | '/app/my_profile'
@@ -341,6 +352,7 @@ export interface FileRouteTypes {
     | '/app/admin'
     | '/app/community'
     | '/app/create-room'
+    | '/app/daily-tasks'
     | '/app/friends'
     | '/app/games'
     | '/app/my_profile'
@@ -477,6 +489,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppFriendsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/daily-tasks': {
+      id: '/app/daily-tasks'
+      path: '/daily-tasks'
+      fullPath: '/app/daily-tasks'
+      preLoaderRoute: typeof AppDailyTasksRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/create-room': {
       id: '/app/create-room'
       path: '/create-room'
@@ -595,6 +614,7 @@ interface AppRouteChildren {
   AppAdminRoute: typeof AppAdminRouteWithChildren
   AppCommunityRoute: typeof AppCommunityRoute
   AppCreateRoomRoute: typeof AppCreateRoomRoute
+  AppDailyTasksRoute: typeof AppDailyTasksRoute
   AppFriendsRoute: typeof AppFriendsRoute
   AppGamesRoute: typeof AppGamesRoute
   AppMy_profileRoute: typeof AppMy_profileRoute
@@ -614,6 +634,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAdminRoute: AppAdminRouteWithChildren,
   AppCommunityRoute: AppCommunityRoute,
   AppCreateRoomRoute: AppCreateRoomRoute,
+  AppDailyTasksRoute: AppDailyTasksRoute,
   AppFriendsRoute: AppFriendsRoute,
   AppGamesRoute: AppGamesRoute,
   AppMy_profileRoute: AppMy_profileRoute,

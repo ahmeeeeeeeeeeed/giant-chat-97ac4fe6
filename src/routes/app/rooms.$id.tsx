@@ -177,6 +177,7 @@ function RoomPage() {
     toast.success("تم الانضمام");
     loadMembership();
     loadMemberCount();
+    try { await supabase.rpc("record_daily_action", { _kind: "join_rooms", _amount: 1 }); } catch { /* ignore */ }
   };
 
   const leaveRoom = async () => setShowLeaveConfirm(true);
@@ -197,7 +198,10 @@ function RoomPage() {
       room_id: roomId, user_id: user.id, content: text.trim(),
     } as never);
     setSending(false);
-    if (!error) setText(""); else toast.error("فشل إرسال الرسالة");
+    if (!error) {
+      setText("");
+      try { await supabase.rpc("record_daily_action", { _kind: "send_messages", _amount: 1 }); } catch { /* ignore */ }
+    } else toast.error("فشل إرسال الرسالة");
   };
 
   const sendAnnouncement = async () => {
