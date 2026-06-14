@@ -91,12 +91,19 @@ function AdminUsers() {
   };
 
   const sendPoints = (u: AdminUser) => {
-    const v = prompt(`عدد النقاط لإرسالها إلى ${u.username ?? "المستخدم"} (يمكن سالب):`, "100");
-    if (!v) return;
-    const n = Number(v);
-    if (!Number.isFinite(n) || n === 0) { toast.error("قيمة غير صالحة"); return; }
-    wrap(u.id, () => supabase.rpc("admin_send_points", { _target: u.id, _amount: n }));
+    setPointsValue("100");
+    setPointsTarget(u);
   };
+
+  const confirmSendPoints = async () => {
+    if (!pointsTarget) return;
+    const n = Number(pointsValue);
+    if (!Number.isFinite(n) || n === 0) { toast.error("قيمة غير صالحة"); return; }
+    const u = pointsTarget;
+    setPointsTarget(null);
+    await wrap(u.id, () => supabase.rpc("admin_send_points", { _target: u.id, _amount: n }));
+  };
+
 
   const rename = (u: AdminUser) => {
     const v = prompt("اسم المستخدم الجديد:", u.username ?? "");
