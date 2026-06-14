@@ -506,6 +506,24 @@ export type Database = {
         }
         Relationships: []
       }
+      level_thresholds: {
+        Row: {
+          level: number
+          min_points: number
+          name: string
+        }
+        Insert: {
+          level: number
+          min_points: number
+          name: string
+        }
+        Update: {
+          level?: number
+          min_points?: number
+          name?: string
+        }
+        Relationships: []
+      }
       music_broadcast_reactions: {
         Row: {
           broadcast_id: string
@@ -1018,6 +1036,33 @@ export type Database = {
           },
         ]
       }
+      user_daily_progress: {
+        Row: {
+          claimed: boolean
+          claimed_at: string | null
+          day: string
+          progress: number
+          task_kind: string
+          user_id: string
+        }
+        Insert: {
+          claimed?: boolean
+          claimed_at?: string | null
+          day?: string
+          progress?: number
+          task_kind: string
+          user_id: string
+        }
+        Update: {
+          claimed?: boolean
+          claimed_at?: string | null
+          day?: string
+          progress?: number
+          task_kind?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_inventory: {
         Row: {
           acquired_at: string
@@ -1150,6 +1195,8 @@ export type Database = {
         Args: { _reason?: string; _room: string; _user: string }
         Returns: undefined
       }
+      claim_daily_reward: { Args: { _kind: string }; Returns: Json }
+      compute_level: { Args: { _points: number }; Returns: number }
       confirm_email_verification_code: {
         Args: { _code: string }
         Returns: boolean
@@ -1157,6 +1204,14 @@ export type Database = {
       consume_recovery_code: {
         Args: { _code: string; _username: string }
         Returns: string
+      }
+      daily_task_meta: {
+        Args: { _kind: string }
+        Returns: {
+          label: string
+          reward: number
+          target: number
+        }[]
       }
       dm_delete_for_all: { Args: { _id: string }; Returns: undefined }
       dm_delete_for_me: { Args: { _id: string }; Returns: undefined }
@@ -1168,6 +1223,17 @@ export type Database = {
       game_maybe_end: { Args: { _rid: string }; Returns: undefined }
       game_tick: { Args: never; Returns: undefined }
       get_bot_id: { Args: never; Returns: string }
+      get_my_daily_tasks: {
+        Args: never
+        Returns: {
+          claimed: boolean
+          kind: string
+          label: string
+          progress: number
+          reward: number
+          target: number
+        }[]
+      }
       get_my_recovery_status: {
         Args: never
         Returns: {
@@ -1239,6 +1305,10 @@ export type Database = {
       }
       music_skip: { Args: { _room: string }; Returns: undefined }
       music_stop: { Args: { _room: string }; Returns: undefined }
+      record_daily_action: {
+        Args: { _amount?: number; _kind: string }
+        Returns: undefined
+      }
       record_game_win: {
         Args: { _game: string; _points?: number }
         Returns: undefined
