@@ -234,9 +234,9 @@ function RoomPage() {
     const ext = kind === "image"
       ? ((file as File).name?.split(".").pop()?.toLowerCase() || "jpg")
       : (file.type.includes("mp4") ? "m4a" : "webm");
-    const path = `${roomId}/${user.id}/${Date.now()}.${ext}`;
+    const path = `${user.id}/${roomId}/${Date.now()}.${ext}`;
     const up = await supabase.storage.from("room-media").upload(path, file, { contentType: file.type, upsert: false });
-    if (up.error) { toast.error("فشل رفع الملف"); return; }
+    if (up.error) { toast.error(up.error.message || "فشل رفع الملف"); return; }
     const { data: pub } = supabase.storage.from("room-media").getPublicUrl(path);
     const url = pub.publicUrl;
     const tempId = `tmp-${Date.now()}`;
@@ -276,9 +276,31 @@ function RoomPage() {
     if (recording) return;
     if (!myRank) { toast.error("يجب الانضمام إلى الغرفة أولاً"); return; }
     if (isBanned) { toast.error("أنت محظور من هذه الغرفة"); return; }
+    if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
+      toast.error("المتصفح لا يدعم تسجيل الصوت");
+      return;
+    }
+    let stream: MediaStream;
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mime = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm"
+      // Call getUserMedia directly in the gesture handler to preserve the
+      // user-activation chain (Android WebView / iOS Safari requirement).
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (err: any) {
+      const name = err?.name || "";
+      if (name === "NotAllowedError" || name === "SecurityError") {
+        toast.error("تم رفض إذن الميكروفون — فعّله من إعدادات التطبيق/المتصفح");
+      } else if (name === "NotFoundError" || name === "OverconstrainedError") {
+        toast.error("لا يوجد ميكروفون متاح على الجهاز");
+      } else if (name === "NotReadableError") {
+        toast.error("الميكروفون مشغول بواسطة تطبيق آخر");
+      } else {
+        toast.error("تعذّر الوصول إلى الميكروفون: " + (err?.message || name || ""));
+      }
+      return;
+    }
+    try {
+      const mime = MediaRecorder.isTypeSupported("audio/webm;codecs=opus") ? "audio/webm;codecs=opus"
+        : MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm"
         : MediaRecorder.isTypeSupported("audio/mp4") ? "audio/mp4" : "";
       const mr = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
       recordChunksRef.current = [];
@@ -296,15 +318,16 @@ function RoomPage() {
         }
       };
       recordStartRef.current = Date.now();
-      mr.start();
+      mr.start(250);
       mediaRecorderRef.current = mr;
       setRecording(true);
       setRecordSec(0);
       recordTimerRef.current = window.setInterval(() => {
         setRecordSec(Math.floor((Date.now() - recordStartRef.current) / 1000));
       }, 250);
-    } catch {
-      toast.error("تعذّر الوصول إلى الميكروفون");
+    } catch (err: any) {
+      stream.getTracks().forEach((t) => t.stop());
+      toast.error("فشل بدء التسجيل: " + (err?.message || ""));
     }
   };
 
