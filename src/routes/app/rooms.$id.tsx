@@ -512,13 +512,23 @@ function RoomPage() {
                     </button>
                   )}
                   <div
-                    className={`rounded-2xl px-4 py-2.5 shadow-sm ${
-                      isOwn
-                        ? "rounded-br-md bg-gradient-to-br from-emerald-500 to-emerald-600 text-white"
-                        : "rounded-bl-md border border-border bg-card text-foreground"
+                    className={`rounded-2xl shadow-sm overflow-hidden ${
+                      msg.message_type === "image"
+                        ? "p-1 bg-transparent"
+                        : `px-4 py-2.5 ${isOwn
+                            ? "rounded-br-md bg-gradient-to-br from-emerald-500 to-emerald-600 text-white"
+                            : "rounded-bl-md border border-border bg-card text-foreground"}`
                     }`}
                   >
-                    <p className="whitespace-pre-wrap break-words text-[15px] leading-relaxed">{msg.content}</p>
+                    {msg.message_type === "image" && msg.media_url ? (
+                      <a href={msg.media_url} target="_blank" rel="noreferrer">
+                        <img src={msg.media_url} alt="" className="max-h-72 w-auto rounded-xl object-cover" />
+                      </a>
+                    ) : msg.message_type === "voice" && msg.media_url ? (
+                      <audio src={msg.media_url} controls preload="metadata" className="h-10 max-w-[260px]" />
+                    ) : (
+                      <p className="whitespace-pre-wrap break-words text-[15px] leading-relaxed">{msg.content}</p>
+                    )}
                   </div>
                   <p className={`mt-1 text-[10px] ${isOwn ? "text-muted-foreground" : "text-muted-foreground/80"}`} suppressHydrationWarning>
                     {date} · {time}
