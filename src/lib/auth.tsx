@@ -14,9 +14,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_evt, s) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((evt, s) => {
       setSession(s);
       setLoading(false);
+      if (evt === "SIGNED_IN" && s?.user) {
+        // Fire-and-forget login record (country + timestamp + IP via server fn)
+        import("./login-history.functions")
+          .then((m) => m.recordLogin())
+          .catch((e) => console.warn("[login-history] record failed", e));
+      }
     });
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
