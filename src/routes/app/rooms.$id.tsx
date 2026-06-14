@@ -620,7 +620,27 @@ function RoomPage() {
       {/* Composer */}
       <form onSubmit={sendMessage} className="border-t border-border bg-background/90 backdrop-blur p-3" style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.75rem)" }}>
         <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={onPickImage} />
-        {recording ? (
+        {pendingMedia ? (
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-center gap-2 rounded-xl bg-secondary/50 p-2">
+              {pendingMedia.kind === "image" ? (
+                <img src={pendingMedia.previewUrl} alt="معاينة" className="max-h-40 rounded-xl object-cover" />
+              ) : (
+                <audio src={pendingMedia.previewUrl} controls className="h-10 flex-1" />
+              )}
+            </div>
+            <div className="flex gap-2">
+              <button type="button" onClick={confirmPendingMedia} disabled={uploading}
+                className="flex-1 h-11 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-white font-bold shadow-md disabled:opacity-50 transition hover:from-emerald-600 hover:to-emerald-700">
+                {uploading ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : "إرسال"}
+              </button>
+              <button type="button" onClick={cancelPendingMedia}
+                className="flex-1 h-11 rounded-xl border border-border font-medium hover:bg-secondary transition">
+                إلغاء
+              </button>
+            </div>
+          </div>
+        ) : recording ? (
           <div className="flex items-center gap-2">
             <button type="button" onClick={() => stopRecording(true)}
               className="flex h-11 w-11 items-center justify-center rounded-xl bg-secondary text-muted-foreground hover:bg-secondary/80 transition" title="إلغاء">
