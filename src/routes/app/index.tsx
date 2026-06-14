@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
-import { Plus, Users, Hash, Loader2, X, Search } from "lucide-react";
+import { Plus, Users, Hash, Loader2, X, Search, Share2, UserPlus, Lock, Crown, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { cacheGet, cacheSet, cacheKeys } from "@/lib/offline-cache";
 
@@ -17,6 +17,7 @@ type Room = {
   name: string;
   description: string | null;
   owner_id: string;
+  type?: string | null;
   member_count?: number;
 };
 
@@ -86,7 +87,7 @@ function RoomsPage() {
     try {
       const { data: roomsData, error: roomsError } = await supabase
         .from("rooms")
-        .select("id, name, description, owner_id")
+        .select("id, name, description, owner_id, type")
         .order("created_at", { ascending: false });
 
       if (roomsError) throw roomsError;
@@ -211,26 +212,10 @@ function RoomsPage() {
         ) : filtered.length === 0 ? (
           <p className="mt-12 text-center text-sm text-muted-foreground">{t("rooms.no_results")}</p>
         ) : (
-          <ul className="flex flex-col gap-2">
-            {filtered.map((r) => (
+          <ul className="grid grid-cols-1 gap-3">
+            {filtered.map((r, idx) => (
               <li key={r.id}>
-                <Link
-                  to="/app/rooms/$id"
-                  params={{ id: r.id }}
-                  className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 transition active:scale-[0.99] hover:border-foreground/20"
-                >
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-secondary to-accent text-foreground">
-                    <Hash className="h-5 w-5" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <span className="truncate font-semibold">{r.name}</span>
-                    {r.description && <div className="truncate text-sm text-muted-foreground">{r.description}</div>}
-                  </div>
-                  <div className="flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1 text-xs font-medium text-muted-foreground">
-                    <Users className="h-3.5 w-3.5" />
-                    {r.member_count}
-                  </div>
-                </Link>
+                <RoomCard room={r} accentIndex={idx} isOwner={r.owner_id === user.id} />
               </li>
             ))}
           </ul>
