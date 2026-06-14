@@ -661,7 +661,7 @@ function MessageBubble({ m, mine, replied, onPress }: { m: DM; mine: boolean; re
 function VoicePlayer({ url, durationMs, mine }: { url: string; durationMs: number; mine: boolean }) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
-  const toggle = () => { const a = audioRef.current; if (!a) return; if (playing) a.pause(); else a.play(); };
+  const toggle = (e?: React.MouseEvent) => { e?.stopPropagation(); const a = audioRef.current; if (!a) return; if (playing) a.pause(); else a.play(); };
   useEffect(() => {
     const a = audioRef.current; if (!a) return;
     const onPlay = () => setPlaying(true);
