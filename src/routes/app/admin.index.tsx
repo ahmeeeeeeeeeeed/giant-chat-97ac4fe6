@@ -1,10 +1,12 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useIsAdmin } from "@/lib/use-admin";
 import { supabase } from "@/integrations/supabase/client";
-import { Shield, Coins, Megaphone, Hash, Loader2, ChevronLeft, Newspaper, Users as UsersIcon, Package, Crown } from "lucide-react";
+import { Shield, Coins, Megaphone, Hash, Loader2, ChevronLeft, Newspaper, Users as UsersIcon, Package, Crown, Trash2, Check, X } from "lucide-react";
 import { toast } from "sonner";
 import { PremiumCreateModal } from "@/components/PremiumCreateModal";
+import { useServerFn } from "@tanstack/react-start";
+import { approveAccountDeletion, rejectAccountDeletion } from "@/lib/account-deletion.functions";
 
 export const Route = createFileRoute("/app/admin/")({
   component: AdminHome,
