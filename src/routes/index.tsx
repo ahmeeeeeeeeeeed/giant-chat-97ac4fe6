@@ -45,7 +45,6 @@ function Welcome() {
         playsInline
         preload="auto"
         disableRemotePlayback
-        x-webkit-airplay="deny"
         className="pointer-events-none absolute inset-0 z-0 h-full w-full object-cover opacity-60"
       />
 
