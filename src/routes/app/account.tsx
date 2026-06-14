@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
-import { Loader2, Camera, User as UserIcon, Bell, Info, Shield, ChevronLeft, Lock, EyeOff, Globe, Eye } from "lucide-react";
+import { Loader2, Camera, User as UserIcon, Bell, Info, Shield, ChevronLeft, Lock, EyeOff, Globe, Eye, History, MapPin } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { getEquipped, type EquippedSet } from "@/lib/equipped";
 import { BadgeChip } from "@/routes/app/store";
@@ -244,6 +244,8 @@ function ProfilePage() {
             <Row icon={<Shield className="h-5 w-5" />} label={t("profile.security")} value="✓" />
           </Section>
 
+          <LoginHistorySection />
+
           <Section title={t("profile.about")}>
             <Row icon={<Info className="h-5 w-5" />} label="Giant" value="v1.0" />
           </Section>
@@ -304,5 +306,108 @@ export function VipBadge() {
     >
       ★ شخصية مهمة
     </span>
+  );
+}
+
+type LoginRow = {
+  id: string;
+  country: string | null;
+  country_code: string | null;
+  city: string | null;
+  ip: string | null;
+  created_at: string;
+};
+
+function flagEmoji(cc: string | null) {
+  if (!cc || cc.length !== 2) return "🌐";
+  const A = 0x1f1e6;
+  return String.fromCodePoint(A + cc.toUpperCase().charCodeAt(0) - 65) +
+         String.fromCodePoint(A + cc.toUpperCase().charCodeAt(1) - 65);
+}
+
+function fmtDate(iso: string) {
+  try {
+    return new Date(iso).toLocaleString("ar-EG", {
+      year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false,
+    });
+  } catch { return iso; }
+}
+
+function LoginHistorySection() {
+  const { user } = useAuth();
+  const [rows, setRows] = useState<LoginRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [expanded, setExpanded] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("login_history")
+        .select("id, country, country_code, city, ip, created_at")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (!cancelled) {
+        setRows((data ?? []) as LoginRow[]);
+        setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
+
+  const visible = expanded ? rows : rows.slice(0, 5);
+
+  return (
+    <div>
+      <h2 className="mb-2 px-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        <History className="inline h-3 w-3" /> سجلّ تسجيل الدخول
+      </h2>
+      <div className="overflow-hidden rounded-2xl border border-border bg-card">
+        {loading ? (
+          <div className="flex items-center justify-center p-6">
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          </div>
+        ) : rows.length === 0 ? (
+          <div className="p-4 text-center text-sm text-muted-foreground">
+            لا يوجد سجلّ بعد. سيظهر هنا عند تسجيل الدخول مرة أخرى.
+          </div>
+        ) : (
+          <ul className="divide-y divide-border">
+            {visible.map((r) => (
+              <li key={r.id} className="flex items-start justify-between gap-3 p-3">
+                <div className="flex min-w-0 items-start gap-2">
+                  <span className="text-lg leading-none">{flagEmoji(r.country_code)}</span>
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-semibold">
+                      {r.country || "غير معروف"}
+                      {r.city ? <span className="text-muted-foreground"> · {r.city}</span> : null}
+                    </div>
+                    <div className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground">
+                      <MapPin className="h-3 w-3" />
+                      <span dir="ltr">{r.ip || "—"}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="shrink-0 text-end text-[11px] text-muted-foreground" dir="ltr">
+                  {fmtDate(r.created_at)}
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+        {rows.length > 5 && (
+          <button
+            type="button"
+            onClick={() => setExpanded(e => !e)}
+            className="w-full border-t border-border bg-background/30 p-2 text-xs font-semibold text-primary hover:bg-background/60"
+          >
+            {expanded ? "عرض أقل" : `عرض الكل (${rows.length})`}
+          </button>
+        )}
+      </div>
+    </div>
   );
 }
