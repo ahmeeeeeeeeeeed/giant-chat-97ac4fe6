@@ -139,6 +139,7 @@ function DMPage() {
       const dmKey = cacheKeys.dmMessages(user.id, otherId);
       const cachedMsgs = await cacheGet<DM[]>(dmKey);
       const cachedProfile = await cacheGet<Profile>(cacheKeys.profile(otherId));
+      const cachedFriend = await cacheGet<boolean>(`friend:${user.id}:${otherId}`);
       if (cachedMsgs) {
         console.info("[dm-cache] loaded-local", { key: dmKey, count: cachedMsgs.length, online: getOnline() });
         setMessages(cachedMsgs);
@@ -146,6 +147,7 @@ function DMPage() {
         console.info("[dm-cache] miss-local", { key: dmKey, online: getOnline() });
       }
       if (cachedProfile) setOther(cachedProfile);
+      if (typeof cachedFriend === "boolean") setIsFriend(cachedFriend);
       if (cachedMsgs && cachedMsgs.length) scrollToBottom(false);
       dmCacheReadyRef.current = true;
 
