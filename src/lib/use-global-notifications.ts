@@ -103,10 +103,16 @@ export function useGlobalNotificationListener(navigateTo?: (url: string) => void
     if (navigateTo) installNativeNotificationTapHandler(navigateTo).catch(() => {});
 
     const loadRooms = async () => {
-      const { data } = await supabase
-        .from("room_members")
-        .select("room_id, rooms(id, name)")
-        .eq("user_id", user.id);
+      let data: any[] | null = null;
+      try {
+        const res = await supabase
+          .from("room_members")
+          .select("room_id, rooms(id, name)")
+          .eq("user_id", user.id);
+        data = res.data as any[] | null;
+      } catch {
+        data = null;
+      }
       const m = new Map<string, string>();
       (data ?? []).forEach((r: any) => {
         if (r.rooms?.id) m.set(r.rooms.id, r.rooms.name ?? "غرفة");
@@ -117,7 +123,13 @@ export function useGlobalNotificationListener(navigateTo?: (url: string) => void
 
     const getUsername = async (uid: string): Promise<string> => {
       if (profileCacheRef.current.has(uid)) return profileCacheRef.current.get(uid)!;
-      const { data } = await supabase.from("profiles").select("username").eq("id", uid).maybeSingle();
+      let data: { username: string | null } | null = null;
+      try {
+        const res = await supabase.from("profiles").select("username").eq("id", uid).maybeSingle();
+        data = res.data;
+      } catch {
+        data = null;
+      }
       const name = data?.username ?? "مستخدم";
       profileCacheRef.current.set(uid, name);
       return name;
