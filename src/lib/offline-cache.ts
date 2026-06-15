@@ -1,6 +1,6 @@
 // Offline-first key-value cache.
-// Web: IndexedDB. Native APK: IndexedDB + Capacitor Preferences mirror for
-// JSON chat data, because WebView IndexedDB can be evicted on mobile devices.
+// Web: IndexedDB. Native APK: IndexedDB + app-private Filesystem mirror,
+// because mobile WebView storage can be evicted while app data files persist.
 // Safe to import from client components; no-ops gracefully on the server.
 import { get, set, del, createStore } from "idb-keyval";
 
@@ -11,52 +11,83 @@ const nativePrefix = "giant.offline.v2:";
 
 type Entry<T> = { v: T; t: number };
 
-async function getNativePreferences() {
+async function getNativeFilesystem() {
   if (typeof window === "undefined") return null;
   try {
-    const [{ Capacitor }, { Preferences }] = await Promise.all([
+    const [{ Capacitor }, fs] = await Promise.all([
       import("@capacitor/core"),
-      import("@capacitor/preferences"),
+      import("@capacitor/filesystem"),
     ]);
-    return Capacitor.isNativePlatform() ? Preferences : null;
+    return Capacitor.isNativePlatform() ? fs : null;
   } catch {
     return null;
   }
 }
 
-function canMirrorNative(value: unknown): boolean {
-  if (typeof Blob !== "undefined" && value instanceof Blob) return false;
-  if (typeof File !== "undefined" && value instanceof File) return false;
-  return true;
+function nativePath(key: string): string {
+  const encoded = btoa(key).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+  return `offline-cache/${encoded}.json`;
+}
+
+function blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
+}
+
+function dataUrlToBlob(dataUrl: string): Blob {
+  const [meta, base64] = dataUrl.split(",");
+  const type = /data:(.*?);base64/.exec(meta)?.[1] ?? "application/octet-stream";
+  const binary = atob(base64 ?? "");
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+  return new Blob([bytes], { type });
 }
 
 async function nativeGet<T>(key: string): Promise<Entry<T> | null> {
-  const Preferences = await getNativePreferences();
-  if (!Preferences) return null;
+  const fs = await getNativeFilesystem();
+  if (!fs) return null;
   try {
-    const { value } = await Preferences.get({ key: nativePrefix + key });
-    return value ? (JSON.parse(value) as Entry<T>) : null;
+    const { data } = await fs.Filesystem.readFile({
+      path: nativePath(key),
+      directory: fs.Directory.Data,
+      encoding: fs.Encoding.UTF8,
+    });
+    const raw = JSON.parse(String(data)) as { t: number; kind: "blob"; dataUrl: string } | { t: number; kind: "json"; v: T };
+    if (raw.kind === "blob") return { t: raw.t, v: dataUrlToBlob(raw.dataUrl) as T };
+    return { t: raw.t, v: raw.v };
   } catch {
     return null;
   }
 }
 
 async function nativeSet<T>(key: string, entry: Entry<T>): Promise<void> {
-  if (!canMirrorNative(entry.v)) return;
-  const Preferences = await getNativePreferences();
-  if (!Preferences) return;
+  const fs = await getNativeFilesystem();
+  if (!fs) return;
   try {
-    await Preferences.set({ key: nativePrefix + key, value: JSON.stringify(entry) });
+    const payload = typeof Blob !== "undefined" && entry.v instanceof Blob
+      ? { t: entry.t, kind: "blob" as const, dataUrl: await blobToDataUrl(entry.v) }
+      : { t: entry.t, kind: "json" as const, v: entry.v };
+    await fs.Filesystem.writeFile({
+      path: nativePath(key),
+      data: JSON.stringify(payload),
+      directory: fs.Directory.Data,
+      encoding: fs.Encoding.UTF8,
+      recursive: true,
+    });
     console.info("[offline-cache] saved-native", { key });
   } catch {
-    /* SharedPreferences quota/serialization — IndexedDB path remains available */
+    /* Native file write failed — IndexedDB path remains available */
   }
 }
 
 async function nativeDel(key: string): Promise<void> {
-  const Preferences = await getNativePreferences();
-  if (!Preferences) return;
-  try { await Preferences.remove({ key: nativePrefix + key }); } catch { /* ignore */ }
+  const fs = await getNativeFilesystem();
+  if (!fs) return;
+  try { await fs.Filesystem.deleteFile({ path: nativePath(key), directory: fs.Directory.Data }); } catch { /* ignore */ }
 }
 
 export async function cacheGet<T>(key: string): Promise<T | null> {
