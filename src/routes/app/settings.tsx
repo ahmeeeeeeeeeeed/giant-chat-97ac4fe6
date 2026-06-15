@@ -11,6 +11,7 @@ import {
   Trophy, MessageSquare, Shield, Info, HelpCircle,
   Star, Share2, Lock, Newspaper, Gamepad2, Crown,
   X, Copy, Loader2, Sparkles, Download, MessageCircle, Send, Mail,
+  Trash2, FileText, ScrollText, Wifi, WifiOff,
 } from "lucide-react";
 import { SUPPORTED_LANGUAGES } from "@/lib/i18n";
 import { findAdminId } from "@/lib/find-admin";
