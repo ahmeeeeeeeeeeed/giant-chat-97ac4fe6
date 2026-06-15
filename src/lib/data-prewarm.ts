@@ -8,6 +8,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { cacheSet, cacheKeys } from "./offline-cache";
 import { getOnline } from "./use-online";
 
+async function cacheMedia(url: string | null | undefined) {
+  if (!url || !getOnline()) return;
+  try {
+    const response = await fetch(url, { cache: "force-cache" });
+    if (!response.ok) return;
+    const blob = await response.blob();
+    if (blob.size) await cacheSet(cacheKeys.media(url), blob);
+  } catch {
+    /* media cache is best-effort */
+  }
+}
+
 const THROTTLE_HOURS = 12;
 const RECENT_DM_PEERS_LIMIT = 8;
 const MESSAGES_PER_PEER = 50;
@@ -155,6 +167,7 @@ async function warmChatsAndRecentMessages(userId: string) {
             cacheKeys.dmMessages(userId, peer.otherId),
             dm.slice().reverse(),
           );
+          await Promise.all(dm.map((m: any) => cacheMedia(m.media_url)));
         }
         if (prof) await cacheSet(cacheKeys.profile(peer.otherId), prof);
       } catch {

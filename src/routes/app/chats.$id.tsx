@@ -15,6 +15,7 @@ import { cacheGet, cacheSet, cacheKeys } from "@/lib/offline-cache";
 import { enqueueMessage } from "@/lib/offline-queue";
 import { getOnline } from "@/lib/use-online";
 import { ensureMediaLibraryPermission, ensureMicPermission } from "@/lib/app-permissions";
+import { useCachedMediaSource } from "@/lib/use-cached-media";
 
 export const Route = createFileRoute("/app/chats/$id")({
   component: DMPage,
@@ -213,6 +214,7 @@ function DMPage() {
   // presence + typing channel (shared by both peers — same name)
   useEffect(() => {
     if (!user) return;
+    if (!getOnline()) return;
     const room = `dm-presence:${[user.id, otherId].sort().join(":")}`;
     const ch = supabase.channel(room, { config: { presence: { key: user.id } } });
     presenceChRef.current = ch;
@@ -270,14 +272,28 @@ function DMPage() {
       return;
     }
 
-    const { error } = await supabase.from("direct_messages").insert({
-      sender_id: user.id, receiver_id: otherId, content, message_type: "text",
-      reply_to_id: reply?.id ?? null,
-    });
+    let error: { message?: string } | null = null;
+    try {
+      const res = await supabase.from("direct_messages").insert({
+        sender_id: user.id, receiver_id: otherId, content, message_type: "text",
+        reply_to_id: reply?.id ?? null,
+      });
+      error = res.error;
+    } catch (err) {
+      error = err as { message?: string };
+    }
     setSending(false);
     if (error) {
       if (!getOnline() || /network|fetch|Failed/i.test(error.message ?? "")) {
         await enqueueMessage({ kind: "dm", sender_id: user.id, receiver_id: otherId, content });
+        const optimistic: DM = {
+          id: `q_${Date.now()}`,
+          sender_id: user.id, receiver_id: otherId, content,
+          created_at: new Date().toISOString(),
+          message_type: "text", media_url: null, media_duration_ms: null,
+          reply_to_id: reply?.id ?? null,
+        };
+        setMessages((old) => [...old, optimistic]);
         toast.message("تم حفظ الرسالة — ستُرسل عند عودة الإنترنت");
         return;
       }
