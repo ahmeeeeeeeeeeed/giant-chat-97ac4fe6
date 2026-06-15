@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { showLocalNotification, getRoomLastSeen, installNativeNotificationTapHandler } from "@/lib/notify";
 import { ensureNotificationPermission } from "@/lib/app-permissions";
+import { getOnline } from "@/lib/use-online";
 
 type RoomLite = { id: string; name: string | null };
 
@@ -14,6 +15,7 @@ export function useUnreadRoomCount(): number {
 
   useEffect(() => {
     if (!user) { setCount(0); return; }
+    if (!getOnline()) { setCount(0); return; }
     let mounted = true;
 
     const recompute = async () => {
@@ -23,22 +25,32 @@ export function useUnreadRoomCount(): number {
       // Run in parallel
       await Promise.all(rooms.map(async (r) => {
         const since = getRoomLastSeen(r.id);
-        const { count: c } = await supabase
-          .from("room_messages")
-          .select("id", { count: "exact", head: true })
-          .eq("room_id", r.id)
-          .gt("created_at", since)
-          .neq("user_id", user.id);
-        total += c ?? 0;
+        try {
+          const { count: c } = await supabase
+            .from("room_messages")
+            .select("id", { count: "exact", head: true })
+            .eq("room_id", r.id)
+            .gt("created_at", since)
+            .neq("user_id", user.id);
+          total += c ?? 0;
+        } catch {
+          /* keep local count */
+        }
       }));
       if (mounted) setCount(total);
     };
 
     const loadRoomsAndCount = async () => {
-      const { data } = await supabase
-        .from("room_members")
-        .select("room_id, rooms(id, name)")
-        .eq("user_id", user.id);
+      let data: any[] | null = null;
+      try {
+        const res = await supabase
+          .from("room_members")
+          .select("room_id, rooms(id, name)")
+          .eq("user_id", user.id);
+        data = res.data as any[] | null;
+      } catch {
+        data = null;
+      }
       const rooms: RoomLite[] = (data ?? [])
         .map((r: any) => r.rooms ? { id: r.rooms.id, name: r.rooms.name } : null)
         .filter(Boolean) as RoomLite[];
@@ -83,6 +95,7 @@ export function useGlobalNotificationListener(navigateTo?: (url: string) => void
 
   useEffect(() => {
     if (!user) return;
+    if (!getOnline()) return;
     let mounted = true;
 
     // Ask once (no-op if already granted/denied)

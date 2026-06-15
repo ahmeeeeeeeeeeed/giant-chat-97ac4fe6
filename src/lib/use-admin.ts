@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
+import { getOnline } from "@/lib/use-online";
 
 export function useIsAdmin() {
   const { user } = useAuth();
@@ -8,15 +9,20 @@ export function useIsAdmin() {
   const [loaded, setLoaded] = useState(false);
   useEffect(() => {
     if (!user) { setIsAdmin(false); setLoaded(true); return; }
+    if (!getOnline()) { setIsAdmin(false); setLoaded(true); return; }
     let cancelled = false;
     (async () => {
-      const { data } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", user.id)
-        .eq("role", "admin")
-        .maybeSingle();
-      if (!cancelled) { setIsAdmin(!!data); setLoaded(true); }
+      try {
+        const { data } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .eq("role", "admin")
+          .maybeSingle();
+        if (!cancelled) { setIsAdmin(!!data); setLoaded(true); }
+      } catch {
+        if (!cancelled) { setIsAdmin(false); setLoaded(true); }
+      }
     })();
     return () => { cancelled = true; };
   }, [user]);
@@ -28,14 +34,19 @@ export function useUnreadDMCount() {
   const [count, setCount] = useState(0);
   useEffect(() => {
     if (!user) { setCount(0); return; }
+    if (!getOnline()) { setCount(0); return; }
     let mounted = true;
     const load = async () => {
-      const { count: c } = await supabase
-        .from("direct_messages")
-        .select("id", { count: "exact", head: true })
-        .eq("receiver_id", user.id)
-        .is("read_at", null);
-      if (mounted) setCount(c ?? 0);
+      try {
+        const { count: c } = await supabase
+          .from("direct_messages")
+          .select("id", { count: "exact", head: true })
+          .eq("receiver_id", user.id)
+          .is("read_at", null);
+        if (mounted) setCount(c ?? 0);
+      } catch {
+        if (mounted) setCount(0);
+      }
     };
     load();
     const ch = supabase
