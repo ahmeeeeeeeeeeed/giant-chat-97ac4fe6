@@ -7,9 +7,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useIsAdmin } from "@/lib/use-admin";
 import {
   Moon, Sun, LogOut, ChevronLeft, Globe, Check,
-  ShoppingBag, Flag, User, Bell, Users as UsersIcon,
-  Trophy, MessageSquare, Shield, Info, HelpCircle,
-  Star, Share2, Lock, Newspaper, Gamepad2, Crown,
+  ShoppingBag, Flag, User, Bell,
+  Trophy, Shield, Info, HelpCircle,
+  Star, Share2, Lock, Crown,
   X, Copy, Loader2, Sparkles, Download, MessageCircle, Send, Mail,
   Trash2, FileText, ScrollText, Wifi, WifiOff,
 } from "lucide-react";
