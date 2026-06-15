@@ -10,10 +10,11 @@ export const getRouter = () => {
     context: { queryClient },
     scrollRestoration: true,
     defaultPreload: "intent",
-    defaultPreloadDelay: 40,
-    defaultPreloadStaleTime: 0,
-    defaultPendingMs: 100,
-    defaultPendingMinMs: 150,
+    defaultPreloadDelay: 0,
+    defaultPreloadStaleTime: 30_000,
+    // Don't flash a pending UI on fast navigations — only show after 800ms
+    defaultPendingMs: 800,
+    defaultPendingMinMs: 0,
   });
 
 
