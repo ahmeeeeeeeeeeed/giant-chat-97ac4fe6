@@ -53,13 +53,17 @@ function OtherProfilePage() {
       }
       setProfile(p as Profile);
 
-      // Check block status
-      const [{ data: blockMe }, { data: blockByMe }] = await Promise.all([
+      // Check block + friendship status
+      const [{ data: blockMe }, { data: blockByMe }, { data: fr }] = await Promise.all([
         supabase.from("dm_blocks").select("blocker_id").eq("blocker_id", otherId).eq("blocked_id", user.id).maybeSingle(),
         supabase.from("dm_blocks").select("blocked_id").eq("blocker_id", user.id).eq("blocked_id", otherId).maybeSingle(),
+        supabase.from("friendships").select("status")
+          .or(`and(requester_id.eq.${user.id},addressee_id.eq.${otherId}),and(requester_id.eq.${otherId},addressee_id.eq.${user.id})`)
+          .eq("status", "accepted").maybeSingle(),
       ]);
       setIsBlockedBy(!!blockMe);
       setIsBlocked(!!blockByMe);
+      setIsFriend(!!fr);
       setLoading(false);
     };
 
