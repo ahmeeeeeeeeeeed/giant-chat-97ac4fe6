@@ -484,3 +484,55 @@ function FeatureTile({ to, icon: Icon, title, subtitle, gradient }: {
     </Link>
   );
 }
+
+function Modal({ title, onClose, icon, color, children }: { title: string; onClose: () => void; icon: React.ReactNode; color: string; children: React.ReactNode }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
+      <div onClick={(e) => e.stopPropagation()} className="w-full sm:max-w-md max-h-[90vh] overflow-y-auto rounded-t-3xl sm:rounded-3xl bg-card shadow-2xl">
+        <div className="sticky top-0 z-10 flex items-center gap-3 border-b border-border bg-card/95 backdrop-blur px-5 py-4">
+          <div className={`flex h-10 w-10 items-center justify-center rounded-xl text-white shadow ${color}`}>{icon}</div>
+          <h2 className="flex-1 text-lg font-extrabold">{title}</h2>
+          <button onClick={onClose} className="rounded-xl p-2 text-muted-foreground hover:bg-secondary"><X className="h-5 w-5" /></button>
+        </div>
+        <div className="p-5">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+function Intro({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="rounded-2xl bg-gradient-to-br from-primary/10 to-fuchsia-500/10 p-4 text-sm leading-relaxed border border-primary/20">{children}</div>
+  );
+}
+
+function Faq({ q, a }: { q: string; a: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="rounded-2xl border border-border bg-card overflow-hidden">
+      <button onClick={() => setOpen((v) => !v)} className="flex w-full items-center justify-between gap-3 p-4 text-start active:bg-secondary/60">
+        <span className="font-semibold text-sm flex-1">{q}</span>
+        <ChevronLeft className={`h-4 w-4 text-muted-foreground transition-transform ${open ? "-rotate-90" : "rtl:rotate-180"}`} />
+      </button>
+      {open && <div className="px-4 pb-4 text-sm text-muted-foreground leading-relaxed">{a}</div>}
+    </div>
+  );
+}
+
+function Row2({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between text-sm">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="font-semibold">{value}</span>
+    </div>
+  );
+}
+
+function ShareTarget({ label, color, onClick, icon }: { label: string; color: string; onClick: () => void; icon: React.ReactNode }) {
+  return (
+    <button onClick={onClick} className="flex flex-col items-center gap-2 active:scale-95 transition">
+      <div className={`flex h-14 w-14 items-center justify-center rounded-2xl text-white shadow-lg ${color}`}>{icon}</div>
+      <span className="text-[11px] font-medium">{label}</span>
+    </button>
+  );
+}
