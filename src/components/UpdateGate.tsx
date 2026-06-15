@@ -23,6 +23,10 @@ function markInstalled(version: string, versionCode: number) {
   } catch { /* ignore */ }
 }
 
+function errorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error ? error.message : fallback;
+}
+
 export function UpdateGate() {
   const [latest, setLatest] = useState<AppUpdateRow | null>(null);
   const [dismissed, setDismissed] = useState(false);
@@ -84,9 +88,10 @@ export function UpdateGate() {
       // returns to a fresh app process with no in-memory state.
       markInstalled(latest.version, latest.version_code);
       setDone(true);
-    } catch (e: any) {
-      setError(e?.message || "فشل التحديث");
-      toast.error(e?.message || "فشل التحديث");
+    } catch (e) {
+      const message = errorMessage(e, "فشل التحديث");
+      setError(message);
+      toast.error(message);
     } finally {
       setBusy(false);
     }

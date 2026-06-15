@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getOnline } from "@/lib/use-online";
 
 const SEEN_KEY = "announce:last_seen_at";
+type AnnouncementRow = { id?: string; content?: string; created_at?: string };
 
 // Subscribes globally to admin announcements and shows them as a top toast
 // for every signed-in user, regardless of which page or room they're in.
@@ -46,7 +47,7 @@ export function useAnnouncementsListener(enabled: boolean) {
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "announcements" },
         (p) => {
-          const row: any = p.new;
+          const row = p.new as AnnouncementRow;
           if (!row?.id || shownIds.current.has(row.id)) return;
           shownIds.current.add(row.id);
           toast(`📢 ${row.content}`, { duration: 8000 });

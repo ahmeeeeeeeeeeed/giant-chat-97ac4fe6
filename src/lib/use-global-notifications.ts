@@ -6,6 +6,15 @@ import { ensureNotificationPermission } from "@/lib/app-permissions";
 import { getOnline } from "@/lib/use-online";
 
 type RoomLite = { id: string; name: string | null };
+type JoinedRoomRow = { rooms?: RoomLite | null };
+type NotificationMessage = {
+  id?: string;
+  sender_id?: string;
+  user_id?: string;
+  room_id?: string;
+  content?: string;
+  message_type?: string | null;
+};
 
 /** Total unread room messages across all rooms the user is a member of, based on per-room lastSeen. */
 export function useUnreadRoomCount(): number {
@@ -41,18 +50,18 @@ export function useUnreadRoomCount(): number {
     };
 
     const loadRoomsAndCount = async () => {
-      let data: any[] | null = null;
+      let data: JoinedRoomRow[] | null = null;
       try {
         const res = await supabase
           .from("room_members")
           .select("room_id, rooms(id, name)")
           .eq("user_id", user.id);
-        data = res.data as any[] | null;
+        data = res.data as JoinedRoomRow[] | null;
       } catch {
         data = null;
       }
       const rooms: RoomLite[] = (data ?? [])
-        .map((r: any) => r.rooms ? { id: r.rooms.id, name: r.rooms.name } : null)
+        .map((r) => r.rooms ? { id: r.rooms.id, name: r.rooms.name } : null)
         .filter(Boolean) as RoomLite[];
       roomsRef.current = rooms;
       recompute();
@@ -103,18 +112,18 @@ export function useGlobalNotificationListener(navigateTo?: (url: string) => void
     if (navigateTo) installNativeNotificationTapHandler(navigateTo).catch(() => {});
 
     const loadRooms = async () => {
-      let data: any[] | null = null;
+      let data: JoinedRoomRow[] | null = null;
       try {
         const res = await supabase
           .from("room_members")
           .select("room_id, rooms(id, name)")
           .eq("user_id", user.id);
-        data = res.data as any[] | null;
+        data = res.data as JoinedRoomRow[] | null;
       } catch {
         data = null;
       }
       const m = new Map<string, string>();
-      (data ?? []).forEach((r: any) => {
+      (data ?? []).forEach((r) => {
         if (r.rooms?.id) m.set(r.rooms.id, r.rooms.name ?? "غرفة");
       });
       if (mounted) myRoomsRef.current = m;
@@ -135,7 +144,7 @@ export function useGlobalNotificationListener(navigateTo?: (url: string) => void
       return name;
     };
 
-    const previewText = (m: any): string => {
+    const previewText = (m: NotificationMessage): string => {
       if (m.message_type === "image") return "🖼️ صورة";
       if (m.message_type === "voice") return "🎙️ رسالة صوتية";
       return (m.content as string)?.slice(0, 120) || "رسالة جديدة";
@@ -147,7 +156,8 @@ export function useGlobalNotificationListener(navigateTo?: (url: string) => void
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "direct_messages", filter: `receiver_id=eq.${user.id}` },
         async (p) => {
-          const m: any = p.new;
+          const m = p.new as NotificationMessage;
+          if (!m.sender_id) return;
           const name = await getUsername(m.sender_id);
           showLocalNotification({
             title: name,
@@ -161,7 +171,7 @@ export function useGlobalNotificationListener(navigateTo?: (url: string) => void
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "room_messages" },
         async (p) => {
-          const m: any = p.new;
+          const m = p.new as NotificationMessage;
           if (!m.room_id || m.user_id === user.id) return;
           const roomName = myRoomsRef.current.get(m.room_id);
           if (!roomName) return; // not a member
