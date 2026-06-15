@@ -7,17 +7,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { useIsAdmin } from "@/lib/use-admin";
 import {
   Moon, Sun, LogOut, ChevronLeft, Globe, Check,
-  ShoppingBag, Flag, User, Bell, Users as UsersIcon,
-  Trophy, MessageSquare, Shield, Info, HelpCircle,
-  Star, Share2, Lock, Newspaper, Gamepad2, Crown,
+  ShoppingBag, Flag, User, Bell,
+  Trophy, Shield, Info, HelpCircle,
+  Star, Share2, Lock, Crown,
   X, Copy, Loader2, Sparkles, Download, MessageCircle, Send, Mail,
+  Trash2, FileText, ScrollText, Wifi, WifiOff,
 } from "lucide-react";
 import { SUPPORTED_LANGUAGES } from "@/lib/i18n";
 import { findAdminId } from "@/lib/find-admin";
 import { APP_VERSION, getVersionCode } from "@/lib/version";
 import { isNativeAndroid, downloadAndInstallApk } from "@/lib/app-update";
 import { cacheGet, cacheSet } from "@/lib/offline-cache";
-import { getOnline } from "@/lib/use-online";
+import { getOnline, useOnline } from "@/lib/use-online";
 import { toast } from "sonner";
 import { PremiumCreateModal } from "@/components/PremiumCreateModal";
 
@@ -48,11 +49,16 @@ function SettingsPage() {
   const [showHelp, setShowHelp] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [showShare, setShowShare] = useState(false);
+  const [showPrivacy, setShowPrivacy] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
+  const [showClearCache, setShowClearCache] = useState(false);
+  const [clearingCache, setClearingCache] = useState(false);
   const [username, setUsername] = useState("");
   const [latest, setLatest] = useState<LatestUpdate>(null);
   const [checkingUpdate, setCheckingUpdate] = useState(false);
   const [installing, setInstalling] = useState(false);
   const [installProgress, setInstallProgress] = useState(0);
+  const online = useOnline();
 
   const doLogout = async () => {
     setSigningOut(true);
@@ -159,6 +165,54 @@ function SettingsPage() {
     } catch { toast.error("تعذر النسخ"); }
   };
 
+  const clearCache = async () => {
+    setClearingCache(true);
+    try {
+      // Clear caches API
+      if (typeof caches !== "undefined") {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((k) => caches.delete(k)));
+      }
+      // Clear IndexedDB (giant-offline + idb-keyval default + others)
+      if (typeof indexedDB !== "undefined") {
+        try {
+          const dbs = await (indexedDB as any).databases?.();
+          if (Array.isArray(dbs)) {
+            await Promise.all(
+              dbs.map((d: any) => d?.name ? new Promise<void>((res) => {
+                const req = indexedDB.deleteDatabase(d.name);
+                req.onsuccess = req.onerror = req.onblocked = () => res();
+              }) : Promise.resolve())
+            );
+          } else {
+            ["giant-offline", "keyval-store"].forEach((n) => indexedDB.deleteDatabase(n));
+          }
+        } catch { /* ignore */ }
+      }
+      // Clear native filesystem mirror
+      try {
+        const [{ Capacitor }, fs] = await Promise.all([
+          import("@capacitor/core"),
+          import("@capacitor/filesystem"),
+        ]);
+        if (Capacitor.isNativePlatform()) {
+          try {
+            await fs.Filesystem.rmdir({ path: "offline-cache", directory: fs.Directory.Data, recursive: true });
+          } catch { /* ignore */ }
+        }
+      } catch { /* not native */ }
+      try { localStorage.clear(); } catch { /* ignore */ }
+      try { sessionStorage.clear(); } catch { /* ignore */ }
+      toast.success("تم مسح التخزين المؤقت");
+      setShowClearCache(false);
+      setTimeout(() => window.location.reload(), 600);
+    } catch (e: any) {
+      toast.error(e?.message || "فشل المسح");
+    } finally {
+      setClearingCache(false);
+    }
+  };
+
   const hasUpdate = latest && latest.version_code > getVersionCode(APP_VERSION);
 
   const currentLang = SUPPORTED_LANGUAGES.find((l) => l.code === i18n.language) ?? SUPPORTED_LANGUAGES[0];
@@ -196,14 +250,6 @@ function SettingsPage() {
           </button>
         </Section>
 
-        {/* Social */}
-        <Section title="التواصل">
-          <Row to="/app/friends" icon={UsersIcon} label={t("nav.friends")} />
-          <Row to="/app/chats" icon={MessageSquare} label={t("nav.chats")} />
-          <Row to="/app/community" icon={Newspaper} label="المجتمع" />
-          <Row to="/app/games" icon={Gamepad2} label={t("nav.games")} />
-        </Section>
-
         {/* Preferences */}
         <Section title="التفضيلات">
           <button onClick={toggle} className="flex w-full items-center justify-between p-4 active:bg-secondary/60">
@@ -224,6 +270,32 @@ function SettingsPage() {
               {currentLang.name}
               <ChevronLeft className="h-4 w-4 rtl:rotate-180" />
             </div>
+          </button>
+          <div className="flex w-full items-center justify-between p-4">
+            <div className="flex items-center gap-3">
+              <IconBox color={online ? "bg-emerald-500" : "bg-zinc-500"}>
+                {online ? <Wifi className="h-4 w-4" /> : <WifiOff className="h-4 w-4" />}
+              </IconBox>
+              <div className="flex flex-col items-start">
+                <span className="font-medium">حالة الاتصال</span>
+                <span className="text-[11px] text-muted-foreground">{online ? "متصل بالإنترنت" : "وضع عدم الاتصال"}</span>
+              </div>
+            </div>
+            <span className={`h-2.5 w-2.5 rounded-full ${online ? "bg-emerald-500" : "bg-zinc-400"}`} />
+          </div>
+        </Section>
+
+        {/* Storage */}
+        <Section title="التخزين والأداء">
+          <button onClick={() => setShowClearCache(true)} className="flex w-full items-center justify-between p-4 active:bg-secondary/60 text-start">
+            <div className="flex items-center gap-3">
+              <IconBox color="bg-rose-500"><Trash2 className="h-4 w-4" /></IconBox>
+              <div className="flex flex-col items-start">
+                <span className="font-medium">مسح التخزين المؤقت</span>
+                <span className="text-[11px] text-muted-foreground">لتسريع التطبيق وتفريغ المساحة</span>
+              </div>
+            </div>
+            <ChevronLeft className="h-4 w-4 text-muted-foreground rtl:rotate-180" />
           </button>
         </Section>
 
@@ -257,6 +329,24 @@ function SettingsPage() {
             </div>
             <ChevronLeft className="h-4 w-4 text-muted-foreground rtl:rotate-180" />
           </button>
+        </Section>
+
+        {/* Legal */}
+        <Section title="الخصوصية والقانونية">
+          <button onClick={() => setShowPrivacy(true)} className="flex w-full items-center justify-between p-4 active:bg-secondary/60 text-start">
+            <div className="flex items-center gap-3">
+              <IconBox color="bg-indigo-500"><FileText className="h-4 w-4" /></IconBox>
+              <span className="font-medium">سياسة الخصوصية</span>
+            </div>
+            <ChevronLeft className="h-4 w-4 text-muted-foreground rtl:rotate-180" />
+          </button>
+          <button onClick={() => setShowTerms(true)} className="flex w-full items-center justify-between p-4 active:bg-secondary/60 text-start">
+            <div className="flex items-center gap-3">
+              <IconBox color="bg-purple-500"><ScrollText className="h-4 w-4" /></IconBox>
+              <span className="font-medium">شروط الاستخدام</span>
+            </div>
+            <ChevronLeft className="h-4 w-4 text-muted-foreground rtl:rotate-180" />
+          </button>
           <button onClick={openAbout} className="flex w-full items-center justify-between p-4 active:bg-secondary/60 text-start">
             <div className="flex items-center gap-3">
               <IconBox color="bg-slate-500"><Info className="h-4 w-4" /></IconBox>
@@ -264,8 +354,8 @@ function SettingsPage() {
             </div>
             <span className="text-[11px] text-muted-foreground">v{APP_VERSION}</span>
           </button>
-
         </Section>
+
 
         {isAdmin && (
           <Section title="الإدارة">
@@ -462,7 +552,99 @@ function SettingsPage() {
         </Modal>
       )}
 
+      {/* Privacy Policy */}
+      {showPrivacy && (
+        <Modal title="سياسة الخصوصية" onClose={() => setShowPrivacy(false)} icon={<FileText className="h-5 w-5" />} color="bg-indigo-500">
+          <div className="space-y-4 text-sm leading-relaxed">
+            <Intro>
+              نحن في Giant Chat نحترم خصوصيتك ونلتزم بحماية بياناتك. توضح هذه السياسة ما نجمعه وكيف نستخدمه.
+            </Intro>
+            <Section2 title="1) البيانات التي نجمعها">
+              • اسم المستخدم والبريد الإلكتروني عند التسجيل.<br />
+              • صورة الملف الشخصي والمعلومات التي تشاركها طوعًا.<br />
+              • الرسائل والمحادثات (مشفّرة أثناء النقل، مرتبطة بحسابك فقط).<br />
+              • معلومات الجهاز الأساسية لتشغيل الإشعارات والتحديثات.
+            </Section2>
+            <Section2 title="2) كيف نستخدم البيانات">
+              • لتقديم خدمات الدردشة والغرف الصوتية والمجتمع.<br />
+              • لتحسين الأداء والأمان ومنع الإساءة.<br />
+              • للتواصل معك بشأن الإشعارات والتحديثات الهامة.
+            </Section2>
+            <Section2 title="3) المشاركة مع أطراف ثالثة">
+              لا نبيع بياناتك. نشاركها فقط مع مزوّدي البنية التحتية الضرورية لتشغيل التطبيق، وعند الطلب القانوني.
+            </Section2>
+            <Section2 title="4) حقوقك">
+              • يمكنك تعديل ملفك أو حذف حسابك في أي وقت من «إدارة الحساب».<br />
+              • يمكنك طلب نسخة من بياناتك أو حذفها نهائيًا.<br />
+              • يمكنك حظر أي مستخدم أو الإبلاغ عن المحتوى المسيء.
+            </Section2>
+            <Section2 title="5) أمان البيانات">
+              نستخدم تشفير TLS وسياسات وصول صارمة على مستوى قاعدة البيانات (RLS) لحماية بياناتك.
+            </Section2>
+            <p className="text-[11px] text-muted-foreground text-center pt-2">
+              آخر تحديث: {new Date().toLocaleDateString("ar")}
+            </p>
+          </div>
+        </Modal>
+      )}
+
+      {/* Terms of Use */}
+      {showTerms && (
+        <Modal title="شروط الاستخدام" onClose={() => setShowTerms(false)} icon={<ScrollText className="h-5 w-5" />} color="bg-purple-500">
+          <div className="space-y-4 text-sm leading-relaxed">
+            <Intro>
+              باستخدامك Giant Chat، فإنك توافق على الشروط التالية. يُرجى قراءتها بعناية.
+            </Intro>
+            <Section2 title="1) الأهلية">
+              يجب ألا يقل عمرك عن 13 عامًا لاستخدام التطبيق. أنت مسؤول عن صحة المعلومات التي تقدّمها.
+            </Section2>
+            <Section2 title="2) السلوك المقبول">
+              يُمنع منعًا باتًا: التحرش، نشر الإباحية، خطاب الكراهية، الترويج للعنف، انتحال الشخصية، أو نشر محتوى يخالف القانون. مخالفة ذلك تؤدي إلى تعليق الحساب أو حذفه نهائيًا.
+            </Section2>
+            <Section2 title="3) المحتوى الذي تنشره">
+              تحتفظ بحقوق المحتوى الخاص بك، لكنك تمنحنا الترخيص لعرضه داخل التطبيق لخدمة المستخدمين الآخرين.
+            </Section2>
+            <Section2 title="4) النقاط والمميزات">
+              النقاط والشارات افتراضية، غير قابلة للتحويل لأموال حقيقية، ويحق للإدارة تعديل أو إلغاء أيٍّ منها لأسباب فنية أو أمنية.
+            </Section2>
+            <Section2 title="5) إنهاء الخدمة">
+              يحق للإدارة إنهاء أو تعليق أي حساب يخالف الشروط دون إشعار مسبق.
+            </Section2>
+            <Section2 title="6) إخلاء المسؤولية">
+              يُقدَّم التطبيق «كما هو». لا نضمن خلوه التام من الأخطاء، ولا نتحمل مسؤولية أي خسائر ناتجة عن سوء الاستخدام.
+            </Section2>
+            <p className="text-[11px] text-muted-foreground text-center pt-2">
+              آخر تحديث: {new Date().toLocaleDateString("ar")}
+            </p>
+          </div>
+        </Modal>
+      )}
+
+      {/* Clear cache confirm */}
+      {showClearCache && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-5" onClick={() => !clearingCache && setShowClearCache(false)}>
+          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm rounded-2xl bg-card p-5 shadow-2xl">
+            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-500 text-white">
+              <Trash2 className="h-6 w-6" />
+            </div>
+            <h2 className="mb-1 text-lg font-bold">مسح التخزين المؤقت؟</h2>
+            <p className="mb-4 text-sm text-muted-foreground">
+              سيتم حذف الملفات المؤقتة والصور المخزّنة محليًا لتفريغ المساحة وحلّ بعض المشاكل. لن يتم حذف حسابك أو رسائلك على الخادم. قد يحتاج التطبيق للاتصال بالإنترنت لإعادة تحميل المحتوى.
+            </p>
+            <div className="flex gap-2">
+              <button disabled={clearingCache} onClick={() => setShowClearCache(false)}
+                className="h-11 flex-1 rounded-xl border border-input font-semibold">إلغاء</button>
+              <button disabled={clearingCache} onClick={clearCache}
+                className="h-11 flex-1 rounded-xl bg-rose-500 text-white font-semibold disabled:opacity-60 flex items-center justify-center gap-2">
+                {clearingCache ? <><Loader2 className="h-4 w-4 animate-spin" /> ...</> : "مسح"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </main>
+
   );
 }
 
@@ -540,6 +722,15 @@ function Faq({ q, a }: { q: string; a: string }) {
         <ChevronLeft className={`h-4 w-4 text-muted-foreground transition-transform ${open ? "-rotate-90" : "rtl:rotate-180"}`} />
       </button>
       {open && <div className="px-4 pb-4 text-sm text-muted-foreground leading-relaxed">{a}</div>}
+    </div>
+  );
+}
+
+function Section2({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="rounded-2xl border border-border bg-secondary/30 p-4">
+      <h3 className="mb-2 text-sm font-bold">{title}</h3>
+      <div className="text-xs text-muted-foreground leading-relaxed">{children}</div>
     </div>
   );
 }
