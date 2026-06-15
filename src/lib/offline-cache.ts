@@ -56,7 +56,9 @@ async function nativeGet<T>(key: string): Promise<Entry<T> | null> {
       directory: fs.Directory.Data,
       encoding: fs.Encoding.UTF8,
     });
-    const raw = JSON.parse(String(data)) as { t: number; kind: "blob"; dataUrl: string } | { t: number; kind: "json"; v: T };
+    const raw = JSON.parse(String(data)) as
+      | { t: number; kind: "blob"; dataUrl: string }
+      | { t: number; kind: "json"; v: T };
     if (raw.kind === "blob") return { t: raw.t, v: dataUrlToBlob(raw.dataUrl) as T };
     return { t: raw.t, v: raw.v };
   } catch {
@@ -87,7 +89,11 @@ async function nativeSet<T>(key: string, entry: Entry<T>): Promise<void> {
 async function nativeDel(key: string): Promise<void> {
   const fs = await getNativeFilesystem();
   if (!fs) return;
-  try { await fs.Filesystem.deleteFile({ path: nativePath(key), directory: fs.Directory.Data }); } catch { /* ignore */ }
+  try {
+    await fs.Filesystem.deleteFile({ path: nativePath(key), directory: fs.Directory.Data });
+  } catch {
+    /* ignore */
+  }
 }
 
 export async function cacheGet<T>(key: string): Promise<T | null> {
@@ -100,7 +106,11 @@ export async function cacheGet<T>(key: string): Promise<T | null> {
   }
   const native = await nativeGet<T>(key);
   if (!native) return null;
-  try { await set(key, native, store); } catch { /* ignore */ }
+  try {
+    await set(key, native, store);
+  } catch {
+    /* ignore */
+  }
   console.info("[offline-cache] loaded-native", { key });
   return native.v;
 }
