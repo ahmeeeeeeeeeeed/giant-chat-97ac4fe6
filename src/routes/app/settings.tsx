@@ -211,7 +211,7 @@ function SettingsPage() {
             </div>
             <ChevronLeft className="h-4 w-4 text-muted-foreground rtl:rotate-180" />
           </button>
-          <button onClick={share} className="flex w-full items-center justify-between p-4 active:bg-secondary/60 text-start">
+          <button onClick={openShare} className="flex w-full items-center justify-between p-4 active:bg-secondary/60 text-start">
             <div className="flex items-center gap-3">
               <IconBox color="bg-sky-500"><Share2 className="h-4 w-4" /></IconBox>
               <span className="font-medium">شارك التطبيق</span>
@@ -225,20 +225,21 @@ function SettingsPage() {
             </div>
             <ChevronLeft className="h-4 w-4 text-muted-foreground rtl:rotate-180" />
           </button>
-          <button onClick={() => toast.info("صفحة المساعدة قريبًا")} className="flex w-full items-center justify-between p-4 active:bg-secondary/60 text-start">
+          <button onClick={() => setShowHelp(true)} className="flex w-full items-center justify-between p-4 active:bg-secondary/60 text-start">
             <div className="flex items-center gap-3">
               <IconBox color="bg-teal-500"><HelpCircle className="h-4 w-4" /></IconBox>
               <span className="font-medium">المساعدة والأسئلة الشائعة</span>
             </div>
             <ChevronLeft className="h-4 w-4 text-muted-foreground rtl:rotate-180" />
           </button>
-          <button onClick={() => toast.info("Giant Chat v1.0.0")} className="flex w-full items-center justify-between p-4 active:bg-secondary/60 text-start">
+          <button onClick={openAbout} className="flex w-full items-center justify-between p-4 active:bg-secondary/60 text-start">
             <div className="flex items-center gap-3">
               <IconBox color="bg-slate-500"><Info className="h-4 w-4" /></IconBox>
               <span className="font-medium">عن التطبيق</span>
             </div>
-            <span className="text-[11px] text-muted-foreground">v1.0.0</span>
+            <span className="text-[11px] text-muted-foreground">v{APP_VERSION}</span>
           </button>
+
         </Section>
 
         {isAdmin && (
