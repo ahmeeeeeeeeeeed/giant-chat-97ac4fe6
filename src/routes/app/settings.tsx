@@ -310,6 +310,133 @@ function SettingsPage() {
       )}
 
       <PremiumCreateModal open={showPremium} onClose={() => setShowPremium(false)} mode="points" />
+
+      {/* Help & FAQ */}
+      {showHelp && (
+        <Modal title="المساعدة والأسئلة الشائعة" onClose={() => setShowHelp(false)} icon={<HelpCircle className="h-5 w-5" />} color="bg-teal-500">
+          <div className="space-y-4 text-sm leading-relaxed">
+            <Intro>
+              مرحبًا بك في مركز المساعدة 👋
+              <br />
+              هنا تجد إجابات لأكثر الأسئلة شيوعًا. لم تجد ما تبحث عنه؟ تواصل مع الإدارة من خلال زر «الإبلاغ والشكاوى».
+            </Intro>
+            <Faq q="كيف أنشئ حسابًا أو أسجّل الدخول؟" a="افتح التطبيق ثم اضغط «إنشاء حساب» وأدخل اسم المستخدم وكلمة السر. لاستعادة الحساب استخدم زر «نسيت كلمة السر» في صفحة الدخول." />
+            <Faq q="كيف أضيف صديقًا؟" a="اضغط على اسم أي مستخدم لعرض ملفه الشخصي ثم زر «إضافة صديق». عندما يقبل الطلب تظهر علامة الصداقة وتتمكن من رؤية حالته (متصل / آخر ظهور)." />
+            <Faq q="لماذا لا أرى حالة بعض المستخدمين؟" a="حالة الاتصال وآخر ظهور تظهر فقط للأصدقاء المتبادلين. أمّا غير الأصدقاء فلا تظهر لهم حالتك، وكذلك أنت لا ترى حالتهم — حمايةً لخصوصية الجميع." />
+            <Faq q="ماذا تعني علامات الصح في الرسائل؟" a="✓ تم إرسال الرسالة. ✓✓ وصلت إلى الطرف الآخر. ✓✓ زرقاء: تمت قراءة الرسالة (للأصدقاء فقط)." />
+            <Faq q="هل تعمل الرسائل بدون إنترنت؟" a="نعم. المحادثات الخاصة تُحفظ محليًا على جهازك، فيمكنك تصفّحها أثناء انقطاع الإنترنت، وتُرسَل الرسائل المعلّقة تلقائيًا عند عودة الاتصال." />
+            <Faq q="كيف أنشئ غرفة صوتية؟" a="من الصفحة الرئيسية اضغط زر «إنشاء غرفة»، اختر الاسم والصورة ونوع الغرفة (عامة/خاصة) ثم انشرها لتصبح متاحة." />
+            <Faq q="كيف أحصل على حساب مميز؟" a="من «الإعدادات» → «إنشاء حساب مميز». تحتاج إلى 50,000 نقطة لتفعيل الاسم العربي أو المزخرف وميزات إضافية." />
+            <Faq q="كيف أكسب النقاط والإنجازات؟" a="بالتفاعل اليومي: تسجيل الدخول، إرسال الرسائل، الانضمام للغرف، والمشاركة في المجتمع. راجع صفحة «الإنجازات» للتفاصيل." />
+            <Faq q="كيف أبلّغ عن مستخدم أو محتوى مسيء؟" a="من ملف المستخدم أو الرسالة اضغط «إبلاغ»، أو افتح «الإبلاغ والشكاوى» من الإعدادات للتواصل المباشر مع الإدارة." />
+            <Faq q="كيف أحذف حسابي؟" a="من «إدارة الحساب وكلمة السر» اضغط «حذف الحساب». الحذف نهائي ولا يمكن التراجع عنه." />
+          </div>
+        </Modal>
+      )}
+
+      {/* About */}
+      {showAbout && (
+        <Modal title="عن التطبيق" onClose={() => setShowAbout(false)} icon={<Info className="h-5 w-5" />} color="bg-slate-600">
+          <div className="space-y-4">
+            <div className="flex flex-col items-center text-center py-2">
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-fuchsia-500 text-white shadow-lg">
+                <Sparkles className="h-8 w-8" />
+              </div>
+              <h3 className="mt-3 text-xl font-extrabold">Giant Chat</h3>
+              <p className="text-xs text-muted-foreground mt-1">دردشة • غرف صوتية • مجتمع</p>
+            </div>
+
+            <div className="rounded-2xl border border-border bg-secondary/30 p-4 space-y-2 text-sm">
+              <Row2 label="الإصدار الحالي" value={`v${APP_VERSION}`} />
+              <Row2 label="رقم البناء" value={String(getVersionCode(APP_VERSION))} />
+              <Row2 label="الجهة المطوّرة" value="فريق Giant" />
+              <Row2 label="الموقع الرسمي" value="giant-chat.lovable.app" />
+            </div>
+
+            {checkingUpdate && (
+              <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground py-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>جارٍ التحقق من التحديثات...</span>
+              </div>
+            )}
+
+            {!checkingUpdate && hasUpdate && latest && (
+              <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 space-y-2">
+                <div className="flex items-center gap-2 text-emerald-600 font-bold">
+                  <Download className="h-4 w-4" />
+                  تحديث جديد متاح — v{latest.version}
+                </div>
+                {latest.update_message && (
+                  <p className="text-xs text-muted-foreground whitespace-pre-wrap">{latest.update_message}</p>
+                )}
+                {installing && (
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
+                    <div className="h-full bg-emerald-500 transition-all" style={{ width: `${installProgress}%` }} />
+                  </div>
+                )}
+                <button
+                  onClick={installUpdate}
+                  disabled={installing}
+                  className="mt-1 h-11 w-full rounded-xl bg-emerald-500 text-white font-bold disabled:opacity-60 flex items-center justify-center gap-2"
+                >
+                  {installing ? <><Loader2 className="h-4 w-4 animate-spin" /> {installProgress}%</> : <><Download className="h-4 w-4" /> تحديث الآن</>}
+                </button>
+              </div>
+            )}
+
+            {!checkingUpdate && !hasUpdate && (
+              <div className="rounded-2xl border border-border bg-secondary/30 p-4 text-center text-sm text-muted-foreground flex items-center justify-center gap-2">
+                <Check className="h-4 w-4 text-emerald-500" />
+                أنت تستخدم أحدث إصدار
+              </div>
+            )}
+
+            <button
+              onClick={checkForUpdate}
+              disabled={checkingUpdate}
+              className="h-11 w-full rounded-xl border border-input font-semibold text-sm disabled:opacity-60"
+            >
+              {checkingUpdate ? "جارٍ التحقق..." : "التحقق من التحديثات"}
+            </button>
+
+            <p className="text-center text-[11px] text-muted-foreground">
+              © {new Date().getFullYear()} Giant Chat — جميع الحقوق محفوظة
+            </p>
+          </div>
+        </Modal>
+      )}
+
+      {/* Share fallback (web without navigator.share) */}
+      {showShare && (
+        <Modal title="مشاركة التطبيق" onClose={() => setShowShare(false)} icon={<Share2 className="h-5 w-5" />} color="bg-sky-500">
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground text-center">اختر الوسيلة التي تريد المشاركة من خلالها</p>
+            <div className="grid grid-cols-4 gap-3">
+              <ShareTarget label="واتساب" color="bg-emerald-500"
+                onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(`${SHARE_TEXT}\n${SHARE_URL}`)}`, "_blank")}
+                icon={<MessageCircle className="h-5 w-5" />} />
+              <ShareTarget label="تيليجرام" color="bg-sky-500"
+                onClick={() => window.open(`https://t.me/share/url?url=${encodeURIComponent(SHARE_URL)}&text=${encodeURIComponent(SHARE_TEXT)}`, "_blank")}
+                icon={<Send className="h-5 w-5" />} />
+              <ShareTarget label="فيسبوك" color="bg-blue-600"
+                onClick={() => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(SHARE_URL)}`, "_blank")}
+                icon={<Share2 className="h-5 w-5" />} />
+              <ShareTarget label="X / تويتر" color="bg-slate-900"
+                onClick={() => window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(SHARE_TEXT)}&url=${encodeURIComponent(SHARE_URL)}`, "_blank")}
+                icon={<X className="h-5 w-5" />} />
+              <ShareTarget label="بريد" color="bg-rose-500"
+                onClick={() => window.open(`mailto:?subject=${encodeURIComponent("Giant Chat")}&body=${encodeURIComponent(`${SHARE_TEXT}\n${SHARE_URL}`)}`)}
+                icon={<Mail className="h-5 w-5" />} />
+              <ShareTarget label="نسخ الرابط" color="bg-zinc-600"
+                onClick={copyShareLink} icon={<Copy className="h-5 w-5" />} />
+            </div>
+            <div className="rounded-xl border border-border bg-secondary/40 p-3 text-xs break-all text-center font-mono">
+              {SHARE_URL}
+            </div>
+          </div>
+        </Modal>
+      )}
+
     </main>
   );
 }
