@@ -19,13 +19,18 @@ export function useAnnouncementsListener(enabled: boolean) {
 
     // Show any announcements created since this device last saw one.
     (async () => {
-      const { data } = await supabase
-        .from("announcements")
-        .select("id, content, created_at")
-        .gt("created_at", lastSeen)
-        .order("created_at", { ascending: true })
-        .limit(10)
-        .catch(() => ({ data: null }));
+      let data: { id: string; content: string; created_at: string }[] | null = null;
+      try {
+        const res = await supabase
+          .from("announcements")
+          .select("id, content, created_at")
+          .gt("created_at", lastSeen)
+          .order("created_at", { ascending: true })
+          .limit(10);
+        data = res.data;
+      } catch {
+        data = null;
+      }
       if (cancelled || !data) return;
       for (const a of data) {
         if (shownIds.current.has(a.id)) continue;
