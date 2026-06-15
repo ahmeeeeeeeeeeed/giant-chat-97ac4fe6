@@ -14,6 +14,7 @@ import { UpdateGate } from "@/components/UpdateGate";
 import { scheduleDataPrewarm } from "@/lib/data-prewarm";
 import { recordDailyAction } from "@/lib/daily-tasks";
 import { usePresenceHeartbeat } from "@/lib/use-presence-heartbeat";
+import { ensurePersistentOfflineStorage } from "@/lib/offline-cache";
 
 export const Route = createFileRoute("/app")({
   component: AppLayout,
@@ -51,6 +52,7 @@ function AppLayout() {
 
   useEffect(() => {
     if (session?.user?.id) {
+      void ensurePersistentOfflineStorage();
       scheduleDataPrewarm(session.user.id);
       void recordDailyAction("daily_login", 1);
     }
