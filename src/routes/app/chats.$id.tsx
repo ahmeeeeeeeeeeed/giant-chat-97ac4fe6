@@ -156,7 +156,7 @@ function DMPage() {
 
       // 3) Background sync from cloud (backup only). Failures are swallowed silently.
       try {
-        const [{ data: p }, { data: msgs }, { data: bl }, { data: blMe }, { data: mu }] = await Promise.all([
+        const [{ data: p }, { data: msgs }, { data: bl }, { data: blMe }, { data: mu }, { data: fr }] = await Promise.all([
           supabase.from("profiles").select("id, username, avatar_url, last_seen_at, hide_last_seen").eq("id", otherId).maybeSingle(),
           supabase.from("direct_messages")
             .select("id, sender_id, receiver_id, content, created_at, message_type, media_url, media_duration_ms, reply_to_id, delivered_at, read_at")
@@ -165,6 +165,9 @@ function DMPage() {
           supabase.from("dm_blocks").select("blocked_id").eq("blocker_id", user.id).eq("blocked_id", otherId).maybeSingle(),
           supabase.from("dm_blocks").select("blocker_id").eq("blocker_id", otherId).eq("blocked_id", user.id).maybeSingle(),
           supabase.from("dm_mutes").select("muted_id").eq("muter_id", user.id).eq("muted_id", otherId).maybeSingle(),
+          supabase.from("friendships").select("status")
+            .or(`and(requester_id.eq.${user.id},addressee_id.eq.${otherId}),and(requester_id.eq.${otherId},addressee_id.eq.${user.id})`)
+            .eq("status", "accepted").maybeSingle(),
         ]);
         if (p) { setOther(p as Profile); await cacheSet(cacheKeys.profile(otherId), p as Profile); }
         const fresh = (msgs ?? []) as DM[];
@@ -178,6 +181,9 @@ function DMPage() {
         setBlocked(!!bl);
         setBlockedByOther(!!blMe);
         setMuted(!!mu);
+        const friend = !!fr;
+        setIsFriend(friend);
+        await cacheSet(`friend:${user.id}:${otherId}`, friend);
         scrollToBottom(didInitialScrollRef.current);
         didInitialScrollRef.current = true;
         await markDelivered();
