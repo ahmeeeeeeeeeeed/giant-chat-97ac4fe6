@@ -45,11 +45,11 @@ function ChatsPage() {
     if (cached) {
       console.info("[dm-cache] loaded-local-list", { key: cacheKeys.chatsList(user.id), count: cached.length, online: getOnline() });
       setConvos(cached); setLoading(false);
+      convoCacheReadyRef.current = true;
     } else {
       console.info("[dm-cache] miss-local-list", { key: cacheKeys.chatsList(user.id), online: getOnline() });
       setLoading(true);
     }
-    convoCacheReadyRef.current = true;
     // Offline → skip the network entirely; cached list is authoritative for the UI.
     if (!getOnline()) { setLoading(false); return; }
     try {
@@ -72,13 +72,14 @@ function ChatsPage() {
         }
       });
       const ids = Array.from(map.keys());
-      if (ids.length === 0) { setConvos([]); await cacheSet(cacheKeys.chatsList(user.id), []); setLoading(false); return; }
+      if (ids.length === 0) { convoCacheReadyRef.current = true; setConvos([]); await cacheSet(cacheKeys.chatsList(user.id), []); setLoading(false); return; }
       const { data: profs } = await supabase.from("profiles").select("id, username, avatar_url").in("id", ids);
       const out: Convo[] = ids.map(id => {
         const p = profs?.find(x => x.id === id);
         const last = map.get(id)!;
         return { otherId: id, username: p?.username ?? "?", avatar_url: p?.avatar_url ?? null, last: last.last, created_at: last.created_at, unread: last.unread };
       });
+      convoCacheReadyRef.current = true;
       setConvos(out);
       console.info("[dm-cache] loaded-cloud-list", { key: cacheKeys.chatsList(user.id), count: out.length });
       await cacheSet(cacheKeys.chatsList(user.id), out);
@@ -112,6 +113,7 @@ function ChatsPage() {
   useEffect(() => {
     if (!user) return;
     if (!convoCacheReadyRef.current) return;
+    if (!getOnline() && convos.length === 0) return;
     void cacheSet(cacheKeys.chatsList(user.id), convos);
   }, [convos, user]);
 
