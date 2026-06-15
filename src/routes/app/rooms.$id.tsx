@@ -151,10 +151,20 @@ function RoomPage() {
   };
 
   const loadMessages = async () => {
+    // 1) Local-first: render cached messages immediately (works fully offline).
+    const cached = await cacheGet<any[]>(cacheKeys.roomMessages(roomId));
+    if (cached && cached.length) {
+      setMessages(cached);
+      const ids = cached.map((m: any) => m.user_id).filter(Boolean);
+      ensureProfiles(ids);
+      scrollToBottom(didInitialScrollRef.current);
+      didInitialScrollRef.current = true;
+    }
+    // 2) Skip network when offline — avoids browser errors and keeps cached UI.
+    if (!getOnline()) return;
+    // 3) Background sync from cloud.
     const { data } = await supabase.from("room_messages").select("*").eq("room_id", roomId).order("created_at", { ascending: true }).limit(200);
     if (data) {
-      // Drop historical plain system messages from the visible list — they
-      // were already shown as floating notices when they happened.
       const visible = data.filter((m: any) => !isPlainSystem(m));
       setMessages(visible);
       const ids = visible.map((m: any) => m.user_id).filter(Boolean);
@@ -163,6 +173,14 @@ function RoomPage() {
       didInitialScrollRef.current = true;
     }
   };
+
+  // Persist room messages locally on every change (offline-first cache).
+  useEffect(() => {
+    if (!roomId) return;
+    // Don't persist optimistic tmp-* items; keep cache to confirmed messages.
+    const persistable = messages.filter((m: any) => typeof m.id === "string" && !m.id.startsWith("tmp-"));
+    if (persistable.length) void cacheSet(cacheKeys.roomMessages(roomId), persistable);
+  }, [messages, roomId]);
 
   useEffect(() => {
     loadRoom();
