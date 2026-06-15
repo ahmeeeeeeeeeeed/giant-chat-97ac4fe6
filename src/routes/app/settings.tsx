@@ -552,7 +552,99 @@ function SettingsPage() {
         </Modal>
       )}
 
+      {/* Privacy Policy */}
+      {showPrivacy && (
+        <Modal title="سياسة الخصوصية" onClose={() => setShowPrivacy(false)} icon={<FileText className="h-5 w-5" />} color="bg-indigo-500">
+          <div className="space-y-4 text-sm leading-relaxed">
+            <Intro>
+              نحن في Giant Chat نحترم خصوصيتك ونلتزم بحماية بياناتك. توضح هذه السياسة ما نجمعه وكيف نستخدمه.
+            </Intro>
+            <Section2 title="1) البيانات التي نجمعها">
+              • اسم المستخدم والبريد الإلكتروني عند التسجيل.<br />
+              • صورة الملف الشخصي والمعلومات التي تشاركها طوعًا.<br />
+              • الرسائل والمحادثات (مشفّرة أثناء النقل، مرتبطة بحسابك فقط).<br />
+              • معلومات الجهاز الأساسية لتشغيل الإشعارات والتحديثات.
+            </Section2>
+            <Section2 title="2) كيف نستخدم البيانات">
+              • لتقديم خدمات الدردشة والغرف الصوتية والمجتمع.<br />
+              • لتحسين الأداء والأمان ومنع الإساءة.<br />
+              • للتواصل معك بشأن الإشعارات والتحديثات الهامة.
+            </Section2>
+            <Section2 title="3) المشاركة مع أطراف ثالثة">
+              لا نبيع بياناتك. نشاركها فقط مع مزوّدي البنية التحتية الضرورية لتشغيل التطبيق، وعند الطلب القانوني.
+            </Section2>
+            <Section2 title="4) حقوقك">
+              • يمكنك تعديل ملفك أو حذف حسابك في أي وقت من «إدارة الحساب».<br />
+              • يمكنك طلب نسخة من بياناتك أو حذفها نهائيًا.<br />
+              • يمكنك حظر أي مستخدم أو الإبلاغ عن المحتوى المسيء.
+            </Section2>
+            <Section2 title="5) أمان البيانات">
+              نستخدم تشفير TLS وسياسات وصول صارمة على مستوى قاعدة البيانات (RLS) لحماية بياناتك.
+            </Section2>
+            <p className="text-[11px] text-muted-foreground text-center pt-2">
+              آخر تحديث: {new Date().toLocaleDateString("ar")}
+            </p>
+          </div>
+        </Modal>
+      )}
+
+      {/* Terms of Use */}
+      {showTerms && (
+        <Modal title="شروط الاستخدام" onClose={() => setShowTerms(false)} icon={<ScrollText className="h-5 w-5" />} color="bg-purple-500">
+          <div className="space-y-4 text-sm leading-relaxed">
+            <Intro>
+              باستخدامك Giant Chat، فإنك توافق على الشروط التالية. يُرجى قراءتها بعناية.
+            </Intro>
+            <Section2 title="1) الأهلية">
+              يجب ألا يقل عمرك عن 13 عامًا لاستخدام التطبيق. أنت مسؤول عن صحة المعلومات التي تقدّمها.
+            </Section2>
+            <Section2 title="2) السلوك المقبول">
+              يُمنع منعًا باتًا: التحرش، نشر الإباحية، خطاب الكراهية، الترويج للعنف، انتحال الشخصية، أو نشر محتوى يخالف القانون. مخالفة ذلك تؤدي إلى تعليق الحساب أو حذفه نهائيًا.
+            </Section2>
+            <Section2 title="3) المحتوى الذي تنشره">
+              تحتفظ بحقوق المحتوى الخاص بك، لكنك تمنحنا الترخيص لعرضه داخل التطبيق لخدمة المستخدمين الآخرين.
+            </Section2>
+            <Section2 title="4) النقاط والمميزات">
+              النقاط والشارات افتراضية، غير قابلة للتحويل لأموال حقيقية، ويحق للإدارة تعديل أو إلغاء أيٍّ منها لأسباب فنية أو أمنية.
+            </Section2>
+            <Section2 title="5) إنهاء الخدمة">
+              يحق للإدارة إنهاء أو تعليق أي حساب يخالف الشروط دون إشعار مسبق.
+            </Section2>
+            <Section2 title="6) إخلاء المسؤولية">
+              يُقدَّم التطبيق «كما هو». لا نضمن خلوه التام من الأخطاء، ولا نتحمل مسؤولية أي خسائر ناتجة عن سوء الاستخدام.
+            </Section2>
+            <p className="text-[11px] text-muted-foreground text-center pt-2">
+              آخر تحديث: {new Date().toLocaleDateString("ar")}
+            </p>
+          </div>
+        </Modal>
+      )}
+
+      {/* Clear cache confirm */}
+      {showClearCache && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-5" onClick={() => !clearingCache && setShowClearCache(false)}>
+          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm rounded-2xl bg-card p-5 shadow-2xl">
+            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-500 text-white">
+              <Trash2 className="h-6 w-6" />
+            </div>
+            <h2 className="mb-1 text-lg font-bold">مسح التخزين المؤقت؟</h2>
+            <p className="mb-4 text-sm text-muted-foreground">
+              سيتم حذف الملفات المؤقتة والصور المخزّنة محليًا لتفريغ المساحة وحلّ بعض المشاكل. لن يتم حذف حسابك أو رسائلك على الخادم. قد يحتاج التطبيق للاتصال بالإنترنت لإعادة تحميل المحتوى.
+            </p>
+            <div className="flex gap-2">
+              <button disabled={clearingCache} onClick={() => setShowClearCache(false)}
+                className="h-11 flex-1 rounded-xl border border-input font-semibold">إلغاء</button>
+              <button disabled={clearingCache} onClick={clearCache}
+                className="h-11 flex-1 rounded-xl bg-rose-500 text-white font-semibold disabled:opacity-60 flex items-center justify-center gap-2">
+                {clearingCache ? <><Loader2 className="h-4 w-4 animate-spin" /> ...</> : "مسح"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </main>
+
   );
 }
 
