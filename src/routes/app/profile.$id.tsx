@@ -162,9 +162,11 @@ function OtherProfilePage() {
               <span className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold">
                 🪙 {profile.points} نقطة
               </span>
-              <span className="rounded-full bg-secondary px-3 py-1 text-xs">
-                {formatLastSeen()}
-              </span>
+              {formatLastSeen() && (
+                <span className="rounded-full bg-secondary px-3 py-1 text-xs">
+                  {formatLastSeen()}
+                </span>
+              )}
             </div>
 
             {/* Bio */}
