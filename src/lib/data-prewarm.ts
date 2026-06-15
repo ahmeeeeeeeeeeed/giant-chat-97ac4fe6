@@ -23,6 +23,7 @@ async function cacheMedia(url: string | null | undefined) {
 const THROTTLE_HOURS = 12;
 const RECENT_DM_PEERS_LIMIT = 8;
 const MESSAGES_PER_PEER = 50;
+type CachedMessageMedia = { media_url?: string | null };
 
 function throttleKey(userId: string) {
   return `giant:data-prewarm:${userId}`;
@@ -160,14 +161,17 @@ async function warmChatsAndRecentMessages(userId: string) {
             )
             .order("created_at", { ascending: false })
             .limit(MESSAGES_PER_PEER),
-          supabase.from("profiles").select("id, username, avatar_url, bio, last_seen_at, created_at, points, gender, country, hide_last_seen, dm_locked, profile_views, equipped_badge, equipped_name_color, equipped_chat_color, equipped_effect, is_banned, is_bot, game_wins").eq("id", peer.otherId).maybeSingle(),
+          supabase
+            .from("profiles")
+            .select(
+              "id, username, avatar_url, bio, last_seen_at, created_at, points, gender, country, hide_last_seen, dm_locked, profile_views, equipped_badge, equipped_name_color, equipped_effect, is_banned, is_bot, game_wins",
+            )
+            .eq("id", peer.otherId)
+            .maybeSingle(),
         ]);
         if (dm) {
-          await cacheSet(
-            cacheKeys.dmMessages(userId, peer.otherId),
-            dm.slice().reverse(),
-          );
-          await Promise.all(dm.map((m: any) => cacheMedia(m.media_url)));
+          await cacheSet(cacheKeys.dmMessages(userId, peer.otherId), dm.slice().reverse());
+          await Promise.all((dm as CachedMessageMedia[]).map((m) => cacheMedia(m.media_url)));
         }
         if (prof) await cacheSet(cacheKeys.profile(peer.otherId), prof);
       } catch {

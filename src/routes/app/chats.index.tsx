@@ -113,16 +113,22 @@ function ChatsPage() {
   useEffect(() => {
     const q = query.trim();
     if (!q || !user) { setResults([]); return; }
+    if (!getOnline()) { setResults([]); setSearching(false); return; }
     const id = setTimeout(async () => {
       setSearching(true);
-      const { data } = await supabase
-        .from("profiles")
-        .select("id, username, avatar_url")
-        .ilike("username", `%${q}%`)
-        .neq("id", user.id)
-        .limit(15);
-      setResults((data ?? []) as SearchProfile[]);
-      setSearching(false);
+      try {
+        const { data } = await supabase
+          .from("profiles")
+          .select("id, username, avatar_url")
+          .ilike("username", `%${q}%`)
+          .neq("id", user.id)
+          .limit(15);
+        setResults((data ?? []) as SearchProfile[]);
+      } catch {
+        setResults([]);
+      } finally {
+        setSearching(false);
+      }
     }, 250);
     return () => clearTimeout(id);
   }, [query, user]);
