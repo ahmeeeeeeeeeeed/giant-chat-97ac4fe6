@@ -726,6 +726,15 @@ function Faq({ q, a }: { q: string; a: string }) {
   );
 }
 
+function Section2({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="rounded-2xl border border-border bg-secondary/30 p-4">
+      <h3 className="mb-2 text-sm font-bold">{title}</h3>
+      <div className="text-xs text-muted-foreground leading-relaxed">{children}</div>
+    </div>
+  );
+}
+
 function Row2({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between text-sm">
