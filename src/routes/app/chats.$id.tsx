@@ -71,6 +71,7 @@ function DMPage() {
   const [muted, setMuted] = useState(false);
   const [blocked, setBlocked] = useState(false); // I blocked them
   const [blockedByOther, setBlockedByOther] = useState(false);
+  const [isFriend, setIsFriend] = useState(false);
   const [pendingMedia, setPendingMedia] = useState<{ kind: "image" | "voice"; file: Blob; previewUrl: string; durationMs?: number } | null>(null);
   const otherAvatarSource = useCachedMediaSource(other?.avatar_url);
 
