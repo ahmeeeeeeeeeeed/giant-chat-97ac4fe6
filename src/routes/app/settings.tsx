@@ -49,11 +49,16 @@ function SettingsPage() {
   const [showHelp, setShowHelp] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [showShare, setShowShare] = useState(false);
+  const [showPrivacy, setShowPrivacy] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
+  const [showClearCache, setShowClearCache] = useState(false);
+  const [clearingCache, setClearingCache] = useState(false);
   const [username, setUsername] = useState("");
   const [latest, setLatest] = useState<LatestUpdate>(null);
   const [checkingUpdate, setCheckingUpdate] = useState(false);
   const [installing, setInstalling] = useState(false);
   const [installProgress, setInstallProgress] = useState(0);
+  const online = useOnline();
 
   const doLogout = async () => {
     setSigningOut(true);
