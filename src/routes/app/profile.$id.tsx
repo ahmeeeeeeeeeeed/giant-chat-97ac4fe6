@@ -106,6 +106,7 @@ function OtherProfilePage() {
 
   const formatLastSeen = () => {
     if (!profile) return "";
+    if (!isFriend) return ""; // hide for non-friends
     if (profile.hide_last_seen) return "آخر ظهور مخفي";
     if (!profile.last_seen_at) return "غير متصل";
     const diff = (Date.now() - new Date(profile.last_seen_at).getTime()) / 1000;
