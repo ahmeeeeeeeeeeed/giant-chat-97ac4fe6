@@ -10,16 +10,28 @@ import {
   ShoppingBag, Flag, User, Bell, Users as UsersIcon,
   Trophy, MessageSquare, Shield, Info, HelpCircle,
   Star, Share2, Lock, Newspaper, Gamepad2, Crown,
+  X, Copy, Loader2, Sparkles, Download, MessageCircle, Send, Mail,
 } from "lucide-react";
 import { SUPPORTED_LANGUAGES } from "@/lib/i18n";
 import { findAdminId } from "@/lib/find-admin";
-import { APP_VERSION } from "@/lib/version";
+import { APP_VERSION, getVersionCode } from "@/lib/version";
+import { isNativeAndroid, downloadAndInstallApk } from "@/lib/app-update";
 import { toast } from "sonner";
 import { PremiumCreateModal } from "@/components/PremiumCreateModal";
 
 export const Route = createFileRoute("/app/settings")({
   component: SettingsPage,
 });
+
+const SHARE_URL = "https://giant-chat.lovable.app";
+const SHARE_TEXT = "حمّل تطبيق Giant Chat — دردشة، غرف صوتية، وأصدقاء جدد في مكان واحد 💬✨";
+
+type LatestUpdate = {
+  version: string;
+  version_code: number;
+  update_message: string;
+  file_url: string;
+} | null;
 
 function SettingsPage() {
   const { theme, toggle } = useTheme();
@@ -31,7 +43,14 @@ function SettingsPage() {
   const [showLogout, setShowLogout] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [showPremium, setShowPremium] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
+  const [showAbout, setShowAbout] = useState(false);
+  const [showShare, setShowShare] = useState(false);
   const [username, setUsername] = useState("");
+  const [latest, setLatest] = useState<LatestUpdate>(null);
+  const [checkingUpdate, setCheckingUpdate] = useState(false);
+  const [installing, setInstalling] = useState(false);
+  const [installProgress, setInstallProgress] = useState(0);
 
   const doLogout = async () => {
     setSigningOut(true);
@@ -56,13 +75,66 @@ function SettingsPage() {
     navigate({ to: "/app/chats/$id", params: { id } });
   };
 
-  const share = async () => {
-    const url = window.location.origin;
+  const checkForUpdate = async () => {
+    setCheckingUpdate(true);
     try {
-      if (navigator.share) await navigator.share({ title: "Giant Chat", url });
-      else { await navigator.clipboard.writeText(url); toast.success("تم نسخ الرابط"); }
-    } catch {}
+      const { data } = await supabase
+        .from("app_updates")
+        .select("version, version_code, update_message, file_url")
+        .eq("is_active", true)
+        .order("version_code", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (data) setLatest(data as LatestUpdate);
+    } catch { /* offline */ }
+    finally { setCheckingUpdate(false); }
   };
+
+  const openAbout = () => { setShowAbout(true); void checkForUpdate(); };
+
+  const installUpdate = async () => {
+    if (!latest) return;
+    if (!(await isNativeAndroid())) {
+      window.open(latest.file_url, "_blank");
+      return;
+    }
+    setInstalling(true);
+    setInstallProgress(0);
+    try {
+      await downloadAndInstallApk(latest.file_url, (p) => setInstallProgress(p));
+    } catch (e: any) {
+      toast.error(e?.message || "فشل التحديث");
+    } finally {
+      setInstalling(false);
+    }
+  };
+
+  const openShare = async () => {
+    const payload = { title: "Giant Chat", text: SHARE_TEXT, url: SHARE_URL };
+    try {
+      if (await isNativeAndroid()) {
+        const { Share } = await import("@capacitor/share");
+        await Share.share({ ...payload, dialogTitle: "مشاركة Giant Chat" });
+        return;
+      }
+      if (typeof navigator !== "undefined" && (navigator as any).share) {
+        await (navigator as any).share(payload);
+        return;
+      }
+    } catch (e: any) {
+      if (e?.message && /cancel|abort|dismiss/i.test(String(e.message))) return;
+    }
+    setShowShare(true);
+  };
+
+  const copyShareLink = async () => {
+    try {
+      await navigator.clipboard.writeText(`${SHARE_TEXT}\n${SHARE_URL}`);
+      toast.success("تم نسخ الرابط");
+    } catch { toast.error("تعذر النسخ"); }
+  };
+
+  const hasUpdate = latest && latest.version_code > getVersionCode(APP_VERSION);
 
   const currentLang = SUPPORTED_LANGUAGES.find((l) => l.code === i18n.language) ?? SUPPORTED_LANGUAGES[0];
 
