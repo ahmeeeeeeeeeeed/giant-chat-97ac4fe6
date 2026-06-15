@@ -18,7 +18,7 @@ import { findAdminId } from "@/lib/find-admin";
 import { APP_VERSION, getVersionCode } from "@/lib/version";
 import { isNativeAndroid, downloadAndInstallApk } from "@/lib/app-update";
 import { cacheGet, cacheSet } from "@/lib/offline-cache";
-import { getOnline } from "@/lib/use-online";
+import { getOnline, useOnline } from "@/lib/use-online";
 import { toast } from "sonner";
 import { PremiumCreateModal } from "@/components/PremiumCreateModal";
 
