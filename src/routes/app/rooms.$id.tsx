@@ -253,6 +253,29 @@ function RoomPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomId, user?.id]);
 
+  // Auto-leave the room when the user goes offline OR signs out.
+  // The user must explicitly tap "انضمام للغرفة" again to come back in.
+  const online = useOnline();
+  useEffect(() => {
+    if (!online && myRank) {
+      setMyRank(null);
+      toast.message("تمت مغادرة الغرفة بسبب فقد الاتصال");
+      navigate({ to: "/app" });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [online]);
+
+  useEffect(() => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_OUT") {
+        setMyRank(null);
+        navigate({ to: "/" });
+      }
+    });
+    return () => { sub.subscription.unsubscribe(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const tryJoin = async (pw?: string) => {
     if (!user || !room) return;
     const banned = await checkBanned();
