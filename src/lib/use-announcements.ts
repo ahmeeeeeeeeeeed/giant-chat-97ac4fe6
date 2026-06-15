@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { getOnline } from "@/lib/use-online";
 
 const SEEN_KEY = "announce:last_seen_at";
 
@@ -11,6 +12,7 @@ export function useAnnouncementsListener(enabled: boolean) {
 
   useEffect(() => {
     if (!enabled) return;
+    if (!getOnline()) return;
 
     let cancelled = false;
     const lastSeen = localStorage.getItem(SEEN_KEY) ?? new Date(Date.now() - 60_000).toISOString();
@@ -22,7 +24,8 @@ export function useAnnouncementsListener(enabled: boolean) {
         .select("id, content, created_at")
         .gt("created_at", lastSeen)
         .order("created_at", { ascending: true })
-        .limit(10);
+        .limit(10)
+        .catch(() => ({ data: null }));
       if (cancelled || !data) return;
       for (const a of data) {
         if (shownIds.current.has(a.id)) continue;

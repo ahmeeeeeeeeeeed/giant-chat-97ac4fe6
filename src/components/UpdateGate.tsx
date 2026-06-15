@@ -35,26 +35,30 @@ export function UpdateGate() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const onAndroid = await isNativeAndroid();
-      if (cancelled) return;
-      setNative(onAndroid);
-      const { data } = await supabase
-        .from("app_updates")
-        .select("*")
-        .eq("is_active", true)
-        .order("version_code", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (cancelled || !data) return;
-      const row = data as AppUpdateRow;
-      // Effective installed code = max(APP_VERSION baked at build time,
-      // last version the user marked as installed via this gate). This
-      // protects against APP_VERSION drift between CI builds.
-      const installedCode = Math.max(getVersionCode(APP_VERSION), getInstalledCode());
-      if (row.version_code <= installedCode) return;
-      setLatest(row);
-      const skipped = typeof window !== "undefined" ? localStorage.getItem(DISMISS_KEY) : null;
-      if (skipped === row.version && !isForceRequired(row)) setDismissed(true);
+      try {
+        const onAndroid = await isNativeAndroid();
+        if (cancelled) return;
+        setNative(onAndroid);
+        const { data } = await supabase
+          .from("app_updates")
+          .select("*")
+          .eq("is_active", true)
+          .order("version_code", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (cancelled || !data) return;
+        const row = data as AppUpdateRow;
+        // Effective installed code = max(APP_VERSION baked at build time,
+        // last version the user marked as installed via this gate). This
+        // protects against APP_VERSION drift between CI builds.
+        const installedCode = Math.max(getVersionCode(APP_VERSION), getInstalledCode());
+        if (row.version_code <= installedCode) return;
+        setLatest(row);
+        const skipped = typeof window !== "undefined" ? localStorage.getItem(DISMISS_KEY) : null;
+        if (skipped === row.version && !isForceRequired(row)) setDismissed(true);
+      } catch {
+        // Offline / reconnect race — do not show a red error toast.
+      }
     })();
     return () => { cancelled = true; };
   }, []);
