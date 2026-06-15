@@ -63,6 +63,7 @@ export const cacheKeys = {
   roomsList: () => `rooms:list`,
   chatsList: (userId: string) => `chats:list:${userId}`,
   dmMessages: (userId: string, otherId: string) => `dm:${userId}:${otherId}`,
+  media: (url: string) => `media:${url}`,
   roomMessages: (roomId: string) => `room-msgs:${roomId}`,
   settings: (userId: string) => `settings:${userId}`,
 };
