@@ -165,6 +165,54 @@ function SettingsPage() {
     } catch { toast.error("تعذر النسخ"); }
   };
 
+  const clearCache = async () => {
+    setClearingCache(true);
+    try {
+      // Clear caches API
+      if (typeof caches !== "undefined") {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((k) => caches.delete(k)));
+      }
+      // Clear IndexedDB (giant-offline + idb-keyval default + others)
+      if (typeof indexedDB !== "undefined") {
+        try {
+          const dbs = await (indexedDB as any).databases?.();
+          if (Array.isArray(dbs)) {
+            await Promise.all(
+              dbs.map((d: any) => d?.name ? new Promise<void>((res) => {
+                const req = indexedDB.deleteDatabase(d.name);
+                req.onsuccess = req.onerror = req.onblocked = () => res();
+              }) : Promise.resolve())
+            );
+          } else {
+            ["giant-offline", "keyval-store"].forEach((n) => indexedDB.deleteDatabase(n));
+          }
+        } catch { /* ignore */ }
+      }
+      // Clear native filesystem mirror
+      try {
+        const [{ Capacitor }, fs] = await Promise.all([
+          import("@capacitor/core"),
+          import("@capacitor/filesystem"),
+        ]);
+        if (Capacitor.isNativePlatform()) {
+          try {
+            await fs.Filesystem.rmdir({ path: "offline-cache", directory: fs.Directory.Data, recursive: true });
+          } catch { /* ignore */ }
+        }
+      } catch { /* not native */ }
+      try { localStorage.clear(); } catch { /* ignore */ }
+      try { sessionStorage.clear(); } catch { /* ignore */ }
+      toast.success("تم مسح التخزين المؤقت");
+      setShowClearCache(false);
+      setTimeout(() => window.location.reload(), 600);
+    } catch (e: any) {
+      toast.error(e?.message || "فشل المسح");
+    } finally {
+      setClearingCache(false);
+    }
+  };
+
   const hasUpdate = latest && latest.version_code > getVersionCode(APP_VERSION);
 
   const currentLang = SUPPORTED_LANGUAGES.find((l) => l.code === i18n.language) ?? SUPPORTED_LANGUAGES[0];
