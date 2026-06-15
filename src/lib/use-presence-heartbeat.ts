@@ -54,6 +54,8 @@ export function usePresenceHeartbeat(userId: string | undefined) {
               Prefer: "return=minimal",
             },
             body: JSON.stringify({ last_seen_at: new Date().toISOString() }),
+          }).catch(() => {
+            /* offline / page is closing */
           });
           void headers;
         } else {

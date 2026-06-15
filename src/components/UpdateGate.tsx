@@ -23,6 +23,10 @@ function markInstalled(version: string, versionCode: number) {
   } catch { /* ignore */ }
 }
 
+function errorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error ? error.message : fallback;
+}
+
 export function UpdateGate() {
   const [latest, setLatest] = useState<AppUpdateRow | null>(null);
   const [dismissed, setDismissed] = useState(false);
@@ -35,26 +39,30 @@ export function UpdateGate() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const onAndroid = await isNativeAndroid();
-      if (cancelled) return;
-      setNative(onAndroid);
-      const { data } = await supabase
-        .from("app_updates")
-        .select("*")
-        .eq("is_active", true)
-        .order("version_code", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (cancelled || !data) return;
-      const row = data as AppUpdateRow;
-      // Effective installed code = max(APP_VERSION baked at build time,
-      // last version the user marked as installed via this gate). This
-      // protects against APP_VERSION drift between CI builds.
-      const installedCode = Math.max(getVersionCode(APP_VERSION), getInstalledCode());
-      if (row.version_code <= installedCode) return;
-      setLatest(row);
-      const skipped = typeof window !== "undefined" ? localStorage.getItem(DISMISS_KEY) : null;
-      if (skipped === row.version && !isForceRequired(row)) setDismissed(true);
+      try {
+        const onAndroid = await isNativeAndroid();
+        if (cancelled) return;
+        setNative(onAndroid);
+        const { data } = await supabase
+          .from("app_updates")
+          .select("*")
+          .eq("is_active", true)
+          .order("version_code", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (cancelled || !data) return;
+        const row = data as AppUpdateRow;
+        // Effective installed code = max(APP_VERSION baked at build time,
+        // last version the user marked as installed via this gate). This
+        // protects against APP_VERSION drift between CI builds.
+        const installedCode = Math.max(getVersionCode(APP_VERSION), getInstalledCode());
+        if (row.version_code <= installedCode) return;
+        setLatest(row);
+        const skipped = typeof window !== "undefined" ? localStorage.getItem(DISMISS_KEY) : null;
+        if (skipped === row.version && !isForceRequired(row)) setDismissed(true);
+      } catch {
+        // Offline / reconnect race — do not show a red error toast.
+      }
     })();
     return () => { cancelled = true; };
   }, []);
@@ -80,9 +88,10 @@ export function UpdateGate() {
       // returns to a fresh app process with no in-memory state.
       markInstalled(latest.version, latest.version_code);
       setDone(true);
-    } catch (e: any) {
-      setError(e?.message || "فشل التحديث");
-      toast.error(e?.message || "فشل التحديث");
+    } catch (e) {
+      const message = errorMessage(e, "فشل التحديث");
+      setError(message);
+      toast.error(message);
     } finally {
       setBusy(false);
     }
@@ -90,7 +99,7 @@ export function UpdateGate() {
 
   const handleLater = () => {
     if (force) return;
-    try { localStorage.setItem(DISMISS_KEY, latest.version); } catch {}
+    try { localStorage.setItem(DISMISS_KEY, latest.version); } catch { /* ignore */ }
     setDismissed(true);
   };
 

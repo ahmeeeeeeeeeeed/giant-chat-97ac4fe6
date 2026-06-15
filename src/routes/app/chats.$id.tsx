@@ -15,6 +15,7 @@ import { cacheGet, cacheSet, cacheKeys } from "@/lib/offline-cache";
 import { enqueueMessage } from "@/lib/offline-queue";
 import { getOnline } from "@/lib/use-online";
 import { ensureMediaLibraryPermission, ensureMicPermission } from "@/lib/app-permissions";
+import { useCachedMediaSource } from "@/lib/use-cached-media";
 
 export const Route = createFileRoute("/app/chats/$id")({
   component: DMPage,
@@ -69,6 +70,7 @@ function DMPage() {
   const [blocked, setBlocked] = useState(false); // I blocked them
   const [blockedByOther, setBlockedByOther] = useState(false);
   const [pendingMedia, setPendingMedia] = useState<{ kind: "image" | "voice"; file: Blob; previewUrl: string; durationMs?: number } | null>(null);
+  const otherAvatarSource = useCachedMediaSource(other?.avatar_url);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -213,6 +215,7 @@ function DMPage() {
   // presence + typing channel (shared by both peers — same name)
   useEffect(() => {
     if (!user) return;
+    if (!getOnline()) return;
     const room = `dm-presence:${[user.id, otherId].sort().join(":")}`;
     const ch = supabase.channel(room, { config: { presence: { key: user.id } } });
     presenceChRef.current = ch;
@@ -270,14 +273,28 @@ function DMPage() {
       return;
     }
 
-    const { error } = await supabase.from("direct_messages").insert({
-      sender_id: user.id, receiver_id: otherId, content, message_type: "text",
-      reply_to_id: reply?.id ?? null,
-    });
+    let error: { message?: string } | null = null;
+    try {
+      const res = await supabase.from("direct_messages").insert({
+        sender_id: user.id, receiver_id: otherId, content, message_type: "text",
+        reply_to_id: reply?.id ?? null,
+      });
+      error = res.error;
+    } catch (err) {
+      error = err as { message?: string };
+    }
     setSending(false);
     if (error) {
       if (!getOnline() || /network|fetch|Failed/i.test(error.message ?? "")) {
         await enqueueMessage({ kind: "dm", sender_id: user.id, receiver_id: otherId, content });
+        const optimistic: DM = {
+          id: `q_${Date.now()}`,
+          sender_id: user.id, receiver_id: otherId, content,
+          created_at: new Date().toISOString(),
+          message_type: "text", media_url: null, media_duration_ms: null,
+          reply_to_id: reply?.id ?? null,
+        };
+        setMessages((old) => [...old, optimistic]);
         toast.message("تم حفظ الرسالة — ستُرسل عند عودة الإنترنت");
         return;
       }
@@ -485,8 +502,8 @@ function DMPage() {
           className="focus:outline-none"
           aria-label="عرض البروفايل"
         >
-          {other?.avatar_url ? (
-            <img src={other.avatar_url} alt="" className="h-10 w-10 rounded-full object-cover ring-2 ring-primary-foreground/30 transition-transform active:scale-95" />
+          {otherAvatarSource ? (
+            <img src={otherAvatarSource} alt="" className="h-10 w-10 rounded-full object-cover ring-2 ring-primary-foreground/30 transition-transform active:scale-95" />
           ) : (
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-foreground/20 font-bold transition-transform active:scale-95">
               {(other?.username ?? "?").charAt(0).toUpperCase()}
@@ -690,6 +707,7 @@ function ActionItem({ icon, label, onClick, destructive }: { icon: React.ReactNo
 
 function MessageBubble({ m, mine, replied, onPress }: { m: DM; mine: boolean; replied: DM | null; onPress?: () => void }) {
   const [lightbox, setLightbox] = useState(false);
+  const mediaSource = useCachedMediaSource(m.media_url);
   const base = `rounded-2xl px-3.5 py-2 shadow-sm ${mine ? "rounded-br-md bg-primary text-primary-foreground" : "rounded-bl-md bg-card border border-border"}`;
   const replyBlock = replied && (
     <div className={`mb-1 rounded-lg border-s-2 px-2 py-1 text-[11px] ${mine ? "border-primary-foreground/60 bg-primary-foreground/10" : "border-primary bg-secondary"}`}>
@@ -697,24 +715,24 @@ function MessageBubble({ m, mine, replied, onPress }: { m: DM; mine: boolean; re
       <div className="truncate opacity-90">{replied.content || (replied.message_type === "image" ? "صورة" : "رسالة صوتية")}</div>
     </div>
   );
-  if (m.message_type === "image" && m.media_url) {
+  if (m.message_type === "image" && mediaSource) {
     return (
       <>
         <div className="overflow-hidden rounded-2xl" onClick={onPress}>
           {replyBlock}
           <button type="button" onClick={(e) => { e.stopPropagation(); setLightbox(true); }} className="block w-full">
-            <img src={m.media_url} alt="" className="max-h-72 w-full rounded-2xl object-cover" loading="lazy" />
+            <img src={mediaSource} alt="" className="max-h-72 w-full rounded-2xl object-cover" loading="lazy" />
           </button>
         </div>
-        {lightbox && <ImageLightbox url={m.media_url} onClose={() => setLightbox(false)} />}
+        {lightbox && <ImageLightbox url={mediaSource} onClose={() => setLightbox(false)} />}
       </>
     );
   }
-  if (m.message_type === "voice" && m.media_url) {
+  if (m.message_type === "voice" && mediaSource) {
     return (
       <div className={base} onClick={onPress}>
         {replyBlock}
-        <VoicePlayer url={m.media_url} durationMs={m.media_duration_ms ?? 0} mine={mine} />
+        <VoicePlayer url={mediaSource} durationMs={m.media_duration_ms ?? 0} mine={mine} />
       </div>
     );
   }

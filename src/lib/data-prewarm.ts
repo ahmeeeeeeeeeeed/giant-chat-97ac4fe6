@@ -8,9 +8,22 @@ import { supabase } from "@/integrations/supabase/client";
 import { cacheSet, cacheKeys } from "./offline-cache";
 import { getOnline } from "./use-online";
 
+async function cacheMedia(url: string | null | undefined) {
+  if (!url || !getOnline()) return;
+  try {
+    const response = await fetch(url, { cache: "force-cache" });
+    if (!response.ok) return;
+    const blob = await response.blob();
+    if (blob.size) await cacheSet(cacheKeys.media(url), blob);
+  } catch {
+    /* media cache is best-effort */
+  }
+}
+
 const THROTTLE_HOURS = 12;
 const RECENT_DM_PEERS_LIMIT = 8;
 const MESSAGES_PER_PEER = 50;
+type CachedMessageMedia = { media_url?: string | null };
 
 function throttleKey(userId: string) {
   return `giant:data-prewarm:${userId}`;
@@ -148,15 +161,22 @@ async function warmChatsAndRecentMessages(userId: string) {
             )
             .order("created_at", { ascending: false })
             .limit(MESSAGES_PER_PEER),
-          supabase.from("profiles").select("id, username, avatar_url, bio, last_seen_at, created_at, points, gender, country, hide_last_seen, dm_locked, profile_views, equipped_badge, equipped_name_color, equipped_chat_color, equipped_effect, is_banned, is_bot, game_wins").eq("id", peer.otherId).maybeSingle(),
+          supabase
+            .from("profiles")
+            .select(
+              "id, username, avatar_url, bio, last_seen_at, created_at, points, gender, country, hide_last_seen, dm_locked, profile_views, equipped_badge, equipped_name_color, equipped_effect, is_banned, is_bot, game_wins",
+            )
+            .eq("id", peer.otherId)
+            .maybeSingle(),
         ]);
         if (dm) {
-          await cacheSet(
-            cacheKeys.dmMessages(userId, peer.otherId),
-            dm.slice().reverse(),
-          );
+          await cacheSet(cacheKeys.dmMessages(userId, peer.otherId), dm.slice().reverse());
+          await Promise.all((dm as CachedMessageMedia[]).map((m) => cacheMedia(m.media_url)));
         }
-        if (prof) await cacheSet(cacheKeys.profile(peer.otherId), prof);
+        if (prof) {
+          await cacheSet(cacheKeys.profile(peer.otherId), prof);
+          await cacheMedia((prof as { avatar_url?: string | null }).avatar_url);
+        }
       } catch {
         /* skip one peer on failure */
       }
