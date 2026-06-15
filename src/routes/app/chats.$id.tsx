@@ -486,6 +486,7 @@ function DMPage() {
   const presenceLabel = (() => {
     if (otherActivity === "typing") return "يكتب الآن…";
     if (otherActivity === "recording") return "يسجل رسالة صوتية…";
+    if (!isFriend) return ""; // hide online / last seen for non-friends
     if (otherOnline) return "متصل الآن";
     if (other?.hide_last_seen) return "آخر ظهور مخفي";
     if (other?.last_seen_at) return `آخر ظهور ${relativeTime(other.last_seen_at)}`;
