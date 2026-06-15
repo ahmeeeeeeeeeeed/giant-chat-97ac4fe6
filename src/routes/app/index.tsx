@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth";
 import { Plus, Users, Hash, Loader2, X, Search, UserPlus, Lock, Crown, Sparkles, AtSign, LogIn } from "lucide-react";
 import { toast } from "sonner";
 import { cacheGet, cacheSet, cacheKeys } from "@/lib/offline-cache";
+import { getOnline } from "@/lib/use-online";
 
 
 export const Route = createFileRoute("/app/")({
@@ -61,14 +62,21 @@ function RoomsPage() {
 
     setError(null);
 
-    // Seed from cache for instant offline render
+    // 1) Local-first: render cached rooms instantly (works fully offline,
+    // even on cold-start after the app was closed).
     const cached = await cacheGet<Room[]>(cacheKeys.roomsList());
-    if (cached) {
+    if (cached && cached.length) {
+      setRooms(cached);
+      setLoading(false);
+    } else if (cached) {
       setRooms(cached);
       setLoading(false);
     } else {
       setLoading(true);
     }
+
+    // 2) Offline → keep cached UI, never overwrite with empty.
+    if (!getOnline()) { setLoading(false); return; }
 
     try {
       const { data: roomsData, error: roomsError } = await supabase
@@ -98,7 +106,10 @@ function RoomsPage() {
       }));
 
       setRooms(roomsWithCount);
-      await cacheSet(cacheKeys.roomsList(), roomsWithCount);
+      // Only persist non-empty fresh lists so we never wipe a useful cache.
+      if (roomsWithCount.length) {
+        await cacheSet(cacheKeys.roomsList(), roomsWithCount);
+      }
     } catch (err) {
       if (!cached) setError("تعذر الاتصال بالخادم — يتم العمل بدون إنترنت");
     }
@@ -111,14 +122,19 @@ function RoomsPage() {
     if (user) {
       load();
     }
-    
+    if (!getOnline()) return;
     const ch = supabase
       .channel("rooms-list")
       .on("postgres_changes", { event: "*", schema: "public", table: "rooms" }, () => load())
       .on("postgres_changes", { event: "*", schema: "public", table: "room_members" }, () => load())
       .subscribe();
-    
-    return () => { supabase.removeChannel(ch); };
+
+    const onUp = () => { void load(); };
+    window.addEventListener("online", onUp);
+    return () => {
+      supabase.removeChannel(ch);
+      window.removeEventListener("online", onUp);
+    };
   }, [user]);
 
 

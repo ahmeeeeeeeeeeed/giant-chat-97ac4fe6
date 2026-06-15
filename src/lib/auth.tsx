@@ -103,7 +103,25 @@ export async function signInWithUsername(username: string, password: string) {
 export async function signOut() {
   explicitSignOutInProgress = true;
   try {
-    await supabase.auth.signOut();
+    // Use 'local' scope so signOut never blocks on the network.
+    // This always clears the local Supabase session (and fires SIGNED_OUT),
+    // even when the device is offline. The server session, if any, expires
+    // on its own. Tokens are also wiped from the native backup below.
+    try {
+      await supabase.auth.signOut({ scope: "local" } as never);
+    } catch {
+      /* offline or transient — fall through and force-clear locally */
+    }
+    try { await clearSessionBackup(); } catch { /* ignore */ }
+    // Defensive: force-clear Supabase persisted session from web storage
+    // in case the SDK call above was a no-op due to a network failure.
+    try {
+      if (typeof localStorage !== "undefined") {
+        Object.keys(localStorage)
+          .filter((k) => k.startsWith("sb-") && k.endsWith("-auth-token"))
+          .forEach((k) => localStorage.removeItem(k));
+      }
+    } catch { /* ignore */ }
   } finally {
     explicitSignOutInProgress = false;
   }
