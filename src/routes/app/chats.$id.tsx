@@ -619,7 +619,7 @@ function DMPage() {
                       <MessageBubble m={m} mine={mine} replied={replied ?? null} onPress={() => setMenuFor(m.id)} />
                       <div className={`mt-1 flex items-center gap-1 text-[10px] text-muted-foreground/80 ${mine ? "justify-end" : "justify-start"}`} suppressHydrationWarning>
                         <span>{formatDateTime(m.created_at)}</span>
-                        {mine && <MessageTicks status={statusOf(m)} />}
+                        {mine && <MessageTicks status={statusOf(m)} isFriend={isFriend} />}
                       </div>
                     </div>
                   </div>
