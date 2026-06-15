@@ -6,6 +6,22 @@ import { Download, X, AlertTriangle, CheckCircle2, Loader2 } from "lucide-react"
 import { toast } from "sonner";
 
 const DISMISS_KEY = "giant.update.dismissed.v";
+const INSTALLED_VERSION_KEY = "giant.update.installed.v";
+const INSTALLED_CODE_KEY = "giant.update.installed.code";
+
+function getInstalledCode(): number {
+  try {
+    const raw = typeof window !== "undefined" ? localStorage.getItem(INSTALLED_CODE_KEY) : null;
+    const n = raw ? parseInt(raw, 10) : 0;
+    return Number.isFinite(n) ? n : 0;
+  } catch { return 0; }
+}
+function markInstalled(version: string, versionCode: number) {
+  try {
+    localStorage.setItem(INSTALLED_VERSION_KEY, version);
+    localStorage.setItem(INSTALLED_CODE_KEY, String(versionCode));
+  } catch { /* ignore */ }
+}
 
 export function UpdateGate() {
   const [latest, setLatest] = useState<AppUpdateRow | null>(null);
@@ -31,7 +47,11 @@ export function UpdateGate() {
         .maybeSingle();
       if (cancelled || !data) return;
       const row = data as AppUpdateRow;
-      if (row.version_code <= getVersionCode(APP_VERSION)) return;
+      // Effective installed code = max(APP_VERSION baked at build time,
+      // last version the user marked as installed via this gate). This
+      // protects against APP_VERSION drift between CI builds.
+      const installedCode = Math.max(getVersionCode(APP_VERSION), getInstalledCode());
+      if (row.version_code <= installedCode) return;
       setLatest(row);
       const skipped = typeof window !== "undefined" ? localStorage.getItem(DISMISS_KEY) : null;
       if (skipped === row.version && !isForceRequired(row)) setDismissed(true);
@@ -44,8 +64,11 @@ export function UpdateGate() {
 
   const handleUpdate = async () => {
     if (!native) {
-      // On web (Lovable preview / desktop), just open the file URL
+      // On web (Lovable preview / desktop), just open the file URL.
+      // Mark as installed so the banner does not reappear on next load.
+      markInstalled(latest.version, latest.version_code);
       window.open(latest.file_url, "_blank");
+      setDismissed(true);
       return;
     }
     setBusy(true);
@@ -53,6 +76,9 @@ export function UpdateGate() {
     setProgress(0);
     try {
       await downloadAndInstallApk(latest.file_url, (p) => setProgress(p));
+      // Persist immediately — after the OS installer takes over, the user
+      // returns to a fresh app process with no in-memory state.
+      markInstalled(latest.version, latest.version_code);
       setDone(true);
     } catch (e: any) {
       setError(e?.message || "فشل التحديث");

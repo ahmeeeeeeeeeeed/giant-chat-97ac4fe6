@@ -18,7 +18,7 @@ import { markRoomSeen } from "@/lib/notify";
 import { ImageLightbox } from "@/components/ImageLightbox";
 import { ensureMediaLibraryPermission } from "@/lib/app-permissions";
 import { cacheGet, cacheSet, cacheKeys } from "@/lib/offline-cache";
-import { getOnline } from "@/lib/use-online";
+import { getOnline, useOnline } from "@/lib/use-online";
 
 type Rank = "owner" | "admin" | "moderator" | "member";
 
@@ -252,6 +252,29 @@ function RoomPage() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomId, user?.id]);
+
+  // Auto-leave the room when the user goes offline OR signs out.
+  // The user must explicitly tap "انضمام للغرفة" again to come back in.
+  const online = useOnline();
+  useEffect(() => {
+    if (!online && myRank) {
+      setMyRank(null);
+      toast.message("تمت مغادرة الغرفة بسبب فقد الاتصال");
+      navigate({ to: "/app" });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [online]);
+
+  useEffect(() => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_OUT") {
+        setMyRank(null);
+        navigate({ to: "/" });
+      }
+    });
+    return () => { sub.subscription.unsubscribe(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const tryJoin = async (pw?: string) => {
     if (!user || !room) return;
@@ -491,6 +514,90 @@ function RoomPage() {
     : messages;
 
   const openSettingsAt = (t: SettingsTab) => { setSettingsTab(t); setShowSettings(true); };
+
+  // Pre-join lobby — the user is NOT inside the room until they tap the
+  // join button. Auto-join is intentionally disabled so that going offline
+  // or signing out doesn't silently put them back in the room next time.
+  if (!isMember) {
+    return (
+      <div className="flex flex-col min-h-screen bg-gradient-to-b from-emerald-50/40 via-background to-background dark:from-emerald-950/20">
+        <header className="sticky top-0 z-10 border-b border-border bg-background/80 backdrop-blur-xl" style={{ paddingTop: "env(safe-area-inset-top)" }}>
+          <div className="flex items-center gap-2 px-3 py-2.5">
+            <button onClick={() => navigate({ to: "/app" })} className="rounded-lg p-2 hover:bg-secondary transition" aria-label="رجوع">
+              <ArrowLeft className="h-5 w-5" />
+            </button>
+            <h1 className="font-bold text-base truncate">{room.name}</h1>
+          </div>
+        </header>
+
+        <div className="flex-1 flex flex-col items-center justify-center px-6 py-10 text-center">
+          <div className={`flex h-24 w-24 items-center justify-center rounded-3xl text-white font-extrabold text-4xl shadow-2xl mb-5 ${
+            room.type === "private"
+              ? "bg-gradient-to-br from-amber-400 via-orange-500 to-rose-500"
+              : "bg-gradient-to-br from-emerald-400 via-emerald-500 to-teal-600"
+          }`}>
+            {roomInitial}
+          </div>
+          <div className="flex items-center gap-2 mb-1">
+            {room.type === "private" ? <Lock className="h-4 w-4 text-amber-500" /> : <Hash className="h-4 w-4 text-emerald-500" />}
+            <h2 className="text-xl font-extrabold">{room.name}</h2>
+          </div>
+          {room.description && (
+            <p className="text-sm text-muted-foreground max-w-md mb-4 whitespace-pre-wrap">{room.description}</p>
+          )}
+          <div className="flex items-center gap-4 text-xs text-muted-foreground mb-6">
+            <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" /> {memberCount}/{room.max_members}</span>
+            <span>•</span>
+            <span>{room.type === "private" ? "غرفة خاصة" : "غرفة عامة"}</span>
+            <span>•</span>
+            <span className={room.is_active ? "text-emerald-600" : "text-red-500"}>
+              {room.is_active ? "نشطة" : "موقوفة"}
+            </span>
+          </div>
+
+          {isBanned ? (
+            <div className="rounded-2xl border border-red-500/30 bg-red-500/10 px-5 py-4 text-red-500 font-bold flex items-center gap-2">
+              <Ban className="h-5 w-5" /> أنت محظور من هذه الغرفة
+            </div>
+          ) : askPassword ? (
+            <div className="w-full max-w-sm space-y-3">
+              <p className="text-sm text-muted-foreground">هذه غرفة خاصة — أدخل كلمة المرور:</p>
+              <input
+                type="password" value={joinPw} onChange={(e) => setJoinPw(e.target.value)}
+                autoFocus placeholder="كلمة المرور"
+                className="h-12 w-full rounded-2xl border border-input bg-background px-4 text-center text-sm outline-none focus:border-primary"
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={() => { setAskPassword(false); setJoinPw(""); }}
+                  className="flex-1 h-12 rounded-2xl border border-border font-semibold"
+                >إلغاء</button>
+                <button
+                  onClick={() => tryJoin(joinPw)} disabled={joining || !joinPw}
+                  className="flex-1 h-12 rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-bold disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {joining ? <Loader2 className="h-5 w-5 animate-spin" /> : <KeyRound className="h-5 w-5" />}
+                  دخول
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={() => tryJoin()} disabled={joining || !room.is_active}
+              className="h-14 px-10 rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-extrabold text-base shadow-[0_10px_30px_-10px_rgba(16,185,129,0.7)] disabled:opacity-50 flex items-center justify-center gap-2 transition active:scale-[0.98]"
+            >
+              {joining ? <Loader2 className="h-5 w-5 animate-spin" /> : <UserPlus className="h-5 w-5" />}
+              {joining ? "جارٍ الانضمام..." : "انضمام إلى الغرفة"}
+            </button>
+          )}
+
+          {!online && (
+            <p className="mt-4 text-xs text-amber-600">⚠️ تحتاج إلى اتصال بالإنترنت للانضمام</p>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-screen bg-gradient-to-b from-emerald-50/40 via-background to-background dark:from-emerald-950/20">
