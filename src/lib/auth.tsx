@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import { supabase } from "@/integrations/supabase/client";
 import type { Session, User } from "@supabase/supabase-js";
 import { backupSession, clearSessionBackup, restoreSessionFromBackup } from "./session-store";
+import { getOnline } from "./use-online";
 
 type AuthCtx = {
   session: Session | null;
@@ -9,6 +10,7 @@ type AuthCtx = {
   loading: boolean;
 };
 const Ctx = createContext<AuthCtx>({ session: null, user: null, loading: true });
+let explicitSignOutInProgress = false;
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
@@ -16,6 +18,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((evt, s) => {
+      if (!s && !getOnline() && !explicitSignOutInProgress) {
+        setLoading(false);
+        return;
+      }
       setSession(s);
       setLoading(false);
       // Mirror session to native secure storage (Capacitor Preferences on Android).
@@ -33,9 +39,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     // First try to restore from native backup (offline-safe), then read current session.
     (async () => {
-      await restoreSessionFromBackup();
+      const restored = await restoreSessionFromBackup();
       const { data } = await supabase.auth.getSession();
-      setSession(data.session);
+      setSession(data.session ?? restored);
       setLoading(false);
     })();
     return () => subscription.unsubscribe();
@@ -88,5 +94,10 @@ export async function signInWithUsername(username: string, password: string) {
 }
 
 export async function signOut() {
-  await supabase.auth.signOut();
+  explicitSignOutInProgress = true;
+  try {
+    await supabase.auth.signOut();
+  } finally {
+    explicitSignOutInProgress = false;
+  }
 }

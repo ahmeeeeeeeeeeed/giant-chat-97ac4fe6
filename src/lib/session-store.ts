@@ -24,6 +24,7 @@ type StoredSession = {
   refresh_token: string;
   expires_at?: number | null;
   user_id?: string;
+  session?: Session;
 };
 
 export async function backupSession(session: Session | null): Promise<void> {
@@ -38,6 +39,7 @@ export async function backupSession(session: Session | null): Promise<void> {
       refresh_token: session.refresh_token,
       expires_at: session.expires_at ?? null,
       user_id: session.user?.id,
+      session,
     };
     await Preferences.set({ key: KEY, value: JSON.stringify(payload) });
   } catch {
@@ -58,23 +60,30 @@ export async function clearSessionBackup(): Promise<void> {
  * Safe to call on every cold start; it's a no-op when a session already
  * exists or when running on the web.
  */
-export async function restoreSessionFromBackup(): Promise<void> {
-  if (!isNative()) return;
+export async function restoreSessionFromBackup(): Promise<Session | null> {
+  if (!isNative()) return null;
   try {
     const { data: existing } = await supabase.auth.getSession();
-    if (existing.session) return;
+    if (existing.session) return existing.session;
 
     const { value } = await Preferences.get({ key: KEY });
-    if (!value) return;
+    if (!value) return null;
 
     const stored = JSON.parse(value) as StoredSession;
-    if (!stored?.access_token || !stored?.refresh_token) return;
+    if (!stored?.access_token || !stored?.refresh_token) return stored?.session ?? null;
 
-    await supabase.auth.setSession({
+    const { data } = await supabase.auth.setSession({
       access_token: stored.access_token,
       refresh_token: stored.refresh_token,
     });
+    return data.session ?? stored.session ?? null;
   } catch {
-    /* ignore — Supabase will surface auth errors normally */
+    try {
+      const { value } = await Preferences.get({ key: KEY });
+      const stored = value ? (JSON.parse(value) as StoredSession) : null;
+      return stored?.session ?? null;
+    } catch {
+      return null;
+    }
   }
 }
