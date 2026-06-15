@@ -18,7 +18,7 @@ import { markRoomSeen } from "@/lib/notify";
 import { ImageLightbox } from "@/components/ImageLightbox";
 import { ensureMediaLibraryPermission } from "@/lib/app-permissions";
 import { cacheGet, cacheSet, cacheKeys } from "@/lib/offline-cache";
-import { getOnline } from "@/lib/use-online";
+import { getOnline, useOnline } from "@/lib/use-online";
 
 type Rank = "owner" | "admin" | "moderator" | "member";
 
