@@ -706,6 +706,7 @@ function ActionItem({ icon, label, onClick, destructive }: { icon: React.ReactNo
 
 function MessageBubble({ m, mine, replied, onPress }: { m: DM; mine: boolean; replied: DM | null; onPress?: () => void }) {
   const [lightbox, setLightbox] = useState(false);
+  const mediaSource = useCachedMediaSource(m.media_url);
   const base = `rounded-2xl px-3.5 py-2 shadow-sm ${mine ? "rounded-br-md bg-primary text-primary-foreground" : "rounded-bl-md bg-card border border-border"}`;
   const replyBlock = replied && (
     <div className={`mb-1 rounded-lg border-s-2 px-2 py-1 text-[11px] ${mine ? "border-primary-foreground/60 bg-primary-foreground/10" : "border-primary bg-secondary"}`}>
@@ -713,24 +714,24 @@ function MessageBubble({ m, mine, replied, onPress }: { m: DM; mine: boolean; re
       <div className="truncate opacity-90">{replied.content || (replied.message_type === "image" ? "صورة" : "رسالة صوتية")}</div>
     </div>
   );
-  if (m.message_type === "image" && m.media_url) {
+  if (m.message_type === "image" && mediaSource) {
     return (
       <>
         <div className="overflow-hidden rounded-2xl" onClick={onPress}>
           {replyBlock}
           <button type="button" onClick={(e) => { e.stopPropagation(); setLightbox(true); }} className="block w-full">
-            <img src={m.media_url} alt="" className="max-h-72 w-full rounded-2xl object-cover" loading="lazy" />
+            <img src={mediaSource} alt="" className="max-h-72 w-full rounded-2xl object-cover" loading="lazy" />
           </button>
         </div>
-        {lightbox && <ImageLightbox url={m.media_url} onClose={() => setLightbox(false)} />}
+        {lightbox && <ImageLightbox url={mediaSource} onClose={() => setLightbox(false)} />}
       </>
     );
   }
-  if (m.message_type === "voice" && m.media_url) {
+  if (m.message_type === "voice" && mediaSource) {
     return (
       <div className={base} onClick={onPress}>
         {replyBlock}
-        <VoicePlayer url={m.media_url} durationMs={m.media_duration_ms ?? 0} mine={mine} />
+        <VoicePlayer url={mediaSource} durationMs={m.media_duration_ms ?? 0} mine={mine} />
       </div>
     );
   }

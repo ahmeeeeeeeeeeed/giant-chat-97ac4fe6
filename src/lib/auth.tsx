@@ -12,6 +12,11 @@ type AuthCtx = {
 const Ctx = createContext<AuthCtx>({ session: null, user: null, loading: true });
 let explicitSignOutInProgress = false;
 
+function isNetworkFailure(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error ?? "");
+  return /Failed to fetch|NetworkError|Load failed|fetch/i.test(message);
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
@@ -34,7 +39,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Fire-and-forget login record (country + timestamp + IP via server fn)
         import("./login-history.functions")
           .then((m) => m.recordLogin())
-          .catch((e) => console.warn("[login-history] record failed", e));
+          .catch((e) => {
+            if (!isNetworkFailure(e)) console.warn("[login-history] record failed", e);
+          });
       }
     });
     // First try to restore from native backup (offline-safe), then read current session.
