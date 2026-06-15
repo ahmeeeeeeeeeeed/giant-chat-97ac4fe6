@@ -532,12 +532,14 @@ function DMPage() {
           <h1 className="truncate text-base font-bold leading-tight hover:underline">
             {other?.username ?? "…"}
           </h1>
-          <div className="flex items-center gap-1.5 text-[11px] opacity-90">
-            {(otherOnline || otherActivity !== "idle") && (
-              <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-300 animate-pulse" />
-            )}
-            <span className="truncate">{presenceLabel}</span>
-          </div>
+          {presenceLabel && (
+            <div className="flex items-center gap-1.5 text-[11px] opacity-90">
+              {isFriend && (otherOnline || otherActivity !== "idle") && (
+                <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-300 animate-pulse" />
+              )}
+              <span className="truncate">{presenceLabel}</span>
+            </div>
+          )}
         </button>
         
         <div className="relative">
