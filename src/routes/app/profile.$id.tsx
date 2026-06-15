@@ -31,6 +31,7 @@ function OtherProfilePage() {
   const [loading, setLoading] = useState(true);
   const [isBlocked, setIsBlocked] = useState(false);
   const [isBlockedBy, setIsBlockedBy] = useState(false);
+  const [isFriend, setIsFriend] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -52,13 +53,17 @@ function OtherProfilePage() {
       }
       setProfile(p as Profile);
 
-      // Check block status
-      const [{ data: blockMe }, { data: blockByMe }] = await Promise.all([
+      // Check block + friendship status
+      const [{ data: blockMe }, { data: blockByMe }, { data: fr }] = await Promise.all([
         supabase.from("dm_blocks").select("blocker_id").eq("blocker_id", otherId).eq("blocked_id", user.id).maybeSingle(),
         supabase.from("dm_blocks").select("blocked_id").eq("blocker_id", user.id).eq("blocked_id", otherId).maybeSingle(),
+        supabase.from("friendships").select("status")
+          .or(`and(requester_id.eq.${user.id},addressee_id.eq.${otherId}),and(requester_id.eq.${otherId},addressee_id.eq.${user.id})`)
+          .eq("status", "accepted").maybeSingle(),
       ]);
       setIsBlockedBy(!!blockMe);
       setIsBlocked(!!blockByMe);
+      setIsFriend(!!fr);
       setLoading(false);
     };
 
@@ -101,6 +106,7 @@ function OtherProfilePage() {
 
   const formatLastSeen = () => {
     if (!profile) return "";
+    if (!isFriend) return ""; // hide for non-friends
     if (profile.hide_last_seen) return "آخر ظهور مخفي";
     if (!profile.last_seen_at) return "غير متصل";
     const diff = (Date.now() - new Date(profile.last_seen_at).getTime()) / 1000;
@@ -156,9 +162,11 @@ function OtherProfilePage() {
               <span className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold">
                 🪙 {profile.points} نقطة
               </span>
-              <span className="rounded-full bg-secondary px-3 py-1 text-xs">
-                {formatLastSeen()}
-              </span>
+              {formatLastSeen() && (
+                <span className="rounded-full bg-secondary px-3 py-1 text-xs">
+                  {formatLastSeen()}
+                </span>
+              )}
             </div>
 
             {/* Bio */}

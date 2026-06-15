@@ -42,10 +42,12 @@ function statusOf(m: DM): MessageStatus {
   if (m.delivered_at) return "delivered";
   return "sent";
 }
-function MessageTicks({ status }: { status: MessageStatus }) {
+function MessageTicks({ status, isFriend }: { status: MessageStatus; isFriend: boolean }) {
   if (status === "pending") return <Clock className="h-3 w-3 opacity-70" aria-label="قيد الإرسال" />;
   if (status === "sent") return <Check className="h-3 w-3 opacity-70" aria-label="تم الإرسال" />;
   if (status === "delivered") return <CheckCheck className="h-3 w-3 opacity-70" aria-label="تم التسليم" />;
+  // Read receipts (blue) only for friends. For non-friends collapse to grey double check.
+  if (!isFriend) return <CheckCheck className="h-3 w-3 opacity-70" aria-label="تم التسليم" />;
   return <CheckCheck className="h-3 w-3 text-sky-400" aria-label="تمت القراءة" />;
 }
 type Profile = { id: string; username: string; avatar_url: string | null; last_seen_at: string | null; hide_last_seen: boolean };
@@ -69,6 +71,7 @@ function DMPage() {
   const [muted, setMuted] = useState(false);
   const [blocked, setBlocked] = useState(false); // I blocked them
   const [blockedByOther, setBlockedByOther] = useState(false);
+  const [isFriend, setIsFriend] = useState(false);
   const [pendingMedia, setPendingMedia] = useState<{ kind: "image" | "voice"; file: Blob; previewUrl: string; durationMs?: number } | null>(null);
   const otherAvatarSource = useCachedMediaSource(other?.avatar_url);
 
@@ -136,6 +139,7 @@ function DMPage() {
       const dmKey = cacheKeys.dmMessages(user.id, otherId);
       const cachedMsgs = await cacheGet<DM[]>(dmKey);
       const cachedProfile = await cacheGet<Profile>(cacheKeys.profile(otherId));
+      const cachedFriend = await cacheGet<boolean>(`friend:${user.id}:${otherId}`);
       if (cachedMsgs) {
         console.info("[dm-cache] loaded-local", { key: dmKey, count: cachedMsgs.length, online: getOnline() });
         setMessages(cachedMsgs);
@@ -143,6 +147,7 @@ function DMPage() {
         console.info("[dm-cache] miss-local", { key: dmKey, online: getOnline() });
       }
       if (cachedProfile) setOther(cachedProfile);
+      if (typeof cachedFriend === "boolean") setIsFriend(cachedFriend);
       if (cachedMsgs && cachedMsgs.length) scrollToBottom(false);
       dmCacheReadyRef.current = true;
 
@@ -151,7 +156,7 @@ function DMPage() {
 
       // 3) Background sync from cloud (backup only). Failures are swallowed silently.
       try {
-        const [{ data: p }, { data: msgs }, { data: bl }, { data: blMe }, { data: mu }] = await Promise.all([
+        const [{ data: p }, { data: msgs }, { data: bl }, { data: blMe }, { data: mu }, { data: fr }] = await Promise.all([
           supabase.from("profiles").select("id, username, avatar_url, last_seen_at, hide_last_seen").eq("id", otherId).maybeSingle(),
           supabase.from("direct_messages")
             .select("id, sender_id, receiver_id, content, created_at, message_type, media_url, media_duration_ms, reply_to_id, delivered_at, read_at")
@@ -160,6 +165,9 @@ function DMPage() {
           supabase.from("dm_blocks").select("blocked_id").eq("blocker_id", user.id).eq("blocked_id", otherId).maybeSingle(),
           supabase.from("dm_blocks").select("blocker_id").eq("blocker_id", otherId).eq("blocked_id", user.id).maybeSingle(),
           supabase.from("dm_mutes").select("muted_id").eq("muter_id", user.id).eq("muted_id", otherId).maybeSingle(),
+          supabase.from("friendships").select("status")
+            .or(`and(requester_id.eq.${user.id},addressee_id.eq.${otherId}),and(requester_id.eq.${otherId},addressee_id.eq.${user.id})`)
+            .eq("status", "accepted").maybeSingle(),
         ]);
         if (p) { setOther(p as Profile); await cacheSet(cacheKeys.profile(otherId), p as Profile); }
         const fresh = (msgs ?? []) as DM[];
@@ -173,6 +181,9 @@ function DMPage() {
         setBlocked(!!bl);
         setBlockedByOther(!!blMe);
         setMuted(!!mu);
+        const friend = !!fr;
+        setIsFriend(friend);
+        await cacheSet(`friend:${user.id}:${otherId}`, friend);
         scrollToBottom(didInitialScrollRef.current);
         didInitialScrollRef.current = true;
         await markDelivered();
@@ -475,6 +486,7 @@ function DMPage() {
   const presenceLabel = (() => {
     if (otherActivity === "typing") return "يكتب الآن…";
     if (otherActivity === "recording") return "يسجل رسالة صوتية…";
+    if (!isFriend) return ""; // hide online / last seen for non-friends
     if (otherOnline) return "متصل الآن";
     if (other?.hide_last_seen) return "آخر ظهور مخفي";
     if (other?.last_seen_at) return `آخر ظهور ${relativeTime(other.last_seen_at)}`;
@@ -520,12 +532,14 @@ function DMPage() {
           <h1 className="truncate text-base font-bold leading-tight hover:underline">
             {other?.username ?? "…"}
           </h1>
-          <div className="flex items-center gap-1.5 text-[11px] opacity-90">
-            {(otherOnline || otherActivity !== "idle") && (
-              <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-300 animate-pulse" />
-            )}
-            <span className="truncate">{presenceLabel}</span>
-          </div>
+          {presenceLabel && (
+            <div className="flex items-center gap-1.5 text-[11px] opacity-90">
+              {isFriend && (otherOnline || otherActivity !== "idle") && (
+                <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-300 animate-pulse" />
+              )}
+              <span className="truncate">{presenceLabel}</span>
+            </div>
+          )}
         </button>
         
         <div className="relative">
@@ -616,7 +630,7 @@ function DMPage() {
                       <MessageBubble m={m} mine={mine} replied={replied ?? null} onPress={() => setMenuFor(m.id)} />
                       <div className={`mt-1 flex items-center gap-1 text-[10px] text-muted-foreground/80 ${mine ? "justify-end" : "justify-start"}`} suppressHydrationWarning>
                         <span>{formatDateTime(m.created_at)}</span>
-                        {mine && <MessageTicks status={statusOf(m)} />}
+                        {mine && <MessageTicks status={statusOf(m)} isFriend={isFriend} />}
                       </div>
                     </div>
                   </div>
