@@ -115,7 +115,7 @@ function SettingsPage() {
     finally { setCheckingUpdate(false); }
   };
 
-  const openAbout = () => { setShowAbout(true); void checkForUpdate(); };
+  const openAbout = () => { setShowAbout(true); if (getOnline()) void checkForUpdate(); };
 
   const installUpdate = async () => {
     if (!latest) return;
