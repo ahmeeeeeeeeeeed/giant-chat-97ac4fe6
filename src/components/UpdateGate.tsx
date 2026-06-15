@@ -99,7 +99,7 @@ export function UpdateGate() {
 
   const handleLater = () => {
     if (force) return;
-    try { localStorage.setItem(DISMISS_KEY, latest.version); } catch {}
+    try { localStorage.setItem(DISMISS_KEY, latest.version); } catch { /* ignore */ }
     setDismissed(true);
   };
 
