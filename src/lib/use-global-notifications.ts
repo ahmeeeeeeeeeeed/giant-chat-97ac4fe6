@@ -172,7 +172,7 @@ export function useGlobalNotificationListener(navigateTo?: (url: string) => void
         { event: "INSERT", schema: "public", table: "room_messages" },
         async (p) => {
           const m = p.new as NotificationMessage;
-          if (!m.room_id || m.user_id === user.id) return;
+          if (!m.room_id || !m.user_id || m.user_id === user.id) return;
           const roomName = myRoomsRef.current.get(m.room_id);
           if (!roomName) return; // not a member
           const name = await getUsername(m.user_id);
