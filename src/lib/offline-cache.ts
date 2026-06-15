@@ -10,6 +10,18 @@ const store = isBrowser ? createStore("giant-offline", "kv") : null;
 
 type Entry<T> = { v: T; t: number };
 
+export async function ensurePersistentOfflineStorage(): Promise<void> {
+  if (typeof navigator === "undefined") return;
+  try {
+    const storage = navigator.storage;
+    if (!storage?.persist) return;
+    const persisted = await storage.persist();
+    console.info("[offline-cache] storage-persist", { persisted });
+  } catch {
+    /* best-effort only; native file mirror is still used in the APK */
+  }
+}
+
 async function getNativeFilesystem() {
   if (typeof window === "undefined") return null;
   try {
