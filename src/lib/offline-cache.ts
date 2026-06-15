@@ -7,7 +7,6 @@ import { get, set, del, createStore } from "idb-keyval";
 const isBrowser = typeof window !== "undefined" && typeof indexedDB !== "undefined";
 
 const store = isBrowser ? createStore("giant-offline", "kv") : null;
-const nativePrefix = "giant.offline.v2:";
 
 type Entry<T> = { v: T; t: number };
 
