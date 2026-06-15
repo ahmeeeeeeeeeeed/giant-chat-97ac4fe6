@@ -66,18 +66,38 @@ function SettingsPage() {
 
   useEffect(() => {
     if (!user?.id) return;
+    // Load cached username instantly (offline-first)
+    void cacheGet<string>(`settings:username:${user.id}`).then((cached) => {
+      if (cached) setUsername(cached);
+    });
+    if (!getOnline()) return;
     supabase.from("profiles").select("username").eq("id", user.id).maybeSingle().then(({ data }) => {
-      if (data?.username) setUsername(data.username);
+      if (data?.username) {
+        setUsername(data.username);
+        void cacheSet(`settings:username:${user.id}`, data.username);
+      }
     });
   }, [user?.id]);
 
+  // Load cached "latest update" info so the About modal works offline.
+  useEffect(() => {
+    void cacheGet<LatestUpdate>("settings:latestUpdate").then((cached) => {
+      if (cached) setLatest(cached);
+    });
+  }, []);
+
   const openReports = async () => {
+    if (!getOnline()) { toast.error("لا يوجد اتصال بالإنترنت"); return; }
     const id = await findAdminId();
     if (!id) { toast.error("لم يتم العثور على حساب الإدارة"); return; }
     navigate({ to: "/app/chats/$id", params: { id } });
   };
 
   const checkForUpdate = async () => {
+    if (!getOnline()) {
+      toast.error("لا يوجد اتصال — يتم عرض آخر معلومات محفوظة");
+      return;
+    }
     setCheckingUpdate(true);
     try {
       const { data } = await supabase
@@ -87,7 +107,10 @@ function SettingsPage() {
         .order("version_code", { ascending: false })
         .limit(1)
         .maybeSingle();
-      if (data) setLatest(data as LatestUpdate);
+      if (data) {
+        setLatest(data as LatestUpdate);
+        void cacheSet("settings:latestUpdate", data);
+      }
     } catch { /* offline */ }
     finally { setCheckingUpdate(false); }
   };
