@@ -42,10 +42,12 @@ function statusOf(m: DM): MessageStatus {
   if (m.delivered_at) return "delivered";
   return "sent";
 }
-function MessageTicks({ status }: { status: MessageStatus }) {
+function MessageTicks({ status, isFriend }: { status: MessageStatus; isFriend: boolean }) {
   if (status === "pending") return <Clock className="h-3 w-3 opacity-70" aria-label="قيد الإرسال" />;
   if (status === "sent") return <Check className="h-3 w-3 opacity-70" aria-label="تم الإرسال" />;
   if (status === "delivered") return <CheckCheck className="h-3 w-3 opacity-70" aria-label="تم التسليم" />;
+  // Read receipts (blue) only for friends. For non-friends collapse to grey double check.
+  if (!isFriend) return <CheckCheck className="h-3 w-3 opacity-70" aria-label="تم التسليم" />;
   return <CheckCheck className="h-3 w-3 text-sky-400" aria-label="تمت القراءة" />;
 }
 type Profile = { id: string; username: string; avatar_url: string | null; last_seen_at: string | null; hide_last_seen: boolean };
