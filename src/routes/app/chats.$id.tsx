@@ -70,6 +70,7 @@ function DMPage() {
   const [blocked, setBlocked] = useState(false); // I blocked them
   const [blockedByOther, setBlockedByOther] = useState(false);
   const [pendingMedia, setPendingMedia] = useState<{ kind: "image" | "voice"; file: Blob; previewUrl: string; durationMs?: number } | null>(null);
+  const otherAvatarSource = useCachedMediaSource(other?.avatar_url);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -501,8 +502,8 @@ function DMPage() {
           className="focus:outline-none"
           aria-label="عرض البروفايل"
         >
-          {other?.avatar_url ? (
-            <img src={other.avatar_url} alt="" className="h-10 w-10 rounded-full object-cover ring-2 ring-primary-foreground/30 transition-transform active:scale-95" />
+          {otherAvatarSource ? (
+            <img src={otherAvatarSource} alt="" className="h-10 w-10 rounded-full object-cover ring-2 ring-primary-foreground/30 transition-transform active:scale-95" />
           ) : (
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-foreground/20 font-bold transition-transform active:scale-95">
               {(other?.username ?? "?").charAt(0).toUpperCase()}

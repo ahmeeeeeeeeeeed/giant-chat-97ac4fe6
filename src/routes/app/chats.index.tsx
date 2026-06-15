@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth";
 import { MessageSquare, Loader2, Search, X } from "lucide-react";
 import { cacheGet, cacheSet, cacheKeys } from "@/lib/offline-cache";
 import { getOnline } from "@/lib/use-online";
+import { useCachedMediaSource } from "@/lib/use-cached-media";
 
 
 export const Route = createFileRoute("/app/chats/")({
@@ -14,6 +15,18 @@ export const Route = createFileRoute("/app/chats/")({
 
 type Convo = { otherId: string; username: string; avatar_url: string | null; last: string; created_at: string; unread: number };
 type SearchProfile = { id: string; username: string; avatar_url: string | null };
+
+function CachedAvatar({ url, username }: { url: string | null; username: string }) {
+  const source = useCachedMediaSource(url);
+  if (source) {
+    return <img src={source} alt="" className="h-12 w-12 rounded-xl object-cover ring-1 ring-emerald-500/30" />;
+  }
+  return (
+    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/15 font-bold text-emerald-300 ring-1 ring-emerald-500/30 shadow-inner">
+      {username.charAt(0).toUpperCase()}
+    </div>
+  );
+}
 
 function ChatsPage() {
   const { user } = useAuth();
@@ -213,13 +226,7 @@ function ChatsPage() {
                     {unreadActive && (
                       <span className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-emerald-400 to-emerald-600" />
                     )}
-                    {c.avatar_url ? (
-                      <img src={c.avatar_url} alt="" className="h-12 w-12 rounded-xl object-cover ring-1 ring-emerald-500/30" />
-                    ) : (
-                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/15 font-bold text-emerald-300 ring-1 ring-emerald-500/30 shadow-inner">
-                        {c.username.charAt(0).toUpperCase()}
-                      </div>
-                    )}
+                    <CachedAvatar url={c.avatar_url} username={c.username} />
                     <div className="min-w-0 flex-1">
                       <div className="truncate font-bold text-foreground">{c.username}</div>
                       <div className={`truncate text-sm ${unreadActive ? "text-emerald-200/80" : "text-muted-foreground"}`}>{c.last}</div>

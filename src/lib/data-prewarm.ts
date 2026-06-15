@@ -173,7 +173,10 @@ async function warmChatsAndRecentMessages(userId: string) {
           await cacheSet(cacheKeys.dmMessages(userId, peer.otherId), dm.slice().reverse());
           await Promise.all((dm as CachedMessageMedia[]).map((m) => cacheMedia(m.media_url)));
         }
-        if (prof) await cacheSet(cacheKeys.profile(peer.otherId), prof);
+        if (prof) {
+          await cacheSet(cacheKeys.profile(peer.otherId), prof);
+          await cacheMedia((prof as { avatar_url?: string | null }).avatar_url);
+        }
       } catch {
         /* skip one peer on failure */
       }
