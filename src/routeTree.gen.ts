@@ -39,6 +39,7 @@ import { Route as AppAdminUsersRouteImport } from './routes/app/admin.users'
 import { Route as AppAdminUpdatesRouteImport } from './routes/app/admin.updates'
 import { Route as AppAdminRoomsRouteImport } from './routes/app/admin.rooms'
 import { Route as AppAdminCommunityRouteImport } from './routes/app/admin.community'
+import { Route as ApiPublicSearchTrackRouteImport } from './routes/api/public/search-track'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -190,6 +191,11 @@ const AppAdminCommunityRoute = AppAdminCommunityRouteImport.update({
   path: '/community',
   getParentRoute: () => AppAdminRoute,
 } as any)
+const ApiPublicSearchTrackRoute = ApiPublicSearchTrackRouteImport.update({
+  id: '/api/public/search-track',
+  path: '/api/public/search-track',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -213,6 +219,7 @@ export interface FileRoutesByFullPath {
   '/app/store': typeof AppStoreRoute
   '/profile/$id': typeof ProfileIdRoute
   '/app/': typeof AppIndexRoute
+  '/api/public/search-track': typeof ApiPublicSearchTrackRoute
   '/app/admin/community': typeof AppAdminCommunityRoute
   '/app/admin/rooms': typeof AppAdminRoomsRoute
   '/app/admin/updates': typeof AppAdminUpdatesRoute
@@ -243,6 +250,7 @@ export interface FileRoutesByTo {
   '/app/store': typeof AppStoreRoute
   '/profile/$id': typeof ProfileIdRoute
   '/app': typeof AppIndexRoute
+  '/api/public/search-track': typeof ApiPublicSearchTrackRoute
   '/app/admin/community': typeof AppAdminCommunityRoute
   '/app/admin/rooms': typeof AppAdminRoomsRoute
   '/app/admin/updates': typeof AppAdminUpdatesRoute
@@ -276,6 +284,7 @@ export interface FileRoutesById {
   '/app/store': typeof AppStoreRoute
   '/profile/$id': typeof ProfileIdRoute
   '/app/': typeof AppIndexRoute
+  '/api/public/search-track': typeof ApiPublicSearchTrackRoute
   '/app/admin/community': typeof AppAdminCommunityRoute
   '/app/admin/rooms': typeof AppAdminRoomsRoute
   '/app/admin/updates': typeof AppAdminUpdatesRoute
@@ -310,6 +319,7 @@ export interface FileRouteTypes {
     | '/app/store'
     | '/profile/$id'
     | '/app/'
+    | '/api/public/search-track'
     | '/app/admin/community'
     | '/app/admin/rooms'
     | '/app/admin/updates'
@@ -340,6 +350,7 @@ export interface FileRouteTypes {
     | '/app/store'
     | '/profile/$id'
     | '/app'
+    | '/api/public/search-track'
     | '/app/admin/community'
     | '/app/admin/rooms'
     | '/app/admin/updates'
@@ -372,6 +383,7 @@ export interface FileRouteTypes {
     | '/app/store'
     | '/profile/$id'
     | '/app/'
+    | '/api/public/search-track'
     | '/app/admin/community'
     | '/app/admin/rooms'
     | '/app/admin/updates'
@@ -392,6 +404,7 @@ export interface RootRouteChildren {
   RegisterRoute: typeof RegisterRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   ProfileIdRoute: typeof ProfileIdRoute
+  ApiPublicSearchTrackRoute: typeof ApiPublicSearchTrackRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -606,6 +619,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminCommunityRouteImport
       parentRoute: typeof AppAdminRoute
     }
+    '/api/public/search-track': {
+      id: '/api/public/search-track'
+      path: '/api/public/search-track'
+      fullPath: '/api/public/search-track'
+      preLoaderRoute: typeof ApiPublicSearchTrackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -680,6 +700,7 @@ const rootRouteChildren: RootRouteChildren = {
   RegisterRoute: RegisterRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   ProfileIdRoute: ProfileIdRoute,
+  ApiPublicSearchTrackRoute: ApiPublicSearchTrackRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
