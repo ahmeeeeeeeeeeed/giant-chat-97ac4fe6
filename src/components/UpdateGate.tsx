@@ -64,8 +64,11 @@ export function UpdateGate() {
 
   const handleUpdate = async () => {
     if (!native) {
-      // On web (Lovable preview / desktop), just open the file URL
+      // On web (Lovable preview / desktop), just open the file URL.
+      // Mark as installed so the banner does not reappear on next load.
+      markInstalled(latest.version, latest.version_code);
       window.open(latest.file_url, "_blank");
+      setDismissed(true);
       return;
     }
     setBusy(true);
@@ -73,6 +76,9 @@ export function UpdateGate() {
     setProgress(0);
     try {
       await downloadAndInstallApk(latest.file_url, (p) => setProgress(p));
+      // Persist immediately — after the OS installer takes over, the user
+      // returns to a fresh app process with no in-memory state.
+      markInstalled(latest.version, latest.version_code);
       setDone(true);
     } catch (e: any) {
       setError(e?.message || "فشل التحديث");
