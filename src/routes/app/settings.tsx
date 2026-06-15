@@ -250,14 +250,6 @@ function SettingsPage() {
           </button>
         </Section>
 
-        {/* Social */}
-        <Section title="التواصل">
-          <Row to="/app/friends" icon={UsersIcon} label={t("nav.friends")} />
-          <Row to="/app/chats" icon={MessageSquare} label={t("nav.chats")} />
-          <Row to="/app/community" icon={Newspaper} label="المجتمع" />
-          <Row to="/app/games" icon={Gamepad2} label={t("nav.games")} />
-        </Section>
-
         {/* Preferences */}
         <Section title="التفضيلات">
           <button onClick={toggle} className="flex w-full items-center justify-between p-4 active:bg-secondary/60">
@@ -278,6 +270,32 @@ function SettingsPage() {
               {currentLang.name}
               <ChevronLeft className="h-4 w-4 rtl:rotate-180" />
             </div>
+          </button>
+          <div className="flex w-full items-center justify-between p-4">
+            <div className="flex items-center gap-3">
+              <IconBox color={online ? "bg-emerald-500" : "bg-zinc-500"}>
+                {online ? <Wifi className="h-4 w-4" /> : <WifiOff className="h-4 w-4" />}
+              </IconBox>
+              <div className="flex flex-col items-start">
+                <span className="font-medium">حالة الاتصال</span>
+                <span className="text-[11px] text-muted-foreground">{online ? "متصل بالإنترنت" : "وضع عدم الاتصال"}</span>
+              </div>
+            </div>
+            <span className={`h-2.5 w-2.5 rounded-full ${online ? "bg-emerald-500" : "bg-zinc-400"}`} />
+          </div>
+        </Section>
+
+        {/* Storage */}
+        <Section title="التخزين والأداء">
+          <button onClick={() => setShowClearCache(true)} className="flex w-full items-center justify-between p-4 active:bg-secondary/60 text-start">
+            <div className="flex items-center gap-3">
+              <IconBox color="bg-rose-500"><Trash2 className="h-4 w-4" /></IconBox>
+              <div className="flex flex-col items-start">
+                <span className="font-medium">مسح التخزين المؤقت</span>
+                <span className="text-[11px] text-muted-foreground">لتسريع التطبيق وتفريغ المساحة</span>
+              </div>
+            </div>
+            <ChevronLeft className="h-4 w-4 text-muted-foreground rtl:rotate-180" />
           </button>
         </Section>
 
@@ -311,6 +329,24 @@ function SettingsPage() {
             </div>
             <ChevronLeft className="h-4 w-4 text-muted-foreground rtl:rotate-180" />
           </button>
+        </Section>
+
+        {/* Legal */}
+        <Section title="الخصوصية والقانونية">
+          <button onClick={() => setShowPrivacy(true)} className="flex w-full items-center justify-between p-4 active:bg-secondary/60 text-start">
+            <div className="flex items-center gap-3">
+              <IconBox color="bg-indigo-500"><FileText className="h-4 w-4" /></IconBox>
+              <span className="font-medium">سياسة الخصوصية</span>
+            </div>
+            <ChevronLeft className="h-4 w-4 text-muted-foreground rtl:rotate-180" />
+          </button>
+          <button onClick={() => setShowTerms(true)} className="flex w-full items-center justify-between p-4 active:bg-secondary/60 text-start">
+            <div className="flex items-center gap-3">
+              <IconBox color="bg-purple-500"><ScrollText className="h-4 w-4" /></IconBox>
+              <span className="font-medium">شروط الاستخدام</span>
+            </div>
+            <ChevronLeft className="h-4 w-4 text-muted-foreground rtl:rotate-180" />
+          </button>
           <button onClick={openAbout} className="flex w-full items-center justify-between p-4 active:bg-secondary/60 text-start">
             <div className="flex items-center gap-3">
               <IconBox color="bg-slate-500"><Info className="h-4 w-4" /></IconBox>
@@ -318,8 +354,8 @@ function SettingsPage() {
             </div>
             <span className="text-[11px] text-muted-foreground">v{APP_VERSION}</span>
           </button>
-
         </Section>
+
 
         {isAdmin && (
           <Section title="الإدارة">
