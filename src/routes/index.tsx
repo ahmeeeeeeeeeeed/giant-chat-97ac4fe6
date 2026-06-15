@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { LogIn, MessageCircle, Users, Music, Sparkles } from "lucide-react";
 import welcomeBg from "@/assets/welcome-bg.png.asset.json";
+import { assetUrl } from "@/lib/asset-url";
 import PermissionsGate, { hasCompletedPermissionsGate } from "@/components/PermissionsGate";
 
 
@@ -31,7 +32,7 @@ function Welcome() {
       {needsPerms && <PermissionsGate onDone={() => setNeedsPerms(false)} />}
       {/* Image background */}
       <img
-        src={welcomeBg.url}
+        src={assetUrl(welcomeBg.url)}
         alt=""
         loading="eager"
         className="pointer-events-none absolute inset-0 z-0 h-full w-full object-cover opacity-60"
