@@ -31,6 +31,7 @@ function OtherProfilePage() {
   const [loading, setLoading] = useState(true);
   const [isBlocked, setIsBlocked] = useState(false);
   const [isBlockedBy, setIsBlockedBy] = useState(false);
+  const [isFriend, setIsFriend] = useState(false);
 
   useEffect(() => {
     if (!user) return;
