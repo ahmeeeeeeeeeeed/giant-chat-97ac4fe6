@@ -214,7 +214,31 @@ export function MusicPlayer({ roomId }: { roomId: string }) {
       _room: roomId, _text: `🔎 جاري البحث عن: «${q}»`,
       _kind: "music_search", _meta: {} as never,
     });
-    const { track, error } = await searchTrack({ data: { q } });
+    // In the Capacitor APK the SPA runs at https://localhost, so relative
+    // serverFn URLs hit the device itself and fail. Detect native and call
+    // the published HTTP endpoint absolutely instead.
+    const isNative =
+      typeof window !== "undefined" &&
+      (((window as any).Capacitor?.isNativePlatform?.() ?? false) ||
+        /^https?:\/\/localhost/i.test(window.location.origin));
+    let track: TrackResult | null = null;
+    let error: string | null = null;
+    try {
+      if (isNative) {
+        const r = await fetch(
+          `https://giant-chat.lovable.app/api/public/search-track?q=${encodeURIComponent(q)}`,
+        );
+        const j = (await r.json()) as { track: TrackResult | null; error: string | null };
+        track = j.track;
+        error = j.error;
+      } else {
+        const r = await searchTrack({ data: { q } });
+        track = r.track;
+        error = r.error;
+      }
+    } catch (e) {
+      error = e instanceof Error ? e.message : "network";
+    }
     if (!track) {
       toast.error(error === "no_results" ? "لم أجد نتائج" : "خطأ بالبحث");
       setSearching(false);
