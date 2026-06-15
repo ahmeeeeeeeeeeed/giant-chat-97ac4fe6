@@ -59,7 +59,9 @@ async function nativeGet<T>(key: string): Promise<Entry<T> | null> {
     const raw = JSON.parse(String(data)) as
       | { t: number; kind: "blob"; dataUrl: string }
       | { t: number; kind: "json"; v: T };
-    if (raw.kind === "blob") return { t: raw.t, v: dataUrlToBlob(raw.dataUrl) as T };
+    if (raw.kind === "blob") {
+      return { t: raw.t, v: dataUrlToBlob(raw.dataUrl) as T };
+    }
     return { t: raw.t, v: raw.v };
   } catch {
     return null;
@@ -70,9 +72,10 @@ async function nativeSet<T>(key: string, entry: Entry<T>): Promise<void> {
   const fs = await getNativeFilesystem();
   if (!fs) return;
   try {
-    const payload = typeof Blob !== "undefined" && entry.v instanceof Blob
-      ? { t: entry.t, kind: "blob" as const, dataUrl: await blobToDataUrl(entry.v) }
-      : { t: entry.t, kind: "json" as const, v: entry.v };
+    const payload =
+      typeof Blob !== "undefined" && entry.v instanceof Blob
+        ? { t: entry.t, kind: "blob" as const, dataUrl: await blobToDataUrl(entry.v) }
+        : { t: entry.t, kind: "json" as const, v: entry.v };
     await fs.Filesystem.writeFile({
       path: nativePath(key),
       data: JSON.stringify(payload),
