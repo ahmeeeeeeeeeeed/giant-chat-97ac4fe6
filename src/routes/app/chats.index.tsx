@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -24,11 +24,19 @@ function ChatsPage() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchProfile[]>([]);
   const [searching, setSearching] = useState(false);
+  const convoCacheReadyRef = useRef(false);
 
   const load = async () => {
     if (!user) return;
     const cached = await cacheGet<Convo[]>(cacheKeys.chatsList(user.id));
-    if (cached) { setConvos(cached); setLoading(false); } else { setLoading(true); }
+    if (cached) {
+      console.info("[dm-cache] loaded-local-list", { key: cacheKeys.chatsList(user.id), count: cached.length, online: getOnline() });
+      setConvos(cached); setLoading(false);
+    } else {
+      console.info("[dm-cache] miss-local-list", { key: cacheKeys.chatsList(user.id), online: getOnline() });
+      setLoading(true);
+    }
+    convoCacheReadyRef.current = true;
     // Offline → skip the network entirely; cached list is authoritative for the UI.
     if (!getOnline()) { setLoading(false); return; }
     try {
@@ -59,6 +67,7 @@ function ChatsPage() {
         return { otherId: id, username: p?.username ?? "?", avatar_url: p?.avatar_url ?? null, last: last.last, created_at: last.created_at, unread: last.unread };
       });
       setConvos(out);
+      console.info("[dm-cache] loaded-cloud-list", { key: cacheKeys.chatsList(user.id), count: out.length });
       await cacheSet(cacheKeys.chatsList(user.id), out);
     } catch {
       // offline — keep cached
@@ -83,6 +92,13 @@ function ChatsPage() {
   // Keep local cache in sync with the latest convo list state.
   useEffect(() => {
     if (!user) return;
+    convoCacheReadyRef.current = false;
+  }, [user?.id]);
+
+  // Keep local cache in sync only after the local read path completed.
+  useEffect(() => {
+    if (!user) return;
+    if (!convoCacheReadyRef.current) return;
     void cacheSet(cacheKeys.chatsList(user.id), convos);
   }, [convos, user]);
 

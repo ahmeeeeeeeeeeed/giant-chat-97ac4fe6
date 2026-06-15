@@ -79,6 +79,7 @@ function DMPage() {
   const presenceChRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const didInitialScrollRef = useRef(false);
+  const dmCacheReadyRef = useRef(false);
 
   // Robust scroll-to-bottom: jumps instantly and retries across a few frames
   // to handle late layout (images/avatars loading).
@@ -99,11 +100,21 @@ function DMPage() {
     return m;
   }, [messages]);
 
-  // Persist messages locally on every change (offline-first cache).
-  // Cloud (direct_messages) remains the source of truth; nothing is deleted from it.
+  // Reset cache write guard when switching peer/user so the initial empty state
+  // can never overwrite an existing IndexedDB conversation before we read it.
+  useEffect(() => {
+    dmCacheReadyRef.current = false;
+  }, [user?.id, otherId]);
+
+  // Persist messages locally only AFTER the IndexedDB read path has completed.
+  // This prevents offline launches from replacing saved messages with [].
   useEffect(() => {
     if (!user) return;
-    void cacheSet(cacheKeys.dmMessages(user.id, otherId), messages);
+    if (!dmCacheReadyRef.current) return;
+    const key = cacheKeys.dmMessages(user.id, otherId);
+    void cacheSet(key, messages).then(() => {
+      console.info("[dm-cache] saved-local", { key, count: messages.length });
+    });
   }, [messages, user, otherId]);
 
   const markRead = async () => {
@@ -120,11 +131,18 @@ function DMPage() {
     if (!user) return;
     (async () => {
       // 1) Render from local store immediately (works fully offline).
-      const cachedMsgs = await cacheGet<DM[]>(cacheKeys.dmMessages(user.id, otherId));
+      const dmKey = cacheKeys.dmMessages(user.id, otherId);
+      const cachedMsgs = await cacheGet<DM[]>(dmKey);
       const cachedProfile = await cacheGet<Profile>(cacheKeys.profile(otherId));
-      if (cachedMsgs) setMessages(cachedMsgs);
+      if (cachedMsgs) {
+        console.info("[dm-cache] loaded-local", { key: dmKey, count: cachedMsgs.length, online: getOnline() });
+        setMessages(cachedMsgs);
+      } else {
+        console.info("[dm-cache] miss-local", { key: dmKey, online: getOnline() });
+      }
       if (cachedProfile) setOther(cachedProfile);
       if (cachedMsgs && cachedMsgs.length) scrollToBottom(false);
+      dmCacheReadyRef.current = true;
 
       // 2) If offline, do NOT touch the network — avoids browser "no internet" errors.
       if (!getOnline()) return;
@@ -143,6 +161,7 @@ function DMPage() {
         ]);
         if (p) { setOther(p as Profile); await cacheSet(cacheKeys.profile(otherId), p as Profile); }
         const fresh = (msgs ?? []) as DM[];
+        console.info("[dm-cache] loaded-cloud", { key: dmKey, count: fresh.length });
         // Merge: keep any local-only (pending/queued) messages that haven't synced yet.
         setMessages((prev) => {
           const freshIds = new Set(fresh.map(m => m.id));
