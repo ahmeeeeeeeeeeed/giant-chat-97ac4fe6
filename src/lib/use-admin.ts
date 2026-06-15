@@ -1,15 +1,16 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
-import { getOnline } from "@/lib/use-online";
+import { useOnline } from "@/lib/use-online";
 
 export function useIsAdmin() {
   const { user } = useAuth();
+  const online = useOnline();
   const [isAdmin, setIsAdmin] = useState(false);
   const [loaded, setLoaded] = useState(false);
   useEffect(() => {
     if (!user) { setIsAdmin(false); setLoaded(true); return; }
-    if (!getOnline()) { setIsAdmin(false); setLoaded(true); return; }
+    if (!online) { setIsAdmin(false); setLoaded(true); return; }
     let cancelled = false;
     (async () => {
       try {
@@ -25,16 +26,17 @@ export function useIsAdmin() {
       }
     })();
     return () => { cancelled = true; };
-  }, [user]);
+  }, [user, online]);
   return { isAdmin, loaded };
 }
 
 export function useUnreadDMCount() {
   const { user } = useAuth();
+  const online = useOnline();
   const [count, setCount] = useState(0);
   useEffect(() => {
     if (!user) { setCount(0); return; }
-    if (!getOnline()) { setCount(0); return; }
+    if (!online) { setCount(0); return; }
     let mounted = true;
     const load = async () => {
       try {
@@ -54,6 +56,6 @@ export function useUnreadDMCount() {
       .on("postgres_changes", { event: "*", schema: "public", table: "direct_messages", filter: `receiver_id=eq.${user.id}` }, load)
       .subscribe();
     return () => { mounted = false; supabase.removeChannel(ch); };
-  }, [user]);
+  }, [user, online]);
   return count;
 }

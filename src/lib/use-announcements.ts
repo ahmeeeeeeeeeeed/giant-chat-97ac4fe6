@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { getOnline } from "@/lib/use-online";
+import { useOnline } from "@/lib/use-online";
 
 const SEEN_KEY = "announce:last_seen_at";
 type AnnouncementRow = { id?: string; content?: string; created_at?: string };
@@ -10,10 +10,11 @@ type AnnouncementRow = { id?: string; content?: string; created_at?: string };
 // for every signed-in user, regardless of which page or room they're in.
 export function useAnnouncementsListener(enabled: boolean) {
   const shownIds = useRef<Set<string>>(new Set());
+  const online = useOnline();
 
   useEffect(() => {
     if (!enabled) return;
-    if (!getOnline()) return;
+    if (!online) return;
 
     let cancelled = false;
     const lastSeen = localStorage.getItem(SEEN_KEY) ?? new Date(Date.now() - 60_000).toISOString();
@@ -60,5 +61,5 @@ export function useAnnouncementsListener(enabled: boolean) {
       cancelled = true;
       supabase.removeChannel(ch);
     };
-  }, [enabled]);
+  }, [enabled, online]);
 }

@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { showLocalNotification, getRoomLastSeen, installNativeNotificationTapHandler } from "@/lib/notify";
 import { ensureNotificationPermission } from "@/lib/app-permissions";
-import { getOnline } from "@/lib/use-online";
+import { useOnline } from "@/lib/use-online";
 
 type RoomLite = { id: string; name: string | null };
 type JoinedRoomRow = { rooms?: RoomLite | null };
@@ -19,12 +19,13 @@ type NotificationMessage = {
 /** Total unread room messages across all rooms the user is a member of, based on per-room lastSeen. */
 export function useUnreadRoomCount(): number {
   const { user } = useAuth();
+  const online = useOnline();
   const [count, setCount] = useState(0);
   const roomsRef = useRef<RoomLite[]>([]);
 
   useEffect(() => {
     if (!user) { setCount(0); return; }
-    if (!getOnline()) { setCount(0); return; }
+    if (!online) { setCount(0); return; }
     let mounted = true;
 
     const recompute = async () => {
@@ -91,7 +92,7 @@ export function useUnreadRoomCount(): number {
       document.removeEventListener("visibilitychange", onVis);
       window.removeEventListener("focus", onVis);
     };
-  }, [user]);
+  }, [user, online]);
 
   return count;
 }
@@ -99,12 +100,13 @@ export function useUnreadRoomCount(): number {
 /** Listens for new DMs and room messages globally and fires native/web notifications. */
 export function useGlobalNotificationListener(navigateTo?: (url: string) => void): void {
   const { user } = useAuth();
+  const online = useOnline();
   const myRoomsRef = useRef<Map<string, string>>(new Map()); // roomId -> name
   const profileCacheRef = useRef<Map<string, string>>(new Map()); // userId -> username
 
   useEffect(() => {
     if (!user) return;
-    if (!getOnline()) return;
+    if (!online) return;
     let mounted = true;
 
     // Ask once (no-op if already granted/denied)
@@ -192,5 +194,5 @@ export function useGlobalNotificationListener(navigateTo?: (url: string) => void
       .subscribe();
 
     return () => { mounted = false; supabase.removeChannel(ch); };
-  }, [user, navigateTo]);
+  }, [user, navigateTo, online]);
 }
