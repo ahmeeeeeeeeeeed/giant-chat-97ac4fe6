@@ -10,16 +10,28 @@ import {
   ShoppingBag, Flag, User, Bell, Users as UsersIcon,
   Trophy, MessageSquare, Shield, Info, HelpCircle,
   Star, Share2, Lock, Newspaper, Gamepad2, Crown,
+  X, Copy, Loader2, Sparkles, Download, MessageCircle, Send, Mail,
 } from "lucide-react";
 import { SUPPORTED_LANGUAGES } from "@/lib/i18n";
 import { findAdminId } from "@/lib/find-admin";
-import { APP_VERSION } from "@/lib/version";
+import { APP_VERSION, getVersionCode } from "@/lib/version";
+import { isNativeAndroid, downloadAndInstallApk } from "@/lib/app-update";
 import { toast } from "sonner";
 import { PremiumCreateModal } from "@/components/PremiumCreateModal";
 
 export const Route = createFileRoute("/app/settings")({
   component: SettingsPage,
 });
+
+const SHARE_URL = "https://giant-chat.lovable.app";
+const SHARE_TEXT = "حمّل تطبيق Giant Chat — دردشة، غرف صوتية، وأصدقاء جدد في مكان واحد 💬✨";
+
+type LatestUpdate = {
+  version: string;
+  version_code: number;
+  update_message: string;
+  file_url: string;
+} | null;
 
 function SettingsPage() {
   const { theme, toggle } = useTheme();
@@ -31,7 +43,14 @@ function SettingsPage() {
   const [showLogout, setShowLogout] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [showPremium, setShowPremium] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
+  const [showAbout, setShowAbout] = useState(false);
+  const [showShare, setShowShare] = useState(false);
   const [username, setUsername] = useState("");
+  const [latest, setLatest] = useState<LatestUpdate>(null);
+  const [checkingUpdate, setCheckingUpdate] = useState(false);
+  const [installing, setInstalling] = useState(false);
+  const [installProgress, setInstallProgress] = useState(0);
 
   const doLogout = async () => {
     setSigningOut(true);
@@ -56,13 +75,66 @@ function SettingsPage() {
     navigate({ to: "/app/chats/$id", params: { id } });
   };
 
-  const share = async () => {
-    const url = window.location.origin;
+  const checkForUpdate = async () => {
+    setCheckingUpdate(true);
     try {
-      if (navigator.share) await navigator.share({ title: "Giant Chat", url });
-      else { await navigator.clipboard.writeText(url); toast.success("تم نسخ الرابط"); }
-    } catch {}
+      const { data } = await supabase
+        .from("app_updates")
+        .select("version, version_code, update_message, file_url")
+        .eq("is_active", true)
+        .order("version_code", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (data) setLatest(data as LatestUpdate);
+    } catch { /* offline */ }
+    finally { setCheckingUpdate(false); }
   };
+
+  const openAbout = () => { setShowAbout(true); void checkForUpdate(); };
+
+  const installUpdate = async () => {
+    if (!latest) return;
+    if (!(await isNativeAndroid())) {
+      window.open(latest.file_url, "_blank");
+      return;
+    }
+    setInstalling(true);
+    setInstallProgress(0);
+    try {
+      await downloadAndInstallApk(latest.file_url, (p) => setInstallProgress(p));
+    } catch (e: any) {
+      toast.error(e?.message || "فشل التحديث");
+    } finally {
+      setInstalling(false);
+    }
+  };
+
+  const openShare = async () => {
+    const payload = { title: "Giant Chat", text: SHARE_TEXT, url: SHARE_URL };
+    try {
+      if (await isNativeAndroid()) {
+        const { Share } = await import("@capacitor/share");
+        await Share.share({ ...payload, dialogTitle: "مشاركة Giant Chat" });
+        return;
+      }
+      if (typeof navigator !== "undefined" && (navigator as any).share) {
+        await (navigator as any).share(payload);
+        return;
+      }
+    } catch (e: any) {
+      if (e?.message && /cancel|abort|dismiss/i.test(String(e.message))) return;
+    }
+    setShowShare(true);
+  };
+
+  const copyShareLink = async () => {
+    try {
+      await navigator.clipboard.writeText(`${SHARE_TEXT}\n${SHARE_URL}`);
+      toast.success("تم نسخ الرابط");
+    } catch { toast.error("تعذر النسخ"); }
+  };
+
+  const hasUpdate = latest && latest.version_code > getVersionCode(APP_VERSION);
 
   const currentLang = SUPPORTED_LANGUAGES.find((l) => l.code === i18n.language) ?? SUPPORTED_LANGUAGES[0];
 
@@ -139,7 +211,7 @@ function SettingsPage() {
             </div>
             <ChevronLeft className="h-4 w-4 text-muted-foreground rtl:rotate-180" />
           </button>
-          <button onClick={share} className="flex w-full items-center justify-between p-4 active:bg-secondary/60 text-start">
+          <button onClick={openShare} className="flex w-full items-center justify-between p-4 active:bg-secondary/60 text-start">
             <div className="flex items-center gap-3">
               <IconBox color="bg-sky-500"><Share2 className="h-4 w-4" /></IconBox>
               <span className="font-medium">شارك التطبيق</span>
@@ -153,20 +225,21 @@ function SettingsPage() {
             </div>
             <ChevronLeft className="h-4 w-4 text-muted-foreground rtl:rotate-180" />
           </button>
-          <button onClick={() => toast.info("صفحة المساعدة قريبًا")} className="flex w-full items-center justify-between p-4 active:bg-secondary/60 text-start">
+          <button onClick={() => setShowHelp(true)} className="flex w-full items-center justify-between p-4 active:bg-secondary/60 text-start">
             <div className="flex items-center gap-3">
               <IconBox color="bg-teal-500"><HelpCircle className="h-4 w-4" /></IconBox>
               <span className="font-medium">المساعدة والأسئلة الشائعة</span>
             </div>
             <ChevronLeft className="h-4 w-4 text-muted-foreground rtl:rotate-180" />
           </button>
-          <button onClick={() => toast.info("Giant Chat v1.0.0")} className="flex w-full items-center justify-between p-4 active:bg-secondary/60 text-start">
+          <button onClick={openAbout} className="flex w-full items-center justify-between p-4 active:bg-secondary/60 text-start">
             <div className="flex items-center gap-3">
               <IconBox color="bg-slate-500"><Info className="h-4 w-4" /></IconBox>
               <span className="font-medium">عن التطبيق</span>
             </div>
-            <span className="text-[11px] text-muted-foreground">v1.0.0</span>
+            <span className="text-[11px] text-muted-foreground">v{APP_VERSION}</span>
           </button>
+
         </Section>
 
         {isAdmin && (
@@ -237,6 +310,133 @@ function SettingsPage() {
       )}
 
       <PremiumCreateModal open={showPremium} onClose={() => setShowPremium(false)} mode="points" />
+
+      {/* Help & FAQ */}
+      {showHelp && (
+        <Modal title="المساعدة والأسئلة الشائعة" onClose={() => setShowHelp(false)} icon={<HelpCircle className="h-5 w-5" />} color="bg-teal-500">
+          <div className="space-y-4 text-sm leading-relaxed">
+            <Intro>
+              مرحبًا بك في مركز المساعدة 👋
+              <br />
+              هنا تجد إجابات لأكثر الأسئلة شيوعًا. لم تجد ما تبحث عنه؟ تواصل مع الإدارة من خلال زر «الإبلاغ والشكاوى».
+            </Intro>
+            <Faq q="كيف أنشئ حسابًا أو أسجّل الدخول؟" a="افتح التطبيق ثم اضغط «إنشاء حساب» وأدخل اسم المستخدم وكلمة السر. لاستعادة الحساب استخدم زر «نسيت كلمة السر» في صفحة الدخول." />
+            <Faq q="كيف أضيف صديقًا؟" a="اضغط على اسم أي مستخدم لعرض ملفه الشخصي ثم زر «إضافة صديق». عندما يقبل الطلب تظهر علامة الصداقة وتتمكن من رؤية حالته (متصل / آخر ظهور)." />
+            <Faq q="لماذا لا أرى حالة بعض المستخدمين؟" a="حالة الاتصال وآخر ظهور تظهر فقط للأصدقاء المتبادلين. أمّا غير الأصدقاء فلا تظهر لهم حالتك، وكذلك أنت لا ترى حالتهم — حمايةً لخصوصية الجميع." />
+            <Faq q="ماذا تعني علامات الصح في الرسائل؟" a="✓ تم إرسال الرسالة. ✓✓ وصلت إلى الطرف الآخر. ✓✓ زرقاء: تمت قراءة الرسالة (للأصدقاء فقط)." />
+            <Faq q="هل تعمل الرسائل بدون إنترنت؟" a="نعم. المحادثات الخاصة تُحفظ محليًا على جهازك، فيمكنك تصفّحها أثناء انقطاع الإنترنت، وتُرسَل الرسائل المعلّقة تلقائيًا عند عودة الاتصال." />
+            <Faq q="كيف أنشئ غرفة صوتية؟" a="من الصفحة الرئيسية اضغط زر «إنشاء غرفة»، اختر الاسم والصورة ونوع الغرفة (عامة/خاصة) ثم انشرها لتصبح متاحة." />
+            <Faq q="كيف أحصل على حساب مميز؟" a="من «الإعدادات» → «إنشاء حساب مميز». تحتاج إلى 50,000 نقطة لتفعيل الاسم العربي أو المزخرف وميزات إضافية." />
+            <Faq q="كيف أكسب النقاط والإنجازات؟" a="بالتفاعل اليومي: تسجيل الدخول، إرسال الرسائل، الانضمام للغرف، والمشاركة في المجتمع. راجع صفحة «الإنجازات» للتفاصيل." />
+            <Faq q="كيف أبلّغ عن مستخدم أو محتوى مسيء؟" a="من ملف المستخدم أو الرسالة اضغط «إبلاغ»، أو افتح «الإبلاغ والشكاوى» من الإعدادات للتواصل المباشر مع الإدارة." />
+            <Faq q="كيف أحذف حسابي؟" a="من «إدارة الحساب وكلمة السر» اضغط «حذف الحساب». الحذف نهائي ولا يمكن التراجع عنه." />
+          </div>
+        </Modal>
+      )}
+
+      {/* About */}
+      {showAbout && (
+        <Modal title="عن التطبيق" onClose={() => setShowAbout(false)} icon={<Info className="h-5 w-5" />} color="bg-slate-600">
+          <div className="space-y-4">
+            <div className="flex flex-col items-center text-center py-2">
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-fuchsia-500 text-white shadow-lg">
+                <Sparkles className="h-8 w-8" />
+              </div>
+              <h3 className="mt-3 text-xl font-extrabold">Giant Chat</h3>
+              <p className="text-xs text-muted-foreground mt-1">دردشة • غرف صوتية • مجتمع</p>
+            </div>
+
+            <div className="rounded-2xl border border-border bg-secondary/30 p-4 space-y-2 text-sm">
+              <Row2 label="الإصدار الحالي" value={`v${APP_VERSION}`} />
+              <Row2 label="رقم البناء" value={String(getVersionCode(APP_VERSION))} />
+              <Row2 label="الجهة المطوّرة" value="فريق Giant" />
+              <Row2 label="الموقع الرسمي" value="giant-chat.lovable.app" />
+            </div>
+
+            {checkingUpdate && (
+              <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground py-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>جارٍ التحقق من التحديثات...</span>
+              </div>
+            )}
+
+            {!checkingUpdate && hasUpdate && latest && (
+              <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 space-y-2">
+                <div className="flex items-center gap-2 text-emerald-600 font-bold">
+                  <Download className="h-4 w-4" />
+                  تحديث جديد متاح — v{latest.version}
+                </div>
+                {latest.update_message && (
+                  <p className="text-xs text-muted-foreground whitespace-pre-wrap">{latest.update_message}</p>
+                )}
+                {installing && (
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
+                    <div className="h-full bg-emerald-500 transition-all" style={{ width: `${installProgress}%` }} />
+                  </div>
+                )}
+                <button
+                  onClick={installUpdate}
+                  disabled={installing}
+                  className="mt-1 h-11 w-full rounded-xl bg-emerald-500 text-white font-bold disabled:opacity-60 flex items-center justify-center gap-2"
+                >
+                  {installing ? <><Loader2 className="h-4 w-4 animate-spin" /> {installProgress}%</> : <><Download className="h-4 w-4" /> تحديث الآن</>}
+                </button>
+              </div>
+            )}
+
+            {!checkingUpdate && !hasUpdate && (
+              <div className="rounded-2xl border border-border bg-secondary/30 p-4 text-center text-sm text-muted-foreground flex items-center justify-center gap-2">
+                <Check className="h-4 w-4 text-emerald-500" />
+                أنت تستخدم أحدث إصدار
+              </div>
+            )}
+
+            <button
+              onClick={checkForUpdate}
+              disabled={checkingUpdate}
+              className="h-11 w-full rounded-xl border border-input font-semibold text-sm disabled:opacity-60"
+            >
+              {checkingUpdate ? "جارٍ التحقق..." : "التحقق من التحديثات"}
+            </button>
+
+            <p className="text-center text-[11px] text-muted-foreground">
+              © {new Date().getFullYear()} Giant Chat — جميع الحقوق محفوظة
+            </p>
+          </div>
+        </Modal>
+      )}
+
+      {/* Share fallback (web without navigator.share) */}
+      {showShare && (
+        <Modal title="مشاركة التطبيق" onClose={() => setShowShare(false)} icon={<Share2 className="h-5 w-5" />} color="bg-sky-500">
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground text-center">اختر الوسيلة التي تريد المشاركة من خلالها</p>
+            <div className="grid grid-cols-4 gap-3">
+              <ShareTarget label="واتساب" color="bg-emerald-500"
+                onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(`${SHARE_TEXT}\n${SHARE_URL}`)}`, "_blank")}
+                icon={<MessageCircle className="h-5 w-5" />} />
+              <ShareTarget label="تيليجرام" color="bg-sky-500"
+                onClick={() => window.open(`https://t.me/share/url?url=${encodeURIComponent(SHARE_URL)}&text=${encodeURIComponent(SHARE_TEXT)}`, "_blank")}
+                icon={<Send className="h-5 w-5" />} />
+              <ShareTarget label="فيسبوك" color="bg-blue-600"
+                onClick={() => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(SHARE_URL)}`, "_blank")}
+                icon={<Share2 className="h-5 w-5" />} />
+              <ShareTarget label="X / تويتر" color="bg-slate-900"
+                onClick={() => window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(SHARE_TEXT)}&url=${encodeURIComponent(SHARE_URL)}`, "_blank")}
+                icon={<X className="h-5 w-5" />} />
+              <ShareTarget label="بريد" color="bg-rose-500"
+                onClick={() => window.open(`mailto:?subject=${encodeURIComponent("Giant Chat")}&body=${encodeURIComponent(`${SHARE_TEXT}\n${SHARE_URL}`)}`)}
+                icon={<Mail className="h-5 w-5" />} />
+              <ShareTarget label="نسخ الرابط" color="bg-zinc-600"
+                onClick={copyShareLink} icon={<Copy className="h-5 w-5" />} />
+            </div>
+            <div className="rounded-xl border border-border bg-secondary/40 p-3 text-xs break-all text-center font-mono">
+              {SHARE_URL}
+            </div>
+          </div>
+        </Modal>
+      )}
+
     </main>
   );
 }
@@ -282,5 +482,57 @@ function FeatureTile({ to, icon: Icon, title, subtitle, gradient }: {
       <div className="text-base font-extrabold leading-tight">{title}</div>
       <div className="text-[11px] opacity-90">{subtitle}</div>
     </Link>
+  );
+}
+
+function Modal({ title, onClose, icon, color, children }: { title: string; onClose: () => void; icon: React.ReactNode; color: string; children: React.ReactNode }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
+      <div onClick={(e) => e.stopPropagation()} className="w-full sm:max-w-md max-h-[90vh] overflow-y-auto rounded-t-3xl sm:rounded-3xl bg-card shadow-2xl">
+        <div className="sticky top-0 z-10 flex items-center gap-3 border-b border-border bg-card/95 backdrop-blur px-5 py-4">
+          <div className={`flex h-10 w-10 items-center justify-center rounded-xl text-white shadow ${color}`}>{icon}</div>
+          <h2 className="flex-1 text-lg font-extrabold">{title}</h2>
+          <button onClick={onClose} className="rounded-xl p-2 text-muted-foreground hover:bg-secondary"><X className="h-5 w-5" /></button>
+        </div>
+        <div className="p-5">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+function Intro({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="rounded-2xl bg-gradient-to-br from-primary/10 to-fuchsia-500/10 p-4 text-sm leading-relaxed border border-primary/20">{children}</div>
+  );
+}
+
+function Faq({ q, a }: { q: string; a: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="rounded-2xl border border-border bg-card overflow-hidden">
+      <button onClick={() => setOpen((v) => !v)} className="flex w-full items-center justify-between gap-3 p-4 text-start active:bg-secondary/60">
+        <span className="font-semibold text-sm flex-1">{q}</span>
+        <ChevronLeft className={`h-4 w-4 text-muted-foreground transition-transform ${open ? "-rotate-90" : "rtl:rotate-180"}`} />
+      </button>
+      {open && <div className="px-4 pb-4 text-sm text-muted-foreground leading-relaxed">{a}</div>}
+    </div>
+  );
+}
+
+function Row2({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between text-sm">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="font-semibold">{value}</span>
+    </div>
+  );
+}
+
+function ShareTarget({ label, color, onClick, icon }: { label: string; color: string; onClick: () => void; icon: React.ReactNode }) {
+  return (
+    <button onClick={onClick} className="flex flex-col items-center gap-2 active:scale-95 transition">
+      <div className={`flex h-14 w-14 items-center justify-center rounded-2xl text-white shadow-lg ${color}`}>{icon}</div>
+      <span className="text-[11px] font-medium">{label}</span>
+    </button>
   );
 }
