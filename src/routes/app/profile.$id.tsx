@@ -150,6 +150,7 @@ function OtherProfilePage() {
 
   return (
     <main className="flex flex-1 flex-col min-h-screen bg-background">
+      <RoomEntryEffect burst={entryBurst} />
       <header className="sticky top-0 z-10 border-b border-border bg-background/90 px-5 py-4 backdrop-blur">
         <button
           onClick={() => navigate({ to: "/app/chats" })}
