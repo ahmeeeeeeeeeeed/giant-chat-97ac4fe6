@@ -312,6 +312,18 @@ function ProfilePage() {
         {user && <UserBadgesGrid userId={user.id} />}
         {user && <WeeklyAchievementsBadge userId={user.id} />}
 
+        <PremiumUsernameCard
+          currentUsername={username}
+          points={points}
+          onUpgraded={(newName) => {
+            setUsername(newName);
+            // refresh points
+            supabase.from("profiles").select("points").eq("id", user!.id).maybeSingle()
+              .then(({ data }) => { if (data?.points != null) setPoints(data.points); });
+          }}
+        />
+
+
         {/* Bio + identity form */}
         <form onSubmit={save} className="mt-6 flex flex-col gap-4">
           <label className="flex flex-col gap-2">
