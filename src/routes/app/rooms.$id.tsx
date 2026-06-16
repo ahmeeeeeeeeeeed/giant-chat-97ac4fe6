@@ -1342,6 +1342,7 @@ function SettingsSheet({ roomId, room, canModerate, myRank, isOwner, ownerId, on
                               <div className="flex items-center gap-2">
                                 <span className="font-semibold truncate">{p?.username ?? "..."}</span>
                                 <RankBadge rank={m.rank} />
+                                <UserBadgesInline userId={m.user_id} size={12} max={3} />
                               </div>
                             </div>
                             {canModerate && m.user_id !== ownerId && (
