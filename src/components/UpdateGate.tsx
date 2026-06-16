@@ -27,8 +27,8 @@ export function UpdateGate() {
         const onAndroid = await isNativeAndroid();
         if (cancelled) return;
         setNative(onAndroid);
-        await syncNativeInstalledVersion();
         await notifyNativeUpdateReady();
+        await syncNativeInstalledVersion();
         if (cancelled) return;
         const { data } = await supabase
           .from("app_updates")

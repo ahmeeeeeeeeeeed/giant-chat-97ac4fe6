@@ -120,8 +120,8 @@ function SettingsPage() {
     }
     setCheckingUpdate(true);
     try {
-      await syncNativeInstalledVersion();
       await notifyNativeUpdateReady();
+      await syncNativeInstalledVersion();
       const { data } = await supabase
         .from("app_updates")
         .select("version, version_code, update_message, file_url, web_bundle_url, web_bundle_version")
