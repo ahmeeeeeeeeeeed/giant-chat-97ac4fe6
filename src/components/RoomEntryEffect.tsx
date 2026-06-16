@@ -331,8 +331,8 @@ function VideoEffect({ type }: { type: EntryEffectType }) {
           height: "100%",
           objectFit: "cover",
           mixBlendMode: "screen",
-          opacity: 0.4,
-          filter: "brightness(1.6) saturate(1.3)",
+          opacity: 0.12,
+          filter: "brightness(3.5) contrast(1.1)",
         }}
       />
     </div>
