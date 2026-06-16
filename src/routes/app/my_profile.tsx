@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { APP_VERSION } from "@/lib/version";
 import { useEffect, useRef, useState } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -479,7 +480,13 @@ function ProfilePage() {
           </Section>
 
           <Section title={t("profile.about")}>
-            <Row icon={<Info className="h-5 w-5" />} label="Giant" value="v1.0" />
+            <Link to="/app/settings" search={{ about: 1 } as any} className="flex items-center justify-between p-4 active:bg-secondary/60">
+              <div className="flex items-center gap-3">
+                <Info className="h-5 w-5" />
+                <span className="font-medium">Giant</span>
+              </div>
+              <span className="text-sm text-muted-foreground">v{APP_VERSION}</span>
+            </Link>
           </Section>
         </div>
       </div>

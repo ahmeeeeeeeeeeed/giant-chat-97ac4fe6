@@ -23,7 +23,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((evt, s) => {
-      if (!s && !getOnline() && !explicitSignOutInProgress) {
+      // Defensive: ignore transient null sessions (token refresh failures,
+      // offline app-resume, etc.). Only an explicit SIGNED_OUT / USER_DELETED
+      // event — or an explicit user sign-out in progress — should clear the
+      // session. This prevents auto-logout/hang when the app resumes from
+      // background with a flaky network.
+      if (!s && evt !== "SIGNED_OUT" && !explicitSignOutInProgress) {
         setLoading(false);
         return;
       }
