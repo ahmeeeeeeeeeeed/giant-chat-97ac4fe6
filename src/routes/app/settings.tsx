@@ -17,7 +17,7 @@ import { SUPPORTED_LANGUAGES } from "@/lib/i18n";
 import { findAdminId } from "@/lib/find-admin";
 import { APP_VERSION, getVersionCode } from "@/lib/version";
 import { isNativeAndroid, downloadAndInstallApk, applyWebBundleUpdate, shouldShowUpdate, markUpdateInstalled, getDisplayInstalledVersion, getDisplayInstalledCode } from "@/lib/app-update";
-import { cacheGet, cacheSet } from "@/lib/offline-cache";
+import { cacheGet, cacheSet, cacheDel } from "@/lib/offline-cache";
 import { getOnline, useOnline } from "@/lib/use-online";
 import { toast } from "sonner";
 import { PremiumCreateModal } from "@/components/PremiumCreateModal";
@@ -127,9 +127,12 @@ function SettingsPage() {
         .order("version_code", { ascending: false })
         .limit(1)
         .maybeSingle();
-      if (data) {
+      if (data && shouldShowUpdate(data)) {
         setLatest(data as LatestUpdate);
         void cacheSet("settings:latestUpdate", data);
+      } else {
+        setLatest(null);
+        void cacheDel("settings:latestUpdate");
       }
     } catch { /* offline */ }
     finally { setCheckingUpdate(false); }
