@@ -888,25 +888,27 @@ function RoomPage() {
                     className="shrink-0 transition active:scale-95"
                     aria-label="عرض البروفايل"
                   >
-                    {displayAvatar ? (
-                      <img
-                        src={displayAvatar}
-                        alt=""
-                        className={`h-9 w-9 rounded-full object-cover ring-2 ${
-                          isOwn ? "ring-emerald-500/50" : "ring-emerald-500/25"
-                        }`}
-                      />
-                    ) : (
-                      <div
-                        className={`flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold text-white shadow ${
-                          isOwn
-                            ? "bg-gradient-to-br from-emerald-400 to-emerald-600"
-                            : "bg-gradient-to-br from-emerald-500 to-emerald-700"
-                        }`}
-                      >
-                        {displayName.charAt(0).toUpperCase()}
-                      </div>
-                    )}
+                    <StoryRing userId={msg.user_id} size="xs">
+                      {displayAvatar ? (
+                        <img
+                          src={displayAvatar}
+                          alt=""
+                          className={`h-9 w-9 rounded-full object-cover ring-2 ${
+                            isOwn ? "ring-emerald-500/50" : "ring-emerald-500/25"
+                          }`}
+                        />
+                      ) : (
+                        <div
+                          className={`flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold text-white shadow ${
+                            isOwn
+                              ? "bg-gradient-to-br from-emerald-400 to-emerald-600"
+                              : "bg-gradient-to-br from-emerald-500 to-emerald-700"
+                          }`}
+                        >
+                          {displayName.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                    </StoryRing>
                   </button>
                 )}
                 <div className={`flex max-w-[82%] flex-col ${isOwn ? "items-end" : "items-start"}`}>
