@@ -505,9 +505,15 @@ function SettingsPage() {
                   <Download className="h-4 w-4" />
                   تحديث جديد متاح — v{latest.version}
                 </div>
+                <p className="text-[11px] text-emerald-700/80 dark:text-emerald-300/80">
+                  {latest.web_bundle_url
+                    ? "تحديث سريع داخل التطبيق — يحدّث فقط ما تغيّر بدون إعادة تثبيت."
+                    : "تحديث كامل للتطبيق — يتطلب إعادة تثبيت."}
+                </p>
                 {latest.update_message && (
                   <p className="text-xs text-muted-foreground whitespace-pre-wrap">{latest.update_message}</p>
                 )}
+
                 {installing && (
                   <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
                     <div className="h-full bg-emerald-500 transition-all" style={{ width: `${installProgress}%` }} />
