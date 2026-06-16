@@ -316,11 +316,11 @@ function ChatRow({ convo, unreadActive, onDeleted }: { convo: Convo; unreadActiv
           </span>
         )}
         <button
-          onClick={(e) => { e.stopPropagation(); setConfirming(true); }}
-          className="ml-1 grid h-9 w-9 place-items-center rounded-xl text-rose-300/80 hover:bg-rose-500/15 hover:text-rose-200"
-          aria-label="حذف المحادثة"
+          onClick={(e) => { e.stopPropagation(); setMenu(true); }}
+          className="ml-1 grid h-9 w-9 place-items-center rounded-xl text-emerald-300/80 hover:bg-emerald-500/15 hover:text-emerald-200"
+          aria-label="خيارات المحادثة"
         >
-          <Trash2 className="h-4 w-4" />
+          <MoreVertical className="h-4 w-4" />
         </button>
       </div>
 
