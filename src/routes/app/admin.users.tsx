@@ -111,6 +111,19 @@ function AdminUsers() {
     wrap(u.id, () => supabase.rpc("admin_reset_username", { _target: u.id, _new_username: v.trim() }));
   };
 
+  const makePremium = (u: AdminUser) => {
+    const v = prompt(
+      `إنشاء/تعيين حساب مميز لـ ${u.username ?? "المستخدم"}\nأدخل الاسم المميز (يدعم العربية والزخرفة، 2-32 حرفًا، بدون مسافات):`,
+      u.username ?? ""
+    );
+    if (!v) return;
+    const clean = v.trim();
+    if (clean.length < 2 || clean.length > 32) { toast.error("الطول غير صالح"); return; }
+    if (/[\s\u0000-\u001F\u007F]/.test(clean)) { toast.error("لا يُسمح بمسافات أو رموز تحكم"); return; }
+    wrap(u.id, () => supabase.rpc("admin_reset_username", { _target: u.id, _new_username: clean }));
+  };
+
+
   const remove = (u: AdminUser) => {
     if (u.id === user?.id) { toast.error("لا يمكنك حذف نفسك"); return; }
     if (!confirm(`حذف الحساب ${u.username ?? u.id} نهائياً؟ لا يمكن التراجع.`)) return;
