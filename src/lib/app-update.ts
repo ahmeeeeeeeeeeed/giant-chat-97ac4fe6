@@ -52,6 +52,30 @@ export function getEffectiveInstalledCode(): number {
   );
 }
 
+export function getNativeInstalledCode(): number {
+  return Math.max(
+    getVersionCode(APP_VERSION),
+    readStoredCode(NATIVE_CODE_KEY),
+    readStoredCode(NATIVE_VERSION_KEY),
+  );
+}
+
+export function getApkVersionFromUrl(url?: string | null): string | null {
+  if (!url) return null;
+  const decoded = (() => {
+    try { return decodeURIComponent(url); } catch { return url; }
+  })();
+  return decoded.match(/giant-([0-9]+\.[0-9]+\.[0-9]+)-[^/?]*\.apk/i)?.[1]
+    ?? decoded.match(/([0-9]+\.[0-9]+\.[0-9]+)[^/?]*\.apk/i)?.[1]
+    ?? null;
+}
+
+export function shouldInstallFullApk(latest: Pick<AppUpdateRow, "file_url" | "version_code">): boolean {
+  const apkVersion = getApkVersionFromUrl(latest.file_url);
+  if (!apkVersion) return false;
+  return getVersionCode(apkVersion) > getNativeInstalledCode();
+}
+
 export function getDisplayInstalledVersion(): string {
   return readStoredValue(WEB_BUNDLE_VERSION_KEY) || readStoredValue(NATIVE_VERSION_KEY) || APP_VERSION;
 }
@@ -121,11 +145,13 @@ export function isUpdateAlreadyMarked(latest: Pick<AppUpdateRow, "version" | "ve
 }
 
 export function shouldShowUpdate(latest: Pick<AppUpdateRow, "version" | "version_code">): boolean {
+  if ("file_url" in latest && shouldInstallFullApk(latest as Pick<AppUpdateRow, "file_url" | "version_code">)) return true;
   if (isUpdateAlreadyMarked(latest)) return false;
   return latest.version_code > getEffectiveInstalledCode();
 }
 
 export function isForceRequired(latest: AppUpdateRow): boolean {
+  if (shouldInstallFullApk(latest)) return latest.update_type === "force" || getNativeInstalledCode() < latest.minimum_required_code;
   if (isUpdateAlreadyMarked(latest)) return false;
   const current = getEffectiveInstalledCode();
   if (latest.update_type === "force" && latest.version_code > current) return true;
@@ -243,7 +269,7 @@ export async function applyWebBundleUpdate(
       markWebBundleInstalled(version);
       await CapacitorUpdater.set({ id: bundle.id });
       onProgress(100);
-      // CapacitorUpdater.set() automatically reloads the WebView with the new bundle.
+      await CapacitorUpdater.reload();
     } finally {
       if (removeListener) await removeListener().catch(() => {});
     }
