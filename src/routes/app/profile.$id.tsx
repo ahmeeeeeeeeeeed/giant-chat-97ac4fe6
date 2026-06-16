@@ -21,6 +21,8 @@ type Profile = {
   hide_last_seen: boolean;
   dm_locked: boolean;
   last_seen_at: string | null;
+  cover_url: string | null;
+  cover_type: string | null;
 };
 
 function OtherProfilePage() {
