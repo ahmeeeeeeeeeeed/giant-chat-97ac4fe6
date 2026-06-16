@@ -1,27 +1,11 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { APP_VERSION, getVersionCode } from "@/lib/version";
-import { downloadAndInstallApk, isForceRequired, isNativeAndroid, type AppUpdateRow } from "@/lib/app-update";
+import { APP_VERSION } from "@/lib/version";
+import { applyWebBundleUpdate, downloadAndInstallApk, getEffectiveInstalledCode, isForceRequired, isNativeAndroid, markUpdateInstalled, type AppUpdateRow } from "@/lib/app-update";
 import { Download, X, AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 const DISMISS_KEY = "giant.update.dismissed.v";
-const INSTALLED_VERSION_KEY = "giant.update.installed.v";
-const INSTALLED_CODE_KEY = "giant.update.installed.code";
-
-function getInstalledCode(): number {
-  try {
-    const raw = typeof window !== "undefined" ? localStorage.getItem(INSTALLED_CODE_KEY) : null;
-    const n = raw ? parseInt(raw, 10) : 0;
-    return Number.isFinite(n) ? n : 0;
-  } catch { return 0; }
-}
-function markInstalled(version: string, versionCode: number) {
-  try {
-    localStorage.setItem(INSTALLED_VERSION_KEY, version);
-    localStorage.setItem(INSTALLED_CODE_KEY, String(versionCode));
-  } catch { /* ignore */ }
-}
 
 function errorMessage(error: unknown, fallback: string): string {
   return error instanceof Error ? error.message : fallback;
@@ -52,10 +36,8 @@ export function UpdateGate() {
           .maybeSingle();
         if (cancelled || !data) return;
         const row = data as AppUpdateRow;
-        // Effective installed code = max(APP_VERSION baked at build time,
-        // last version the user marked as installed via this gate). This
-        // protects against APP_VERSION drift between CI builds.
-        const installedCode = Math.max(getVersionCode(APP_VERSION), getInstalledCode());
+        // Effective installed code = APK build version + any OTA bundle already applied.
+        const installedCode = getEffectiveInstalledCode();
         if (row.version_code <= installedCode) return;
         setLatest(row);
         const skipped = typeof window !== "undefined" ? localStorage.getItem(DISMISS_KEY) : null;
@@ -71,22 +53,30 @@ export function UpdateGate() {
   const force = isForceRequired(latest);
 
   const handleUpdate = async () => {
-    if (!native) {
-      // On web (Lovable preview / desktop), just open the file URL.
-      // Mark as installed so the banner does not reappear on next load.
-      markInstalled(latest.version, latest.version_code);
-      window.open(latest.file_url, "_blank");
-      setDismissed(true);
-      return;
-    }
     setBusy(true);
     setError(null);
     setProgress(0);
     try {
+      if (latest.web_bundle_url) {
+        await applyWebBundleUpdate(
+          latest.web_bundle_url,
+          latest.web_bundle_version || latest.version,
+          (p) => setProgress(p),
+        );
+        markUpdateInstalled(latest.version, latest.version_code);
+        setDone(true);
+        return;
+      }
+      if (!native) {
+        window.open(latest.file_url, "_blank");
+        markUpdateInstalled(latest.version, latest.version_code);
+        setDismissed(true);
+        return;
+      }
       await downloadAndInstallApk(latest.file_url, (p) => setProgress(p));
       // Persist immediately — after the OS installer takes over, the user
       // returns to a fresh app process with no in-memory state.
-      markInstalled(latest.version, latest.version_code);
+      markUpdateInstalled(latest.version, latest.version_code);
       setDone(true);
     } catch (e) {
       const message = errorMessage(e, "فشل التحديث");
@@ -135,7 +125,7 @@ export function UpdateGate() {
           <div className="mb-4 space-y-2">
             <div className="flex items-center gap-2 text-sm">
               <Loader2 className="h-4 w-4 animate-spin text-primary" />
-              <span>جارٍ تنزيل التحديث... {progress}%</span>
+              <span>{latest.web_bundle_url ? "جارٍ تطبيق التحديث" : "جارٍ تنزيل التحديث"}... {progress}%</span>
             </div>
             <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
               <div
@@ -149,7 +139,7 @@ export function UpdateGate() {
         {done && (
           <div className="mb-4 flex items-center gap-2 rounded-2xl bg-emerald-500/10 p-3 text-sm text-emerald-600">
             <CheckCircle2 className="h-5 w-5" />
-            <span>اكتمل التحميل — يتم فتح المثبت...</span>
+            <span>{latest.web_bundle_url ? "تم تطبيق التحديث — سيتم إعادة تشغيل التطبيق" : "اكتمل التحميل — يتم فتح المثبت..."}</span>
           </div>
         )}
 
