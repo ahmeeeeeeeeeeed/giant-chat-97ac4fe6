@@ -203,6 +203,7 @@ jobs:
           "$ZIPALIGN" -p 4 "$UNSIGNED" "$ALIGNED"
           "$APKSIGNER" sign \
             --ks "$KEYSTORE" \
+            --ks-type "$OPENED_TYPE" \
             --ks-key-alias "$ALIAS" \
             --ks-pass "pass:$STOREPASS" \
             --key-pass "pass:$KEYPASS" \

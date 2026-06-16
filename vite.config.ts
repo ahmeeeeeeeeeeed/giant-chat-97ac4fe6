@@ -35,6 +35,7 @@ export default defineConfig({
   vite: {
     define: {
       __APP_VERSION__: JSON.stringify(APP_VERSION),
+      __CAPACITOR_BUILD__: JSON.stringify(isCapacitorBuild),
     },
     plugins: [
       VitePWA({

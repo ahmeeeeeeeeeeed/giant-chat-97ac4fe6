@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { LogIn, MessageCircle, Users, Music, Sparkles } from "lucide-react";
 import PermissionsGate, { hasCompletedPermissionsGate } from "@/components/PermissionsGate";
 
+declare const __CAPACITOR_BUILD__: boolean | undefined;
+
 // Local bundled media — shipped inside the APK assets folder and the web build.
 const WELCOME_VIDEO = "/media/welcome-video.mp4";
 const WELCOME_POSTER = "/media/welcome-poster.jpg";
@@ -24,6 +26,7 @@ function Welcome() {
   const [sessionChecked, setSessionChecked] = useState(false);
   const [hasSession, setHasSession] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const isNativeApp = typeof __CAPACITOR_BUILD__ !== "undefined" && __CAPACITOR_BUILD__;
   useEffect(() => { setNeedsPerms(!hasCompletedPermissionsGate()); }, []);
 
   const guardedNavigate = (to: "/login" | "/register") => {
@@ -32,6 +35,10 @@ function Welcome() {
   };
 
   useEffect(() => {
+    if (!isNativeApp) {
+      setSessionChecked(true);
+      return;
+    }
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         setHasSession(true);
@@ -40,7 +47,11 @@ function Welcome() {
         setSessionChecked(true);
       }
     });
-  }, [navigate]);
+  }, [isNativeApp, navigate]);
+
+  if (!isNativeApp) {
+    return <PublicWebsite />;
+  }
 
   // While checking session or redirecting an existing session, render nothing
   // to avoid flashing the welcome/login UI for already-signed-in users.
@@ -194,6 +205,28 @@ function Welcome() {
           100% { transform: translateY(-10px); }
         }
       `}</style>
+    </main>
+  );
+}
+
+function PublicWebsite() {
+  return (
+    <main className="flex min-h-dvh items-center justify-center bg-background px-6 py-16 text-center text-foreground" dir="rtl">
+      <div className="mx-auto max-w-lg">
+        <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-success text-2xl font-black text-primary-foreground shadow-lg shadow-primary/30">
+          G
+        </div>
+        <h1 className="text-4xl font-black tracking-tight">Giant</h1>
+        <p className="mt-4 text-base leading-relaxed text-muted-foreground">
+          هذا الموقع منفصل عن التطبيق، ومخصص فقط لعرض آخر تحديثات التطبيق وروابط تحميل APK الرسمية.
+        </p>
+        <a
+          href="/download"
+          className="mt-8 inline-flex h-14 items-center justify-center rounded-2xl bg-primary px-8 text-base font-bold text-primary-foreground shadow-lg shadow-primary/30 transition hover:opacity-90"
+        >
+          فتح صفحة التحديثات والتحميل
+        </a>
+      </div>
     </main>
   );
 }
