@@ -58,17 +58,22 @@ function OtherProfilePage() {
     
     const fetchProfile = async () => {
       setLoading(true);
-      
-      // Fetch profile data
-      const { data: p, error } = await supabase
-        .from("profiles")
-        .select("id, username, avatar_url, bio, points, gender, country, hide_last_seen, dm_locked, last_seen_at, cover_url, cover_type")
-        .eq("id", otherId)
-        .maybeSingle();
-      
-      if (error || !p) {
-        toast.error("المستخدم غير موجود");
-        navigate({ to: "/app/chats" });
+
+      const selectCols = "id, username, avatar_url, bio, points, gender, country, hide_last_seen, dm_locked, last_seen_at, cover_url, cover_type";
+      let p: any = null;
+      let lastErr: any = null;
+      // Retry up to 3 times — session token may still be attaching on cold load.
+      for (let i = 0; i < 3; i++) {
+        const res = await supabase.from("profiles").select(selectCols).eq("id", otherId).maybeSingle();
+        if (res.data) { p = res.data; lastErr = null; break; }
+        lastErr = res.error;
+        await new Promise((r) => setTimeout(r, 400));
+      }
+
+      if (!p) {
+        console.error("profile fetch failed", { otherId, lastErr });
+        toast.error(lastErr?.message ? `تعذر تحميل البروفايل: ${lastErr.message}` : "تعذر تحميل البروفايل، حاول مرة أخرى");
+        setLoading(false);
         return;
       }
       setProfile(p as Profile);
