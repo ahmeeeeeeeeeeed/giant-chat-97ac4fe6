@@ -318,10 +318,8 @@ function CharImg({ src, alt, style, className }: { src: string; alt: string; sty
       src={src}
       alt={alt}
       loading="lazy"
-      width={1024}
-      height={1024}
-      className={className}
-      style={{ width: "auto", maxWidth: "min(90vw, 560px)", maxHeight: "75vh", objectFit: "contain", ...style }}
+      className={`block ${className || ""}`}
+      style={{ width: "100%", height: "auto", objectFit: "contain", ...style }}
     />
   );
 }
@@ -332,7 +330,12 @@ function DragonEffect() {
       <div className="absolute inset-0 animate-fade-in" style={{ background: "radial-gradient(circle at 50% 40%, rgba(255,90,0,0.45), transparent 65%)" }} />
       <div
         className="absolute left-1/2 -translate-x-1/2"
-        style={{ animation: "dragon-fly 5s ease-in-out forwards", filter: "drop-shadow(0 0 40px rgba(255,80,0,0.85))" }}
+        style={{
+          width: "min(90vw, 560px)",
+          height: "auto",
+          animation: "dragon-fly 5s ease-in-out forwards",
+          filter: "drop-shadow(0 0 40px rgba(255,80,0,0.85))",
+        }}
       >
         <CharImg src={dragonImg} alt="Dragon" />
       </div>
@@ -365,6 +368,8 @@ function PrincessEffect() {
       <div
         className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
         style={{
+          width: "min(90vw, 560px)",
+          height: "auto",
           animation: "princess-dance 5s ease-in-out forwards",
           filter: "drop-shadow(0 0 50px rgba(255,180,230,0.95))",
           transformOrigin: "center",
@@ -396,7 +401,12 @@ function KnightEffect() {
       ))}
       <div
         className="absolute top-1/2 -translate-y-1/2"
-        style={{ animation: "knight-gallop 5s linear forwards", filter: "drop-shadow(0 10px 20px rgba(0,0,0,0.55))" }}
+        style={{
+          width: "min(90vw, 560px)",
+          height: "auto",
+          animation: "knight-gallop 5s linear forwards",
+          filter: "drop-shadow(0 10px 20px rgba(0,0,0,0.55))",
+        }}
       >
         <CharImg src={knightImg} alt="Knight" />
       </div>
@@ -411,7 +421,12 @@ function MagicEffect() {
            style={{ background: "radial-gradient(circle at center, rgba(180,120,255,0.45), transparent 60%)" }} />
       <div
         className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-        style={{ animation: "magic-burst 5s ease-out forwards", filter: "drop-shadow(0 0 50px gold)" }}
+        style={{
+          width: "min(90vw, 560px)",
+          height: "auto",
+          animation: "magic-burst 5s ease-out forwards",
+          filter: "drop-shadow(0 0 50px gold)",
+        }}
       >
         <CharImg src={magicImg} alt="Magic burst" />
       </div>
@@ -447,7 +462,12 @@ function MascotEffect() {
       <Sparkles count={20} color="#fff7a8" />
       <div
         className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-        style={{ animation: "mascot-bounce 5s ease-in-out forwards", filter: "drop-shadow(0 0 35px rgba(255,200,0,0.8))" }}
+        style={{
+          width: "min(90vw, 560px)",
+          height: "auto",
+          animation: "mascot-bounce 5s ease-in-out forwards",
+          filter: "drop-shadow(0 0 35px rgba(255,200,0,0.8))",
+        }}
       >
         <CharImg src={mascotImg} alt="Mascot" />
       </div>
@@ -493,7 +513,12 @@ function PortalEffect() {
       />
       <div
         className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-        style={{ animation: "portal-emerge 5s ease-out forwards", filter: "drop-shadow(0 0 30px rgba(120,200,255,0.9))" }}
+        style={{
+          width: "min(90vw, 560px)",
+          height: "auto",
+          animation: "portal-emerge 5s ease-out forwards",
+          filter: "drop-shadow(0 0 30px rgba(120,200,255,0.9))",
+        }}
       >
         <CharImg src={portalImg} alt="Wizard portal" />
       </div>
