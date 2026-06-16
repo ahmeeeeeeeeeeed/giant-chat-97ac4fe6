@@ -16,7 +16,7 @@ import {
 import { SUPPORTED_LANGUAGES } from "@/lib/i18n";
 import { findAdminId } from "@/lib/find-admin";
 import { APP_VERSION, getVersionCode } from "@/lib/version";
-import { isNativeAndroid, downloadAndInstallApk, applyWebBundleUpdate, shouldShowUpdate, markUpdateInstalled, markWebBundleInstalled, getDisplayInstalledVersion, getDisplayInstalledCode } from "@/lib/app-update";
+import { isNativeAndroid, downloadAndInstallApk, applyWebBundleUpdate, shouldShowUpdate, markUpdateInstalled, getDisplayInstalledVersion, getDisplayInstalledCode } from "@/lib/app-update";
 import { cacheGet, cacheSet, cacheDel } from "@/lib/offline-cache";
 import { getOnline, useOnline } from "@/lib/use-online";
 import { toast } from "sonner";
