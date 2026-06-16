@@ -816,16 +816,17 @@ function RoomPage() {
               if (meta?.kind === "gift" || meta?.kind === "gift_global") {
                 const isG = meta.kind === "gift_global" || meta.scope === "global";
                 return (
-                  <div key={msg.id} className="flex justify-center my-2">
-                    <div className={`inline-flex items-center gap-2 max-w-[92%] rounded-full border px-4 py-2 shadow-sm ${isG ? "border-amber-400/50 bg-gradient-to-r from-amber-50 via-pink-50 to-fuchsia-50 dark:from-amber-950/40 dark:via-pink-950/40 dark:to-fuchsia-950/40" : "border-pink-400/40 bg-gradient-to-r from-pink-50 to-fuchsia-50 dark:from-pink-950/40 dark:to-fuchsia-950/40"}`}>
+                  <div key={msg.id} className="flex justify-center my-2 animate-fade-in">
+                    <div className={`inline-flex items-center gap-2 max-w-[94%] rounded-full border px-4 py-2 shadow-md ${isG ? "border-amber-400/60 bg-gradient-to-r from-amber-100 via-pink-100 to-fuchsia-100 dark:from-amber-950/50 dark:via-pink-950/50 dark:to-fuchsia-950/50" : "border-pink-400/50 bg-gradient-to-r from-pink-100 to-fuchsia-100 dark:from-pink-950/50 dark:to-fuchsia-950/50"}`}>
                       <span className="text-2xl leading-none">{meta.emoji ?? "🎁"}</span>
                       <p className="text-xs sm:text-sm font-medium leading-tight">
                         {isG && <span className="text-amber-500 me-1">🌍</span>}
-                        <span className="font-bold text-pink-600 dark:text-pink-300">{meta.receiver_name}</span>
-                        <span className="opacity-80"> استلمت هدية </span>
+                        <span className="font-bold text-emerald-700 dark:text-emerald-300">{meta.sender_name}</span>
+                        <span className="opacity-90"> أرسل إلى </span>
+                        <span className="font-bold text-pink-700 dark:text-pink-300">{meta.receiver_name}</span>
+                        <span className="opacity-90"> هدية </span>
                         <span className="font-bold">{meta.gift_name}</span>
-                        <span className="opacity-80"> من </span>
-                        <span className="font-bold text-emerald-600 dark:text-emerald-300">{meta.sender_name}</span>
+                        <span className="ms-1">{meta.emoji ?? "🎁"}</span>
                       </p>
                     </div>
                   </div>
