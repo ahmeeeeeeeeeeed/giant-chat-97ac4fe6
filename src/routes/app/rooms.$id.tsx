@@ -1072,7 +1072,23 @@ function InfoStat({ icon, value, label }: { icon: React.ReactNode; value: string
   );
 }
 
-type SettingsTab = "members" | "invite" | "bans" | "logs" | "manage";
+type SettingsTab = "members" | "invite" | "bans" | "logs" | "manage" | "background";
+
+function RoomBackground({ url, type }: { url: string | null; type: string | null }) {
+  if (!url) return null;
+  const isVideo = type === "video";
+  return (
+    <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+      {isVideo ? (
+        <video src={url} autoPlay loop muted playsInline
+          className="h-full w-full object-cover" />
+      ) : (
+        <img src={url} alt="" className="h-full w-full object-cover" />
+      )}
+      <div className="absolute inset-0 bg-background/70 backdrop-blur-sm dark:bg-background/80" />
+    </div>
+  );
+}
 
 function SettingsSheet({ roomId, room, canModerate, myRank, isOwner, ownerId, onClose, ensureProfiles, userMap, tab, setTab, onDeleted }: {
   roomId: string; room: any; canModerate: boolean; myRank: Rank | null; isOwner: boolean; ownerId: string;
