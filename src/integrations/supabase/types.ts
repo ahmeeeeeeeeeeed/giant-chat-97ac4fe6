@@ -153,6 +153,8 @@ export type Database = {
           is_active: boolean
           minimum_required_code: number
           minimum_required_version: string
+          previous_web_bundle_url: string | null
+          previous_web_bundle_version: string | null
           update_message: string
           update_type: string
           updated_at: string
@@ -170,6 +172,8 @@ export type Database = {
           is_active?: boolean
           minimum_required_code?: number
           minimum_required_version?: string
+          previous_web_bundle_url?: string | null
+          previous_web_bundle_version?: string | null
           update_message?: string
           update_type?: string
           updated_at?: string
@@ -187,6 +191,8 @@ export type Database = {
           is_active?: boolean
           minimum_required_code?: number
           minimum_required_version?: string
+          previous_web_bundle_url?: string | null
+          previous_web_bundle_version?: string | null
           update_message?: string
           update_type?: string
           updated_at?: string
@@ -1875,6 +1881,62 @@ export type Database = {
       }
       music_skip: { Args: { _room: string }; Returns: undefined }
       music_stop: { Args: { _room: string }; Returns: undefined }
+      ota_publish_bundle: {
+        Args: { _message?: string; _url: string; _version: string }
+        Returns: {
+          created_at: string
+          created_by: string | null
+          file_size: number | null
+          file_url: string
+          id: string
+          is_active: boolean
+          minimum_required_code: number
+          minimum_required_version: string
+          previous_web_bundle_url: string | null
+          previous_web_bundle_version: string | null
+          update_message: string
+          update_type: string
+          updated_at: string
+          version: string
+          version_code: number
+          web_bundle_url: string | null
+          web_bundle_version: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "app_updates"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      ota_rollback: {
+        Args: never
+        Returns: {
+          created_at: string
+          created_by: string | null
+          file_size: number | null
+          file_url: string
+          id: string
+          is_active: boolean
+          minimum_required_code: number
+          minimum_required_version: string
+          previous_web_bundle_url: string | null
+          previous_web_bundle_version: string | null
+          update_message: string
+          update_type: string
+          updated_at: string
+          version: string
+          version_code: number
+          web_bundle_url: string | null
+          web_bundle_version: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "app_updates"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       premium_charge_points: { Args: { _cost?: number }; Returns: undefined }
       publish_story: {
         Args: {
