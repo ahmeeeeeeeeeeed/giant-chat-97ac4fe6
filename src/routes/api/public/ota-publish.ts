@@ -49,7 +49,7 @@ export const Route = createFileRoute('/api/public/ota-publish')({
         }
 
         // 2) تحقق من HMAC
-        const rawBody = isBinaryBundle ? '' : new TextDecoder().decode(rawBuffer)
+        const rawBody = (isBinaryBundle || isApkUpload) ? '' : new TextDecoder().decode(rawBuffer)
         const bundleVersion = request.headers.get('x-ota-version') ?? ''
         const apkVersion = request.headers.get('x-ota-apk-version') ?? ''
         const declaredHash = request.headers.get('x-ota-sha256') ?? ''
@@ -121,9 +121,20 @@ export const Route = createFileRoute('/api/public/ota-publish')({
             .maybeSingle()
 
           if (existing?.id) {
+            await supabaseAdmin.from('app_updates').update({ is_active: false }).neq('id', existing.id)
             const { error } = await supabaseAdmin
               .from('app_updates')
-              .update({ file_url: signed.signedUrl, file_size: apk.length, is_active: true, updated_at: new Date().toISOString() })
+              .update({
+                version_code: versionCode,
+                minimum_required_version: '1.0.0',
+                minimum_required_code: 10000,
+                update_message: message,
+                update_type: 'optional',
+                file_url: signed.signedUrl,
+                file_size: apk.length,
+                is_active: true,
+                updated_at: new Date().toISOString(),
+              })
               .eq('id', existing.id)
             if (error) return Response.json({ ok: false, error: error.message }, { status: 500 })
           } else {
