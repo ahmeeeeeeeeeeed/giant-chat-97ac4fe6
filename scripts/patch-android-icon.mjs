@@ -53,7 +53,7 @@ if (existsSync(valuesDir)) {
   const colorsPath = join(valuesDir, "ic_launcher_background.xml");
   writeFileSync(
     colorsPath,
-    `<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <color name="ic_launcher_background">#0a1a14</color>\n</resources>\n`,
+    `<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <color name="ic_launcher_background">#0a7a3f</color>\n</resources>\n`,
   );
 }
 
