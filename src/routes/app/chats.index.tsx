@@ -3,16 +3,18 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
-import { MessageSquare, Loader2, Search, X } from "lucide-react";
+import { MessageSquare, Loader2, Search, X, Trash2 } from "lucide-react";
 import { cacheGet, cacheSet, cacheKeys } from "@/lib/offline-cache";
 import { getOnline } from "@/lib/use-online";
 import { useCachedMediaSource } from "@/lib/use-cached-media";
 import { StoryRing } from "@/components/StoryRing";
+import { toast } from "sonner";
 
 
 export const Route = createFileRoute("/app/chats/")({
   component: ChatsPage,
 });
+
 
 type Convo = { otherId: string; username: string; avatar_url: string | null; last: string; created_at: string; unread: number };
 type SearchProfile = { id: string; username: string; avatar_url: string | null };
