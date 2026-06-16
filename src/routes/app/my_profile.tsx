@@ -189,6 +189,41 @@ function ProfilePage() {
     }
   };
 
+  const onPickCover = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !user) return;
+    if (file.size > 15 * 1024 * 1024) { toast.error("الحد الأقصى 15 ميجابايت"); return; }
+    setCoverUploading(true);
+    try {
+      const ext = file.name.split(".").pop()?.toLowerCase() || "bin";
+      const path = `${user.id}/cover-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("profile-covers")
+        .upload(path, file, { upsert: true, contentType: file.type });
+      if (upErr) throw upErr;
+      const { data: signed } = await supabase.storage.from("profile-covers")
+        .createSignedUrl(path, 60 * 60 * 24 * 365 * 10);
+      const url = signed?.signedUrl;
+      if (!url) throw new Error("no_url");
+      const t2 = file.type.startsWith("video") ? "video" : (file.type === "image/gif" ? "gif" : "image");
+      const { error } = await supabase.rpc("set_profile_cover" as never, { _url: url, _type: t2 } as never);
+      if (error) throw error;
+      setCoverUrl(url); setCoverType(t2);
+      toast.success("تم تحديث الغلاف");
+    } catch (err: any) {
+      toast.error("فشل: " + (err?.message ?? ""));
+    } finally {
+      setCoverUploading(false);
+    }
+  };
+
+  const removeCover = async () => {
+    const { error } = await supabase.rpc("set_profile_cover" as never, { _url: null, _type: null } as never);
+    if (error) { toast.error("فشل: " + error.message); return; }
+    setCoverUrl(null); setCoverType(null);
+    toast.success("تمت إزالة الغلاف");
+  };
+
   const toggleNotif = async () => {
     const next = !notifEnabled;
     if (next && "Notification" in window) {
