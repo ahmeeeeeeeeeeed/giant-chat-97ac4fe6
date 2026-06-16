@@ -14,6 +14,7 @@ import { AuthProvider } from "@/lib/auth";
 import { Toaster } from "@/components/ui/sonner";
 import { ExitConfirmDialog } from "@/components/ExitConfirmDialog";
 import { PageTransition } from "@/components/PageTransition";
+import { UpdateGate } from "@/components/UpdateGate";
 import i18n, { applyLanguageDir } from "@/lib/i18n";
 import { setAutoTranslateLanguage } from "@/lib/auto-translate";
 import { registerAppServiceWorker } from "@/lib/register-sw";
@@ -146,6 +147,7 @@ function RootComponent() {
           <PageTransition>
             <Outlet />
           </PageTransition>
+          <UpdateGate />
           <Toaster position="top-center" richColors />
           <ExitConfirmDialog />
         </AuthProvider>
