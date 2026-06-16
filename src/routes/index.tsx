@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { LogIn, MessageCircle, Users, Music, Sparkles } from "lucide-react";
 import PermissionsGate, { hasCompletedPermissionsGate } from "@/components/PermissionsGate";
 
+declare const __CAPACITOR_BUILD__: boolean | undefined;
+
 // Local bundled media — shipped inside the APK assets folder and the web build.
 const WELCOME_VIDEO = "/media/welcome-video.mp4";
 const WELCOME_POSTER = "/media/welcome-poster.jpg";
