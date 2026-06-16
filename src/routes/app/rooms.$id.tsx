@@ -7,12 +7,14 @@ import {
   Send, Loader2, ArrowLeft, Users, Hash, Lock, Settings, Shield, Ban, UserMinus,
   ArrowUp, ArrowDown, Crown, FileText, X, KeyRound, MoreVertical, Megaphone,
   UserPlus, AtSign, Edit3, Trash2, Power, Globe, Search, Info, Save, AlertTriangle,
-  Image as ImageIcon, Mic, Square, Play, Pause, Share2, Copy, Bot,
+  Image as ImageIcon, Mic, Square, Play, Pause, Share2, Copy, Bot, Gift,
 } from "lucide-react";
 import { MusicPlayer } from "@/components/MusicPlayer";
 import { BroadcastCard } from "@/components/BroadcastCard";
 import { SharePostModal, SharedPostCard } from "@/components/SharePostModal";
 import { RoomEntryEffect, type EntryBurst, type EntryEffectType, pickRandomEffect } from "@/components/RoomEntryEffect";
+import { GiftPickerModal } from "@/components/GiftPicker";
+import { GiftEffectOverlay, type GiftBurst } from "@/components/GiftEffectOverlay";
 import { getEquipped } from "@/lib/equipped";
 import { markRoomSeen } from "@/lib/notify";
 import { ImageLightbox } from "@/components/ImageLightbox";
