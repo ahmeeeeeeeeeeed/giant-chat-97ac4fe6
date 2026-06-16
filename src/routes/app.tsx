@@ -76,6 +76,23 @@ function AppLayout() {
     navigate({ to: target as any });
   }, [navigate, parentRouteFor]);
 
+  // Tab-visit stack: every time the user enters a new tab-root, push it.
+  // Phone back button pops one entry, so users cycle through their visited
+  // tabs before the exit-confirm dialog is offered.
+  const tabRootsList = ["/app/chats", "/app", "/app/community", "/app/friends", "/app/games", "/app/settings"] as const;
+  const tabHistoryRef = useRef<string[]>([]);
+  useEffect(() => {
+    const path = location.pathname.replace(/\/$/, "") || "/";
+    if (!(tabRootsList as readonly string[]).includes(path)) return;
+    const stack = tabHistoryRef.current;
+    if (stack[stack.length - 1] === path) return;
+    // Avoid runaway growth: drop earlier occurrence so each tab appears once
+    // in the order it was last visited.
+    const filtered = stack.filter((p) => p !== path);
+    filtered.push(path);
+    tabHistoryRef.current = filtered;
+  }, [location.pathname]);
+
   useEffect(() => {
     let removeListener: (() => void) | undefined;
     const setup = async () => {
@@ -83,13 +100,19 @@ function AppLayout() {
         const CapApp = await import("@capacitor/app");
         const listener = await CapApp.App.addListener("backButton", () => {
           const currentPath = window.location.pathname.replace(/\/$/, "") || "/";
-          // Default landing tab — show exit confirm instead of going back further
-          if (currentPath === "/app/chats") {
-            window.dispatchEvent(new CustomEvent("giant:exit-confirm"));
-            return;
-          }
-          const tabRoots = new Set(["/app/chats", "/app", "/app/community", "/app/friends", "/app/games", "/app/settings"]);
+          const tabRoots = new Set(tabRootsList as readonly string[]);
           if (tabRoots.has(currentPath)) {
+            // We're at a tab root — try to pop a previously visited tab first.
+            const stack = tabHistoryRef.current;
+            // Remove current from top, then look for a previous distinct tab.
+            const trimmed = stack.filter((p) => p !== currentPath);
+            const previous = trimmed[trimmed.length - 1];
+            if (previous) {
+              tabHistoryRef.current = trimmed;
+              navigate({ to: previous as any });
+              return;
+            }
+            // No more tabs to go back to — confirm exit.
             window.dispatchEvent(new CustomEvent("giant:exit-confirm"));
             return;
           }
@@ -103,6 +126,7 @@ function AppLayout() {
     setup();
     return () => { if (removeListener) removeListener(); };
   }, [navigate, parentRouteFor]);
+
 
 
   if (loading || !session) {
