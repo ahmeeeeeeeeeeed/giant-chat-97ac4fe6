@@ -120,14 +120,20 @@ export function GiftEffectOverlay({ burst }: { burst: GiftBurst | null }) {
 
 function BurstLabel({ burst, big }: { burst: GiftBurst; big?: boolean }) {
   return (
-    <div className={`relative ${big ? "absolute left-1/2 bottom-[14%] -translate-x-1/2" : ""} text-center px-6`}>
-      <div className={`inline-block rounded-2xl bg-black/70 backdrop-blur-md px-5 py-2.5 text-white shadow-2xl ring-1 ring-white/10 ${big ? "text-base" : "text-sm"}`}>
-        {burst.isGlobal && <span className="me-1 text-amber-300">🌍</span>}
-        <span className="font-bold">{burst.receiverName ?? "عضو"}</span>
-        <span className="opacity-80"> استلم هدية </span>
-        <span className="font-bold text-amber-300">{burst.giftName}</span>
-        <span className="opacity-80"> من </span>
-        <span className="font-bold">{burst.senderName ?? "مستخدم"}</span>
+    <div className={`${big ? "absolute left-1/2 bottom-[18%] -translate-x-1/2" : "relative"} text-center px-6 z-10`}>
+      <div className="inline-flex flex-col items-center gap-1 rounded-2xl bg-black/75 backdrop-blur-md px-6 py-3 text-white shadow-2xl ring-1 ring-white/15">
+        {burst.isGlobal && (
+          <span className="text-[10px] font-bold text-amber-300 flex items-center gap-1">
+            🌍 هدية عالمية
+          </span>
+        )}
+        <div className="text-sm sm:text-base">
+          <span className="font-bold text-amber-300">{burst.receiverName ?? "عضو"}</span>
+          <span className="opacity-90"> استلمت هدية </span>
+          <span className="font-bold text-pink-300">{burst.giftName}</span>
+          <span className="opacity-90"> من </span>
+          <span className="font-bold text-emerald-300">{burst.senderName ?? "مستخدم"}</span>
+        </div>
       </div>
     </div>
   );
