@@ -1,4 +1,4 @@
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export type StoryUser = {
@@ -58,12 +58,59 @@ export type StoryRow = {
   media_type: "image" | "video" | null;
   background: string | null;
   created_at: string;
+  updated_at?: string;
   expires_at: string;
+  is_hidden?: boolean;
 };
 
-export async function fetchUserStories(userId: string): Promise<StoryRow[]> {
+// ---------- Local cache (per-user stories) ----------
+const LS_PREFIX = "stories_cache:v1:";
+const LS_TTL_MS = 60 * 60 * 1000; // 1h soft TTL; expiry of stories themselves is checked too
+
+type CacheEntry = { at: number; updatedKey: string; data: StoryRow[] };
+
+function readLS(userId: string): CacheEntry | null {
+  try {
+    const raw = localStorage.getItem(LS_PREFIX + userId);
+    if (!raw) return null;
+    const v = JSON.parse(raw) as CacheEntry;
+    if (!v?.data) return null;
+    return v;
+  } catch { return null; }
+}
+function writeLS(userId: string, data: StoryRow[]) {
+  try {
+    const updatedKey = data.map((s) => `${s.id}:${s.updated_at || s.created_at}`).join("|");
+    const entry: CacheEntry = { at: Date.now(), updatedKey, data };
+    localStorage.setItem(LS_PREFIX + userId, JSON.stringify(entry));
+  } catch { /* quota */ }
+}
+export function invalidateStoryCache(userId?: string) {
+  try {
+    if (userId) localStorage.removeItem(LS_PREFIX + userId);
+    else {
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith(LS_PREFIX)) localStorage.removeItem(k);
+      }
+    }
+  } catch { /* ignore */ }
+}
+
+export function getCachedUserStories(userId: string): StoryRow[] | null {
+  const v = readLS(userId);
+  if (!v) return null;
+  // Filter out anything that's already expired
+  const now = Date.now();
+  const valid = v.data.filter((s) => new Date(s.expires_at).getTime() > now);
+  return valid.length ? valid : null;
+}
+
+export async function fetchUserStories(userId: string, opts?: { force?: boolean }): Promise<StoryRow[]> {
   const { data } = await (supabase as any).rpc("get_user_stories", { _user: userId });
-  return (data as StoryRow[]) || [];
+  const fresh = ((data as StoryRow[]) || []);
+  writeLS(userId, fresh);
+  return fresh;
 }
 
 export async function viewStory(storyId: string) {
@@ -87,9 +134,29 @@ export async function publishStory(args: {
   return data as string;
 }
 
+export async function editStory(args: {
+  id: string;
+  content?: string | null;
+  media_url?: string | null;
+  media_type?: "image" | "video" | null;
+  background?: string | null;
+}) {
+  const { error } = await (supabase as any).rpc("edit_story", {
+    _story: args.id,
+    _content: args.content ?? null,
+    _media_url: args.media_url ?? null,
+    _media_type: args.media_type ?? null,
+    _background: args.background ?? null,
+  });
+  if (error) throw error;
+  invalidateStoryCache();
+  void fetchActiveStories(true);
+}
+
 export async function deleteStory(storyId: string) {
   const { error } = await (supabase as any).from("stories").delete().eq("id", storyId);
   if (error) throw error;
+  invalidateStoryCache();
   void fetchActiveStories(true);
 }
 
