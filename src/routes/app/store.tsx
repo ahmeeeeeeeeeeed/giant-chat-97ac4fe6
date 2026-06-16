@@ -282,6 +282,16 @@ function Preview({ item }: { item: ShopItem }) {
     return <div className="text-2xl font-extrabold" style={{ color }}>اسمك</div>;
   if (item.kind === "chat_color")
     return <div className="rounded-2xl bg-primary/15 px-3 py-2 text-sm font-bold" style={{ color }}>مرحباً 👋</div>;
+  if (item.kind === "avatar_frame") {
+    const grad = item.payload?.gradient ?? "from-primary to-fuchsia-500";
+    const glow = item.payload?.glow ?? "shadow-primary/40";
+    const animated = !!item.payload?.animated;
+    return (
+      <div className={`relative inline-flex items-center justify-center rounded-full p-[4px] bg-gradient-to-tr ${grad} shadow-lg ${glow} ${animated ? "animate-[spin_8s_linear_infinite]" : ""}`}>
+        <div className={`grid h-16 w-16 place-items-center rounded-full bg-background text-2xl ${animated ? "[animation:spin_8s_linear_infinite_reverse]" : ""}`}>👤</div>
+      </div>
+    );
+  }
   if (item.kind === "effect") {
     if (item.code.startsWith("entry_")) {
       const map: Record<string, string> = {
@@ -294,6 +304,7 @@ function Preview({ item }: { item: ShopItem }) {
   }
   return null;
 }
+
 
 export function BadgeChip({ code, color, name }: { code: string; color?: string; name: string }) {
   const Icon = code.includes("diamond") ? Gem : code.includes("verified") ? CheckCircle2 : code.includes("fire") ? Flame : code.includes("star") ? Star : Crown;
