@@ -50,6 +50,7 @@ function RoomPage() {
   const [isBanned, setIsBanned] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [showAnnounce, setShowAnnounce] = useState(false);
+  const [showBots, setShowBots] = useState(false);
   const [announceText, setAnnounceText] = useState("");
   const [showInfo, setShowInfo] = useState(false);
   const [search, setSearch] = useState("");
