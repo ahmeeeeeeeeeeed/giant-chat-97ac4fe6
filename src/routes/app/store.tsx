@@ -134,8 +134,10 @@ function StorePage() {
     if (tab === "entry_effect") return items.filter((i) => i.kind === "effect" && i.code.startsWith("entry_"));
     if (tab === "chat_effect") return items.filter((i) => i.kind === "effect" && !i.code.startsWith("entry_"));
     if (tab === "gifts") return [];
+    if (tab === "avatar_frame") return items.filter((i) => i.kind === "avatar_frame");
     return items.filter((i) => i.kind === tab);
   }, [items, tab]);
+
 
   return (
     <main className="flex flex-1 flex-col pb-24">
