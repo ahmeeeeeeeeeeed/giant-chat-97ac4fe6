@@ -731,6 +731,8 @@ export type Database = {
           ban_reason: string | null
           bio: string | null
           country: string | null
+          cover_type: string | null
+          cover_url: string | null
           created_at: string
           dm_locked: boolean
           equipped_badge: string | null
@@ -757,6 +759,8 @@ export type Database = {
           ban_reason?: string | null
           bio?: string | null
           country?: string | null
+          cover_type?: string | null
+          cover_url?: string | null
           created_at?: string
           dm_locked?: boolean
           equipped_badge?: string | null
@@ -783,6 +787,8 @@ export type Database = {
           ban_reason?: string | null
           bio?: string | null
           country?: string | null
+          cover_type?: string | null
+          cover_url?: string | null
           created_at?: string
           dm_locked?: boolean
           equipped_badge?: string | null
@@ -1055,6 +1061,8 @@ export type Database = {
       }
       rooms: {
         Row: {
+          background_type: string | null
+          background_url: string | null
           created_at: string
           description: string | null
           id: string
@@ -1066,6 +1074,8 @@ export type Database = {
           type: string
         }
         Insert: {
+          background_type?: string | null
+          background_url?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -1077,6 +1087,8 @@ export type Database = {
           type?: string
         }
         Update: {
+          background_type?: string | null
+          background_url?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -1484,6 +1496,18 @@ export type Database = {
           _room: string
           _user: string
         }
+        Returns: undefined
+      }
+      set_profile_cover: {
+        Args: { _type: string; _url: string }
+        Returns: undefined
+      }
+      set_room_background: {
+        Args: { _room: string; _type: string; _url: string }
+        Returns: undefined
+      }
+      set_room_password: {
+        Args: { _password: string; _room: string }
         Returns: undefined
       }
       share_post_to_all_rooms: {
