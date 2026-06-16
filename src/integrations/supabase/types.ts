@@ -596,6 +596,102 @@ export type Database = {
         }
         Relationships: []
       }
+      gift_transactions: {
+        Row: {
+          cost_points: number
+          created_at: string
+          gift_id: string
+          id: string
+          message: string | null
+          receiver_id: string
+          room_id: string | null
+          scope: string
+          sender_id: string
+        }
+        Insert: {
+          cost_points?: number
+          created_at?: string
+          gift_id: string
+          id?: string
+          message?: string | null
+          receiver_id: string
+          room_id?: string | null
+          scope?: string
+          sender_id: string
+        }
+        Update: {
+          cost_points?: number
+          created_at?: string
+          gift_id?: string
+          id?: string
+          message?: string | null
+          receiver_id?: string
+          room_id?: string | null
+          scope?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gift_transactions_gift_id_fkey"
+            columns: ["gift_id"]
+            isOneToOne: false
+            referencedRelation: "gifts_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gift_transactions_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gifts_catalog: {
+        Row: {
+          animation_url: string | null
+          category: string | null
+          cost_points: number
+          created_at: string
+          effect_type: string
+          emoji: string | null
+          icon_url: string | null
+          id: string
+          is_active: boolean
+          name: string
+          scope: string
+          sort_order: number
+        }
+        Insert: {
+          animation_url?: string | null
+          category?: string | null
+          cost_points?: number
+          created_at?: string
+          effect_type?: string
+          emoji?: string | null
+          icon_url?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          scope?: string
+          sort_order?: number
+        }
+        Update: {
+          animation_url?: string | null
+          category?: string | null
+          cost_points?: number
+          created_at?: string
+          effect_type?: string
+          emoji?: string | null
+          icon_url?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          scope?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
       level_thresholds: {
         Row: {
           level: number
@@ -1489,6 +1585,15 @@ export type Database = {
       room_rank_of: {
         Args: { _room: string; _user: string }
         Returns: Database["public"]["Enums"]["room_rank"]
+      }
+      send_gift: {
+        Args: {
+          _gift: string
+          _message?: string
+          _receiver: string
+          _room?: string
+        }
+        Returns: string
       }
       set_member_rank: {
         Args: {

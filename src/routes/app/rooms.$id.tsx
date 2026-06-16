@@ -7,12 +7,14 @@ import {
   Send, Loader2, ArrowLeft, Users, Hash, Lock, Settings, Shield, Ban, UserMinus,
   ArrowUp, ArrowDown, Crown, FileText, X, KeyRound, MoreVertical, Megaphone,
   UserPlus, AtSign, Edit3, Trash2, Power, Globe, Search, Info, Save, AlertTriangle,
-  Image as ImageIcon, Mic, Square, Play, Pause, Share2, Copy, Bot,
+  Image as ImageIcon, Mic, Square, Play, Pause, Share2, Copy, Bot, Gift,
 } from "lucide-react";
 import { MusicPlayer } from "@/components/MusicPlayer";
 import { BroadcastCard } from "@/components/BroadcastCard";
 import { SharePostModal, SharedPostCard } from "@/components/SharePostModal";
 import { RoomEntryEffect, type EntryBurst, type EntryEffectType, pickRandomEffect } from "@/components/RoomEntryEffect";
+import { GiftPickerModal } from "@/components/GiftPicker";
+import { GiftEffectOverlay, type GiftBurst } from "@/components/GiftEffectOverlay";
 import { getEquipped } from "@/lib/equipped";
 import { markRoomSeen } from "@/lib/notify";
 import { ImageLightbox } from "@/components/ImageLightbox";
@@ -51,6 +53,9 @@ function RoomPage() {
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [showAnnounce, setShowAnnounce] = useState(false);
   const [showBots, setShowBots] = useState(false);
+  const [showGifts, setShowGifts] = useState(false);
+  const [giftPreset, setGiftPreset] = useState<string | null>(null);
+  const [giftBurst, setGiftBurst] = useState<GiftBurst | null>(null);
   const [announceText, setAnnounceText] = useState("");
   const [showInfo, setShowInfo] = useState(false);
   const [search, setSearch] = useState("");
@@ -147,6 +152,7 @@ function RoomPage() {
     if (!(m?.message_type === "system" || !m?.user_id)) return false;
     const meta = m?.meta as any;
     if (meta?.kind === "music_broadcast" || meta?.kind === "user_share") return false;
+    if (meta?.kind === "gift" || meta?.kind === "gift_global") return false;
     if ((m?.content ?? "").startsWith("📢")) return false;
     return true;
   };
@@ -197,6 +203,19 @@ function RoomPage() {
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "room_messages", filter: `room_id=eq.${roomId}` },
         (p) => {
           const m: any = p.new;
+          // Trigger gift burst overlay for gift system messages
+          const gmeta = m?.meta as any;
+          if ((gmeta?.kind === "gift" || gmeta?.kind === "gift_global") && gmeta?.emoji) {
+            setGiftBurst({
+              id: String(m.id),
+              emoji: gmeta.emoji,
+              giftName: gmeta.gift_name ?? "هدية",
+              senderName: gmeta.sender_name,
+              receiverName: gmeta.receiver_name,
+              effectType: (gmeta.effect_type as any) ?? "overlay",
+              isGlobal: gmeta.kind === "gift_global" || gmeta.scope === "global",
+            });
+          }
           // Plain system messages float as a transient notice instead of
           // joining the chat history.
           if (isPlainSystem(m)) {
@@ -619,6 +638,7 @@ function RoomPage() {
     <div className="relative flex flex-col h-screen bg-gradient-to-b from-emerald-50/40 via-background to-background dark:from-emerald-950/20">
       <RoomBackground url={room.background_url} type={room.background_type} />
       <RoomEntryEffect burst={entryBurst} />
+      <GiftEffectOverlay burst={giftBurst} />
       {/* Header */}
       <header className="sticky top-0 z-10 border-b border-border bg-background/80 backdrop-blur-xl" style={{ paddingTop: "env(safe-area-inset-top)" }}>
         <div className="flex items-center justify-between px-3 py-2.5">
@@ -694,6 +714,7 @@ function RoomPage() {
           <div className="flex gap-1.5 overflow-x-auto px-3 pb-2 scrollbar-thin">
             <ChipBtn icon={<Share2 className="h-3 w-3" />} label="نشر" onClick={() => setShowShare(true)} highlight />
             <ChipBtn icon={<Bot className="h-3 w-3" />} label="البوتات" onClick={() => setShowBots(true)} highlight />
+            <ChipBtn icon={<Gift className="h-3 w-3" />} label="هدية" onClick={() => { setGiftPreset(null); setShowGifts(true); }} highlight />
             <ChipBtn icon={<UserPlus className="h-3 w-3" />} label="دعوة" onClick={() => openSettingsAt("invite")} />
             <ChipBtn icon={<Users className="h-3 w-3" />} label={`الأعضاء (${memberCount})`} onClick={() => openSettingsAt("members")} />
             {canModerate && <ChipBtn icon={<Megaphone className="h-3 w-3" />} label="إعلان" onClick={() => setShowAnnounce(true)} highlight />}
@@ -735,6 +756,25 @@ function RoomPage() {
                 );
               }
               if (meta?.kind === "user_share") return <SharedPostCard key={msg.id} meta={meta} />;
+              if (meta?.kind === "gift" || meta?.kind === "gift_global") {
+                const isG = meta.kind === "gift_global" || meta.scope === "global";
+                return (
+                  <div key={msg.id} className={`mx-auto max-w-[92%] rounded-2xl border p-3 shadow-sm ${isG ? "border-amber-400/40 bg-gradient-to-br from-amber-50 via-pink-50 to-fuchsia-50 dark:from-amber-950/30 dark:via-pink-950/30 dark:to-fuchsia-950/30" : "border-pink-400/30 bg-gradient-to-br from-pink-50 to-fuchsia-50 dark:from-pink-950/30 dark:to-fuchsia-950/30"}`}>
+                    <div className="flex items-center gap-2">
+                      <div className="text-4xl shrink-0">{meta.emoji ?? "🎁"}</div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-xs font-bold text-pink-600 dark:text-pink-300 flex items-center gap-1">
+                          {isG && <span className="text-amber-500">🌍</span>} هدية {isG ? "عالمية" : ""}
+                        </div>
+                        <p className="text-sm font-medium">
+                          <span className="font-bold">{meta.sender_name}</span> أهدى <span className="font-bold">{meta.receiver_name}</span> {meta.gift_name}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground" suppressHydrationWarning>{meta.cost} نقطة · {time}</p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
               const isAnnounce = (msg.content ?? "").startsWith("📢");
               if (isAnnounce) {
                 return (
@@ -895,6 +935,7 @@ function RoomPage() {
       {showShare && <SharePostModal roomId={roomId} onClose={() => setShowShare(false)} />}
 
       {showBots && <BotCommandsModal onClose={() => setShowBots(false)} />}
+      {showGifts && <GiftPickerModal roomId={roomId} onClose={() => setShowGifts(false)} presetReceiverId={giftPreset} />}
 
       {askPassword && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setAskPassword(false)}>
