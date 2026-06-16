@@ -153,7 +153,7 @@ function AppLayout() {
             <div className="flex min-w-0 items-center gap-2.5">
               {showBack ? (
                 <button
-                  onClick={() => { try { router.history.back(); } catch { navigate({ to: "/app" }); } }}
+                  onClick={goBack}
                   aria-label="رجوع"
                   className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/15 backdrop-blur transition active:scale-95 hover:bg-white/20"
                 >
