@@ -278,22 +278,24 @@ function ProfilePage() {
         {/* Hero card */}
         <div className="rounded-3xl border border-border bg-gradient-to-br from-primary/10 via-card to-secondary p-5">
           <div className="flex items-center gap-4">
-            <button
-              type="button"
-              onClick={() => fileRef.current?.click()}
-              disabled={uploading}
-              className="relative h-20 w-20 overflow-hidden rounded-full bg-primary text-2xl font-bold text-primary-foreground ring-2 ring-background"
-              aria-label={t("profile.change_photo")}
-            >
-              {avatarUrl ? (
-                <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
-              ) : (
-                <span className="flex h-full w-full items-center justify-center">{username.charAt(0).toUpperCase()}</span>
-              )}
-              <span className="absolute inset-x-0 bottom-0 flex items-center justify-center bg-black/60 py-1 text-white">
-                {uploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Camera className="h-3.5 w-3.5" />}
-              </span>
-            </button>
+            <StoryRing userId={user?.id} size="md">
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                disabled={uploading}
+                className="relative h-20 w-20 overflow-hidden rounded-full bg-primary text-2xl font-bold text-primary-foreground ring-2 ring-background"
+                aria-label={t("profile.change_photo")}
+              >
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <span className="flex h-full w-full items-center justify-center">{username.charAt(0).toUpperCase()}</span>
+                )}
+                <span className="absolute inset-x-0 bottom-0 flex items-center justify-center bg-black/60 py-1 text-white">
+                  {uploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Camera className="h-3.5 w-3.5" />}
+                </span>
+              </button>
+            </StoryRing>
             <input ref={fileRef} type="file" accept="image/*" onChange={onPickAvatar} className="hidden" />
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
