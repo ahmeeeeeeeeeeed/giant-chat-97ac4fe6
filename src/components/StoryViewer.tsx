@@ -27,6 +27,7 @@ export function StoryViewer({
   const [paused, setPaused] = useState(false);
   const [viewers, setViewers] = useState<{ viewer_id: string; viewed_at: string; username: string | null; avatar_url: string | null }[]>([]);
   const [showViewers, setShowViewers] = useState(false);
+  const [editing, setEditing] = useState<StoryRow | null>(null);
   const rafRef = useRef<number | null>(null);
   const startRef = useRef<number>(0);
   const elapsedRef = useRef<number>(0);
@@ -37,7 +38,9 @@ export function StoryViewer({
   useEffect(() => {
     if (!currentUser) return;
     setStoryIdx(0);
-    setStories([]);
+    // Hydrate from local cache instantly, then refresh from server
+    const cached = getCachedUserStories(currentUser.user_id);
+    setStories(cached ?? []);
     fetchUserStories(currentUser.user_id).then((s) => setStories(s));
   }, [currentUser?.user_id]);
 
