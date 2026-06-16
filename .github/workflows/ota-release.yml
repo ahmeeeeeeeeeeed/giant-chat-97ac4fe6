@@ -4,8 +4,8 @@ name: OTA Release
 # الخطوات:
 #   1. بناء نسخة الويب (CAPACITOR_BUILD=1)
 #   2. ضغطها bundle.zip
-#   3. رفعها إلى GitHub Release باسم ota-<run_number>
-#   4. استدعاء /api/public/ota-publish لتفعيلها كـ OTA
+#   3. رفع bundle.zip مباشرة إلى /api/public/ota-publish لتخزينه كرابط تنزيل صالح
+#   4. تفعيله كـ OTA للمستخدمين
 
 on:
   push:
@@ -81,76 +81,27 @@ jobs:
         id: ver
         run: echo "version=1.0.${{ github.run_number }}" >> "$GITHUB_OUTPUT"
 
-      - name: Create GitHub Release (empty)
-        id: release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          TAG="ota-v${{ steps.ver.outputs.version }}"
-          gh release create "$TAG" \
-            --title "OTA ${{ steps.ver.outputs.version }}" \
-            --notes "Automated OTA bundle from commit ${{ github.sha }}" \
-            --target "${{ github.sha }}"
-          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
-
-      - name: Upload bundle.zip to Release and verify asset
-        id: url
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPO: ${{ github.repository }}
-          TAG: ${{ steps.release.outputs.tag }}
-        run: |
-          set -euo pipefail
-
-          # 1) رفع الملف فعليًا داخل الـ Release
-          gh release upload "$TAG" bundle.zip --clobber
-
-          # 2) التحقق من وجود الـ asset عبر GitHub API (وليس عبر URL)
-          ASSET_JSON=$(gh api "repos/$REPO/releases/tags/$TAG" \
-            --jq '.assets[] | select(.name=="bundle.zip")')
-
-          if [ -z "$ASSET_JSON" ]; then
-            echo "::error::bundle.zip asset not found in release $TAG via GitHub API"
-            exit 1
-          fi
-
-          ASSET_SIZE=$(echo "$ASSET_JSON" | jq -r '.size')
-          ASSET_STATE=$(echo "$ASSET_JSON" | jq -r '.state')
-          LOCAL_SIZE=$(stat -c%s bundle.zip)
-
-          echo "Asset state: $ASSET_STATE, remote size: $ASSET_SIZE, local size: $LOCAL_SIZE"
-
-          if [ "$ASSET_STATE" != "uploaded" ]; then
-            echo "::error::Asset state is '$ASSET_STATE', expected 'uploaded'"
-            exit 1
-          fi
-
-          if [ "$ASSET_SIZE" != "$LOCAL_SIZE" ]; then
-            echo "::error::Size mismatch: remote=$ASSET_SIZE local=$LOCAL_SIZE"
-            exit 1
-          fi
-
-          URL="https://github.com/$REPO/releases/download/$TAG/bundle.zip"
-          echo "url=$URL" >> "$GITHUB_OUTPUT"
-          echo "Asset verified successfully: $URL"
-
-
+      - name: Compute bundle hash
+        id: bundle
+        run: echo "sha256=$(sha256sum bundle.zip | awk '{print $1}')" >> "$GITHUB_OUTPUT"
 
       - name: Publish OTA via signed endpoint
         env:
           OTA_PUBLISH_SECRET: ${{ secrets.OTA_PUBLISH_SECRET }}
           OTA_ENDPOINT: https://giant-chat.lovable.app/api/public/ota-publish
           VERSION: ${{ steps.ver.outputs.version }}
-          URL: ${{ steps.url.outputs.url }}
-          MSG: ${{ github.event.head_commit.message }}
+          SHA256: ${{ steps.bundle.outputs.sha256 }}
+          MSG: ${{ github.event.head_commit.message || 'Manual OTA release' }}
         run: |
-          BODY=$(jq -cn --arg v "$VERSION" --arg u "$URL" --arg m "$MSG" \
-            '{version:$v, url:$u, message:$m}')
           TS=$(date +%s)
-          SIG=$(printf '%s.%s' "$TS" "$BODY" | openssl dgst -sha256 -hmac "$OTA_PUBLISH_SECRET" | awk '{print $2}')
-          echo "Publishing OTA $VERSION -> $URL"
+          SIG=$(printf '%s.%s.%s' "$TS" "$VERSION" "$SHA256" | openssl dgst -sha256 -hmac "$OTA_PUBLISH_SECRET" | awk '{print $2}')
+          MSG_B64=$(printf '%s' "$MSG" | base64 -w 0)
+          echo "Publishing OTA $VERSION ($SHA256)"
           curl -fsSL -X POST "$OTA_ENDPOINT" \
-            -H "content-type: application/json" \
+            -H "content-type: application/zip" \
             -H "x-ota-timestamp: $TS" \
             -H "x-ota-signature: $SIG" \
-            --data "$BODY"
+            -H "x-ota-version: $VERSION" \
+            -H "x-ota-sha256: $SHA256" \
+            -H "x-ota-message-b64: $MSG_B64" \
+            --data-binary @bundle.zip
