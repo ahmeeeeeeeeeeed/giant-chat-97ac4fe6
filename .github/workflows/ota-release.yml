@@ -60,6 +60,11 @@ jobs:
       - name: Install deps
         run: bun install --frozen-lockfile
 
+      - name: Match APK build version
+        env:
+          APP_VERSION_PATCH: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.run_number || github.run_number }}
+        run: node scripts/bump-version.mjs patch
+
       - name: Build web bundle
         env:
           CAPACITOR_BUILD: '1'
