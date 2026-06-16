@@ -177,7 +177,8 @@ export function shouldShowUpdate(latest: Pick<AppUpdateRow, "version" | "version
   if (latest.web_bundle_url) {
     const bundleVersion = latest.web_bundle_version || latest.version;
     const bundleCode = getVersionCode(bundleVersion);
-    if (bundleCode >= getEffectiveInstalledCode()) return true;
+    if (bundleCode > getEffectiveInstalledCode()) return true;
+    if (latest.version_code > getEffectiveInstalledCode() && bundleCode >= getNativeInstalledCode()) return true;
   }
   return latest.version_code > getEffectiveInstalledCode();
 }
