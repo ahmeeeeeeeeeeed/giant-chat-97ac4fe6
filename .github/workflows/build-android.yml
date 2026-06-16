@@ -1,10 +1,8 @@
-name: Build Android APK
+name: Build Android Debug APK (manual)
 
 # يبني ملف APK تلقائيًا عند كل push إلى الفرع الرئيسي
 # أو يدويًا من تبويب Actions في GitHub.
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 jobs:
