@@ -1333,6 +1333,38 @@ export type Database = {
         }
         Relationships: []
       }
+      story_reactions: {
+        Row: {
+          created_at: string
+          emoji: string
+          id: string
+          story_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          emoji: string
+          id?: string
+          story_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          emoji?: string
+          id?: string
+          story_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "story_reactions_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
+            referencedRelation: "stories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       story_views: {
         Row: {
           story_id: string
@@ -1625,6 +1657,10 @@ export type Database = {
       }
       claim_daily_reward: { Args: { _kind: string }; Returns: Json }
       cleanup_expired_stories: { Args: never; Returns: undefined }
+      comment_on_story: {
+        Args: { _story: string; _text: string }
+        Returns: string
+      }
       compute_level: { Args: { _points: number }; Returns: number }
       confirm_email_verification_code: {
         Args: { _code: string }
@@ -1642,6 +1678,7 @@ export type Database = {
           target: number
         }[]
       }
+      delete_conversation: { Args: { _other: string }; Returns: number }
       dm_delete_for_all: { Args: { _id: string }; Returns: undefined }
       dm_delete_for_me: { Args: { _id: string }; Returns: undefined }
       dm_mark_delivered: { Args: { _peer: string }; Returns: undefined }
@@ -1716,6 +1753,14 @@ export type Database = {
         Returns: {
           recovery_email: string
           recovery_email_verified_at: string
+        }[]
+      }
+      get_story_reactions: {
+        Args: { _story: string }
+        Returns: {
+          count: number
+          emoji: string
+          mine: boolean
         }[]
       }
       get_top_game_winners: {
@@ -1838,6 +1883,10 @@ export type Database = {
         Args: { _new_username: string }
         Returns: undefined
       }
+      react_to_story: {
+        Args: { _emoji: string; _story: string }
+        Returns: undefined
+      }
       realtime_topic_allowed: { Args: never; Returns: boolean }
       record_daily_action: {
         Args: { _amount?: number; _kind: string }
@@ -1916,6 +1965,7 @@ export type Database = {
         Args: { _room: string; _user: string }
         Returns: undefined
       }
+      unreact_to_story: { Args: { _story: string }; Returns: undefined }
       user_has_active_story: { Args: { _user: string }; Returns: boolean }
       view_story: { Args: { _story: string }; Returns: undefined }
     }
