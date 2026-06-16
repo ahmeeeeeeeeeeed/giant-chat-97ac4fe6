@@ -283,10 +283,25 @@ function RoomPage() {
       .subscribe();
     entryChRef.current = entryCh;
 
+    // Fallback channel: some system rows (gifts/music) are written via
+    // SECURITY DEFINER RPCs and occasionally don't reach the room_messages
+    // realtime subscriber. Listen to the source tables and refetch messages
+    // so they appear without needing to leave and re-enter the room.
+    const sysCh = supabase
+      .channel(`room-sys:${roomId}`)
+      .on("postgres_changes",
+        { event: "INSERT", schema: "public", table: "gift_transactions", filter: `room_id=eq.${roomId}` },
+        () => { loadMessages(); })
+      .on("postgres_changes",
+        { event: "*", schema: "public", table: "room_music", filter: `room_id=eq.${roomId}` },
+        () => { loadMessages(); })
+      .subscribe();
+
     return () => {
       markRoomSeen(roomId);
       supabase.removeChannel(ch);
       supabase.removeChannel(entryCh);
+      supabase.removeChannel(sysCh);
       entryChRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
