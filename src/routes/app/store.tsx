@@ -62,7 +62,7 @@ function StorePage() {
     (async () => {
       const [{ data: shop }, { data: prof }, { data: inv }, { data: cfg }, { data: giftRows }] = await Promise.all([
         supabase.from("shop_items").select("*").order("sort_order"),
-        supabase.from("profiles").select("points, gender, equipped_badge, equipped_name_color, equipped_chat_color, equipped_effect").eq("id", user.id).maybeSingle(),
+        supabase.from("profiles").select("points, gender, equipped_badge, equipped_name_color, equipped_chat_color, equipped_effect, equipped_frame").eq("id", user.id).maybeSingle(),
         supabase.from("user_inventory").select("item_id").eq("user_id", user.id),
         supabase.from("app_config").select("value").eq("key", "points_seller_username").maybeSingle(),
         supabase.from("gifts_catalog").select("id, name, emoji, cost_points, scope, category").eq("is_active", true).order("sort_order"),
@@ -76,7 +76,9 @@ function StorePage() {
         name_color: (prof as any)?.equipped_name_color ?? null,
         chat_color: (prof as any)?.equipped_chat_color ?? null,
         effect: (prof as any)?.equipped_effect ?? null,
+        avatar_frame: (prof as any)?.equipped_frame ?? null,
       });
+
       setOwned(new Set((inv ?? []).map((r: { item_id: string }) => r.item_id)));
       if (cfg?.value) {
         setAdminUsername(cfg.value);
