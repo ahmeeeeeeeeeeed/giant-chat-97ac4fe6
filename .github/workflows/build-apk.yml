@@ -1,0 +1,129 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build Release APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "21"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install npm dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Build SPA for Capacitor
+        env:
+          CAPACITOR_BUILD: "1"
+        run: npm run build
+
+      - name: Verify build output exists
+        run: |
+          if [ ! -f dist/client/index.html ]; then
+            echo "❌ dist/client/index.html missing — SPA prerender did not run"
+            ls -R dist || true
+            exit 1
+          fi
+          echo "✅ SPA build present:"
+          ls -lah dist/client | head
+
+      - name: Sync Capacitor assets into Android project
+        run: npx cap sync android
+
+      - name: Confirm bundled media is inside APK assets
+        run: |
+          ASSET_DIR="android/app/src/main/assets/public/media"
+          if [ -f "$ASSET_DIR/welcome-video.mp4" ]; then
+            echo "✅ welcome-video.mp4 bundled ($(du -h "$ASSET_DIR/welcome-video.mp4" | cut -f1))"
+          else
+            echo "❌ welcome-video.mp4 NOT bundled"
+            exit 1
+          fi
+
+      - name: Make gradlew executable
+        run: chmod +x android/gradlew
+
+      - name: Build Release APK (unsigned)
+        working-directory: android
+        run: ./gradlew assembleRelease --no-daemon --stacktrace
+
+      - name: Sign APK with debug keystore (auto-installable, no Play Store)
+        run: |
+          # The CI generates a stable debug key so users can install the APK on any device.
+          # For Play Store submission, replace with your real keystore via repository secrets.
+          KEYSTORE=$HOME/giant-debug.keystore
+          if [ ! -f "$KEYSTORE" ]; then
+            keytool -genkeypair -v \
+              -keystore "$KEYSTORE" \
+              -alias giant \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -storepass giantapp -keypass giantapp \
+              -dname "CN=Giant, OU=Giant, O=Giant, L=Cairo, ST=Egypt, C=EG"
+          fi
+
+          BUILD_TOOLS=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -n1)
+          APKSIGNER="$BUILD_TOOLS/apksigner"
+          ZIPALIGN="$BUILD_TOOLS/zipalign"
+          UNSIGNED=android/app/build/outputs/apk/release/app-release-unsigned.apk
+          ALIGNED=android/app/build/outputs/apk/release/app-release-aligned.apk
+          SIGNED=android/app/build/outputs/apk/release/app-release.apk
+
+          "$ZIPALIGN" -p 4 "$UNSIGNED" "$ALIGNED"
+          "$APKSIGNER" sign \
+            --ks "$KEYSTORE" \
+            --ks-pass pass:giantapp \
+            --key-pass pass:giantapp \
+            --out "$SIGNED" \
+            "$ALIGNED"
+          "$APKSIGNER" verify "$SIGNED"
+          echo "✅ Signed APK ready: $SIGNED ($(du -h "$SIGNED" | cut -f1))"
+
+      - name: Upload APK as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Giant-release-apk
+          path: android/app/build/outputs/apk/release/app-release.apk
+          retention-days: 90
+
+      - name: Create GitHub Release with APK (main branch only)
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: Giant APK build #${{ github.run_number }}
+          body: |
+            🎉 Automated APK build from commit ${{ github.sha }}.
+
+            **Install:** Download `app-release.apk` below, transfer to your Android phone, and open it.
+            You may need to allow "Install from unknown sources" in Settings.
+
+            Built from branch: `${{ github.ref_name }}`
+          files: android/app/build/outputs/apk/release/app-release.apk
+          fail_on_unmatched_files: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

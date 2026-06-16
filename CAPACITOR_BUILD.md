@@ -1,89 +1,96 @@
-# 📱 بناء تطبيق Giant كـ APK أصلي عبر Capacitor
+# 📱 Giant — APK Build (Automated)
 
-تم تجهيز المشروع لبناء APK يحتوي الفيديو والصور محفوظة محليًا داخل التطبيق.
-
----
-
-## ✅ ما تم تجهيزه تلقائيًا
-
-- ✓ تحميل الفيديو (`public/media/welcome-video.mp4` - 6.5 ميجا) محليًا
-- ✓ تحميل صورة الخلفية (`public/media/welcome-poster.jpg`) محليًا
-- ✓ تثبيت `@capacitor/core` و `@capacitor/cli` و `@capacitor/android`
-- ✓ إنشاء `capacitor.config.ts`
-- ✓ تعديل الكود ليقرأ الفيديو من المسار المحلي `/media/welcome-video.mp4`
+تطبيق Giant مُجهَّز ببناء APK تلقائي عبر **GitHub Actions**. لا تحتاج Android Studio ولا أي إعداد محلي.
 
 ---
 
-## 🛠️ ما تحتاج تنفيذه على جهازك (مرة واحدة)
+## 🚀 كيف تحصل على ملف APK جاهز للتثبيت
 
-### المتطلبات
-- **Node.js 20+** و **Java JDK 21** و **Android Studio** (يثبّت Android SDK تلقائيًا)
-- اضبط متغير البيئة `ANDROID_HOME` (Android Studio يفعل ذلك تلقائيًا)
+### الخطوة 1 — اربط المشروع بـ GitHub (مرة واحدة)
+من Lovable: زر **+** أعلى الشات → **GitHub** → **Connect project**.
+سيُنشئ مستودعًا تلقائيًا ويرفع كل الكود (بما فيه مجلد `android/` و workflow البناء).
 
-### الخطوات
-```bash
-# 1) نزّل المشروع من GitHub المربوط بـ Lovable
-git clone <your-repo-url>
-cd <your-repo>
+### الخطوة 2 — انتظر اكتمال البناء
+بعد أول push يبدأ GitHub Actions تلقائيًا:
+1. افتح مستودعك على GitHub.
+2. اذهب إلى تبويب **Actions**.
+3. ستجد Workflow باسم **Build Android APK** يعمل (يستغرق ~5-8 دقائق).
 
-# 2) ثبّت الحزم
-npm install     # أو bun install
+### الخطوة 3 — حمّل ملف APK
+بعد نجاح البناء:
 
-# 3) ابنِ نسخة الويب الثابتة
-npm run build
+**أ) من Releases** (الأسهل):
+- اذهب إلى **Releases** في صفحة المستودع.
+- ستجد إصدار جديد باسم `Giant APK build #N`.
+- اضغط على `app-release.apk` وحمّله مباشرة على هاتفك.
 
-# 4) أضف منصة Android (مرة واحدة فقط)
-npx cap add android
+**ب) من Artifacts**:
+- ادخل Actions → اختر آخر تشغيل ناجح → اسحب لأسفل → **Artifacts** → `Giant-release-apk`.
 
-# 5) انسخ ملفات الويب (بما فيها الفيديو) إلى مشروع Android
-npx cap sync android
+### الخطوة 4 — ثبّت على هاتفك
+- افتح الملف على هاتف Android.
+- أذِن "تثبيت من مصادر مجهولة" إذا طُلب.
+- سيظهر تطبيق **Giant** في القائمة بأيقونته الجديدة.
 
-# 6) افتح Android Studio
-npx cap open android
+---
+
+## 🎬 ماذا داخل APK؟
+
+- ✅ شِفرة التطبيق كاملة (SPA من TanStack Start مبنية بوضع `CAPACITOR_BUILD=1`).
+- ✅ **الفيديو 6.5 ميجا** مُضمَّن في `android/app/src/main/assets/public/media/welcome-video.mp4`.
+- ✅ صورة الخلفية وكل الأيقونات.
+- ✅ يفتح فورًا بدون انتظار تحميل الفيديو من الإنترنت.
+
+اتصال الإنترنت يُستخدم فقط لـ:
+- تسجيل الدخول والمحادثات (Supabase).
+- الصور والملفات التي يرفعها المستخدمون.
+
+---
+
+## ⚙️ تخصيص البناء
+
+### تعديل اسم/معرّف التطبيق
+في `capacitor.config.ts`:
+```ts
+appId: "app.lovable.giant",  // غيّر إلى معرّفك (مثل com.yourcompany.giant)
+appName: "Giant",
 ```
 
-داخل Android Studio:
-- اختر **Build → Generate Signed Bundle / APK → APK → Release**
-- اتبع المعالج لإنشاء مفتاح توقيع (keystore) واحفظه في مكان آمن
-- سيُنتج ملف `app-release.apk` في `android/app/build/outputs/apk/release/`
-
----
-
-## 🎯 أين يُحفظ الفيديو داخل APK؟
-
-بعد `npx cap sync android` ستجد الفيديو في:
+### استبدال أيقونة التطبيق
+ضع أيقوناتك في:
 ```
-android/app/src/main/assets/public/media/welcome-video.mp4
+android/app/src/main/res/mipmap-*/ic_launcher.png
 ```
-يُحمَّل من الذاكرة المحلية فورًا — لا إنترنت، لا انتظار. ✨
+أو استخدم: `npx @capacitor/assets generate` بعد وضع `assets/icon.png` (1024x1024).
+
+### للنشر على Google Play Store
+1. ولّد keystore حقيقيًا:
+   ```bash
+   keytool -genkey -v -keystore giant-release.jks -keyalg RSA -keysize 2048 -validity 10000 -alias giant
+   ```
+2. ارفعه كـ **GitHub Secret** باسم `RELEASE_KEYSTORE_BASE64` (`base64 giant-release.jks`).
+3. أضف Secrets أخرى: `RELEASE_STORE_PASSWORD`, `RELEASE_KEY_ALIAS`, `RELEASE_KEY_PASSWORD`.
+4. عدّل `.github/workflows/build-apk.yml` ليستخدم هذه السرّيات بدل debug keystore، وأنشئ **AAB** بدل APK:
+   ```yaml
+   - run: cd android && ./gradlew bundleRelease
+   ```
 
 ---
 
-## ⚠️ ملاحظات مهمة
+## 🔄 تحديث التطبيق
 
-### 1. SSR لا يعمل داخل APK
-التطبيق الحالي يستخدم **TanStack Start مع Server Functions** التي تعمل على Cloudflare Workers. داخل APK، يعمل الكود الذي يستدعي Supabase مباشرة من المتصفح (مثل تسجيل الدخول، الغرف، الدردشة) بشكل سليم لأنه يتصل بـ Supabase عبر HTTPS.
+كل `git push` إلى `main` يُنتج إصدار APK جديد تلقائيًا. لتحديث المستخدمين، أرسل لهم رابط الـ Release الجديد.
 
-أي ميزة تعتمد على `createServerFn` ستحتاج إلى استضافتها على الـ URL المنشور `https://giant-chat.lovable.app` ثم استدعاؤها من APK كـ API خارجي.
-
-### 2. التحديثات
-بعد أي تعديل تريد تضمينه في APK جديد:
-```bash
-npm run build && npx cap sync android
-```
-ثم أعد البناء من Android Studio.
-
-### 3. تحديث الإصدار
-في `android/app/build.gradle` ارفع `versionCode` و `versionName` قبل كل إصدار جديد على Play Store.
+> ملاحظة: تحديث Play Store اللاحق يستلزم رفع `versionCode` في `android/app/build.gradle` قبل البناء.
 
 ---
 
-## 📦 نشر على Google Play Store
+## ⚠️ ملاحظات تقنية
 
-1. أنشئ حساب مطوّر ($25 دفعة واحدة) في [Google Play Console](https://play.google.com/console)
-2. ابنِ **AAB** بدلاً من APK (Android App Bundle): `Build → Generate Signed Bundle → AAB`
-3. ارفع الملف في Play Console واملأ بيانات المتجر
+- يُبنى التطبيق في وضع **SPA** (لا SSR) داخل APK — جميع استعلامات Supabase تعمل مباشرة من العميل بنفس طريقة الويب.
+- إذا كان عندك `createServerFn` تعتمد على بيئة Cloudflare Workers، استدعها كـ API عبر `https://giant-chat.lovable.app/...` بدل تضمينها في APK.
+- للاختبار محليًا (اختياري): `npm install && CAPACITOR_BUILD=1 npm run build && npx cap sync android && cd android && ./gradlew assembleDebug`.
 
 ---
 
-أي مشكلة في البناء؟ راجع توثيق Capacitor الرسمي: https://capacitorjs.com/docs/android
+❓ مشكلة في البناء؟ افتح Actions → الـ run الفاشل → اقرأ السجل، أو شاركني نصّ الخطأ.
