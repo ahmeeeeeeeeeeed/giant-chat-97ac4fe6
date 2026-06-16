@@ -70,7 +70,7 @@ function RoomPage() {
     setTimeout(go, 350);
     setTimeout(go, 800);
   };
-  const [entryBurst, setEntryBurst] = useState<{ id: number; emoji: string; name?: string } | null>(null);
+  const [entryBurst, setEntryBurst] = useState<EntryBurst | null>(null);
   const entryChRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
