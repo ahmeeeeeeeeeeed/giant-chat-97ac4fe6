@@ -38,7 +38,7 @@ function LoginPage() {
     <main className="relative flex min-h-dvh flex-col overflow-hidden bg-background px-6 py-8 text-foreground">
       {/* Still image background from welcome video */}
       <img
-        src={assetUrl(welcomePoster.url)}
+        src={WELCOME_POSTER}
         alt=""
         loading="eager"
         className="pointer-events-none absolute inset-0 z-0 h-full w-full object-cover opacity-40"
