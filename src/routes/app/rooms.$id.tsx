@@ -892,6 +892,8 @@ function RoomPage() {
 
       {showShare && <SharePostModal roomId={roomId} onClose={() => setShowShare(false)} />}
 
+      {showBots && <BotCommandsModal onClose={() => setShowBots(false)} />}
+
       {askPassword && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setAskPassword(false)}>
           <div className="w-full max-w-sm rounded-2xl bg-card p-6" onClick={(e) => e.stopPropagation()}>
