@@ -1201,6 +1201,7 @@ export type Database = {
         Row: {
           code: string
           created_at: string
+          gender_target: string | null
           id: string
           kind: Database["public"]["Enums"]["shop_item_kind"]
           name_ar: string
@@ -1211,6 +1212,7 @@ export type Database = {
         Insert: {
           code: string
           created_at?: string
+          gender_target?: string | null
           id?: string
           kind: Database["public"]["Enums"]["shop_item_kind"]
           name_ar: string
@@ -1221,6 +1223,7 @@ export type Database = {
         Update: {
           code?: string
           created_at?: string
+          gender_target?: string | null
           id?: string
           kind?: Database["public"]["Enums"]["shop_item_kind"]
           name_ar?: string
@@ -1603,6 +1606,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      set_my_entry_effect: { Args: { _item: string }; Returns: undefined }
       set_profile_cover: {
         Args: { _type: string; _url: string }
         Returns: undefined
