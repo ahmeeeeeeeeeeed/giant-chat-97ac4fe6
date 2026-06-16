@@ -1279,6 +1279,10 @@ function SettingsSheet({ roomId, room, canModerate, myRank, isOwner, ownerId, on
             </ul>
           )}
 
+          {isOwner && tab === "background" && (
+            <BackgroundTab room={room} roomId={roomId} />
+          )}
+
           {isOwner && tab === "manage" && (
             <ManageTab room={room} roomId={roomId} onDeleted={onDeleted} />
           )}
