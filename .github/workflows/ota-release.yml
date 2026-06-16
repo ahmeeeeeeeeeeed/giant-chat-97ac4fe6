@@ -79,7 +79,7 @@ jobs:
 
       - name: Compute version
         id: ver
-        run: echo "version=1.0.${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+        run: echo "version=11.0.0" >> "$GITHUB_OUTPUT"
 
       - name: Compute bundle hash
         id: bundle
@@ -91,7 +91,16 @@ jobs:
           OTA_ENDPOINT: https://giant-chat.lovable.app/api/public/ota-publish
           VERSION: ${{ steps.ver.outputs.version }}
           SHA256: ${{ steps.bundle.outputs.sha256 }}
-          MSG: ${{ github.event.head_commit.message || 'Manual OTA release' }}
+          MSG: |-
+            🚀 تحديث جديد متاح!
+
+            ✨ ما الجديد في هذا التحديث:
+            • تحسين أداء التطبيق وسرعة التنقل بين الصفحات.
+            • تطوير نظام التحديثات ليصل الإصدار الجديد للمستخدمين أصحاب النسخ القديمة.
+            • إصلاح مشكلة ظهور تحديثات قديمة أو غير مكتملة.
+            • تحسينات عامة في الاستقرار وتجربة الاستخدام.
+
+            📲 ننصح بالتحديث الآن للاستفادة من أحدث التحسينات.
         run: |
           TS=$(date +%s)
           SIG=$(printf '%s.%s.%s' "$TS" "$VERSION" "$SHA256" | openssl dgst -sha256 -hmac "$OTA_PUBLISH_SECRET" | awk '{print $2}')
