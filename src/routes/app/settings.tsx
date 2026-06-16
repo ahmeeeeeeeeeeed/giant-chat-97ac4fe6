@@ -122,7 +122,7 @@ function SettingsPage() {
     try {
       const { data } = await supabase
         .from("app_updates")
-        .select("version, version_code, update_message, file_url")
+        .select("version, version_code, update_message, file_url, web_bundle_url, web_bundle_version")
         .eq("is_active", true)
         .order("version_code", { ascending: false })
         .limit(1)
@@ -134,6 +134,7 @@ function SettingsPage() {
     } catch { /* offline */ }
     finally { setCheckingUpdate(false); }
   };
+
 
   const openAbout = () => { setShowAbout(true); if (getOnline()) void checkForUpdate(); };
 
