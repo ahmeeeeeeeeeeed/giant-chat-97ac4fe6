@@ -247,9 +247,14 @@ function AdminUsers() {
                     className="flex flex-col items-center gap-0.5 rounded-lg border border-amber-500/40 p-2 text-[10px] text-amber-600 disabled:opacity-50 col-span-5 bg-gradient-to-r from-amber-500/10 to-orange-500/10">
                     <Sparkles className="h-4 w-4" /> إنشاء حساب مميز (اسم مزخرف/عربي)
                   </button>
+                  <button onClick={() => navigate({ to: "/app/activity", search: { user: u.id } as any })}
+                    className="flex flex-col items-center gap-0.5 rounded-lg border border-indigo-500/40 p-2 text-[10px] text-indigo-600 col-span-12 bg-gradient-to-r from-indigo-500/10 to-sky-500/10">
+                    <Eye className="h-4 w-4" /> عرض سجل النشاط الكامل لهذا المستخدم
+                  </button>
                 </div>
               </div>
             );
+
           })}
           {filtered.length === 0 && (
             <div className="py-10 text-center text-sm text-muted-foreground">لا نتائج</div>
