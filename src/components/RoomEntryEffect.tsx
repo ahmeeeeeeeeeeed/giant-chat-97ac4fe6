@@ -296,48 +296,159 @@ const MOTION: Record<EntryEffectType, { wrapper: string; inner: string }> = {
   portal: { wrapper: "fx-cam-pulse", inner: "fx-portal-warp" },
 };
 
+/* Fully transparent CSS/SVG visuals — no video, no background */
+function SvgVisual({ type }: { type: EntryEffectType }) {
+  const common = { width: "100%", height: "100%", viewBox: "0 0 200 200", style: { overflow: "visible" as const } };
+
+  if (type === "dragon") {
+    return (
+      <svg {...common}>
+        <defs>
+          <radialGradient id="dg" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#ffaa33" stopOpacity="0.95" />
+            <stop offset="60%" stopColor="#ff5500" stopOpacity="0.7" />
+            <stop offset="100%" stopColor="#7a1f1f" stopOpacity="0" />
+          </radialGradient>
+        </defs>
+        <ellipse cx="100" cy="100" rx="70" ry="28" fill="url(#dg)" />
+        <path d="M30 100 Q60 70 100 95 Q140 70 170 100 Q140 130 100 105 Q60 130 30 100 Z"
+          fill="none" stroke="#ffcc66" strokeWidth="2" opacity="0.8" />
+        <circle cx="100" cy="100" r="6" fill="#fff8aa" opacity="0.9" />
+      </svg>
+    );
+  }
+  if (type === "princess") {
+    return (
+      <svg {...common}>
+        <defs>
+          <radialGradient id="pg" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#fff" stopOpacity="0.9" />
+            <stop offset="50%" stopColor="#f0abfc" stopOpacity="0.7" />
+            <stop offset="100%" stopColor="#d946ef" stopOpacity="0" />
+          </radialGradient>
+        </defs>
+        <circle cx="100" cy="100" r="60" fill="url(#pg)" />
+        {Array.from({ length: 12 }).map((_, i) => {
+          const a = (i / 12) * Math.PI * 2;
+          const x = 100 + Math.cos(a) * 70;
+          const y = 100 + Math.sin(a) * 70;
+          return <circle key={i} cx={x} cy={y} r="2.5" fill="#fff" opacity="0.9" />;
+        })}
+        <path d="M100 60 L106 92 L138 100 L106 108 L100 140 L94 108 L62 100 L94 92 Z"
+          fill="#fff" opacity="0.85" />
+      </svg>
+    );
+  }
+  if (type === "knight") {
+    return (
+      <svg {...common}>
+        <defs>
+          <linearGradient id="kg" x1="0" x2="1">
+            <stop offset="0%" stopColor="#fde68a" stopOpacity="0" />
+            <stop offset="50%" stopColor="#f59e0b" stopOpacity="0.85" />
+            <stop offset="100%" stopColor="#92400e" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <rect x="10" y="90" width="180" height="20" fill="url(#kg)" />
+        <path d="M70 110 Q80 80 100 90 Q120 70 135 95 Q145 115 130 120 L70 120 Z"
+          fill="#92400e" opacity="0.85" stroke="#fde68a" strokeWidth="1.5" />
+        <circle cx="128" cy="92" r="6" fill="#fde68a" opacity="0.9" />
+        {[0, 1, 2, 3].map((i) => (
+          <line key={i} x1={60 - i * 18} y1="115" x2={50 - i * 18} y2="115"
+            stroke="#fde68a" strokeWidth="2" opacity={0.7 - i * 0.15} />
+        ))}
+      </svg>
+    );
+  }
+  if (type === "magic") {
+    return (
+      <svg {...common}>
+        <defs>
+          <radialGradient id="mg" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#fff" stopOpacity="1" />
+            <stop offset="40%" stopColor="#a78bfa" stopOpacity="0.7" />
+            <stop offset="100%" stopColor="#3b82f6" stopOpacity="0" />
+          </radialGradient>
+        </defs>
+        <circle cx="100" cy="100" r="80" fill="url(#mg)" />
+        {Array.from({ length: 16 }).map((_, i) => {
+          const a = (i / 16) * Math.PI * 2;
+          const x1 = 100 + Math.cos(a) * 20;
+          const y1 = 100 + Math.sin(a) * 20;
+          const x2 = 100 + Math.cos(a) * 90;
+          const y2 = 100 + Math.sin(a) * 90;
+          return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2}
+            stroke="#fff" strokeWidth="1.5" opacity="0.7" />;
+        })}
+        {Array.from({ length: 20 }).map((_, i) => {
+          const a = Math.random() * Math.PI * 2;
+          const r = 30 + Math.random() * 60;
+          return <circle key={i} cx={100 + Math.cos(a) * r} cy={100 + Math.sin(a) * r}
+            r="1.8" fill="#fff" opacity="0.9" />;
+        })}
+      </svg>
+    );
+  }
+  if (type === "mascot") {
+    return (
+      <svg {...common}>
+        <defs>
+          <radialGradient id="mcg" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#fef3c7" stopOpacity="0.95" />
+            <stop offset="70%" stopColor="#f59e0b" stopOpacity="0.55" />
+            <stop offset="100%" stopColor="#facc15" stopOpacity="0" />
+          </radialGradient>
+        </defs>
+        <circle cx="100" cy="100" r="55" fill="url(#mcg)" />
+        <circle cx="85" cy="92" r="5" fill="#000" opacity="0.7" />
+        <circle cx="115" cy="92" r="5" fill="#000" opacity="0.7" />
+        <path d="M80 112 Q100 130 120 112" stroke="#000" strokeWidth="3" fill="none" opacity="0.7" strokeLinecap="round" />
+        {[60, 140].map((x, i) => (
+          <path key={i} d={`M${x} 100 Q${x + (i ? 20 : -20)} 80 ${x + (i ? 30 : -30)} 95`}
+            stroke="#f59e0b" strokeWidth="3" fill="none" opacity="0.8" strokeLinecap="round" />
+        ))}
+      </svg>
+    );
+  }
+  // portal
+  return (
+    <svg {...common}>
+      <defs>
+        <radialGradient id="ptg" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#fff" stopOpacity="0" />
+          <stop offset="40%" stopColor="#22d3ee" stopOpacity="0.6" />
+          <stop offset="70%" stopColor="#6366f1" stopOpacity="0.7" />
+          <stop offset="100%" stopColor="#0891b2" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      <circle cx="100" cy="100" r="80" fill="url(#ptg)" />
+      {[0, 1, 2, 3].map((i) => (
+        <ellipse key={i} cx="100" cy="100" rx={70 - i * 12} ry={28 - i * 4}
+          fill="none" stroke="#22d3ee" strokeWidth="1.5" opacity={0.7 - i * 0.15}
+          transform={`rotate(${i * 30} 100 100)`} />
+      ))}
+      <circle cx="100" cy="100" r="8" fill="#fff" opacity="0.9" />
+    </svg>
+  );
+}
+
 function VideoEffect({ type }: { type: EntryEffectType }) {
-  const ref = useRef<HTMLVideoElement | null>(null);
-  useEffect(() => {
-    const v = ref.current;
-    if (!v) return;
-    v.currentTime = 0;
-    const p = v.play();
-    if (p && typeof p.catch === "function") p.catch(() => {});
-  }, []);
-
   const m = MOTION[type];
-
   return (
     <div
-      className="absolute inset-0"
+      className="absolute inset-0 flex items-center justify-center"
       style={{
         animation: `${m.inner} 5s cubic-bezier(0.22, 1, 0.36, 1) forwards`,
         willChange: "transform, opacity, filter",
       }}
     >
-      <video
-        ref={ref}
-        src={VIDEO_SRC[type]}
-        muted
-        playsInline
-        autoPlay
-        preload="auto"
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "100%",
-          objectFit: "cover",
-          mixBlendMode: "screen",
-          opacity: 0.12,
-          filter: "brightness(3.5) contrast(1.1)",
-        }}
-      />
+      <div style={{ width: "min(60vw, 420px)", height: "min(60vw, 420px)" }}>
+        <SvgVisual type={type} />
+      </div>
     </div>
   );
 }
+
 
 /* ===================== Main Component ===================== */
 
