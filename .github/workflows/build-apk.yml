@@ -96,7 +96,9 @@ jobs:
           # (+ optional ANDROID_KEY_PASSWORD) as repository secrets for production.
           if [ -n "${ANDROID_KEYSTORE_BASE64:-}" ] && [ -n "${ANDROID_KEYSTORE_PASSWORD:-}" ] && [ -n "${ANDROID_KEY_ALIAS:-}" ]; then
             KEYSTORE=$HOME/giant-release.keystore
-            printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$KEYSTORE"
+            # Strip any accidental whitespace/newlines that GitHub Secrets UI may have
+            # introduced when the value was pasted, then decode.
+            printf '%s' "$ANDROID_KEYSTORE_BASE64" | tr -d '\r\n\t ' | base64 -d > "$KEYSTORE"
             STOREPASS="$ANDROID_KEYSTORE_PASSWORD"
             KEYPASS="${ANDROID_KEY_PASSWORD:-$ANDROID_KEYSTORE_PASSWORD}"
             ALIAS="$ANDROID_KEY_ALIAS"
@@ -105,6 +107,38 @@ jobs:
             echo "Add ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, and optionally ANDROID_KEY_PASSWORD."
             exit 1
           fi
+
+          echo "🔍 Keystore debug:"
+          echo "  file size: $(wc -c < "$KEYSTORE") bytes"
+          echo "  file type: $(file "$KEYSTORE")"
+          echo "  alias requested: $ALIAS"
+
+          echo "🔍 Verifying keystore can be opened with ANDROID_KEYSTORE_PASSWORD..."
+          if ! keytool -list -keystore "$KEYSTORE" -storepass "$STOREPASS" > /tmp/ks-list.txt 2>&1; then
+            echo "❌ Cannot open keystore with provided ANDROID_KEYSTORE_PASSWORD."
+            echo "   This means either:"
+            echo "   1) ANDROID_KEYSTORE_PASSWORD does not match the password used when the keystore was created, OR"
+            echo "   2) ANDROID_KEYSTORE_BASE64 is truncated/corrupted (re-export with: base64 -w 0 giant-release.keystore)."
+            sed 's/^/   /' /tmp/ks-list.txt
+            exit 1
+          fi
+          echo "✅ Keystore opened successfully. Aliases inside keystore:"
+          sed 's/^/   /' /tmp/ks-list.txt
+
+          if ! grep -qi "^$ALIAS," /tmp/ks-list.txt && ! grep -qi "Alias name: $ALIAS$" /tmp/ks-list.txt; then
+            echo "⚠️  ANDROID_KEY_ALIAS='$ALIAS' was not found in the keystore listing above."
+            echo "   Update ANDROID_KEY_ALIAS to match one of the alias names printed above."
+            exit 1
+          fi
+
+          echo "🔍 Verifying ANDROID_KEY_PASSWORD unlocks the private key for alias '$ALIAS'..."
+          if ! keytool -list -keystore "$KEYSTORE" -storepass "$STOREPASS" -alias "$ALIAS" -keypass "$KEYPASS" > /dev/null 2>&1; then
+            echo "❌ ANDROID_KEY_PASSWORD does not unlock the private key for alias '$ALIAS'."
+            echo "   When the keystore was created, the key password may differ from the store password."
+            echo "   Set ANDROID_KEY_PASSWORD to the correct key password (often the same as store password)."
+            exit 1
+          fi
+          echo "✅ Key password is correct."
 
           BUILD_TOOLS=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -n1)
           APKSIGNER="$BUILD_TOOLS/apksigner"
@@ -123,6 +157,7 @@ jobs:
             "$ALIGNED"
           "$APKSIGNER" verify "$SIGNED"
           echo "✅ Signed APK ready: $SIGNED ($(du -h "$SIGNED" | cut -f1))"
+
 
       - name: Verify APK version before publishing
         run: |
