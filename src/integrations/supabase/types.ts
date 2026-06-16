@@ -1283,6 +1283,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_all_bots_to_room: { Args: { _room: string }; Returns: undefined }
       add_member_to_room: { Args: { p_room_id: string }; Returns: Json }
       admin_broadcast: { Args: { _text: string }; Returns: undefined }
       admin_delete_post: { Args: { _post: string }; Returns: undefined }
