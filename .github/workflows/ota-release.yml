@@ -93,36 +93,47 @@ jobs:
             --target "${{ github.sha }}"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
-      - name: Upload bundle.zip to Release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release upload "${{ steps.release.outputs.tag }}" bundle.zip --clobber
-
-      - name: Resolve final download URL
+      - name: Upload bundle.zip to Release and verify asset
         id: url
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          TAG: ${{ steps.release.outputs.tag }}
         run: |
-          TAG="${{ steps.release.outputs.tag }}"
-          URL="https://github.com/${{ github.repository }}/releases/download/${TAG}/bundle.zip"
-          echo "url=$URL" >> "$GITHUB_OUTPUT"
+          set -euo pipefail
 
-      - name: Verify bundle is publicly reachable
-        env:
-          URL: ${{ steps.url.outputs.url }}
-        run: |
-          for i in 1 2 3 4 5 6 7 8 9 10; do
-            CODE=$(curl -L -o /dev/null -s -w "%{http_code}" "$URL")
-            echo "Attempt $i: HTTP $CODE"
-            if [ "$CODE" = "200" ]; then
-              echo "Bundle is reachable."
-              exit 0
-            fi
-            sleep 3
-          done
-          echo "::error::Bundle URL not reachable after retries: $URL"
-          exit 1
+          # 1) رفع الملف فعليًا داخل الـ Release
+          gh release upload "$TAG" bundle.zip --clobber
+
+          # 2) التحقق من وجود الـ asset عبر GitHub API (وليس عبر URL)
+          ASSET_JSON=$(gh api "repos/$REPO/releases/tags/$TAG" \
+            --jq '.assets[] | select(.name=="bundle.zip")')
+
+          if [ -z "$ASSET_JSON" ]; then
+            echo "::error::bundle.zip asset not found in release $TAG via GitHub API"
+            exit 1
+          fi
+
+          ASSET_SIZE=$(echo "$ASSET_JSON" | jq -r '.size')
+          ASSET_STATE=$(echo "$ASSET_JSON" | jq -r '.state')
+          LOCAL_SIZE=$(stat -c%s bundle.zip)
+
+          echo "Asset state: $ASSET_STATE, remote size: $ASSET_SIZE, local size: $LOCAL_SIZE"
+
+          if [ "$ASSET_STATE" != "uploaded" ]; then
+            echo "::error::Asset state is '$ASSET_STATE', expected 'uploaded'"
+            exit 1
+          fi
+
+          if [ "$ASSET_SIZE" != "$LOCAL_SIZE" ]; then
+            echo "::error::Size mismatch: remote=$ASSET_SIZE local=$LOCAL_SIZE"
+            exit 1
+          fi
+
+          URL="https://github.com/$REPO/releases/download/$TAG/bundle.zip"
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+          echo "Asset verified successfully: $URL"
+
 
 
       - name: Publish OTA via signed endpoint
