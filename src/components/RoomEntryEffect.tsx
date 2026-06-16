@@ -368,6 +368,8 @@ function PrincessEffect() {
       <div
         className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
         style={{
+          width: "min(90vw, 560px)",
+          height: "auto",
           animation: "princess-dance 5s ease-in-out forwards",
           filter: "drop-shadow(0 0 50px rgba(255,180,230,0.95))",
           transformOrigin: "center",
