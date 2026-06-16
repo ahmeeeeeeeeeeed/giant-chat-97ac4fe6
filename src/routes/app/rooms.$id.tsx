@@ -1385,16 +1385,22 @@ function ManageTab({ room, roomId, onDeleted }: { room: any; roomId: string; onD
     const update: any = {
       name: name.trim(),
       description: description.trim() || null,
-      type,
       max_members: Math.max(2, Math.min(500, Number(maxMembers) || 50)),
       is_active: isActive,
     };
-    if (type === "private" && changePw && password.trim()) update.password_hash = password.trim();
-    if (type === "public") update.password_hash = null;
     const { error } = await supabase.from("rooms").update(update).eq("id", roomId);
+    if (error) { setSaving(false); toast.error("فشل الحفظ: " + error.message); return; }
+
+    // Password / type changes via secure RPC (owner-only, server-side hashing)
+    if (type === "public") {
+      await supabase.rpc("set_room_password" as never, { _room: roomId, _password: null } as never);
+    } else if (type === "private" && changePw && password.trim()) {
+      const { error: pwErr } = await supabase.rpc("set_room_password" as never, { _room: roomId, _password: password.trim() } as never);
+      if (pwErr) { setSaving(false); toast.error("فشل ضبط كلمة المرور: " + pwErr.message); return; }
+    }
     setSaving(false);
-    if (error) toast.error("فشل الحفظ: " + error.message);
-    else { toast.success("تم حفظ التغييرات"); setChangePw(false); setPassword(""); }
+    toast.success("تم حفظ التغييرات");
+    setChangePw(false); setPassword("");
   };
 
   const deleteRoom = async () => {
