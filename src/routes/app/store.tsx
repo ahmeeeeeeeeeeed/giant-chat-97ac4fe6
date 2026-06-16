@@ -27,18 +27,20 @@ type GiftItem = {
   category: string | null;
 };
 
-type TabKey = "badge" | "name_color" | "chat_color" | "entry_effect" | "chat_effect" | "gifts";
+type TabKey = "badge" | "avatar_frame" | "name_color" | "chat_color" | "entry_effect" | "chat_effect" | "gifts";
 
 export const Route = createFileRoute("/app/store")({ component: StorePage });
 
 const TABS: { key: TabKey; label: string; icon: any }[] = [
   { key: "badge", label: "الشارات", icon: Crown },
+  { key: "avatar_frame", label: "إطارات البروفايل", icon: Gem },
   { key: "entry_effect", label: "مؤثرات الدخول", icon: Sparkles },
   { key: "chat_effect", label: "مؤثرات الدردشة", icon: Flame },
   { key: "name_color", label: "ألوان الاسم", icon: Star },
   { key: "chat_color", label: "ألوان الخط", icon: Star },
   { key: "gifts", label: "الهدايا", icon: Gift },
 ];
+
 
 function StorePage() {
   const { user } = useAuth();
