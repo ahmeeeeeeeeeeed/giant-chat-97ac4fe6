@@ -237,3 +237,138 @@ function ChatsPage() {
     </main>
   );
 }
+
+function ChatRow({ convo, unreadActive, onDeleted }: { convo: Convo; unreadActive: boolean; onDeleted: (id: string) => void }) {
+  const navigate = useNavigate();
+  const [menu, setMenu] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const timerRef = useRef<number | null>(null);
+  const longPressedRef = useRef(false);
+
+  const startPress = () => {
+    longPressedRef.current = false;
+    if (timerRef.current) window.clearTimeout(timerRef.current);
+    timerRef.current = window.setTimeout(() => {
+      longPressedRef.current = true;
+      setMenu(true);
+      try { (navigator as any).vibrate?.(20); } catch { /* ignore */ }
+    }, 450);
+  };
+  const cancelPress = () => {
+    if (timerRef.current) { window.clearTimeout(timerRef.current); timerRef.current = null; }
+  };
+
+  const onClick = (e: React.MouseEvent) => {
+    if (longPressedRef.current || menu || confirming) { e.preventDefault(); e.stopPropagation(); return; }
+    navigate({ to: "/app/chats/$id", params: { id: convo.otherId } });
+  };
+
+  const onContext = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setMenu(true);
+  };
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      const { error } = await (supabase as any).rpc("delete_conversation", { _other: convo.otherId });
+      if (error) throw error;
+      onDeleted(convo.otherId);
+      toast.success("تم حذف المحادثة");
+    } catch (e: any) {
+      toast.error(e.message || "فشل الحذف");
+    } finally {
+      setDeleting(false);
+      setConfirming(false);
+      setMenu(false);
+    }
+  };
+
+  return (
+    <>
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={onClick}
+        onContextMenu={onContext}
+        onPointerDown={startPress}
+        onPointerUp={cancelPress}
+        onPointerLeave={cancelPress}
+        onPointerCancel={cancelPress}
+        className={`relative flex items-center gap-3 overflow-hidden rounded-2xl border p-3 transition active:scale-[0.99] cursor-pointer select-none ${
+          unreadActive
+            ? "border-emerald-400/30 bg-emerald-950/40 shadow-[0_6px_20px_-12px_rgba(16,185,129,0.5)]"
+            : "border-emerald-500/10 bg-gradient-to-l from-emerald-950/15 to-transparent hover:bg-emerald-900/15"
+        }`}
+      >
+        {unreadActive && (
+          <span className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-emerald-400 to-emerald-600" />
+        )}
+        <StoryRing userId={convo.otherId} size="sm"><CachedAvatar url={convo.avatar_url} username={convo.username} /></StoryRing>
+        <div className="min-w-0 flex-1">
+          <div className="truncate font-bold text-foreground">{convo.username}</div>
+          <div className={`truncate text-sm ${unreadActive ? "text-emerald-200/80" : "text-muted-foreground"}`}>{convo.last}</div>
+        </div>
+        {unreadActive && (
+          <span className="flex h-6 min-w-[24px] items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 px-2 text-[11px] font-bold text-white shadow-[0_4px_10px_-2px_rgba(16,185,129,0.6)]">
+            {convo.unread > 99 ? "99+" : convo.unread}
+          </span>
+        )}
+        <button
+          onClick={(e) => { e.stopPropagation(); setConfirming(true); }}
+          className="ml-1 grid h-9 w-9 place-items-center rounded-xl text-rose-300/80 hover:bg-rose-500/15 hover:text-rose-200"
+          aria-label="حذف المحادثة"
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
+      </div>
+
+      {menu && (
+        <div className="fixed inset-0 z-[90] grid place-items-center bg-black/60 backdrop-blur-sm" onClick={() => setMenu(false)}>
+          <div className="w-full max-w-xs rounded-2xl bg-slate-900 border border-white/10 p-2" onClick={(e) => e.stopPropagation()}>
+            <div className="px-3 py-2 text-sm font-bold text-white truncate">{convo.username}</div>
+            <button
+              onClick={() => { setMenu(false); navigate({ to: "/app/chats/$id", params: { id: convo.otherId } }); }}
+              className="w-full text-right rounded-xl px-3 py-2.5 text-sm text-white hover:bg-white/5"
+            >
+              فتح المحادثة
+            </button>
+            <button
+              onClick={() => { setMenu(false); setConfirming(true); }}
+              className="w-full text-right rounded-xl px-3 py-2.5 text-sm text-rose-300 hover:bg-rose-500/10 flex items-center gap-2 justify-end"
+            >
+              حذف المحادثة <Trash2 className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {confirming && (
+        <div className="fixed inset-0 z-[95] grid place-items-center bg-black/70 backdrop-blur-sm p-4" onClick={() => !deleting && setConfirming(false)}>
+          <div className="w-full max-w-sm rounded-2xl bg-slate-900 border border-white/10 p-5" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-base font-extrabold text-white">حذف المحادثة؟</h3>
+            <p className="mt-2 text-sm text-white/70">
+              سيتم حذف جميع الرسائل بينك وبين <span className="font-bold text-white">{convo.username}</span> نهائياً. لا يمكن التراجع.
+            </p>
+            <div className="mt-4 flex items-center gap-2 justify-end">
+              <button
+                onClick={() => setConfirming(false)}
+                disabled={deleting}
+                className="rounded-xl px-4 py-2 text-sm font-bold text-white/80 hover:bg-white/5 disabled:opacity-50"
+              >إلغاء</button>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="rounded-xl bg-gradient-to-br from-rose-500 to-red-600 px-4 py-2 text-sm font-bold text-white shadow-lg shadow-rose-600/30 disabled:opacity-60 flex items-center gap-2"
+              >
+                {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />} حذف
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
