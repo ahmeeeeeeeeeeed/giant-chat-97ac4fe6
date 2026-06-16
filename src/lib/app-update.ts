@@ -91,9 +91,22 @@ export async function notifyNativeUpdateReady(): Promise<void> {
   try {
     const { CapacitorUpdater } = await import("@capgo/capacitor-updater");
     const ready = await CapacitorUpdater.notifyAppReady();
-    const activeVersion = ready?.bundle?.version;
+    let activeVersion = ready?.bundle?.version;
+
+    // Some Android launches report the ready bundle before local JS storage is
+    // hydrated. Read the updater's native source of truth too, so an already
+    // applied OTA bundle (e.g. 11.0.0) is never offered again as a new update.
+    try {
+      const current = await CapacitorUpdater.current();
+      if (current?.bundle?.version && current.bundle.version !== "builtin") {
+        activeVersion = current.bundle.version;
+      }
+    } catch { /* ignore */ }
+
     if (activeVersion && activeVersion !== "builtin") {
       localStorage.setItem(WEB_BUNDLE_VERSION_KEY, activeVersion);
+      localStorage.setItem(INSTALLED_VERSION_KEY, activeVersion);
+      localStorage.setItem(INSTALLED_CODE_KEY, String(getVersionCode(activeVersion)));
     }
   } catch { /* ignore */ }
 }

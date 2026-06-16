@@ -131,8 +131,8 @@ function LanguageSync() {
     return () => { i18n.off("languageChanged", onChange); };
   }, []);
   useEffect(() => {
-    void syncNativeInstalledVersion();
     void notifyNativeUpdateReady();
+    void syncNativeInstalledVersion();
     registerAppServiceWorker();
     schedulePrewarm();
     initCapacitorChrome();

@@ -16,7 +16,7 @@ import {
 import { SUPPORTED_LANGUAGES } from "@/lib/i18n";
 import { findAdminId } from "@/lib/find-admin";
 import { APP_VERSION, getVersionCode } from "@/lib/version";
-import { isNativeAndroid, downloadAndInstallApk, applyWebBundleUpdate, shouldShowUpdate, markUpdateInstalled, getDisplayInstalledVersion, getDisplayInstalledCode } from "@/lib/app-update";
+import { isNativeAndroid, downloadAndInstallApk, applyWebBundleUpdate, shouldShowUpdate, markUpdateInstalled, getDisplayInstalledVersion, getDisplayInstalledCode, notifyNativeUpdateReady, syncNativeInstalledVersion } from "@/lib/app-update";
 import { cacheGet, cacheSet, cacheDel } from "@/lib/offline-cache";
 import { getOnline, useOnline } from "@/lib/use-online";
 import { toast } from "sonner";
@@ -120,6 +120,8 @@ function SettingsPage() {
     }
     setCheckingUpdate(true);
     try {
+      await notifyNativeUpdateReady();
+      await syncNativeInstalledVersion();
       const { data } = await supabase
         .from("app_updates")
         .select("version, version_code, update_message, file_url, web_bundle_url, web_bundle_version")
