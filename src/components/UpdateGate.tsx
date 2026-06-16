@@ -68,7 +68,6 @@ export function UpdateGate() {
         await downloadAndInstallApk(
           latest.file_url,
           (p) => setProgress(p),
-          () => markUpdateInstalled(latest.version, latest.version_code),
         );
         setDone(true);
         return;
@@ -91,7 +90,6 @@ export function UpdateGate() {
       await downloadAndInstallApk(
         latest.file_url,
         (p) => setProgress(p),
-        () => markUpdateInstalled(latest.version, latest.version_code),
       );
       setDone(true);
     } catch (e) {
