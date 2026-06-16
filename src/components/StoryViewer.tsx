@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState } from "react";
-import { X, ChevronLeft, ChevronRight, Trash2, Eye, Pencil } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, Trash2, Eye, Pencil, Send, Heart } from "lucide-react";
 import { AvatarFrame } from "@/components/AvatarFrame";
-import { fetchUserStories, getCachedUserStories, viewStory, deleteStory, type StoryRow, type StoryUser } from "@/lib/use-stories";
+import { fetchUserStories, getCachedUserStories, viewStory, deleteStory, getStoryReactions, reactToStory, unreactToStory, commentOnStory, type StoryRow, type StoryUser, type StoryReactionAgg } from "@/lib/use-stories";
 import { CreateStoryDialog } from "@/components/CreateStoryDialog";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const DURATION_MS = 5000;
+const QUICK_EMOJIS = ["❤️", "🔥", "😂", "😮", "😢", "👏", "💯"];
+
 
 export function StoryViewer({
   users,
@@ -28,9 +30,14 @@ export function StoryViewer({
   const [viewers, setViewers] = useState<{ viewer_id: string; viewed_at: string; username: string | null; avatar_url: string | null }[]>([]);
   const [showViewers, setShowViewers] = useState(false);
   const [editing, setEditing] = useState<StoryRow | null>(null);
+  const [reactions, setReactions] = useState<StoryReactionAgg[]>([]);
+  const [comment, setComment] = useState("");
+  const [sending, setSending] = useState(false);
+  const [flyEmoji, setFlyEmoji] = useState<string | null>(null);
   const rafRef = useRef<number | null>(null);
   const startRef = useRef<number>(0);
   const elapsedRef = useRef<number>(0);
+
 
   const currentUser = users[userIdx];
   const currentStory = stories[storyIdx];
@@ -66,6 +73,41 @@ export function StoryViewer({
       })));
     })();
   }, [currentStory?.id, currentUser?.user_id, myId]);
+
+  // load reactions for current story
+  useEffect(() => {
+    if (!currentStory) { setReactions([]); return; }
+    getStoryReactions(currentStory.id).then(setReactions).catch(() => setReactions([]));
+  }, [currentStory?.id]);
+
+  const handleReact = async (emoji: string) => {
+    if (!currentStory) return;
+    const mineNow = reactions.find((r) => r.mine);
+    setFlyEmoji(emoji);
+    window.setTimeout(() => setFlyEmoji(null), 900);
+    try {
+      if (mineNow && mineNow.emoji === emoji) {
+        await unreactToStory(currentStory.id);
+      } else {
+        await reactToStory(currentStory.id, emoji);
+      }
+      const fresh = await getStoryReactions(currentStory.id);
+      setReactions(fresh);
+    } catch (e: any) { toast.error(e.message || "تعذر إرسال التفاعل"); }
+  };
+
+  const handleSendComment = async () => {
+    if (!currentStory || !comment.trim() || sending) return;
+    setSending(true);
+    try {
+      await commentOnStory(currentStory.id, comment.trim());
+      setComment("");
+      toast.success("تم إرسال التعليق في المحادثة");
+    } catch (e: any) { toast.error(e.message || "فشل الإرسال"); }
+    finally { setSending(false); }
+  };
+
+
 
   const next = () => {
     if (storyIdx + 1 < stories.length) setStoryIdx(storyIdx + 1);
@@ -222,6 +264,72 @@ export function StoryViewer({
             )}
           </div>
         )}
+
+        {/* footer (others' story → react + comment) */}
+        {currentUser.user_id !== myId && currentStory && (
+          <div className="absolute bottom-0 inset-x-0 z-20 px-3 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] bg-gradient-to-t from-black/80 via-black/40 to-transparent">
+            {/* reaction summary */}
+            {reactions.length > 0 && (
+              <div className="mb-2 flex flex-wrap items-center gap-1.5 justify-center">
+                {reactions.slice(0, 6).map((r) => (
+                  <span key={r.emoji} className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs ${r.mine ? "bg-emerald-500/30 text-white ring-1 ring-emerald-400/60" : "bg-white/10 text-white/90"}`}>
+                    <span>{r.emoji}</span>
+                    <span className="font-bold">{r.count}</span>
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* quick reactions */}
+            <div className="mb-2 flex items-center justify-center gap-1.5">
+              {QUICK_EMOJIS.map((e) => {
+                const isMine = reactions.find((r) => r.mine)?.emoji === e;
+                return (
+                  <button
+                    key={e}
+                    onClick={() => handleReact(e)}
+                    onPointerDown={(ev) => ev.stopPropagation()}
+                    className={`h-10 w-10 grid place-items-center rounded-full text-xl transition active:scale-90 ${isMine ? "bg-emerald-500/30 ring-2 ring-emerald-400/70" : "bg-white/10 hover:bg-white/20"}`}
+                    aria-label={`تفاعل ${e}`}
+                  >{e}</button>
+                );
+              })}
+            </div>
+
+            {/* comment input */}
+            <form
+              onSubmit={(ev) => { ev.preventDefault(); handleSendComment(); }}
+              onPointerDown={(ev) => ev.stopPropagation()}
+              className="flex items-center gap-2"
+            >
+              <input
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                onFocus={() => setPaused(true)}
+                onBlur={() => setPaused(false)}
+                placeholder="اكتب تعليقاً…"
+                className="flex-1 h-11 rounded-full bg-white/10 border border-white/15 px-4 text-sm text-white placeholder:text-white/50 outline-none focus:border-emerald-400/60"
+              />
+              <button
+                type="button"
+                onClick={() => handleReact("❤️")}
+                className="h-11 w-11 grid place-items-center rounded-full bg-white/10 hover:bg-white/20 text-rose-300"
+                aria-label="إعجاب"
+              ><Heart className="h-5 w-5" /></button>
+              <button
+                type="submit"
+                disabled={!comment.trim() || sending}
+                className="h-11 w-11 grid place-items-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/30 disabled:opacity-50"
+                aria-label="إرسال"
+              ><Send className="h-5 w-5" /></button>
+            </form>
+
+            {flyEmoji && (
+              <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-24 text-5xl animate-[fly_0.9s_ease-out_forwards]">{flyEmoji}</div>
+            )}
+          </div>
+        )}
+
 
         {/* prev/next chevrons (visible hint) */}
         {userIdx > 0 && (

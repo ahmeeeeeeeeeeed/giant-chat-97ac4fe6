@@ -167,3 +167,26 @@ export function useStoriesAutoRefresh(intervalMs = 60_000) {
     return () => clearInterval(t);
   }, [intervalMs]);
 }
+
+export type StoryReactionAgg = { emoji: string; count: number; mine: boolean };
+
+export async function getStoryReactions(storyId: string): Promise<StoryReactionAgg[]> {
+  const { data } = await (supabase as any).rpc("get_story_reactions", { _story: storyId });
+  return ((data as any[]) || []).map((r) => ({ emoji: r.emoji, count: Number(r.count), mine: !!r.mine }));
+}
+
+export async function reactToStory(storyId: string, emoji: string) {
+  const { error } = await (supabase as any).rpc("react_to_story", { _story: storyId, _emoji: emoji });
+  if (error) throw error;
+}
+
+export async function unreactToStory(storyId: string) {
+  const { error } = await (supabase as any).rpc("unreact_to_story", { _story: storyId });
+  if (error) throw error;
+}
+
+export async function commentOnStory(storyId: string, text: string) {
+  const { error } = await (supabase as any).rpc("comment_on_story", { _story: storyId, _text: text });
+  if (error) throw error;
+}
+
