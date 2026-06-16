@@ -331,7 +331,9 @@ function VideoEffect({ type }: { type: EntryEffectType }) {
           height: "100%",
           objectFit: "cover",
           mixBlendMode: "screen",
-          filter: "drop-shadow(0 20px 60px rgba(0,0,0,0.55))",
+          opacity: 0.75,
+          WebkitMaskImage: "radial-gradient(ellipse 80% 75% at 50% 55%, black 30%, transparent 85%)",
+          maskImage: "radial-gradient(ellipse 80% 75% at 50% 55%, black 30%, transparent 85%)",
         }}
       />
     </div>
