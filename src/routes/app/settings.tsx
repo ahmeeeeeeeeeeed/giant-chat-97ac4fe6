@@ -140,13 +140,21 @@ function SettingsPage() {
 
   const installUpdate = async () => {
     if (!latest) return;
-    if (!(await isNativeAndroid())) {
-      window.open(latest.file_url, "_blank");
-      return;
-    }
     setInstalling(true);
     setInstallProgress(0);
     try {
+      // Prefer OTA web bundle update — no full reinstall, just refresh the changed pieces.
+      if (latest.web_bundle_url) {
+        const v = latest.web_bundle_version || String(latest.version_code) || latest.version;
+        await applyWebBundleUpdate(latest.web_bundle_url, v, (p) => setInstallProgress(p));
+        toast.success("تم تطبيق التحديث");
+        return;
+      }
+      // Fallback: full APK only when no OTA bundle is published.
+      if (!(await isNativeAndroid())) {
+        window.open(latest.file_url, "_blank");
+        return;
+      }
       await downloadAndInstallApk(latest.file_url, (p) => setInstallProgress(p));
     } catch (e: any) {
       toast.error(e?.message || "فشل التحديث");
@@ -154,6 +162,7 @@ function SettingsPage() {
       setInstalling(false);
     }
   };
+
 
   const openShare = async () => {
     const payload = { title: "Giant Chat", text: SHARE_TEXT, url: SHARE_URL };
