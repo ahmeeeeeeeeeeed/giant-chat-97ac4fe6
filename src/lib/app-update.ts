@@ -227,7 +227,7 @@ export async function applyWebBundleUpdate(
       // caller code after await applyWebBundleUpdate() is guaranteed to run.
       // Persist the applied web version before switching bundles to prevent the
       // same update prompt from appearing again on the next launch.
-      try { localStorage.setItem(WEB_BUNDLE_VERSION_KEY, version); } catch { /* ignore */ }
+      markWebBundleInstalled(version);
       await CapacitorUpdater.set({ id: bundle.id });
       onProgress(100);
       // CapacitorUpdater.set() automatically reloads the WebView with the new bundle.
