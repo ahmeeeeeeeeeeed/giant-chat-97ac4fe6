@@ -824,7 +824,7 @@ function RoomPage() {
                           {isG && <span className="text-amber-500">🌍</span>} هدية {isG ? "عالمية" : ""}
                         </div>
                         <p className="text-sm font-medium">
-                          <span className="font-bold">{meta.sender_name}</span> أهدى <span className="font-bold">{meta.receiver_name}</span> {meta.gift_name}
+                          <span className="font-bold">{meta.receiver_name}</span> استلم هدية <span className="font-bold">{meta.gift_name}</span> من <span className="font-bold">{meta.sender_name}</span>
                         </p>
                         <p className="text-[10px] text-muted-foreground" suppressHydrationWarning>{meta.cost} نقطة · {time}</p>
                       </div>
