@@ -111,15 +111,21 @@
     min-height: 100vh;
     min-height: 100dvh;
     background-image:
-      linear-gradient(180deg, color-mix(in oklab, var(--background) 78%, transparent), color-mix(in oklab, var(--background) 92%, transparent)),
-      url("https://giant-chat.lovable.app/__l5e/assets-v1/fca5876a-b66b-4d09-9da4-e7faf953d46f/app-bg.jpg");
+      linear-gradient(180deg, color-mix(in oklab, var(--background) 70%, transparent), color-mix(in oklab, var(--background) 88%, transparent)),
+      url("./assets/app-bg-v2.jpg");
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
     background-repeat: no-repeat;
   }
   .dark body {
-    background-image: none;
+    background-image:
+      linear-gradient(180deg, color-mix(in oklab, var(--background) 82%, transparent), color-mix(in oklab, var(--background) 94%, transparent)),
+      url("./assets/app-bg-v2.jpg");
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
   }
   /* iOS WebKit zooms inputs whose font-size < 16px. Force 16px minimum. */
   input, textarea, select {
