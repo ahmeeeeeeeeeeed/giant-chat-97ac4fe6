@@ -295,15 +295,58 @@ function RoomPage() {
   }, [online]);
 
   useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+    const { data: sub } = supabase.auth.onAuthStateChange(async (event) => {
       if (event === "SIGNED_OUT") {
+        // Best-effort: remove room membership so user must re-join after sign-in.
+        try {
+          if (user?.id) {
+            await supabase.from("room_members").delete().eq("room_id", roomId).eq("user_id", user.id);
+          }
+        } catch { /* ignore */ }
         setMyRank(null);
         navigate({ to: "/" });
       }
     });
     return () => { sub.subscription.unsubscribe(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [user?.id, roomId]);
+
+  // Auto-leave on app close / tab hide / device lock — uses fetch keepalive
+  // so the request survives the unload. User must rejoin manually next time.
+  useEffect(() => {
+    if (!user?.id || !myRank) return;
+    const leaveOnExit = () => {
+      try {
+        const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/room_members?room_id=eq.${roomId}&user_id=eq.${user.id}`;
+        const apikey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+        // Pull current session token synchronously from storage to attach as bearer.
+        let token = apikey;
+        try {
+          const raw = Object.keys(localStorage).find((k) => k.startsWith("sb-") && k.endsWith("-auth-token"));
+          if (raw) {
+            const parsed = JSON.parse(localStorage.getItem(raw) || "null");
+            if (parsed?.access_token) token = parsed.access_token;
+          }
+        } catch { /* ignore */ }
+        void fetch(url, {
+          method: "DELETE",
+          keepalive: true,
+          headers: { apikey, Authorization: `Bearer ${token}` },
+        });
+      } catch { /* ignore */ }
+    };
+    const onVisibility = () => { if (document.visibilityState === "hidden") leaveOnExit(); };
+    window.addEventListener("pagehide", leaveOnExit);
+    window.addEventListener("beforeunload", leaveOnExit);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("pagehide", leaveOnExit);
+      window.removeEventListener("beforeunload", leaveOnExit);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [user?.id, myRank, roomId]);
+
+
 
   const tryJoin = async (pw?: string) => {
     if (!user || !room) return;
@@ -691,16 +734,12 @@ function RoomPage() {
             <button onClick={() => openSettingsAt("members")} className="rounded-lg p-2 hover:bg-secondary transition" aria-label="الإعدادات">
               <Settings className="h-4.5 w-4.5" />
             </button>
-            {isMember ? (
+            {isMember && (
               <button onClick={leaveRoom} className="rounded-lg bg-red-500/10 px-2.5 py-1.5 text-xs font-medium text-red-500 hover:bg-red-500/20 transition">
                 مغادرة
               </button>
-            ) : (
-              <button onClick={() => tryJoin()} disabled={joining || isBanned}
-                className="rounded-lg bg-gradient-to-r from-emerald-500 to-emerald-600 px-3 py-1.5 text-xs font-bold text-white shadow-md hover:from-emerald-600 hover:to-emerald-700 transition disabled:opacity-50">
-                {joining ? <Loader2 className="h-4 w-4 animate-spin" /> : isBanned ? "محظور" : "انضمام"}
-              </button>
             )}
+
           </div>
         </div>
 
