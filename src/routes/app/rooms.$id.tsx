@@ -295,15 +295,58 @@ function RoomPage() {
   }, [online]);
 
   useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+    const { data: sub } = supabase.auth.onAuthStateChange(async (event) => {
       if (event === "SIGNED_OUT") {
+        // Best-effort: remove room membership so user must re-join after sign-in.
+        try {
+          if (user?.id) {
+            await supabase.from("room_members").delete().eq("room_id", roomId).eq("user_id", user.id);
+          }
+        } catch { /* ignore */ }
         setMyRank(null);
         navigate({ to: "/" });
       }
     });
     return () => { sub.subscription.unsubscribe(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [user?.id, roomId]);
+
+  // Auto-leave on app close / tab hide / device lock — uses fetch keepalive
+  // so the request survives the unload. User must rejoin manually next time.
+  useEffect(() => {
+    if (!user?.id || !myRank) return;
+    const leaveOnExit = () => {
+      try {
+        const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/room_members?room_id=eq.${roomId}&user_id=eq.${user.id}`;
+        const apikey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+        // Pull current session token synchronously from storage to attach as bearer.
+        let token = apikey;
+        try {
+          const raw = Object.keys(localStorage).find((k) => k.startsWith("sb-") && k.endsWith("-auth-token"));
+          if (raw) {
+            const parsed = JSON.parse(localStorage.getItem(raw) || "null");
+            if (parsed?.access_token) token = parsed.access_token;
+          }
+        } catch { /* ignore */ }
+        void fetch(url, {
+          method: "DELETE",
+          keepalive: true,
+          headers: { apikey, Authorization: `Bearer ${token}` },
+        });
+      } catch { /* ignore */ }
+    };
+    const onVisibility = () => { if (document.visibilityState === "hidden") leaveOnExit(); };
+    window.addEventListener("pagehide", leaveOnExit);
+    window.addEventListener("beforeunload", leaveOnExit);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("pagehide", leaveOnExit);
+      window.removeEventListener("beforeunload", leaveOnExit);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [user?.id, myRank, roomId]);
+
+
 
   const tryJoin = async (pw?: string) => {
     if (!user || !room) return;
