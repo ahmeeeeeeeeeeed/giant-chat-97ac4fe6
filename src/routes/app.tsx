@@ -161,6 +161,8 @@ function AppLayout() {
     if (path.startsWith("/app/profile/")) return "الملف الشخصي";
     if (path === "/app/create-room") return "إنشاء غرفة";
     if (path === "/app/account") return "إدارة الحساب";
+    if (path === "/app/activity") return "سجل النشاط";
+
     return "";
   })();
 
