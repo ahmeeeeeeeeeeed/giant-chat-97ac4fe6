@@ -148,9 +148,14 @@ export function StoryViewer({
           </div>
           <div className="flex items-center gap-1">
             {currentUser.user_id === myId && currentStory && (
-              <button onClick={handleDelete} className="h-9 w-9 grid place-items-center rounded-full bg-white/10 text-white hover:bg-white/20" aria-label="حذف">
-                <Trash2 className="h-4 w-4" />
-              </button>
+              <>
+                <button onClick={() => { setPaused(true); setEditing(currentStory); }} className="h-9 w-9 grid place-items-center rounded-full bg-white/10 text-white hover:bg-white/20" aria-label="تعديل">
+                  <Pencil className="h-4 w-4" />
+                </button>
+                <button onClick={handleDelete} className="h-9 w-9 grid place-items-center rounded-full bg-white/10 text-white hover:bg-white/20" aria-label="حذف">
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </>
             )}
             <button onClick={onClose} className="h-9 w-9 grid place-items-center rounded-full bg-white/10 text-white hover:bg-white/20" aria-label="إغلاق">
               <X className="h-5 w-5" />
