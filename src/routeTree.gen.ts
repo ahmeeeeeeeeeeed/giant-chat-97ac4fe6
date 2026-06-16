@@ -28,6 +28,7 @@ import { Route as AppDailyTasksRouteImport } from './routes/app/daily-tasks'
 import { Route as AppCreateRoomRouteImport } from './routes/app/create-room'
 import { Route as AppCommunityRouteImport } from './routes/app/community'
 import { Route as AppAdminRouteImport } from './routes/app/admin'
+import { Route as AppActivityRouteImport } from './routes/app/activity'
 import { Route as AppAchievementsRouteImport } from './routes/app/achievements'
 import { Route as AppAccountRouteImport } from './routes/app/account'
 import { Route as AppChatsIndexRouteImport } from './routes/app/chats.index'
@@ -136,6 +137,11 @@ const AppAdminRoute = AppAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AppRoute,
 } as any)
+const AppActivityRoute = AppActivityRouteImport.update({
+  id: '/activity',
+  path: '/activity',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAchievementsRoute = AppAchievementsRouteImport.update({
   id: '/achievements',
   path: '/achievements',
@@ -207,6 +213,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/app/account': typeof AppAccountRoute
   '/app/achievements': typeof AppAchievementsRoute
+  '/app/activity': typeof AppActivityRoute
   '/app/admin': typeof AppAdminRouteWithChildren
   '/app/community': typeof AppCommunityRoute
   '/app/create-room': typeof AppCreateRoomRoute
@@ -239,6 +246,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/app/account': typeof AppAccountRoute
   '/app/achievements': typeof AppAchievementsRoute
+  '/app/activity': typeof AppActivityRoute
   '/app/community': typeof AppCommunityRoute
   '/app/create-room': typeof AppCreateRoomRoute
   '/app/daily-tasks': typeof AppDailyTasksRoute
@@ -272,6 +280,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/app/account': typeof AppAccountRoute
   '/app/achievements': typeof AppAchievementsRoute
+  '/app/activity': typeof AppActivityRoute
   '/app/admin': typeof AppAdminRouteWithChildren
   '/app/community': typeof AppCommunityRoute
   '/app/create-room': typeof AppCreateRoomRoute
@@ -307,6 +316,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/app/account'
     | '/app/achievements'
+    | '/app/activity'
     | '/app/admin'
     | '/app/community'
     | '/app/create-room'
@@ -339,6 +349,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/app/account'
     | '/app/achievements'
+    | '/app/activity'
     | '/app/community'
     | '/app/create-room'
     | '/app/daily-tasks'
@@ -371,6 +382,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/app/account'
     | '/app/achievements'
+    | '/app/activity'
     | '/app/admin'
     | '/app/community'
     | '/app/create-room'
@@ -542,6 +554,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/activity': {
+      id: '/app/activity'
+      path: '/activity'
+      fullPath: '/app/activity'
+      preLoaderRoute: typeof AppActivityRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/achievements': {
       id: '/app/achievements'
       path: '/achievements'
@@ -652,6 +671,7 @@ const AppAdminRouteWithChildren = AppAdminRoute._addFileChildren(
 interface AppRouteChildren {
   AppAccountRoute: typeof AppAccountRoute
   AppAchievementsRoute: typeof AppAchievementsRoute
+  AppActivityRoute: typeof AppActivityRoute
   AppAdminRoute: typeof AppAdminRouteWithChildren
   AppCommunityRoute: typeof AppCommunityRoute
   AppCreateRoomRoute: typeof AppCreateRoomRoute
@@ -672,6 +692,7 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppAccountRoute: AppAccountRoute,
   AppAchievementsRoute: AppAchievementsRoute,
+  AppActivityRoute: AppActivityRoute,
   AppAdminRoute: AppAdminRouteWithChildren,
   AppCommunityRoute: AppCommunityRoute,
   AppCreateRoomRoute: AppCreateRoomRoute,
