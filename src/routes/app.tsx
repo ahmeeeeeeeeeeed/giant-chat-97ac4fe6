@@ -58,23 +58,42 @@ function AppLayout() {
     }
   }, [session?.user?.id]);
 
+  // Logical "back" — go to the section's natural parent instead of relying on
+  // browser history, which can return to an unrelated screen the user came
+  // from earlier (e.g. notifications → room → back should go to /app, not
+  // back to notifications).
+  const parentRouteFor = useCallback((p: string): string => {
+    if (/^\/app\/rooms\//.test(p)) return "/app";
+    if (/^\/app\/chats\/[^/]+/.test(p)) return "/app/chats";
+    if (/^\/app\/profile\//.test(p)) return "/app/chats";
+    if (/^\/app\/admin\/.+/.test(p)) return "/app/admin";
+    if (p === "/app/admin") return "/app";
+    return "/app";
+  }, []);
+
+  const goBack = useCallback(() => {
+    const target = parentRouteFor(window.location.pathname.replace(/\/$/, "") || "/");
+    navigate({ to: target as any });
+  }, [navigate, parentRouteFor]);
+
   useEffect(() => {
     let removeListener: (() => void) | undefined;
     const setup = async () => {
       try {
         const CapApp = await import("@capacitor/app");
-        const listener = await CapApp.App.addListener("backButton", ({ canGoBack }) => {
+        const listener = await CapApp.App.addListener("backButton", () => {
           const currentPath = window.location.pathname.replace(/\/$/, "") || "/";
           // Default landing tab — show exit confirm instead of going back further
           if (currentPath === "/app/chats") {
             window.dispatchEvent(new CustomEvent("giant:exit-confirm"));
             return;
           }
-          if (canGoBack) {
-            router.history.back();
-          } else {
+          const tabRoots = new Set(["/app/chats", "/app", "/app/community", "/app/friends", "/app/games", "/app/settings"]);
+          if (tabRoots.has(currentPath)) {
             window.dispatchEvent(new CustomEvent("giant:exit-confirm"));
+            return;
           }
+          navigate({ to: parentRouteFor(currentPath) as any });
         });
         removeListener = () => listener.remove();
       } catch {
@@ -83,7 +102,7 @@ function AppLayout() {
     };
     setup();
     return () => { if (removeListener) removeListener(); };
-  }, [router]);
+  }, [navigate, parentRouteFor]);
 
 
   if (loading || !session) {
