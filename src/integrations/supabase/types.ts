@@ -834,6 +834,7 @@ export type Database = {
           equipped_badge: string | null
           equipped_chat_color: string | null
           equipped_effect: string | null
+          equipped_frame: string | null
           equipped_name_color: string | null
           game_wins: number
           gender: string | null
@@ -862,6 +863,7 @@ export type Database = {
           equipped_badge?: string | null
           equipped_chat_color?: string | null
           equipped_effect?: string | null
+          equipped_frame?: string | null
           equipped_name_color?: string | null
           game_wins?: number
           gender?: string | null
@@ -890,6 +892,7 @@ export type Database = {
           equipped_badge?: string | null
           equipped_chat_color?: string | null
           equipped_effect?: string | null
+          equipped_frame?: string | null
           equipped_name_color?: string | null
           game_wins?: number
           gender?: string | null
@@ -923,6 +926,13 @@ export type Database = {
           {
             foreignKeyName: "profiles_equipped_effect_fkey"
             columns: ["equipped_effect"]
+            isOneToOne: false
+            referencedRelation: "shop_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_equipped_frame_fkey"
+            columns: ["equipped_frame"]
             isOneToOne: false
             referencedRelation: "shop_items"
             referencedColumns: ["id"]
@@ -1661,7 +1671,12 @@ export type Database = {
         | "mute"
         | "unmute"
       room_rank: "owner" | "admin" | "moderator" | "member"
-      shop_item_kind: "badge" | "name_color" | "chat_color" | "effect"
+      shop_item_kind:
+        | "badge"
+        | "name_color"
+        | "chat_color"
+        | "effect"
+        | "avatar_frame"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1808,7 +1823,13 @@ export const Constants = {
         "unmute",
       ],
       room_rank: ["owner", "admin", "moderator", "member"],
-      shop_item_kind: ["badge", "name_color", "chat_color", "effect"],
+      shop_item_kind: [
+        "badge",
+        "name_color",
+        "chat_color",
+        "effect",
+        "avatar_frame",
+      ],
     },
   },
 } as const

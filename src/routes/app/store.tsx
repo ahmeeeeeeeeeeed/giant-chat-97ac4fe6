@@ -8,14 +8,15 @@ import { clearEquippedCache } from "@/lib/equipped";
 
 type ShopItem = {
   id: string;
-  kind: "badge" | "name_color" | "chat_color" | "effect";
+  kind: "badge" | "name_color" | "chat_color" | "effect" | "avatar_frame";
   code: string;
   name_ar: string;
   price: number;
-  payload: Record<string, string>;
+  payload: Record<string, any>;
   sort_order: number;
   gender_target?: string | null;
 };
+
 
 type GiftItem = {
   id: string;
@@ -26,18 +27,20 @@ type GiftItem = {
   category: string | null;
 };
 
-type TabKey = "badge" | "name_color" | "chat_color" | "entry_effect" | "chat_effect" | "gifts";
+type TabKey = "badge" | "avatar_frame" | "name_color" | "chat_color" | "entry_effect" | "chat_effect" | "gifts";
 
 export const Route = createFileRoute("/app/store")({ component: StorePage });
 
 const TABS: { key: TabKey; label: string; icon: any }[] = [
   { key: "badge", label: "الشارات", icon: Crown },
+  { key: "avatar_frame", label: "إطارات البروفايل", icon: Gem },
   { key: "entry_effect", label: "مؤثرات الدخول", icon: Sparkles },
   { key: "chat_effect", label: "مؤثرات الدردشة", icon: Flame },
   { key: "name_color", label: "ألوان الاسم", icon: Star },
   { key: "chat_color", label: "ألوان الخط", icon: Star },
   { key: "gifts", label: "الهدايا", icon: Gift },
 ];
+
 
 function StorePage() {
   const { user } = useAuth();
@@ -59,7 +62,7 @@ function StorePage() {
     (async () => {
       const [{ data: shop }, { data: prof }, { data: inv }, { data: cfg }, { data: giftRows }] = await Promise.all([
         supabase.from("shop_items").select("*").order("sort_order"),
-        supabase.from("profiles").select("points, gender, equipped_badge, equipped_name_color, equipped_chat_color, equipped_effect").eq("id", user.id).maybeSingle(),
+        supabase.from("profiles").select("points, gender, equipped_badge, equipped_name_color, equipped_chat_color, equipped_effect, equipped_frame").eq("id", user.id).maybeSingle(),
         supabase.from("user_inventory").select("item_id").eq("user_id", user.id),
         supabase.from("app_config").select("value").eq("key", "points_seller_username").maybeSingle(),
         supabase.from("gifts_catalog").select("id, name, emoji, cost_points, scope, category").eq("is_active", true).order("sort_order"),
@@ -73,7 +76,9 @@ function StorePage() {
         name_color: (prof as any)?.equipped_name_color ?? null,
         chat_color: (prof as any)?.equipped_chat_color ?? null,
         effect: (prof as any)?.equipped_effect ?? null,
+        avatar_frame: (prof as any)?.equipped_frame ?? null,
       });
+
       setOwned(new Set((inv ?? []).map((r: { item_id: string }) => r.item_id)));
       if (cfg?.value) {
         setAdminUsername(cfg.value);
@@ -129,8 +134,10 @@ function StorePage() {
     if (tab === "entry_effect") return items.filter((i) => i.kind === "effect" && i.code.startsWith("entry_"));
     if (tab === "chat_effect") return items.filter((i) => i.kind === "effect" && !i.code.startsWith("entry_"));
     if (tab === "gifts") return [];
+    if (tab === "avatar_frame") return items.filter((i) => i.kind === "avatar_frame");
     return items.filter((i) => i.kind === tab);
   }, [items, tab]);
+
 
   return (
     <main className="flex flex-1 flex-col pb-24">
@@ -275,6 +282,16 @@ function Preview({ item }: { item: ShopItem }) {
     return <div className="text-2xl font-extrabold" style={{ color }}>اسمك</div>;
   if (item.kind === "chat_color")
     return <div className="rounded-2xl bg-primary/15 px-3 py-2 text-sm font-bold" style={{ color }}>مرحباً 👋</div>;
+  if (item.kind === "avatar_frame") {
+    const grad = item.payload?.gradient ?? "from-primary to-fuchsia-500";
+    const glow = item.payload?.glow ?? "shadow-primary/40";
+    const animated = !!item.payload?.animated;
+    return (
+      <div className={`relative inline-flex items-center justify-center rounded-full p-[4px] bg-gradient-to-tr ${grad} shadow-lg ${glow} ${animated ? "animate-[spin_8s_linear_infinite]" : ""}`}>
+        <div className={`grid h-16 w-16 place-items-center rounded-full bg-background text-2xl ${animated ? "[animation:spin_8s_linear_infinite_reverse]" : ""}`}>👤</div>
+      </div>
+    );
+  }
   if (item.kind === "effect") {
     if (item.code.startsWith("entry_")) {
       const map: Record<string, string> = {
@@ -287,6 +304,7 @@ function Preview({ item }: { item: ShopItem }) {
   }
   return null;
 }
+
 
 export function BadgeChip({ code, color, name }: { code: string; color?: string; name: string }) {
   const Icon = code.includes("diamond") ? Gem : code.includes("verified") ? CheckCircle2 : code.includes("fire") ? Flame : code.includes("star") ? Star : Crown;
