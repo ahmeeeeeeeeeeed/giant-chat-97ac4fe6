@@ -75,7 +75,7 @@ export function GiftPickerModal({
       toast.error("تعذر إرسال الهدية: " + error.message);
       return;
     }
-    toast.success(`🎁 تم إرسال ${gift.emoji ?? ""} ${gift.name}`);
+    // No toast — gift animation + system message in the room are the feedback.
     setMyPoints((p) => p - gift.cost_points);
     onClose();
   }

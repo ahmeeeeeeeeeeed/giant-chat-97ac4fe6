@@ -128,11 +128,12 @@ function BurstLabel({ burst, big }: { burst: GiftBurst; big?: boolean }) {
           </span>
         )}
         <div className="text-sm sm:text-base">
-          <span className="font-bold text-amber-300">{burst.receiverName ?? "عضو"}</span>
-          <span className="opacity-90"> استلمت هدية </span>
-          <span className="font-bold text-pink-300">{burst.giftName}</span>
-          <span className="opacity-90"> من </span>
           <span className="font-bold text-emerald-300">{burst.senderName ?? "مستخدم"}</span>
+          <span className="opacity-90"> أرسل إلى </span>
+          <span className="font-bold text-pink-300">{burst.receiverName ?? "عضو"}</span>
+          <span className="opacity-90"> هدية </span>
+          <span className="font-bold text-amber-300">{burst.giftName}</span>
+          <span className="ms-1">{burst.emoji}</span>
         </div>
       </div>
     </div>
