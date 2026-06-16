@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useIsAdmin } from "@/lib/use-admin";
 import { supabase } from "@/integrations/supabase/client";
-import { Shield, Coins, Megaphone, Hash, Loader2, ChevronLeft, Newspaper, Users as UsersIcon, Package, Crown, Trash2, Check, X } from "lucide-react";
+import { Shield, Coins, Megaphone, Hash, Loader2, ChevronLeft, Newspaper, Users as UsersIcon, Package, Crown, Trash2, Check, X, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { PremiumCreateModal } from "@/components/PremiumCreateModal";
 import { useServerFn } from "@tanstack/react-start";
