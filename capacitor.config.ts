@@ -14,10 +14,19 @@ const config: CapacitorConfig = {
   webDir: "dist/client",
   server: {
     androidScheme: "https",
+    iosScheme: "https",
   },
   android: {
     allowMixedContent: false,
     webContentsDebuggingEnabled: false,
+  },
+  ios: {
+    // Allow the WebView to extend under the notch / Dynamic Island and the
+    // home indicator. Safe-area insets in CSS keep content tappable.
+    contentInset: "never",
+    scrollEnabled: true,
+    limitsNavigationsToAppBoundDomains: false,
+    backgroundColor: "#0a1a14",
   },
   plugins: {
     SplashScreen: {
@@ -27,6 +36,9 @@ const config: CapacitorConfig = {
       androidSplashResourceName: "splash",
       androidScaleType: "CENTER_CROP",
       showSpinner: false,
+      iosSpinnerStyle: "small",
+      splashFullScreen: true,
+      splashImmersive: true,
     },
     StatusBar: {
       // Edge-to-edge: WebView fills the entire screen including under the
