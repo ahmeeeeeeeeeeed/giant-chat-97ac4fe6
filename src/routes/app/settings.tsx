@@ -23,6 +23,7 @@ import { toast } from "sonner";
 import { PremiumCreateModal } from "@/components/PremiumCreateModal";
 
 export const Route = createFileRoute("/app/settings")({
+  validateSearch: (s: Record<string, unknown>) => ({ about: s.about ? 1 : undefined }),
   component: SettingsPage,
 });
 
