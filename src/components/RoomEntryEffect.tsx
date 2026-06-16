@@ -401,7 +401,12 @@ function KnightEffect() {
       ))}
       <div
         className="absolute top-1/2 -translate-y-1/2"
-        style={{ animation: "knight-gallop 5s linear forwards", filter: "drop-shadow(0 10px 20px rgba(0,0,0,0.55))" }}
+        style={{
+          width: "min(90vw, 560px)",
+          height: "auto",
+          animation: "knight-gallop 5s linear forwards",
+          filter: "drop-shadow(0 10px 20px rgba(0,0,0,0.55))",
+        }}
       >
         <CharImg src={knightImg} alt="Knight" />
       </div>
