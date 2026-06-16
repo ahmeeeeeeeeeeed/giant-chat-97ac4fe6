@@ -84,8 +84,15 @@ function ProfilePage() {
       try {
         const { data, error } = await supabase
           .from("profiles")
-          .select("username, bio, avatar_url, points, gender, country, hide_last_seen, dm_locked, profile_views")
+          .select("username, bio, avatar_url, points, gender, country, hide_last_seen, dm_locked, profile_views, cover_url, cover_type")
           .eq("id", user.id).maybeSingle();
+        if (error) throw error;
+        if (data) {
+          setUsername(data.username);
+          setBio(data.bio ?? "");
+          setAvatarUrl(data.avatar_url);
+          setCoverUrl((data as any).cover_url ?? null);
+          setCoverType((data as any).cover_type ?? null);
         if (error) throw error;
         if (data) {
           setUsername(data.username);
