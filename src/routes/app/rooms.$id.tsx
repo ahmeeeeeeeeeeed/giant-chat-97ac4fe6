@@ -203,6 +203,19 @@ function RoomPage() {
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "room_messages", filter: `room_id=eq.${roomId}` },
         (p) => {
           const m: any = p.new;
+          // Trigger gift burst overlay for gift system messages
+          const gmeta = m?.meta as any;
+          if ((gmeta?.kind === "gift" || gmeta?.kind === "gift_global") && gmeta?.emoji) {
+            setGiftBurst({
+              id: String(m.id),
+              emoji: gmeta.emoji,
+              giftName: gmeta.gift_name ?? "هدية",
+              senderName: gmeta.sender_name,
+              receiverName: gmeta.receiver_name,
+              effectType: (gmeta.effect_type as any) ?? "overlay",
+              isGlobal: gmeta.kind === "gift_global" || gmeta.scope === "global",
+            });
+          }
           // Plain system messages float as a transient notice instead of
           // joining the chat history.
           if (isPlainSystem(m)) {
@@ -210,7 +223,6 @@ function RoomPage() {
             markRoomSeen(roomId);
             return;
           }
-          setMessages((prev) => {
             if (prev.some((x) => x.id === m.id)) return prev;
             // Replace any matching optimistic temp message from the same sender
             const tmpIdx = prev.findIndex((x) =>
