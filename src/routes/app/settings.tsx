@@ -16,7 +16,7 @@ import {
 import { SUPPORTED_LANGUAGES } from "@/lib/i18n";
 import { findAdminId } from "@/lib/find-admin";
 import { APP_VERSION, getVersionCode } from "@/lib/version";
-import { isNativeAndroid, downloadAndInstallApk, applyWebBundleUpdate } from "@/lib/app-update";
+import { isNativeAndroid, downloadAndInstallApk, applyWebBundleUpdate, getEffectiveInstalledCode, markUpdateInstalled } from "@/lib/app-update";
 import { cacheGet, cacheSet } from "@/lib/offline-cache";
 import { getOnline, useOnline } from "@/lib/use-online";
 import { toast } from "sonner";
@@ -147,6 +147,7 @@ function SettingsPage() {
       if (latest.web_bundle_url) {
         const v = latest.web_bundle_version || String(latest.version_code) || latest.version;
         await applyWebBundleUpdate(latest.web_bundle_url, v, (p) => setInstallProgress(p));
+        markUpdateInstalled(latest.version, latest.version_code);
         toast.success("تم تطبيق التحديث");
         return;
       }
@@ -156,6 +157,7 @@ function SettingsPage() {
         return;
       }
       await downloadAndInstallApk(latest.file_url, (p) => setInstallProgress(p));
+      markUpdateInstalled(latest.version, latest.version_code);
     } catch (e: any) {
       toast.error(e?.message || "فشل التحديث");
     } finally {
@@ -237,7 +239,7 @@ function SettingsPage() {
     }
   };
 
-  const hasUpdate = latest && latest.version_code > getVersionCode(APP_VERSION);
+  const hasUpdate = latest && latest.version_code > getEffectiveInstalledCode();
 
   const currentLang = SUPPORTED_LANGUAGES.find((l) => l.code === i18n.language) ?? SUPPORTED_LANGUAGES[0];
 
