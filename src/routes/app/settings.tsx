@@ -16,7 +16,7 @@ import {
 import { SUPPORTED_LANGUAGES } from "@/lib/i18n";
 import { findAdminId } from "@/lib/find-admin";
 import { APP_VERSION, getVersionCode } from "@/lib/version";
-import { isNativeAndroid, downloadAndInstallApk, applyWebBundleUpdate, shouldShowUpdate, shouldInstallFullApk, markUpdateInstalled, getDisplayInstalledVersion, getDisplayInstalledCode, notifyNativeUpdateReady, syncNativeInstalledVersion } from "@/lib/app-update";
+import { isNativeAndroid, downloadAndInstallApk, applyWebBundleUpdate, shouldShowUpdate, shouldInstallFullApk, getDisplayInstalledVersion, getDisplayInstalledCode, notifyNativeUpdateReady, syncNativeInstalledVersion } from "@/lib/app-update";
 import { cacheGet, cacheSet, cacheDel } from "@/lib/offline-cache";
 import { getOnline, useOnline } from "@/lib/use-online";
 import { toast } from "sonner";
@@ -157,7 +157,6 @@ function SettingsPage() {
         await downloadAndInstallApk(
           latest.file_url,
           (p) => setInstallProgress(p),
-          () => markUpdateInstalled(latest.version, latest.version_code),
         );
         return;
       }
@@ -176,7 +175,6 @@ function SettingsPage() {
       await downloadAndInstallApk(
         latest.file_url,
         (p) => setInstallProgress(p),
-        () => markUpdateInstalled(latest.version, latest.version_code),
       );
     } catch (e: any) {
       toast.error(e?.message || "فشل التحديث");

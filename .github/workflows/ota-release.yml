@@ -1,6 +1,6 @@
 name: OTA Release
 
-# يعمل تلقائياً عند كل push ناجح إلى main
+# يعمل تلقائياً بعد نجاح Build Android APK على main
 # الخطوات:
 #   1. بناء نسخة الويب (CAPACITOR_BUILD=1)
 #   2. ضغطها bundle.zip
@@ -8,7 +8,9 @@ name: OTA Release
 #   4. تفعيله كـ OTA للمستخدمين
 
 on:
-  push:
+  workflow_run:
+    workflows: ["Build Android APK"]
+    types: [completed]
     branches: [main]
   workflow_dispatch:
     inputs:
@@ -44,10 +46,12 @@ jobs:
             --data "$BODY"
 
   publish:
-    if: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && !inputs.rollback) }}
+    if: ${{ (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') || (github.event_name == 'workflow_dispatch' && !inputs.rollback) }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -55,6 +59,11 @@ jobs:
 
       - name: Install deps
         run: bun install --frozen-lockfile
+
+      - name: Match APK build version
+        env:
+          APP_VERSION_PATCH: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.run_number || github.run_number }}
+        run: node scripts/bump-version.mjs patch
 
       - name: Build web bundle
         env:

@@ -23,6 +23,11 @@ const NATIVE_VERSION_KEY = "giant.update.native.v";
 const NATIVE_CODE_KEY = "giant.update.native.code";
 const WEB_BUNDLE_VERSION_KEY = "web_bundle_version";
 
+function getSafeVersionCode(version?: string | null): number {
+  if (!version || version === "builtin") return 0;
+  return getVersionCode(version);
+}
+
 function readStoredCode(key: string): number {
   try {
     const raw = typeof window !== "undefined" ? localStorage.getItem(key) : null;
@@ -73,7 +78,8 @@ export function getApkVersionFromUrl(url?: string | null): string | null {
 export function shouldInstallFullApk(latest: Pick<AppUpdateRow, "file_url" | "version_code">): boolean {
   const apkVersion = getApkVersionFromUrl(latest.file_url);
   if (!apkVersion) return false;
-  return getVersionCode(apkVersion) > getNativeInstalledCode();
+  const apkCode = getVersionCode(apkVersion);
+  return apkCode > getNativeInstalledCode() && apkCode >= latest.version_code;
 }
 
 export function getDisplayInstalledVersion(): string {
@@ -116,16 +122,37 @@ export async function notifyNativeUpdateReady(): Promise<void> {
     const { CapacitorUpdater } = await import("@capgo/capacitor-updater");
     const ready = await CapacitorUpdater.notifyAppReady();
     let activeVersion = ready?.bundle?.version;
+    let nativeVersion: string | null = null;
 
     // Some Android launches report the ready bundle before local JS storage is
     // hydrated. Read the updater's native source of truth too, so an already
     // applied OTA bundle (e.g. 11.0.0) is never offered again as a new update.
     try {
       const current = await CapacitorUpdater.current();
+      nativeVersion = current?.native || null;
       if (current?.bundle?.version && current.bundle.version !== "builtin") {
         activeVersion = current.bundle.version;
       }
     } catch { /* ignore */ }
+
+    if (nativeVersion) {
+      localStorage.setItem(NATIVE_VERSION_KEY, nativeVersion);
+      localStorage.setItem(NATIVE_CODE_KEY, String(getVersionCode(nativeVersion)));
+    }
+
+    // After a full APK install, Android may still have an older OTA bundle cached.
+    // If that happens, reset to the APK-bundled web code so the app actually opens
+    // on the newly installed version instead of the previous web bundle.
+    if (
+      activeVersion && activeVersion !== "builtin" && nativeVersion &&
+      getSafeVersionCode(activeVersion) < getSafeVersionCode(nativeVersion)
+    ) {
+      localStorage.removeItem(WEB_BUNDLE_VERSION_KEY);
+      localStorage.removeItem(INSTALLED_VERSION_KEY);
+      localStorage.removeItem(INSTALLED_CODE_KEY);
+      await CapacitorUpdater.reset({ toLastSuccessful: false });
+      return;
+    }
 
     if (activeVersion && activeVersion !== "builtin") {
       localStorage.setItem(WEB_BUNDLE_VERSION_KEY, activeVersion);
@@ -144,9 +171,15 @@ export function isUpdateAlreadyMarked(latest: Pick<AppUpdateRow, "version" | "ve
   return webVersion === latest.version || getVersionCode(webVersion || "0.0.0") === latest.version_code;
 }
 
-export function shouldShowUpdate(latest: Pick<AppUpdateRow, "version" | "version_code">): boolean {
+export function shouldShowUpdate(latest: Pick<AppUpdateRow, "version" | "version_code"> & Partial<Pick<AppUpdateRow, "file_url" | "web_bundle_url" | "web_bundle_version">>): boolean {
   if ("file_url" in latest && shouldInstallFullApk(latest as Pick<AppUpdateRow, "file_url" | "version_code">)) return true;
   if (isUpdateAlreadyMarked(latest)) return false;
+  if (latest.web_bundle_url) {
+    const bundleVersion = latest.web_bundle_version || latest.version;
+    const bundleCode = getVersionCode(bundleVersion);
+    if (bundleCode > getEffectiveInstalledCode()) return true;
+    if (latest.version_code > getEffectiveInstalledCode() && bundleCode >= getNativeInstalledCode()) return true;
+  }
   return latest.version_code > getEffectiveInstalledCode();
 }
 
