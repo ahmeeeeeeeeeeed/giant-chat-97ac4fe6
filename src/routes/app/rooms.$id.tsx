@@ -196,13 +196,15 @@ function RoomPage() {
   }, [messages, roomId]);
 
   useEffect(() => {
+    if (!user?.id) return; // wait for auth so RLS allows reads
     loadRoom();
     checkBanned();
     loadMembership();
     loadMemberCount();
     loadMessages();
-    if (user?.id) ensureProfiles([user.id]);
+    ensureProfiles([user.id]);
     markRoomSeen(roomId);
+
 
     const ch = supabase
       .channel(`room:${roomId}`)
