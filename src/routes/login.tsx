@@ -4,8 +4,7 @@ import { useTranslation } from "react-i18next";
 import { signInWithUsername } from "@/lib/auth";
 import { toast } from "sonner";
 import { ArrowRight, Loader2, Eye, EyeOff, User, Lock, Sparkles } from "lucide-react";
-import welcomePoster from "@/assets/welcome-poster.jpg.asset.json";
-import { assetUrl } from "@/lib/asset-url";
+const WELCOME_POSTER = "/media/welcome-poster.jpg";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,

@@ -41,8 +41,8 @@ function Welcome() {
       {/* Background video (autoplay, muted, loop) with poster fallback */}
       <video
         ref={videoRef}
-        src={assetUrl(welcomeVideo.url)}
-        poster={assetUrl(welcomePoster.url)}
+        src={WELCOME_VIDEO}
+        poster={WELCOME_POSTER}
         autoPlay
         loop
         muted
