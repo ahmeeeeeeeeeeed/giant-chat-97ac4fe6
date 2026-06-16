@@ -1,0 +1,114 @@
+name: OTA Release
+
+# يعمل تلقائياً عند كل push ناجح إلى main
+# الخطوات:
+#   1. بناء نسخة الويب (CAPACITOR_BUILD=1)
+#   2. ضغطها bundle.zip
+#   3. رفعها إلى GitHub Release باسم ota-<run_number>
+#   4. استدعاء /api/public/ota-publish لتفعيلها كـ OTA
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      rollback:
+        description: 'Rollback to previous OTA bundle'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write  # مطلوب لإنشاء GitHub Release
+
+concurrency:
+  group: ota-release
+  cancel-in-progress: false
+
+jobs:
+  rollback:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.rollback }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call rollback endpoint
+        env:
+          OTA_PUBLISH_SECRET: ${{ secrets.OTA_PUBLISH_SECRET }}
+          OTA_ENDPOINT: https://giant-chat.lovable.app/api/public/ota-publish
+        run: |
+          BODY='{"action":"rollback"}'
+          TS=$(date +%s)
+          SIG=$(printf '%s.%s' "$TS" "$BODY" | openssl dgst -sha256 -hmac "$OTA_PUBLISH_SECRET" | awk '{print $2}')
+          curl -fsSL -X POST "$OTA_ENDPOINT" \
+            -H "content-type: application/json" \
+            -H "x-ota-timestamp: $TS" \
+            -H "x-ota-signature: $SIG" \
+            --data "$BODY"
+
+  publish:
+    if: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && !inputs.rollback) }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install deps
+        run: bun install --frozen-lockfile
+
+      - name: Build web bundle
+        env:
+          CAPACITOR_BUILD: '1'
+        run: bun run build
+
+      - name: Resolve build output dir
+        id: outdir
+        run: |
+          if [ -d "dist/client" ]; then
+            echo "dir=dist/client" >> "$GITHUB_OUTPUT"
+          elif [ -d "dist" ]; then
+            echo "dir=dist" >> "$GITHUB_OUTPUT"
+          else
+            echo "::error::No build output directory found"; exit 1
+          fi
+
+      - name: Create bundle.zip
+        run: |
+          cd "${{ steps.outdir.outputs.dir }}"
+          zip -r "$GITHUB_WORKSPACE/bundle.zip" .
+
+      - name: Compute version
+        id: ver
+        run: echo "version=1.0.${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release with bundle.zip
+        id: release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="ota-v${{ steps.ver.outputs.version }}"
+          gh release create "$TAG" bundle.zip \
+            --title "OTA ${{ steps.ver.outputs.version }}" \
+            --notes "Automated OTA bundle from commit ${{ github.sha }}" \
+            --target "${{ github.sha }}"
+          URL="https://github.com/${{ github.repository }}/releases/download/${TAG}/bundle.zip"
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+
+      - name: Publish OTA via signed endpoint
+        env:
+          OTA_PUBLISH_SECRET: ${{ secrets.OTA_PUBLISH_SECRET }}
+          OTA_ENDPOINT: https://giant-chat.lovable.app/api/public/ota-publish
+          VERSION: ${{ steps.ver.outputs.version }}
+          URL: ${{ steps.release.outputs.url }}
+          MSG: ${{ github.event.head_commit.message }}
+        run: |
+          BODY=$(jq -cn --arg v "$VERSION" --arg u "$URL" --arg m "$MSG" \
+            '{version:$v, url:$u, message:$m}')
+          TS=$(date +%s)
+          SIG=$(printf '%s.%s' "$TS" "$BODY" | openssl dgst -sha256 -hmac "$OTA_PUBLISH_SECRET" | awk '{print $2}')
+          echo "Publishing OTA $VERSION -> $URL"
+          curl -fsSL -X POST "$OTA_ENDPOINT" \
+            -H "content-type: application/json" \
+            -H "x-ota-timestamp: $TS" \
+            -H "x-ota-signature: $SIG" \
+            --data "$BODY"

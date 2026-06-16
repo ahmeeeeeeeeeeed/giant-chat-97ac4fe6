@@ -43,6 +43,7 @@ import { Route as AppAdminStoriesRouteImport } from './routes/app/admin.stories'
 import { Route as AppAdminRoomsRouteImport } from './routes/app/admin.rooms'
 import { Route as AppAdminCommunityRouteImport } from './routes/app/admin.community'
 import { Route as ApiPublicSearchTrackRouteImport } from './routes/api/public/search-track'
+import { Route as ApiPublicOtaPublishRouteImport } from './routes/api/public/ota-publish'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -214,6 +215,11 @@ const ApiPublicSearchTrackRoute = ApiPublicSearchTrackRouteImport.update({
   path: '/api/public/search-track',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicOtaPublishRoute = ApiPublicOtaPublishRouteImport.update({
+  id: '/api/public/ota-publish',
+  path: '/api/public/ota-publish',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -239,6 +245,7 @@ export interface FileRoutesByFullPath {
   '/app/stories': typeof AppStoriesRoute
   '/profile/$id': typeof ProfileIdRoute
   '/app/': typeof AppIndexRoute
+  '/api/public/ota-publish': typeof ApiPublicOtaPublishRoute
   '/api/public/search-track': typeof ApiPublicSearchTrackRoute
   '/app/admin/community': typeof AppAdminCommunityRoute
   '/app/admin/rooms': typeof AppAdminRoomsRoute
@@ -273,6 +280,7 @@ export interface FileRoutesByTo {
   '/app/stories': typeof AppStoriesRoute
   '/profile/$id': typeof ProfileIdRoute
   '/app': typeof AppIndexRoute
+  '/api/public/ota-publish': typeof ApiPublicOtaPublishRoute
   '/api/public/search-track': typeof ApiPublicSearchTrackRoute
   '/app/admin/community': typeof AppAdminCommunityRoute
   '/app/admin/rooms': typeof AppAdminRoomsRoute
@@ -310,6 +318,7 @@ export interface FileRoutesById {
   '/app/stories': typeof AppStoriesRoute
   '/profile/$id': typeof ProfileIdRoute
   '/app/': typeof AppIndexRoute
+  '/api/public/ota-publish': typeof ApiPublicOtaPublishRoute
   '/api/public/search-track': typeof ApiPublicSearchTrackRoute
   '/app/admin/community': typeof AppAdminCommunityRoute
   '/app/admin/rooms': typeof AppAdminRoomsRoute
@@ -348,6 +357,7 @@ export interface FileRouteTypes {
     | '/app/stories'
     | '/profile/$id'
     | '/app/'
+    | '/api/public/ota-publish'
     | '/api/public/search-track'
     | '/app/admin/community'
     | '/app/admin/rooms'
@@ -382,6 +392,7 @@ export interface FileRouteTypes {
     | '/app/stories'
     | '/profile/$id'
     | '/app'
+    | '/api/public/ota-publish'
     | '/api/public/search-track'
     | '/app/admin/community'
     | '/app/admin/rooms'
@@ -418,6 +429,7 @@ export interface FileRouteTypes {
     | '/app/stories'
     | '/profile/$id'
     | '/app/'
+    | '/api/public/ota-publish'
     | '/api/public/search-track'
     | '/app/admin/community'
     | '/app/admin/rooms'
@@ -440,6 +452,7 @@ export interface RootRouteChildren {
   RegisterRoute: typeof RegisterRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   ProfileIdRoute: typeof ProfileIdRoute
+  ApiPublicOtaPublishRoute: typeof ApiPublicOtaPublishRoute
   ApiPublicSearchTrackRoute: typeof ApiPublicSearchTrackRoute
 }
 
@@ -683,6 +696,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicSearchTrackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/ota-publish': {
+      id: '/api/public/ota-publish'
+      path: '/api/public/ota-publish'
+      fullPath: '/api/public/ota-publish'
+      preLoaderRoute: typeof ApiPublicOtaPublishRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -763,6 +783,7 @@ const rootRouteChildren: RootRouteChildren = {
   RegisterRoute: RegisterRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   ProfileIdRoute: ProfileIdRoute,
+  ApiPublicOtaPublishRoute: ApiPublicOtaPublishRoute,
   ApiPublicSearchTrackRoute: ApiPublicSearchTrackRoute,
 }
 export const routeTree = rootRouteImport
