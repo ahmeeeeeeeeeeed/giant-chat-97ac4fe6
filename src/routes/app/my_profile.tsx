@@ -13,6 +13,7 @@ import { getEquipped, type EquippedSet } from "@/lib/equipped";
 import { BadgeChip } from "@/routes/app/store";
 
 import { cacheGet, cacheSet, cacheKeys } from "@/lib/offline-cache";
+import { StoryRing } from "@/components/StoryRing";
 
 export const Route = createFileRoute("/app/my_profile")({
   component: ProfilePage,
