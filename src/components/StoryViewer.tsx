@@ -231,6 +231,15 @@ export function StoryViewer({
           <div className="absolute left-1 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none"><ChevronLeft className="h-6 w-6" /></div>
         )}
       </div>
+
+      <CreateStoryDialog
+        open={!!editing}
+        editing={editing}
+        onClose={() => { setEditing(null); setPaused(false); }}
+        onCreated={() => {
+          if (currentUser) fetchUserStories(currentUser.user_id).then((s) => setStories(s));
+        }}
+      />
     </div>
   );
 }
