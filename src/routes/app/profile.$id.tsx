@@ -35,6 +35,23 @@ function OtherProfilePage() {
   const [isBlocked, setIsBlocked] = useState(false);
   const [isBlockedBy, setIsBlockedBy] = useState(false);
   const [isFriend, setIsFriend] = useState(false);
+  const [entryBurst, setEntryBurst] = useState<EntryBurst | null>(null);
+
+  // Play the profile owner's equipped entry effect once per profile open
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data: p } = await supabase.from("profiles")
+        .select("username, equipped_effect").eq("id", otherId).maybeSingle();
+      if (cancelled || !p?.equipped_effect) return;
+      const { data: item } = await supabase.from("shop_items")
+        .select("code, kind").eq("id", p.equipped_effect).maybeSingle();
+      if (cancelled || !item?.code?.startsWith("entry_")) return;
+      const type = item.code.replace("entry_", "") as EntryEffectType;
+      setEntryBurst({ id: Date.now() + Math.random(), type, name: p.username });
+    })();
+    return () => { cancelled = true; };
+  }, [otherId]);
 
   useEffect(() => {
     if (!user) return;
