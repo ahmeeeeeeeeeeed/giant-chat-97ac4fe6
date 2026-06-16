@@ -88,14 +88,28 @@
 @layer base {
   * {
     border-color: var(--color-border);
+    -webkit-tap-highlight-color: transparent;
   }
   html {
     font-family: var(--font-sans);
+    /* Prevent iOS text auto-zoom in landscape */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    /* Use dynamic viewport units so iOS Safari bottom bar / Android keyboard
+       don't break full-height layouts */
+    height: 100%;
   }
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* Disable pull-to-refresh and rubber-band that conflicts with chat UX */
+    overscroll-behavior-y: none;
+    /* Avoid iOS double-tap zoom on buttons */
+    touch-action: manipulation;
+    min-height: 100vh;
+    min-height: 100dvh;
     background-image:
       linear-gradient(180deg, color-mix(in oklab, var(--background) 78%, transparent), color-mix(in oklab, var(--background) 92%, transparent)),
       url("https://giant-chat.lovable.app/__l5e/assets-v1/fca5876a-b66b-4d09-9da4-e7faf953d46f/app-bg.jpg");
@@ -107,6 +121,22 @@
   .dark body {
     background-image: none;
   }
+  /* iOS WebKit zooms inputs whose font-size < 16px. Force 16px minimum. */
+  input, textarea, select {
+    font-size: 16px;
+  }
+  @media (min-width: 768px) {
+    input, textarea, select { font-size: inherit; }
+  }
+  /* Prevent long-press selection on UI chrome (chat bubbles keep their own) */
+  button, [role="button"], nav, header {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+  /* Use dynamic viewport height where supported (iOS Safari address bar fix) */
+  .min-h-screen { min-height: 100vh; min-height: 100dvh; }
+  .h-screen { height: 100vh; height: 100dvh; }
 }
 
 /* subtle bubble animations */
