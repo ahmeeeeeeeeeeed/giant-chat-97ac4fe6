@@ -691,16 +691,12 @@ function RoomPage() {
             <button onClick={() => openSettingsAt("members")} className="rounded-lg p-2 hover:bg-secondary transition" aria-label="الإعدادات">
               <Settings className="h-4.5 w-4.5" />
             </button>
-            {isMember ? (
+            {isMember && (
               <button onClick={leaveRoom} className="rounded-lg bg-red-500/10 px-2.5 py-1.5 text-xs font-medium text-red-500 hover:bg-red-500/20 transition">
                 مغادرة
               </button>
-            ) : (
-              <button onClick={() => tryJoin()} disabled={joining || isBanned}
-                className="rounded-lg bg-gradient-to-r from-emerald-500 to-emerald-600 px-3 py-1.5 text-xs font-bold text-white shadow-md hover:from-emerald-600 hover:to-emerald-700 transition disabled:opacity-50">
-                {joining ? <Loader2 className="h-4 w-4 animate-spin" /> : isBanned ? "محظور" : "انضمام"}
-              </button>
             )}
+
           </div>
         </div>
 
