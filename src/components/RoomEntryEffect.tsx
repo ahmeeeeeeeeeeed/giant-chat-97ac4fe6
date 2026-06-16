@@ -421,7 +421,12 @@ function MagicEffect() {
            style={{ background: "radial-gradient(circle at center, rgba(180,120,255,0.45), transparent 60%)" }} />
       <div
         className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-        style={{ animation: "magic-burst 5s ease-out forwards", filter: "drop-shadow(0 0 50px gold)" }}
+        style={{
+          width: "min(90vw, 560px)",
+          height: "auto",
+          animation: "magic-burst 5s ease-out forwards",
+          filter: "drop-shadow(0 0 50px gold)",
+        }}
       >
         <CharImg src={magicImg} alt="Magic burst" />
       </div>
