@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { WeeklyAchievementsBadge } from "@/components/WeeklyAchievementsBadge";
 import { toast } from "sonner";
-import { Loader2, Camera, User as UserIcon, Bell, Info, Shield, ChevronLeft, Lock, EyeOff, Globe, Eye, Mail, CheckCircle2, KeyRound, History, Trash2 } from "lucide-react";
+import { Loader2, Camera, User as UserIcon, Bell, Info, Shield, ChevronLeft, Lock, EyeOff, Globe, Eye, Mail, CheckCircle2, KeyRound, History, Trash2, ImageIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { getEquipped, type EquippedSet } from "@/lib/equipped";
 import { BadgeChip } from "@/routes/app/store";
@@ -28,6 +28,10 @@ function ProfilePage() {
   const [username, setUsername] = useState("");
   const [bio, setBio] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [coverUrl, setCoverUrl] = useState<string | null>(null);
+  const [coverType, setCoverType] = useState<string | null>(null);
+  const [coverUploading, setCoverUploading] = useState(false);
+  const coverFileRef = useRef<HTMLInputElement>(null);
   const [points, setPoints] = useState<number>(0);
   const [gender, setGender] = useState<"male" | "female" | null>(null);
   const [country, setCountry] = useState<string>("");
@@ -80,13 +84,15 @@ function ProfilePage() {
       try {
         const { data, error } = await supabase
           .from("profiles")
-          .select("username, bio, avatar_url, points, gender, country, hide_last_seen, dm_locked, profile_views")
+          .select("username, bio, avatar_url, points, gender, country, hide_last_seen, dm_locked, profile_views, cover_url, cover_type")
           .eq("id", user.id).maybeSingle();
         if (error) throw error;
         if (data) {
           setUsername(data.username);
           setBio(data.bio ?? "");
           setAvatarUrl(data.avatar_url);
+          setCoverUrl((data as any).cover_url ?? null);
+          setCoverType((data as any).cover_type ?? null);
           setPoints(data.points ?? 0);
           setGender((data.gender as "male" | "female" | null) ?? null);
           setCountry(data.country ?? "");
@@ -183,6 +189,41 @@ function ProfilePage() {
     }
   };
 
+  const onPickCover = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !user) return;
+    if (file.size > 15 * 1024 * 1024) { toast.error("الحد الأقصى 15 ميجابايت"); return; }
+    setCoverUploading(true);
+    try {
+      const ext = file.name.split(".").pop()?.toLowerCase() || "bin";
+      const path = `${user.id}/cover-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("profile-covers")
+        .upload(path, file, { upsert: true, contentType: file.type });
+      if (upErr) throw upErr;
+      const { data: signed } = await supabase.storage.from("profile-covers")
+        .createSignedUrl(path, 60 * 60 * 24 * 365 * 10);
+      const url = signed?.signedUrl;
+      if (!url) throw new Error("no_url");
+      const t2 = file.type.startsWith("video") ? "video" : (file.type === "image/gif" ? "gif" : "image");
+      const { error } = await supabase.rpc("set_profile_cover" as never, { _url: url, _type: t2 } as never);
+      if (error) throw error;
+      setCoverUrl(url); setCoverType(t2);
+      toast.success("تم تحديث الغلاف");
+    } catch (err: any) {
+      toast.error("فشل: " + (err?.message ?? ""));
+    } finally {
+      setCoverUploading(false);
+    }
+  };
+
+  const removeCover = async () => {
+    const { error } = await supabase.rpc("set_profile_cover" as never, { _url: null, _type: null } as never);
+    if (error) { toast.error("فشل: " + error.message); return; }
+    setCoverUrl(null); setCoverType(null);
+    toast.success("تمت إزالة الغلاف");
+  };
+
   const toggleNotif = async () => {
     const next = !notifEnabled;
     if (next && "Notification" in window) {
@@ -202,6 +243,35 @@ function ProfilePage() {
       </header>
 
       <div className="px-5 py-6">
+        {/* Cover */}
+        <div className="relative mb-4 h-44 overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-primary/15 via-card to-secondary">
+          {coverUrl ? (
+            coverType === "video" ? (
+              <video src={coverUrl} autoPlay loop muted playsInline className="h-full w-full object-cover" />
+            ) : (
+              <img src={coverUrl} alt="غلاف" className="h-full w-full object-cover" />
+            )
+          ) : (
+            <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+              <ImageIcon className="h-10 w-10 opacity-40" />
+            </div>
+          )}
+          <div className="absolute inset-x-0 bottom-0 flex items-center justify-end gap-2 bg-gradient-to-t from-black/60 to-transparent p-3">
+            <input ref={coverFileRef} type="file" accept="image/*,video/mp4,video/webm" onChange={onPickCover} className="hidden" />
+            {coverUrl && (
+              <button type="button" onClick={removeCover}
+                className="rounded-lg bg-red-500/80 px-3 py-1.5 text-xs font-bold text-white backdrop-blur hover:bg-red-500">
+                إزالة
+              </button>
+            )}
+            <button type="button" onClick={() => coverFileRef.current?.click()} disabled={coverUploading}
+              className="flex items-center gap-1.5 rounded-lg bg-white/90 px-3 py-1.5 text-xs font-bold text-black backdrop-blur hover:bg-white disabled:opacity-60">
+              {coverUploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Camera className="h-3.5 w-3.5" />}
+              {coverUrl ? "تغيير" : "إضافة غلاف"}
+            </button>
+          </div>
+        </div>
+
         {/* Hero card */}
         <div className="rounded-3xl border border-border bg-gradient-to-br from-primary/10 via-card to-secondary p-5">
           <div className="flex items-center gap-4">

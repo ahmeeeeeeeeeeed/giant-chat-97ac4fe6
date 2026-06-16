@@ -112,7 +112,7 @@ function RoomPage() {
   }, []);
 
   const loadRoom = async () => {
-    const { data, error } = await supabase.from("rooms").select("id, name, description, owner_id, created_at, type, max_members, is_active").eq("id", roomId).single();
+    const { data, error } = await supabase.from("rooms").select("id, name, description, owner_id, created_at, type, max_members, is_active, background_url, background_type").eq("id", roomId).single();
     if (error || !data) {
       toast.error("الغرفة غير موجودة");
       navigate({ to: "/app" });
@@ -616,7 +616,8 @@ function RoomPage() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gradient-to-b from-emerald-50/40 via-background to-background dark:from-emerald-950/20">
+    <div className="relative flex flex-col h-screen bg-gradient-to-b from-emerald-50/40 via-background to-background dark:from-emerald-950/20">
+      <RoomBackground url={room.background_url} type={room.background_type} />
       <RoomEntryEffect burst={entryBurst} />
       {/* Header */}
       <header className="sticky top-0 z-10 border-b border-border bg-background/80 backdrop-blur-xl" style={{ paddingTop: "env(safe-area-inset-top)" }}>
@@ -698,6 +699,7 @@ function RoomPage() {
             {canModerate && <ChipBtn icon={<Megaphone className="h-3 w-3" />} label="إعلان" onClick={() => setShowAnnounce(true)} highlight />}
             {canModerate && <ChipBtn icon={<Ban className="h-3 w-3" />} label="الحظر" onClick={() => openSettingsAt("bans")} />}
             {canModerate && <ChipBtn icon={<FileText className="h-3 w-3" />} label="السجل" onClick={() => openSettingsAt("logs")} />}
+            {isOwner && <ChipBtn icon={<ImageIcon className="h-3 w-3" />} label="خلفية" onClick={() => openSettingsAt("background")} />}
             {isOwner && <ChipBtn icon={<Edit3 className="h-3 w-3" />} label="إعدادات الغرفة" onClick={() => openSettingsAt("manage")} />}
           </div>
         )}
@@ -1071,7 +1073,23 @@ function InfoStat({ icon, value, label }: { icon: React.ReactNode; value: string
   );
 }
 
-type SettingsTab = "members" | "invite" | "bans" | "logs" | "manage";
+type SettingsTab = "members" | "invite" | "bans" | "logs" | "manage" | "background";
+
+function RoomBackground({ url, type }: { url: string | null; type: string | null }) {
+  if (!url) return null;
+  const isVideo = type === "video";
+  return (
+    <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+      {isVideo ? (
+        <video src={url} autoPlay loop muted playsInline
+          className="h-full w-full object-cover" />
+      ) : (
+        <img src={url} alt="" className="h-full w-full object-cover" />
+      )}
+      <div className="absolute inset-0 bg-background/70 backdrop-blur-sm dark:bg-background/80" />
+    </div>
+  );
+}
 
 function SettingsSheet({ roomId, room, canModerate, myRank, isOwner, ownerId, onClose, ensureProfiles, userMap, tab, setTab, onDeleted }: {
   roomId: string; room: any; canModerate: boolean; myRank: Rank | null; isOwner: boolean; ownerId: string;
@@ -1151,6 +1169,7 @@ function SettingsSheet({ roomId, room, canModerate, myRank, isOwner, ownerId, on
           <Tab id="invite" icon={<UserPlus className="h-4 w-4" />} label="دعوة" />
           <Tab id="bans" icon={<Ban className="h-4 w-4" />} label="الحظر" show={canModerate} />
           <Tab id="logs" icon={<FileText className="h-4 w-4" />} label="السجل" show={canModerate} />
+          <Tab id="background" icon={<ImageIcon className="h-4 w-4" />} label="خلفية" show={isOwner} />
           <Tab id="manage" icon={<Edit3 className="h-4 w-4" />} label="إدارة" show={isOwner} />
         </div>
 
@@ -1261,6 +1280,10 @@ function SettingsSheet({ roomId, room, canModerate, myRank, isOwner, ownerId, on
             </ul>
           )}
 
+          {isOwner && tab === "background" && (
+            <BackgroundTab room={room} roomId={roomId} />
+          )}
+
           {isOwner && tab === "manage" && (
             <ManageTab room={room} roomId={roomId} onDeleted={onDeleted} />
           )}
@@ -1362,16 +1385,22 @@ function ManageTab({ room, roomId, onDeleted }: { room: any; roomId: string; onD
     const update: any = {
       name: name.trim(),
       description: description.trim() || null,
-      type,
       max_members: Math.max(2, Math.min(500, Number(maxMembers) || 50)),
       is_active: isActive,
     };
-    if (type === "private" && changePw && password.trim()) update.password_hash = password.trim();
-    if (type === "public") update.password_hash = null;
     const { error } = await supabase.from("rooms").update(update).eq("id", roomId);
+    if (error) { setSaving(false); toast.error("فشل الحفظ: " + error.message); return; }
+
+    // Password / type changes via secure RPC (owner-only, server-side hashing)
+    if (type === "public") {
+      await supabase.rpc("set_room_password" as never, { _room: roomId, _password: null } as never);
+    } else if (type === "private" && changePw && password.trim()) {
+      const { error: pwErr } = await supabase.rpc("set_room_password" as never, { _room: roomId, _password: password.trim() } as never);
+      if (pwErr) { setSaving(false); toast.error("فشل ضبط كلمة المرور: " + pwErr.message); return; }
+    }
     setSaving(false);
-    if (error) toast.error("فشل الحفظ: " + error.message);
-    else { toast.success("تم حفظ التغييرات"); setChangePw(false); setPassword(""); }
+    toast.success("تم حفظ التغييرات");
+    setChangePw(false); setPassword("");
   };
 
   const deleteRoom = async () => {
@@ -1472,6 +1501,108 @@ function ManageTab({ room, roomId, onDeleted }: { room: any; roomId: string; onD
             </div>
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function BackgroundTab({ room, roomId }: { room: any; roomId: string }) {
+  const { user } = useAuth();
+  const [url, setUrl] = useState<string | null>(room.background_url ?? null);
+  const [type, setType] = useState<string | null>(room.background_type ?? null);
+  const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const fileRef = useRef<HTMLInputElement | null>(null);
+
+  const pick = () => fileRef.current?.click();
+
+  const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    if (file.size > 15 * 1024 * 1024) { toast.error("الحد الأقصى 15 ميجابايت"); return; }
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop()?.toLowerCase() || "bin";
+      const path = `${user.id}/${roomId}-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("room-backgrounds")
+        .upload(path, file, { upsert: true, contentType: file.type });
+      if (upErr) throw upErr;
+      const { data: signed } = await supabase.storage.from("room-backgrounds")
+        .createSignedUrl(path, 60 * 60 * 24 * 365 * 10);
+      const u = signed?.signedUrl ?? null;
+      if (!u) throw new Error("no_url");
+      const t = file.type.startsWith("video") ? "video" : (file.type === "image/gif" ? "gif" : "image");
+      setUrl(u); setType(t);
+      toast.success("تم الرفع — اضغط حفظ للتطبيق");
+    } catch (err: any) {
+      toast.error("فشل الرفع: " + (err?.message ?? ""));
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const save = async () => {
+    setSaving(true);
+    const { error } = await supabase.rpc("set_room_background" as never, { _room: roomId, _url: url, _type: type } as never);
+    setSaving(false);
+    if (error) toast.error("فشل: " + error.message);
+    else toast.success("تم تطبيق الخلفية على الغرفة");
+  };
+
+  const clear = async () => {
+    setSaving(true);
+    const { error } = await supabase.rpc("set_room_background" as never, { _room: roomId, _url: null, _type: null } as never);
+    setSaving(false);
+    if (error) toast.error("فشل: " + error.message);
+    else { setUrl(null); setType(null); toast.success("تمت إزالة الخلفية"); }
+  };
+
+  return (
+    <div className="space-y-4 p-1">
+      <div className="rounded-2xl border border-border bg-background overflow-hidden">
+        <div className="relative h-44 bg-gradient-to-br from-muted/50 to-muted flex items-center justify-center">
+          {url ? (
+            type === "video" ? (
+              <video src={url} autoPlay loop muted playsInline className="h-full w-full object-cover" />
+            ) : (
+              <img src={url} alt="معاينة" className="h-full w-full object-cover" />
+            )
+          ) : (
+            <div className="text-center text-muted-foreground">
+              <ImageIcon className="h-10 w-10 mx-auto mb-2 opacity-50" />
+              <p className="text-xs">لا توجد خلفية</p>
+            </div>
+          )}
+        </div>
+        <div className="p-3 text-[11px] text-muted-foreground">
+          معاينة الخلفية كما ستظهر للأعضاء (مع طبقة شفافة فوقها لتسهيل القراءة).
+        </div>
+      </div>
+
+      <input ref={fileRef} type="file" accept="image/*,video/mp4,video/webm" hidden onChange={onFile} />
+
+      <button onClick={pick} disabled={uploading}
+        className="w-full h-12 rounded-2xl border-2 border-dashed border-emerald-500/40 bg-emerald-500/5 text-emerald-600 font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50">
+        {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageIcon className="h-4 w-4" />}
+        {uploading ? "جاري الرفع..." : "اختر صورة / GIF / فيديو"}
+      </button>
+
+      <div className="flex gap-2">
+        <button onClick={save} disabled={saving || !url}
+          className="flex-1 h-11 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50">
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          حفظ وتطبيق
+        </button>
+        {(room.background_url || url) && (
+          <button onClick={clear} disabled={saving}
+            className="h-11 px-4 rounded-xl bg-red-500/10 text-red-600 text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-50">
+            <Trash2 className="h-4 w-4" /> إزالة
+          </button>
+        )}
+      </div>
+
+      <div className="rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200/50 dark:border-amber-800/30 p-3 text-[11px] text-amber-700 dark:text-amber-300">
+        💡 يدعم الصور (JPG/PNG)، الصور المتحركة (GIF)، والفيديوهات القصيرة (MP4/WebM). الحد الأقصى 15 ميجابايت.
       </div>
     </div>
   );
