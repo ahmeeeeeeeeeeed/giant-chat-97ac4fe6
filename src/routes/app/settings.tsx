@@ -16,7 +16,7 @@ import {
 import { SUPPORTED_LANGUAGES } from "@/lib/i18n";
 import { findAdminId } from "@/lib/find-admin";
 import { APP_VERSION, getVersionCode } from "@/lib/version";
-import { isNativeAndroid, downloadAndInstallApk } from "@/lib/app-update";
+import { isNativeAndroid, downloadAndInstallApk, applyWebBundleUpdate } from "@/lib/app-update";
 import { cacheGet, cacheSet } from "@/lib/offline-cache";
 import { getOnline, useOnline } from "@/lib/use-online";
 import { toast } from "sonner";
@@ -35,7 +35,10 @@ type LatestUpdate = {
   version_code: number;
   update_message: string;
   file_url: string;
+  web_bundle_url: string | null;
+  web_bundle_version: string | null;
 } | null;
+
 
 function SettingsPage() {
   const { theme, toggle } = useTheme();
@@ -119,7 +122,7 @@ function SettingsPage() {
     try {
       const { data } = await supabase
         .from("app_updates")
-        .select("version, version_code, update_message, file_url")
+        .select("version, version_code, update_message, file_url, web_bundle_url, web_bundle_version")
         .eq("is_active", true)
         .order("version_code", { ascending: false })
         .limit(1)
@@ -132,17 +135,26 @@ function SettingsPage() {
     finally { setCheckingUpdate(false); }
   };
 
+
   const openAbout = () => { setShowAbout(true); if (getOnline()) void checkForUpdate(); };
 
   const installUpdate = async () => {
     if (!latest) return;
-    if (!(await isNativeAndroid())) {
-      window.open(latest.file_url, "_blank");
-      return;
-    }
     setInstalling(true);
     setInstallProgress(0);
     try {
+      // Prefer OTA web bundle update — no full reinstall, just refresh the changed pieces.
+      if (latest.web_bundle_url) {
+        const v = latest.web_bundle_version || String(latest.version_code) || latest.version;
+        await applyWebBundleUpdate(latest.web_bundle_url, v, (p) => setInstallProgress(p));
+        toast.success("تم تطبيق التحديث");
+        return;
+      }
+      // Fallback: full APK only when no OTA bundle is published.
+      if (!(await isNativeAndroid())) {
+        window.open(latest.file_url, "_blank");
+        return;
+      }
       await downloadAndInstallApk(latest.file_url, (p) => setInstallProgress(p));
     } catch (e: any) {
       toast.error(e?.message || "فشل التحديث");
@@ -150,6 +162,7 @@ function SettingsPage() {
       setInstalling(false);
     }
   };
+
 
   const openShare = async () => {
     const payload = { title: "Giant Chat", text: SHARE_TEXT, url: SHARE_URL };
@@ -492,9 +505,15 @@ function SettingsPage() {
                   <Download className="h-4 w-4" />
                   تحديث جديد متاح — v{latest.version}
                 </div>
+                <p className="text-[11px] text-emerald-700/80 dark:text-emerald-300/80">
+                  {latest.web_bundle_url
+                    ? "تحديث سريع داخل التطبيق — يحدّث فقط ما تغيّر بدون إعادة تثبيت."
+                    : "تحديث كامل للتطبيق — يتطلب إعادة تثبيت."}
+                </p>
                 {latest.update_message && (
                   <p className="text-xs text-muted-foreground whitespace-pre-wrap">{latest.update_message}</p>
                 )}
+
                 {installing && (
                   <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
                     <div className="h-full bg-emerald-500 transition-all" style={{ width: `${installProgress}%` }} />

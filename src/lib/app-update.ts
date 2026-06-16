@@ -97,3 +97,66 @@ export async function downloadAndInstallApk(
     throw new Error("تعذر فتح المثبت — تأكد من السماح بتثبيت التطبيقات من مصادر غير معروفة");
   }
 }
+
+// --------- In-place (OTA) web bundle update ---------
+// Updates only the web layer (HTML/JS/CSS/assets) inside the existing APK,
+// without requiring the user to reinstall the full app.
+// Uses @capgo/capacitor-updater on Android; falls back to a soft cache
+// purge + reload in the browser/PWA.
+
+export async function applyWebBundleUpdate(
+  bundleUrl: string,
+  version: string,
+  onProgress: (percent: number) => void,
+): Promise<void> {
+  if (await isNativeAndroid()) {
+    const { CapacitorUpdater } = await import("@capgo/capacitor-updater");
+    // Listen for download progress (best-effort; not all versions emit it).
+    let removeListener: (() => Promise<void>) | null = null;
+    try {
+      const handle = await (CapacitorUpdater as any).addListener?.(
+        "download",
+        (info: { percent?: number }) => {
+          if (typeof info?.percent === "number") onProgress(Math.max(1, Math.min(99, info.percent)));
+        },
+      );
+      if (handle && typeof handle.remove === "function") removeListener = () => handle.remove();
+    } catch { /* ignore */ }
+
+    try {
+      onProgress(1);
+      const bundle = await CapacitorUpdater.download({ url: bundleUrl, version });
+      onProgress(99);
+      await CapacitorUpdater.set({ id: bundle.id });
+      onProgress(100);
+      // CapacitorUpdater.set() automatically reloads the WebView with the new bundle.
+    } finally {
+      if (removeListener) await removeListener().catch(() => {});
+    }
+    return;
+  }
+
+  // Web / PWA fallback: clear caches + unregister SW + hard reload.
+  onProgress(10);
+  try {
+    if ("caches" in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((k) => caches.delete(k)));
+    }
+  } catch { /* ignore */ }
+  onProgress(60);
+  try {
+    if ("serviceWorker" in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map((r) => r.unregister()));
+    }
+  } catch { /* ignore */ }
+  onProgress(95);
+  try { localStorage.setItem("web_bundle_version", version); } catch { /* ignore */ }
+  onProgress(100);
+  // small delay so the user sees 100%
+  await new Promise((r) => setTimeout(r, 250));
+  const url = new URL(window.location.href);
+  url.searchParams.set("_v", String(Date.now()));
+  window.location.replace(url.toString());
+}

@@ -19,6 +19,7 @@
         "@capacitor/share": "^8.0.1",
         "@capacitor/splash-screen": "^8.0.1",
         "@capacitor/status-bar": "^8.0.2",
+        "@capgo/capacitor-updater": "^8.49.1",
         "@cloudflare/vite-plugin": "^1.25.5",
         "@hookform/resolvers": "^5.2.2",
         "@radix-ui/react-accordion": "^1.2.12",
@@ -326,6 +327,8 @@
     "@capacitor/status-bar": ["@capacitor/status-bar@8.0.2", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@capacitor/status-bar/-/status-bar-8.0.2.tgz", { "peerDependencies": { "@capacitor/core": ">=8.0.0" } }, "sha512-WXs8YB8B9eEaPZz+bcdY6t2nForF1FLoj/JU0Dl9RRgQnddnS98FEEyDooQhaY7wivr000j4+SC1FyeJkrFO7A=="],
 
     "@capacitor/synapse": ["@capacitor/synapse@1.0.4", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@capacitor/synapse/-/synapse-1.0.4.tgz", {}, "sha512-/C1FUo8/OkKuAT4nCIu/34ny9siNHr9qtFezu4kxm6GY1wNFxrCFWjfYx5C1tUhVGz3fxBABegupkpjXvjCHrw=="],
+
+    "@capgo/capacitor-updater": ["@capgo/capacitor-updater@8.49.1", "https://europe-west1-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@capgo/capacitor-updater/-/capacitor-updater-8.49.1.tgz", { "peerDependencies": { "@capacitor/core": "^8.0.0" } }, "sha512-cFAfOAeySj7hoQ3NsxZ5Tn5O6CRNYgJiqghTmG7XoVtatzU8WhhGO9vWe/qEaHTOL4sgXHkHB8joaOt9V0barw=="],
 
     "@cloudflare/kv-asset-handler": ["@cloudflare/kv-asset-handler@0.4.2", "", {}, "sha512-SIOD2DxrRRwQ+jgzlXCqoEFiKOFqaPjhnNTGKXSRLvp1HiOvapLaFG2kEr9dYQTYe8rKrd9uvDUzmAITeNyaHQ=="],
 
