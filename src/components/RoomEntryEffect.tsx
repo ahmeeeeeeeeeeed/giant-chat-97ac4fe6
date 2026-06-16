@@ -264,16 +264,6 @@ const VIDEO_SRC: Record<EntryEffectType, string> = {
   portal: portalVid.url,
 };
 
-// Per-effect display sizing. Knight is 16:9 (wide); others are portrait/square.
-const VIDEO_SIZE: Record<EntryEffectType, { width: string; height: string }> = {
-  dragon:   { width: "min(78vw, 420px)", height: "auto" },
-  princess: { width: "min(78vw, 420px)", height: "auto" },
-  knight:   { width: "min(96vw, 640px)", height: "auto" },
-  magic:    { width: "min(80vw, 460px)", height: "auto" },
-  mascot:   { width: "min(78vw, 420px)", height: "auto" },
-  portal:   { width: "min(80vw, 460px)", height: "auto" },
-};
-
 const EFFECT_COLOR: Record<EntryEffectType, string> = {
   dragon: "linear-gradient(135deg,#7a1f1f,#ff5500)",
   princess: "linear-gradient(135deg,#d946ef,#ec4899)",
@@ -305,8 +295,6 @@ function VideoEffect({ type }: { type: EntryEffectType }) {
     if (p && typeof p.catch === "function") p.catch(() => {});
   }, []);
 
-  const size = VIDEO_SIZE[type];
-
   return (
     <div className="absolute inset-0 flex items-center justify-center">
       <video
@@ -316,13 +304,13 @@ function VideoEffect({ type }: { type: EntryEffectType }) {
         playsInline
         autoPlay
         preload="auto"
-        // mix-blend-mode: screen — black backgrounds disappear, only bright pixels show.
-        // Keeps the room content visible behind/around the effect.
         style={{
-          width: size.width,
-          height: size.height,
-          maxHeight: "75vh",
-          objectFit: "contain",
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
           mixBlendMode: "screen",
           filter: "drop-shadow(0 10px 40px rgba(0,0,0,0.45))",
         }}
