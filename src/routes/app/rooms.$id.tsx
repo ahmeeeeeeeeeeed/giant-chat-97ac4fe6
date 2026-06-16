@@ -756,6 +756,25 @@ function RoomPage() {
                 );
               }
               if (meta?.kind === "user_share") return <SharedPostCard key={msg.id} meta={meta} />;
+              if (meta?.kind === "gift" || meta?.kind === "gift_global") {
+                const isG = meta.kind === "gift_global" || meta.scope === "global";
+                return (
+                  <div key={msg.id} className={`mx-auto max-w-[92%] rounded-2xl border p-3 shadow-sm ${isG ? "border-amber-400/40 bg-gradient-to-br from-amber-50 via-pink-50 to-fuchsia-50 dark:from-amber-950/30 dark:via-pink-950/30 dark:to-fuchsia-950/30" : "border-pink-400/30 bg-gradient-to-br from-pink-50 to-fuchsia-50 dark:from-pink-950/30 dark:to-fuchsia-950/30"}`}>
+                    <div className="flex items-center gap-2">
+                      <div className="text-4xl shrink-0">{meta.emoji ?? "🎁"}</div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-xs font-bold text-pink-600 dark:text-pink-300 flex items-center gap-1">
+                          {isG && <span className="text-amber-500">🌍</span>} هدية {isG ? "عالمية" : ""}
+                        </div>
+                        <p className="text-sm font-medium">
+                          <span className="font-bold">{meta.sender_name}</span> أهدى <span className="font-bold">{meta.receiver_name}</span> {meta.gift_name}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground" suppressHydrationWarning>{meta.cost} نقطة · {time}</p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
               const isAnnounce = (msg.content ?? "").startsWith("📢");
               if (isAnnounce) {
                 return (
