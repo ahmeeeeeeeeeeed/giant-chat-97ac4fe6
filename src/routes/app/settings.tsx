@@ -148,7 +148,7 @@ function SettingsPage() {
     try {
       // Prefer OTA web bundle update — no full reinstall, just refresh the changed pieces.
       if (latest.web_bundle_url) {
-        const v = latest.web_bundle_version || String(latest.version_code) || latest.version;
+        const v = latest.web_bundle_version || latest.version;
         await applyWebBundleUpdate(latest.web_bundle_url, v, (p) => setInstallProgress(p));
         toast.success("تم تطبيق التحديث");
         return;
