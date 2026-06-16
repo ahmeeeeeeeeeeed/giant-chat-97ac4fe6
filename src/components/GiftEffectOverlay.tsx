@@ -120,13 +120,14 @@ export function GiftEffectOverlay({ burst }: { burst: GiftBurst | null }) {
 
 function BurstLabel({ burst, big }: { burst: GiftBurst; big?: boolean }) {
   return (
-    <div className={`absolute left-1/2 -translate-x-1/2 ${big ? "bottom-[18%]" : "bottom-[22%]"} text-center px-6`}>
-      <div className={`inline-block rounded-2xl bg-black/60 backdrop-blur-md px-4 py-2 text-white shadow-2xl ${big ? "text-base" : "text-sm"}`}>
+    <div className={`relative ${big ? "absolute left-1/2 bottom-[14%] -translate-x-1/2" : ""} text-center px-6`}>
+      <div className={`inline-block rounded-2xl bg-black/70 backdrop-blur-md px-5 py-2.5 text-white shadow-2xl ring-1 ring-white/10 ${big ? "text-base" : "text-sm"}`}>
         {burst.isGlobal && <span className="me-1 text-amber-300">🌍</span>}
-        <span className="font-bold">{burst.senderName ?? "مستخدم"}</span>
-        <span className="opacity-80"> أهدى </span>
         <span className="font-bold">{burst.receiverName ?? "عضو"}</span>
-        <span className="opacity-80"> {burst.giftName}</span>
+        <span className="opacity-80"> استلم هدية </span>
+        <span className="font-bold text-amber-300">{burst.giftName}</span>
+        <span className="opacity-80"> من </span>
+        <span className="font-bold">{burst.senderName ?? "مستخدم"}</span>
       </div>
     </div>
   );
