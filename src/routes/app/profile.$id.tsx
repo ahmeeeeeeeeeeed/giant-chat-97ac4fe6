@@ -260,6 +260,8 @@ function OtherProfilePage() {
               )}
             </div>
 
+            <UserBadgesGrid userId={profile.id} />
+
             <div className="mt-2 w-full max-w-md">
               <WeeklyAchievementsBadge userId={profile.id} />
             </div>
