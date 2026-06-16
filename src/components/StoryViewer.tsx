@@ -265,6 +265,72 @@ export function StoryViewer({
           </div>
         )}
 
+        {/* footer (others' story → react + comment) */}
+        {currentUser.user_id !== myId && currentStory && (
+          <div className="absolute bottom-0 inset-x-0 z-20 px-3 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] bg-gradient-to-t from-black/80 via-black/40 to-transparent">
+            {/* reaction summary */}
+            {reactions.length > 0 && (
+              <div className="mb-2 flex flex-wrap items-center gap-1.5 justify-center">
+                {reactions.slice(0, 6).map((r) => (
+                  <span key={r.emoji} className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs ${r.mine ? "bg-emerald-500/30 text-white ring-1 ring-emerald-400/60" : "bg-white/10 text-white/90"}`}>
+                    <span>{r.emoji}</span>
+                    <span className="font-bold">{r.count}</span>
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* quick reactions */}
+            <div className="mb-2 flex items-center justify-center gap-1.5">
+              {QUICK_EMOJIS.map((e) => {
+                const isMine = reactions.find((r) => r.mine)?.emoji === e;
+                return (
+                  <button
+                    key={e}
+                    onClick={() => handleReact(e)}
+                    onPointerDown={(ev) => ev.stopPropagation()}
+                    className={`h-10 w-10 grid place-items-center rounded-full text-xl transition active:scale-90 ${isMine ? "bg-emerald-500/30 ring-2 ring-emerald-400/70" : "bg-white/10 hover:bg-white/20"}`}
+                    aria-label={`تفاعل ${e}`}
+                  >{e}</button>
+                );
+              })}
+            </div>
+
+            {/* comment input */}
+            <form
+              onSubmit={(ev) => { ev.preventDefault(); handleSendComment(); }}
+              onPointerDown={(ev) => ev.stopPropagation()}
+              className="flex items-center gap-2"
+            >
+              <input
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                onFocus={() => setPaused(true)}
+                onBlur={() => setPaused(false)}
+                placeholder="اكتب تعليقاً…"
+                className="flex-1 h-11 rounded-full bg-white/10 border border-white/15 px-4 text-sm text-white placeholder:text-white/50 outline-none focus:border-emerald-400/60"
+              />
+              <button
+                type="button"
+                onClick={() => handleReact("❤️")}
+                className="h-11 w-11 grid place-items-center rounded-full bg-white/10 hover:bg-white/20 text-rose-300"
+                aria-label="إعجاب"
+              ><Heart className="h-5 w-5" /></button>
+              <button
+                type="submit"
+                disabled={!comment.trim() || sending}
+                className="h-11 w-11 grid place-items-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/30 disabled:opacity-50"
+                aria-label="إرسال"
+              ><Send className="h-5 w-5" /></button>
+            </form>
+
+            {flyEmoji && (
+              <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-24 text-5xl animate-[fly_0.9s_ease-out_forwards]">{flyEmoji}</div>
+            )}
+          </div>
+        )}
+
+
         {/* prev/next chevrons (visible hint) */}
         {userIdx > 0 && (
           <div className="absolute right-1 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none"><ChevronRight className="h-6 w-6" /></div>
