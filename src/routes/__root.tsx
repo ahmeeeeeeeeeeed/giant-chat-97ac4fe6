@@ -13,6 +13,7 @@ import { ThemeProvider } from "@/lib/theme";
 import { AuthProvider } from "@/lib/auth";
 import { Toaster } from "@/components/ui/sonner";
 import { ExitConfirmDialog } from "@/components/ExitConfirmDialog";
+import { PageTransition } from "@/components/PageTransition";
 import i18n, { applyLanguageDir } from "@/lib/i18n";
 import { setAutoTranslateLanguage } from "@/lib/auto-translate";
 import { registerAppServiceWorker } from "@/lib/register-sw";
@@ -142,7 +143,9 @@ function RootComponent() {
       <ThemeProvider>
         <AuthProvider>
           <LanguageSync />
-          <Outlet />
+          <PageTransition>
+            <Outlet />
+          </PageTransition>
           <Toaster position="top-center" richColors />
           <ExitConfirmDialog />
         </AuthProvider>
