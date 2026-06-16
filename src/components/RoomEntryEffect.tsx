@@ -601,4 +601,10 @@ const KEYFRAMES = `
   80% { transform: translate(-50%,-50%) scale(1); opacity: 1; }
   100% { transform: translate(-50%,-200%) scale(1.4); opacity: 0; }
 }
+@keyframes portal-ring {
+  0% { transform: translate(-50%,-50%) scale(0) rotate(0); opacity: 0; }
+  20% { transform: translate(-50%,-50%) scale(1) rotate(360deg); opacity: 1; }
+  85% { transform: translate(-50%,-50%) scale(1.05) rotate(1440deg); opacity: 1; }
+  100% { transform: translate(-50%,-50%) scale(0) rotate(1800deg); opacity: 0; }
+}
 `;
