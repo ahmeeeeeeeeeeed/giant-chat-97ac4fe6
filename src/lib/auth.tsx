@@ -28,7 +28,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // event — or an explicit user sign-out in progress — should clear the
       // session. This prevents auto-logout/hang when the app resumes from
       // background with a flaky network.
-      if (!s && evt !== "SIGNED_OUT" && evt !== "USER_DELETED" && !explicitSignOutInProgress) {
+      if (!s && evt !== "SIGNED_OUT" && true && !explicitSignOutInProgress) {
         setLoading(false);
         return;
       }
@@ -37,7 +37,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Mirror session to native secure storage (Capacitor Preferences on Android).
       // No-op on web — Supabase already persists to localStorage there.
       void backupSession(s);
-      if (evt === "SIGNED_OUT" || evt === "USER_DELETED") {
+      if (evt === "SIGNED_OUT") {
         void clearSessionBackup();
       }
       if (evt === "SIGNED_IN" && s?.user) {
