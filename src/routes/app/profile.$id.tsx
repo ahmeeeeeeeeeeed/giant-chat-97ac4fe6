@@ -6,6 +6,8 @@ import { toast } from "sonner";
 import { Loader2, ArrowRight, MessageCircle, Ban, Flag, Globe, Lock, EyeOff } from "lucide-react";
 import { WeeklyAchievementsBadge } from "@/components/WeeklyAchievementsBadge";
 import { RoomEntryEffect, type EntryBurst, type EntryEffectType } from "@/components/RoomEntryEffect";
+import { cacheGet, cacheSet, cacheKeys } from "@/lib/offline-cache";
+import { getOnline } from "@/lib/use-online";
 
 export const Route = createFileRoute("/app/profile/$id")({
   component: OtherProfilePage,
