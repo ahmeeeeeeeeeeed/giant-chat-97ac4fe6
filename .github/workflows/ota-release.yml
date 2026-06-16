@@ -81,25 +81,56 @@ jobs:
         id: ver
         run: echo "version=1.0.${{ github.run_number }}" >> "$GITHUB_OUTPUT"
 
-      - name: Create GitHub Release with bundle.zip
+      - name: Create GitHub Release (empty)
         id: release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="ota-v${{ steps.ver.outputs.version }}"
-          gh release create "$TAG" bundle.zip \
+          gh release create "$TAG" \
             --title "OTA ${{ steps.ver.outputs.version }}" \
             --notes "Automated OTA bundle from commit ${{ github.sha }}" \
             --target "${{ github.sha }}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Upload bundle.zip to Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "${{ steps.release.outputs.tag }}" bundle.zip --clobber
+
+      - name: Resolve final download URL
+        id: url
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ steps.release.outputs.tag }}"
           URL="https://github.com/${{ github.repository }}/releases/download/${TAG}/bundle.zip"
           echo "url=$URL" >> "$GITHUB_OUTPUT"
+
+      - name: Verify bundle is publicly reachable
+        env:
+          URL: ${{ steps.url.outputs.url }}
+        run: |
+          for i in 1 2 3 4 5 6 7 8 9 10; do
+            CODE=$(curl -L -o /dev/null -s -w "%{http_code}" "$URL")
+            echo "Attempt $i: HTTP $CODE"
+            if [ "$CODE" = "200" ]; then
+              echo "Bundle is reachable."
+              exit 0
+            fi
+            sleep 3
+          done
+          echo "::error::Bundle URL not reachable after retries: $URL"
+          exit 1
+
 
       - name: Publish OTA via signed endpoint
         env:
           OTA_PUBLISH_SECRET: ${{ secrets.OTA_PUBLISH_SECRET }}
           OTA_ENDPOINT: https://giant-chat.lovable.app/api/public/ota-publish
           VERSION: ${{ steps.ver.outputs.version }}
-          URL: ${{ steps.release.outputs.url }}
+          URL: ${{ steps.url.outputs.url }}
           MSG: ${{ github.event.head_commit.message }}
         run: |
           BODY=$(jq -cn --arg v "$VERSION" --arg u "$URL" --arg m "$MSG" \
