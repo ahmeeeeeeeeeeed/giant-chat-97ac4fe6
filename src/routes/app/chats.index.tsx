@@ -222,30 +222,16 @@ function ChatsPage() {
               const unreadActive = c.unread > 0;
               return (
                 <li key={c.otherId}>
-                  <Link to="/app/chats/$id" params={{ id: c.otherId }}
-                    className={`relative flex items-center gap-3 overflow-hidden rounded-2xl border p-3 transition active:scale-[0.99] ${
-                      unreadActive
-                        ? "border-emerald-400/30 bg-emerald-950/40 shadow-[0_6px_20px_-12px_rgba(16,185,129,0.5)]"
-                        : "border-emerald-500/10 bg-gradient-to-l from-emerald-950/15 to-transparent hover:bg-emerald-900/15"
-                    }`}>
-                    {unreadActive && (
-                      <span className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-emerald-400 to-emerald-600" />
-                    )}
-                    <StoryRing userId={c.otherId} size="sm"><CachedAvatar url={c.avatar_url} username={c.username} /></StoryRing>
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate font-bold text-foreground">{c.username}</div>
-                      <div className={`truncate text-sm ${unreadActive ? "text-emerald-200/80" : "text-muted-foreground"}`}>{c.last}</div>
-                    </div>
-                    {unreadActive && (
-                      <span className="flex h-6 min-w-[24px] items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 px-2 text-[11px] font-bold text-white shadow-[0_4px_10px_-2px_rgba(16,185,129,0.6)]">
-                        {c.unread > 99 ? "99+" : c.unread}
-                      </span>
-                    )}
-                  </Link>
+                  <ChatRow
+                    convo={c}
+                    unreadActive={unreadActive}
+                    onDeleted={(id) => setConvos((prev) => prev.filter((x) => x.otherId !== id))}
+                  />
                 </li>
               );
             })}
           </ul>
+
         )}
       </div>
     </main>
