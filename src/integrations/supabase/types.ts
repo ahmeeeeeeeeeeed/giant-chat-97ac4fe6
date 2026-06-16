@@ -158,6 +158,8 @@ export type Database = {
           updated_at: string
           version: string
           version_code: number
+          web_bundle_url: string | null
+          web_bundle_version: string | null
         }
         Insert: {
           created_at?: string
@@ -173,6 +175,8 @@ export type Database = {
           updated_at?: string
           version: string
           version_code: number
+          web_bundle_url?: string | null
+          web_bundle_version?: string | null
         }
         Update: {
           created_at?: string
@@ -188,6 +192,8 @@ export type Database = {
           updated_at?: string
           version?: string
           version_code?: number
+          web_bundle_url?: string | null
+          web_bundle_version?: string | null
         }
         Relationships: []
       }
