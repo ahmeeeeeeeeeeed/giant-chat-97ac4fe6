@@ -93,6 +93,16 @@ function SettingsPage() {
     });
   }, []);
 
+  // Auto-open About modal when arriving via ?about=1 (e.g. from profile/account "حول التطبيق").
+  const search = Route.useSearch();
+  useEffect(() => {
+    if (search.about) {
+      setShowAbout(true);
+      if (getOnline()) void checkForUpdate();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search.about]);
+
   const openReports = async () => {
     if (!getOnline()) { toast.error("لا يوجد اتصال بالإنترنت"); return; }
     const id = await findAdminId();
