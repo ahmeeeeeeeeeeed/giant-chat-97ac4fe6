@@ -309,6 +309,7 @@ function ProfilePage() {
           </div>
         </div>
 
+        {user && <UserBadgesGrid userId={user.id} />}
         {user && <WeeklyAchievementsBadge userId={user.id} />}
 
         {/* Bio + identity form */}
