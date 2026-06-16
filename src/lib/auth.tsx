@@ -105,8 +105,17 @@ export async function signInWithUsername(username: string, password: string) {
   } catch { /* fall back to synthetic email */ }
   const { error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) return { error: "اسم المستخدم أو كلمة المرور غير صحيحة" };
+  // fire-and-forget activity log
+  try {
+    await supabase.rpc("log_activity" as never, {
+      _category: "auth", _action: "login",
+      _meta: { device: navigator.userAgent.includes("Android") ? "Android" : navigator.userAgent.includes("Mobile") ? "Mobile" : "Web" } as any,
+      _user_agent: navigator.userAgent,
+    } as never);
+  } catch { /* ignore */ }
   return { error: null };
 }
+
 
 export async function signOut() {
   explicitSignOutInProgress = true;
