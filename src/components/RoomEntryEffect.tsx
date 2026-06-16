@@ -285,6 +285,17 @@ function NameBanner({ name, color }: { name?: string; color: string }) {
   );
 }
 
+// Per-effect cinematic motion: each has its own entry path, in-scene motion, and exit.
+// Wrapper handles the camera (shake + zoom). Inner video handles the character travel.
+const MOTION: Record<EntryEffectType, { wrapper: string; inner: string }> = {
+  dragon: { wrapper: "fx-cam-strong", inner: "fx-dragon-fly" },
+  princess: { wrapper: "fx-cam-soft", inner: "fx-princess-float" },
+  knight: { wrapper: "fx-cam-gallop", inner: "fx-knight-run" },
+  magic: { wrapper: "fx-cam-pulse", inner: "fx-magic-burst" },
+  mascot: { wrapper: "fx-cam-soft", inner: "fx-mascot-bounce" },
+  portal: { wrapper: "fx-cam-pulse", inner: "fx-portal-warp" },
+};
+
 function VideoEffect({ type }: { type: EntryEffectType }) {
   const ref = useRef<HTMLVideoElement | null>(null);
   useEffect(() => {
@@ -295,8 +306,16 @@ function VideoEffect({ type }: { type: EntryEffectType }) {
     if (p && typeof p.catch === "function") p.catch(() => {});
   }, []);
 
+  const m = MOTION[type];
+
   return (
-    <div className="absolute inset-0 flex items-center justify-center">
+    <div
+      className="absolute inset-0"
+      style={{
+        animation: `${m.inner} 5s cubic-bezier(0.22, 1, 0.36, 1) forwards`,
+        willChange: "transform, opacity, filter",
+      }}
+    >
       <video
         ref={ref}
         src={VIDEO_SRC[type]}
@@ -312,7 +331,7 @@ function VideoEffect({ type }: { type: EntryEffectType }) {
           height: "100%",
           objectFit: "cover",
           mixBlendMode: "screen",
-          filter: "drop-shadow(0 10px 40px rgba(0,0,0,0.45))",
+          filter: "drop-shadow(0 20px 60px rgba(0,0,0,0.55))",
         }}
       />
     </div>
@@ -342,18 +361,27 @@ export function RoomEntryEffect({ burst }: { burst: EntryBurst | null }) {
   return (
     <>
       <style>{KEYFRAMES}</style>
-      {/* pointer-events-none so the user can still tap the room behind the effect */}
-      <div className="pointer-events-none fixed inset-0 z-[80] overflow-hidden">
-        {items.map((it) => (
-          <div
-            key={it.id}
-            className="absolute inset-0"
-            style={{ animation: "fx-fade 5s ease-out forwards" }}
-          >
-            <NameBanner name={it.name} color={EFFECT_COLOR[it.type]} />
-            <VideoEffect type={it.type} />
-          </div>
-        ))}
+      <div
+        className="pointer-events-none fixed inset-0 z-[80] overflow-hidden"
+        style={{ perspective: "1200px" }}
+      >
+        {items.map((it) => {
+          const m = MOTION[it.type];
+          return (
+            <div
+              key={it.id}
+              className="absolute inset-0"
+              style={{
+                animation: `fx-fade 5s ease-out forwards, ${m.wrapper} 5s ease-in-out forwards`,
+                transformStyle: "preserve-3d",
+                willChange: "transform, opacity",
+              }}
+            >
+              <NameBanner name={it.name} color={EFFECT_COLOR[it.type]} />
+              <VideoEffect type={it.type} />
+            </div>
+          );
+        })}
       </div>
     </>
   );
@@ -361,4 +389,101 @@ export function RoomEntryEffect({ burst }: { burst: EntryBurst | null }) {
 
 const KEYFRAMES = `
 @keyframes fx-fade { 0%{opacity:0} 6%{opacity:1} 88%{opacity:1} 100%{opacity:0} }
+
+/* ===== Camera (wrapper) — handheld / cinematic shake & zoom ===== */
+@keyframes fx-cam-soft {
+  0%   { transform: translate3d(0,0,0) scale(1.02); }
+  20%  { transform: translate3d(-0.6%, 0.4%, 0) scale(1.03); }
+  45%  { transform: translate3d(0.5%, -0.5%, 0) scale(1.04); }
+  70%  { transform: translate3d(-0.3%, 0.6%, 0) scale(1.03); }
+  100% { transform: translate3d(0,0,0) scale(1.0); }
+}
+@keyframes fx-cam-strong {
+  0%   { transform: translate3d(0,0,0) scale(1.0) rotate(0deg); }
+  10%  { transform: translate3d(1.2%, -0.8%, 0) scale(1.05) rotate(0.4deg); }
+  25%  { transform: translate3d(-1.4%, 0.9%, 0) scale(1.06) rotate(-0.5deg); }
+  45%  { transform: translate3d(1.0%, 0.7%, 0) scale(1.07) rotate(0.3deg); }
+  65%  { transform: translate3d(-0.8%, -0.6%, 0) scale(1.05) rotate(-0.3deg); }
+  85%  { transform: translate3d(0.4%, 0.3%, 0) scale(1.03) rotate(0.1deg); }
+  100% { transform: translate3d(0,0,0) scale(1.0) rotate(0deg); }
+}
+@keyframes fx-cam-gallop {
+  0%   { transform: translate3d(0, 0, 0) scale(1.0); }
+  8%   { transform: translate3d(0, -0.7%, 0) scale(1.015); }
+  16%  { transform: translate3d(0, 0.6%, 0) scale(1.02); }
+  24%  { transform: translate3d(0, -0.6%, 0) scale(1.015); }
+  32%  { transform: translate3d(0, 0.5%, 0) scale(1.02); }
+  40%  { transform: translate3d(0, -0.5%, 0) scale(1.015); }
+  48%  { transform: translate3d(0, 0.4%, 0) scale(1.01); }
+  100% { transform: translate3d(0,0,0) scale(1.0); }
+}
+@keyframes fx-cam-pulse {
+  0%   { transform: scale(1.0); filter: blur(0px); }
+  15%  { transform: scale(1.08); filter: blur(0.4px); }
+  40%  { transform: scale(1.04); filter: blur(0px); }
+  70%  { transform: scale(1.06); filter: blur(0.2px); }
+  100% { transform: scale(1.0); filter: blur(0px); }
+}
+
+/* ===== Character (inner) — choreographed per-effect motion ===== */
+
+/* Dragon: swoops in from top-right depth, arcs across, exits up */
+@keyframes fx-dragon-fly {
+  0%   { transform: translate3d(60vw, -50vh, -400px) scale(0.4) rotate(15deg); opacity: 0; }
+  15%  { transform: translate3d(20vw, -10vh, -100px) scale(0.85) rotate(8deg); opacity: 1; }
+  40%  { transform: translate3d(-15vw, 5vh, 0) scale(1.05) rotate(-4deg); opacity: 1; }
+  65%  { transform: translate3d(10vw, -8vh, 0) scale(1.0) rotate(3deg); opacity: 1; }
+  85%  { transform: translate3d(0, -20vh, 0) scale(0.9) rotate(-2deg); opacity: 0.9; }
+  100% { transform: translate3d(-10vw, -80vh, 200px) scale(0.5) rotate(-10deg); opacity: 0; }
+}
+
+/* Princess: floats up from below, hovers, drifts away */
+@keyframes fx-princess-float {
+  0%   { transform: translate3d(0, 80vh, -200px) scale(0.7); opacity: 0; }
+  18%  { transform: translate3d(-3vw, 10vh, 0) scale(1.0); opacity: 1; }
+  40%  { transform: translate3d(3vw, 0, 0) scale(1.02); opacity: 1; }
+  60%  { transform: translate3d(-2vw, -3vh, 0) scale(1.03); opacity: 1; }
+  80%  { transform: translate3d(2vw, -8vh, 0) scale(1.01); opacity: 1; }
+  100% { transform: translate3d(0, -60vh, 300px) scale(0.6); opacity: 0; }
+}
+
+/* Knight: gallops left→right→left across the screen */
+@keyframes fx-knight-run {
+  0%   { transform: translate3d(-110vw, 0, 0) scale(0.9); opacity: 0; }
+  10%  { transform: translate3d(-60vw, 0, 0) scale(0.95); opacity: 1; }
+  35%  { transform: translate3d(0, 0, 0) scale(1.0); opacity: 1; }
+  50%  { transform: translate3d(40vw, 0, 0) scale(1.0); opacity: 1; }
+  60%  { transform: translate3d(60vw, 0, 0) scale(1.0) scaleX(-1); opacity: 1; }
+  85%  { transform: translate3d(-20vw, 0, 0) scale(0.95) scaleX(-1); opacity: 1; }
+  100% { transform: translate3d(-110vw, 0, 0) scale(0.9) scaleX(-1); opacity: 0; }
+}
+
+/* Magic: explodes from depth at center, expands, drifts, fades */
+@keyframes fx-magic-burst {
+  0%   { transform: scale(0.2) translateZ(-500px) rotate(0deg); opacity: 0; filter: brightness(2); }
+  15%  { transform: scale(1.15) translateZ(0) rotate(30deg); opacity: 1; filter: brightness(1.4); }
+  40%  { transform: scale(1.0) translateZ(0) rotate(60deg); opacity: 1; filter: brightness(1.1); }
+  70%  { transform: scale(1.08) translateZ(50px) rotate(90deg); opacity: 1; filter: brightness(1); }
+  100% { transform: scale(1.6) translateZ(300px) rotate(120deg); opacity: 0; filter: brightness(1.3); }
+}
+
+/* Mascot: bouncy entry from bottom-left, waves around, exits bottom-right */
+@keyframes fx-mascot-bounce {
+  0%   { transform: translate3d(-60vw, 60vh, 0) scale(0.5) rotate(-15deg); opacity: 0; }
+  15%  { transform: translate3d(-10vw, -5vh, 0) scale(1.1) rotate(5deg); opacity: 1; }
+  25%  { transform: translate3d(-8vw, 2vh, 0) scale(0.95) rotate(-3deg); opacity: 1; }
+  40%  { transform: translate3d(5vw, -3vh, 0) scale(1.05) rotate(4deg); opacity: 1; }
+  55%  { transform: translate3d(-3vw, 0, 0) scale(1.0) rotate(-2deg); opacity: 1; }
+  75%  { transform: translate3d(8vw, -2vh, 0) scale(1.02) rotate(3deg); opacity: 1; }
+  100% { transform: translate3d(60vw, 60vh, 0) scale(0.5) rotate(15deg); opacity: 0; }
+}
+
+/* Portal: warps in from deep Z, swirls, warps out forward */
+@keyframes fx-portal-warp {
+  0%   { transform: scale(0.1) translateZ(-800px) rotate(-180deg); opacity: 0; filter: blur(8px); }
+  20%  { transform: scale(1.0) translateZ(0) rotate(-30deg); opacity: 1; filter: blur(0px); }
+  50%  { transform: scale(1.05) translateZ(0) rotate(20deg); opacity: 1; filter: blur(0px); }
+  80%  { transform: scale(1.1) translateZ(100px) rotate(60deg); opacity: 0.9; filter: blur(1px); }
+  100% { transform: scale(2.0) translateZ(600px) rotate(180deg); opacity: 0; filter: blur(10px); }
+}
 `;
