@@ -67,10 +67,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
+      { name: "viewport", content: "width=device-width, initial-scale=1, maximum-scale=5, viewport-fit=cover" },
       { title: "Giant — دردشة مجتمعات وغرف" },
       { name: "description", content: "Giant: غرف دردشة مجتمعات ومحادثات خاصة فورية." },
       { name: "theme-color", content: "#10b981" },
+      { name: "color-scheme", content: "dark light" },
+      // iOS PWA / WebView chrome
+      { name: "mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-title", content: "Giant" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
+      // Android
+      { name: "format-detection", content: "telephone=no" },
       { property: "og:title", content: "Giant — دردشة مجتمعات وغرف" },
       { property: "og:description", content: "Giant: غرف دردشة مجتمعات ومحادثات خاصة فورية." },
       { property: "og:type", content: "website" },
