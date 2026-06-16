@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useIsAdmin } from "@/lib/use-admin";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Search, Shield, ShieldOff, Ban, CheckCircle2, Trash2, Coins, Pencil, Users as UsersIcon, Eye, KeyRound } from "lucide-react";
+import { Loader2, Search, Shield, ShieldOff, Ban, CheckCircle2, Trash2, Coins, Pencil, Users as UsersIcon, Eye, KeyRound, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { useServerFn } from "@tanstack/react-start";
