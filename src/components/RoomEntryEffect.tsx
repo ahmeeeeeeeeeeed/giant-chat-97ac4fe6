@@ -462,7 +462,12 @@ function MascotEffect() {
       <Sparkles count={20} color="#fff7a8" />
       <div
         className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-        style={{ animation: "mascot-bounce 5s ease-in-out forwards", filter: "drop-shadow(0 0 35px rgba(255,200,0,0.8))" }}
+        style={{
+          width: "min(90vw, 560px)",
+          height: "auto",
+          animation: "mascot-bounce 5s ease-in-out forwards",
+          filter: "drop-shadow(0 0 35px rgba(255,200,0,0.8))",
+        }}
       >
         <CharImg src={mascotImg} alt="Mascot" />
       </div>
