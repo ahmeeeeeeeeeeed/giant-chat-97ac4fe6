@@ -330,7 +330,12 @@ function DragonEffect() {
       <div className="absolute inset-0 animate-fade-in" style={{ background: "radial-gradient(circle at 50% 40%, rgba(255,90,0,0.45), transparent 65%)" }} />
       <div
         className="absolute left-1/2 -translate-x-1/2"
-        style={{ animation: "dragon-fly 5s ease-in-out forwards", filter: "drop-shadow(0 0 40px rgba(255,80,0,0.85))" }}
+        style={{
+          width: "min(90vw, 560px)",
+          height: "auto",
+          animation: "dragon-fly 5s ease-in-out forwards",
+          filter: "drop-shadow(0 0 40px rgba(255,80,0,0.85))",
+        }}
       >
         <CharImg src={dragonImg} alt="Dragon" />
       </div>
