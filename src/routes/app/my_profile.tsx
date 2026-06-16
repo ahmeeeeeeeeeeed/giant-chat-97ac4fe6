@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { WeeklyAchievementsBadge } from "@/components/WeeklyAchievementsBadge";
 import { toast } from "sonner";
-import { Loader2, Camera, User as UserIcon, Bell, Info, Shield, ChevronLeft, Lock, EyeOff, Globe, Eye, Mail, CheckCircle2, KeyRound, History, Trash2 } from "lucide-react";
+import { Loader2, Camera, User as UserIcon, Bell, Info, Shield, ChevronLeft, Lock, EyeOff, Globe, Eye, Mail, CheckCircle2, KeyRound, History, Trash2, ImageIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { getEquipped, type EquippedSet } from "@/lib/equipped";
 import { BadgeChip } from "@/routes/app/store";
