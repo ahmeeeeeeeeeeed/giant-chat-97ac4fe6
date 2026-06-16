@@ -318,10 +318,8 @@ function CharImg({ src, alt, style, className }: { src: string; alt: string; sty
       src={src}
       alt={alt}
       loading="lazy"
-      width={1024}
-      height={1024}
-      className={className}
-      style={{ width: "auto", maxWidth: "min(90vw, 560px)", maxHeight: "75vh", objectFit: "contain", ...style }}
+      className={`block ${className || ""}`}
+      style={{ width: "100%", height: "auto", objectFit: "contain", ...style }}
     />
   );
 }
