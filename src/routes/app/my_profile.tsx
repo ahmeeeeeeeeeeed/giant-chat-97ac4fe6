@@ -93,11 +93,6 @@ function ProfilePage() {
           setAvatarUrl(data.avatar_url);
           setCoverUrl((data as any).cover_url ?? null);
           setCoverType((data as any).cover_type ?? null);
-        if (error) throw error;
-        if (data) {
-          setUsername(data.username);
-          setBio(data.bio ?? "");
-          setAvatarUrl(data.avatar_url);
           setPoints(data.points ?? 0);
           setGender((data.gender as "male" | "female" | null) ?? null);
           setCountry(data.country ?? "");
