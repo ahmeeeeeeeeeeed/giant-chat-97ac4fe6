@@ -1334,9 +1334,11 @@ function SettingsSheet({ roomId, room, canModerate, myRank, isOwner, ownerId, on
                         return (
                           <li key={m.user_id} className="flex items-center gap-3 rounded-xl bg-background border border-border/50 p-3 hover:border-emerald-500/30 transition">
                             <div className="relative">
-                              <div className="h-10 w-10 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-bold overflow-hidden">
-                                {p?.avatar_url ? <img src={p.avatar_url} alt="" className="h-full w-full object-cover" /> : (p?.username?.[0] ?? "?")}
-                              </div>
+                              <StoryRing userId={m.user_id} size="sm">
+                                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-bold overflow-hidden">
+                                  {p?.avatar_url ? <img src={p.avatar_url} alt="" className="h-full w-full object-cover" /> : (p?.username?.[0] ?? "?")}
+                                </div>
+                              </StoryRing>
                               {m.rank === "owner" && (
                                 <Crown className="absolute -top-1 -end-1 h-4 w-4 text-amber-500 fill-amber-500" />
                               )}
