@@ -53,6 +53,9 @@ function RoomPage() {
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [showAnnounce, setShowAnnounce] = useState(false);
   const [showBots, setShowBots] = useState(false);
+  const [showGifts, setShowGifts] = useState(false);
+  const [giftPreset, setGiftPreset] = useState<string | null>(null);
+  const [giftBurst, setGiftBurst] = useState<GiftBurst | null>(null);
   const [announceText, setAnnounceText] = useState("");
   const [showInfo, setShowInfo] = useState(false);
   const [search, setSearch] = useState("");
