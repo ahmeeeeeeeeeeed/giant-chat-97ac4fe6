@@ -130,7 +130,7 @@ jobs:
           OTA_PUBLISH_SECRET: ${{ secrets.OTA_PUBLISH_SECRET }}
           OTA_ENDPOINT: https://giant-chat.lovable.app/api/public/ota-publish
           VERSION: ${{ steps.ver.outputs.version }}
-          URL: ${{ steps.release.outputs.url }}
+          URL: ${{ steps.url.outputs.url }}
           MSG: ${{ github.event.head_commit.message }}
         run: |
           BODY=$(jq -cn --arg v "$VERSION" --arg u "$URL" --arg m "$MSG" \
