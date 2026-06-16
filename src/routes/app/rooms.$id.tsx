@@ -304,12 +304,11 @@ function RoomPage() {
     loadMemberCount();
     // Broadcast entry effect to everyone in the room (including self)
     try {
-      const eq = await getEquipped(user.id);
-      const emoji = eq.effect?.emoji || "✨";
       const { data: prof } = await supabase.from("profiles").select("username").eq("id", user.id).maybeSingle();
       const name = prof?.username ?? "مستخدم";
-      setEntryBurst({ id: Date.now(), emoji, name });
-      entryChRef.current?.send({ type: "broadcast", event: "entry", payload: { emoji, name } });
+      const effectType: EntryEffectType = pickRandomEffect();
+      setEntryBurst({ id: Date.now(), type: effectType, name });
+      entryChRef.current?.send({ type: "broadcast", event: "entry", payload: { effectType, name } });
     } catch { /* ignore */ }
     try { await supabase.rpc("record_daily_action", { _kind: "join_rooms", _amount: 1 }); } catch { /* ignore */ }
   };
