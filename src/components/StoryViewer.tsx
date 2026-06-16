@@ -30,9 +30,14 @@ export function StoryViewer({
   const [viewers, setViewers] = useState<{ viewer_id: string; viewed_at: string; username: string | null; avatar_url: string | null }[]>([]);
   const [showViewers, setShowViewers] = useState(false);
   const [editing, setEditing] = useState<StoryRow | null>(null);
+  const [reactions, setReactions] = useState<StoryReactionAgg[]>([]);
+  const [comment, setComment] = useState("");
+  const [sending, setSending] = useState(false);
+  const [flyEmoji, setFlyEmoji] = useState<string | null>(null);
   const rafRef = useRef<number | null>(null);
   const startRef = useRef<number>(0);
   const elapsedRef = useRef<number>(0);
+
 
   const currentUser = users[userIdx];
   const currentStory = stories[storyIdx];
