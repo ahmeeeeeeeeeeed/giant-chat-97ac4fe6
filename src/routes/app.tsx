@@ -10,7 +10,6 @@ import { Home, MessageSquare, User, Settings, Users as UsersIcon, Gamepad2, Bell
 import { OnlineStatusBanner } from "@/components/OnlineStatusBanner";
 import { ConnectionStatusBadge } from "@/components/ConnectionStatusBadge";
 import { ReportModal } from "@/components/ReportModal";
-import { UpdateGate } from "@/components/UpdateGate";
 import { scheduleDataPrewarm } from "@/lib/data-prewarm";
 import { recordDailyAction } from "@/lib/daily-tasks";
 import { usePresenceHeartbeat } from "@/lib/use-presence-heartbeat";
@@ -171,7 +170,6 @@ function AppLayout() {
     <div className={`flex min-h-screen flex-col ${hideChrome ? "" : "pb-[calc(72px+env(safe-area-inset-bottom))]"}`}>
 
       <OnlineStatusBanner />
-      <UpdateGate />
       <ReportModal open={reportOpen} onClose={() => setReportOpen(false)} />
       {!hideChrome && (
         <header className="sticky top-0 z-50 pt-[env(safe-area-inset-top)] bg-[linear-gradient(180deg,#052e22_0%,#073d2c_60%,#073d2c_100%)] text-white shadow-[0_10px_30px_-18px_rgba(0,0,0,0.6)] border-b border-emerald-500/15 backdrop-blur-xl">
