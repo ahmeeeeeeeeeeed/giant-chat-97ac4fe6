@@ -118,7 +118,7 @@ function LoginPage() {
             <span className="text-muted-foreground">تذكّرني</span>
           </label>
           <Link to="/recovery" className="font-bold text-primary hover:underline">
-            استرجاع الحساب
+            نسيت كلمة المرور؟
           </Link>
         </div>
 
