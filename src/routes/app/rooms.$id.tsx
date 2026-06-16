@@ -1168,6 +1168,7 @@ function SettingsSheet({ roomId, room, canModerate, myRank, isOwner, ownerId, on
           <Tab id="invite" icon={<UserPlus className="h-4 w-4" />} label="دعوة" />
           <Tab id="bans" icon={<Ban className="h-4 w-4" />} label="الحظر" show={canModerate} />
           <Tab id="logs" icon={<FileText className="h-4 w-4" />} label="السجل" show={canModerate} />
+          <Tab id="background" icon={<ImageIcon className="h-4 w-4" />} label="خلفية" show={isOwner} />
           <Tab id="manage" icon={<Edit3 className="h-4 w-4" />} label="إدارة" show={isOwner} />
         </div>
 
