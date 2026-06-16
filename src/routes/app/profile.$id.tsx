@@ -44,7 +44,7 @@ function OtherProfilePage() {
       // Fetch profile data
       const { data: p, error } = await supabase
         .from("profiles")
-        .select("id, username, avatar_url, bio, points, gender, country, hide_last_seen, dm_locked, last_seen_at")
+        .select("id, username, avatar_url, bio, points, gender, country, hide_last_seen, dm_locked, last_seen_at, cover_url, cover_type")
         .eq("id", otherId)
         .maybeSingle();
       
