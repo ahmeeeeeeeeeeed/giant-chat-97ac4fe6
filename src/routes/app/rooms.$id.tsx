@@ -916,6 +916,7 @@ function RoomPage() {
       {showShare && <SharePostModal roomId={roomId} onClose={() => setShowShare(false)} />}
 
       {showBots && <BotCommandsModal onClose={() => setShowBots(false)} />}
+      {showGifts && <GiftPickerModal roomId={roomId} onClose={() => setShowGifts(false)} presetReceiverId={giftPreset} />}
 
       {askPassword && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setAskPassword(false)}>
