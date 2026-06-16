@@ -223,6 +223,7 @@ function RoomPage() {
             markRoomSeen(roomId);
             return;
           }
+          setMessages((prev) => {
             if (prev.some((x) => x.id === m.id)) return prev;
             // Replace any matching optimistic temp message from the same sender
             const tmpIdx = prev.findIndex((x) =>
