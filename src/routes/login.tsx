@@ -4,6 +4,8 @@ import { useTranslation } from "react-i18next";
 import { signInWithUsername } from "@/lib/auth";
 import { toast } from "sonner";
 import { ArrowRight, Loader2, Eye, EyeOff, User, Lock, Sparkles } from "lucide-react";
+import welcomePoster from "@/assets/welcome-poster.jpg.asset.json";
+import { assetUrl } from "@/lib/asset-url";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
@@ -35,9 +37,18 @@ function LoginPage() {
 
   return (
     <main className="relative flex min-h-dvh flex-col overflow-hidden bg-background px-6 py-8 text-foreground">
+      {/* Still image background from welcome video */}
+      <img
+        src={assetUrl(welcomePoster.url)}
+        alt=""
+        loading="eager"
+        className="pointer-events-none absolute inset-0 z-0 h-full w-full object-cover opacity-40"
+      />
+      <div className="pointer-events-none absolute inset-0 z-0 bg-gradient-to-b from-background/80 via-background/60 to-background/95" />
       {/* Decorative blobs */}
-      <div className="pointer-events-none absolute -top-20 -end-20 h-72 w-72 rounded-full bg-primary/30 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-24 -start-20 h-80 w-80 rounded-full bg-accent/40 blur-3xl" />
+      <div className="pointer-events-none absolute -top-20 -end-20 z-0 h-72 w-72 rounded-full bg-primary/25 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-24 -start-20 z-0 h-80 w-80 rounded-full bg-accent/30 blur-3xl" />
+
 
       <Link to="/" className="relative z-10 self-start text-muted-foreground transition hover:text-foreground">
         <ArrowRight className="h-6 w-6 rtl:rotate-180" />

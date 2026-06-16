@@ -1,19 +1,27 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { LogIn, MessageCircle, Users, Music, Sparkles } from "lucide-react";
-import welcomeBg from "@/assets/welcome-bg.png.asset.json";
+import welcomeVideo from "@/assets/welcome-video.mp4.asset.json";
+import welcomePoster from "@/assets/welcome-poster.jpg.asset.json";
 import { assetUrl } from "@/lib/asset-url";
 import PermissionsGate, { hasCompletedPermissionsGate } from "@/components/PermissionsGate";
 
 
 export const Route = createFileRoute("/")({
   component: Welcome,
+  head: () => ({
+    links: [
+      { rel: "preload", as: "video", href: assetUrl(welcomeVideo.url), type: "video/mp4" },
+      { rel: "preload", as: "image", href: assetUrl(welcomePoster.url) },
+    ],
+  }),
 });
 
 function Welcome() {
   const navigate = useNavigate();
   const [needsPerms, setNeedsPerms] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
   useEffect(() => { setNeedsPerms(!hasCompletedPermissionsGate()); }, []);
 
   const guardedNavigate = (to: "/login" | "/register") => {
@@ -30,20 +38,26 @@ function Welcome() {
   return (
     <main className="relative flex min-h-dvh flex-col overflow-hidden bg-background px-6 py-8 text-foreground">
       {needsPerms && <PermissionsGate onDone={() => setNeedsPerms(false)} />}
-      {/* Image background */}
-      <img
-        src={assetUrl(welcomeBg.url)}
-        alt=""
-        loading="eager"
-        className="pointer-events-none absolute inset-0 z-0 h-full w-full object-cover opacity-60"
+      {/* Background video (autoplay, muted, loop) with poster fallback */}
+      <video
+        ref={videoRef}
+        src={assetUrl(welcomeVideo.url)}
+        poster={assetUrl(welcomePoster.url)}
+        autoPlay
+        loop
+        muted
+        playsInline
+        preload="auto"
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 z-0 h-full w-full object-cover opacity-70"
       />
 
-      <div className="pointer-events-none absolute inset-0 z-0 bg-gradient-to-b from-background/70 via-background/50 to-background/90" />
+      <div className="pointer-events-none absolute inset-0 z-0 bg-gradient-to-b from-background/70 via-background/40 to-background/95" />
 
       {/* Decorative blobs */}
-      <div className="pointer-events-none absolute -top-24 -end-24 z-0 h-80 w-80 rounded-full bg-primary/30 blur-3xl" />
-      <div className="pointer-events-none absolute top-1/3 -start-24 z-0 h-72 w-72 rounded-full bg-accent/40 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-32 end-1/4 z-0 h-80 w-80 rounded-full bg-primary/20 blur-3xl" />
+      <div className="pointer-events-none absolute -top-24 -end-24 z-0 h-80 w-80 rounded-full bg-primary/20 blur-3xl" />
+      <div className="pointer-events-none absolute top-1/3 -start-24 z-0 h-72 w-72 rounded-full bg-accent/30 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-32 end-1/4 z-0 h-80 w-80 rounded-full bg-primary/15 blur-3xl" />
 
       {/* Animated hero illustration */}
       <div className="relative z-10 mx-auto mt-6 h-44 w-full max-w-sm" style={{ animation: "rise 0.8s ease-out both" }}>
