@@ -122,6 +122,22 @@ jobs:
           "$APKSIGNER" verify "$SIGNED"
           echo "✅ Signed APK ready: $SIGNED ($(du -h "$SIGNED" | cut -f1))"
 
+      - name: Verify APK version before publishing
+        run: |
+          APK=android/app/build/outputs/apk/release/app-release.apk
+          EXPECTED_VERSION=$(node -p "require('./package.json').version")
+          EXPECTED_CODE=$(node -e "const v=require('./package.json').version.split('.').map(Number); console.log((v[0]||0)*10000+(v[1]||0)*100+(v[2]||0))")
+          BADGING=$($ANDROID_HOME/build-tools/$(ls $ANDROID_HOME/build-tools | sort -V | tail -n1)/aapt dump badging "$APK" | head -n1)
+          echo "$BADGING"
+          if ! echo "$BADGING" | grep -q "versionName='$EXPECTED_VERSION'"; then
+            echo "❌ APK versionName does not match package.json ($EXPECTED_VERSION)"
+            exit 1
+          fi
+          if ! echo "$BADGING" | grep -q "versionCode='$EXPECTED_CODE'"; then
+            echo "❌ APK versionCode does not match expected code ($EXPECTED_CODE)"
+            exit 1
+          fi
+
       - name: Upload APK as workflow artifact
         uses: actions/upload-artifact@v4
         with:
@@ -134,7 +150,6 @@ jobs:
         env:
           OTA_PUBLISH_SECRET: ${{ secrets.OTA_PUBLISH_SECRET }}
           OTA_ENDPOINT: https://giant-chat.lovable.app/api/public/ota-publish
-          VERSION: 11.0.0
           MSG: |-
             🚀 تحديث جديد متاح!
 
@@ -147,6 +162,7 @@ jobs:
             📲 ننصح بالتحديث الآن للحصول على أحدث نسخة من التطبيق.
         run: |
           APK=android/app/build/outputs/apk/release/app-release.apk
+          VERSION=$(node -p "require('./package.json').version")
           SHA256=$(sha256sum "$APK" | awk '{print $1}')
           TS=$(date +%s)
           SIG=$(printf '%s.apk.%s.%s' "$TS" "$VERSION" "$SHA256" | openssl dgst -sha256 -hmac "$OTA_PUBLISH_SECRET" | awk '{print $2}')
