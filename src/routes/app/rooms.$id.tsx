@@ -12,7 +12,7 @@ import {
 import { MusicPlayer } from "@/components/MusicPlayer";
 import { BroadcastCard } from "@/components/BroadcastCard";
 import { SharePostModal, SharedPostCard } from "@/components/SharePostModal";
-import { FlyingEffect } from "@/components/FlyingEffect";
+import { RoomEntryEffect, type EntryBurst, type EntryEffectType, pickRandomEffect } from "@/components/RoomEntryEffect";
 import { getEquipped } from "@/lib/equipped";
 import { markRoomSeen } from "@/lib/notify";
 import { ImageLightbox } from "@/components/ImageLightbox";
