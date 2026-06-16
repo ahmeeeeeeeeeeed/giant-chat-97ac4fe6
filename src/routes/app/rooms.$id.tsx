@@ -699,6 +699,7 @@ function RoomPage() {
             {canModerate && <ChipBtn icon={<Megaphone className="h-3 w-3" />} label="إعلان" onClick={() => setShowAnnounce(true)} highlight />}
             {canModerate && <ChipBtn icon={<Ban className="h-3 w-3" />} label="الحظر" onClick={() => openSettingsAt("bans")} />}
             {canModerate && <ChipBtn icon={<FileText className="h-3 w-3" />} label="السجل" onClick={() => openSettingsAt("logs")} />}
+            {isOwner && <ChipBtn icon={<ImageIcon className="h-3 w-3" />} label="خلفية" onClick={() => openSettingsAt("background")} />}
             {isOwner && <ChipBtn icon={<Edit3 className="h-3 w-3" />} label="إعدادات الغرفة" onClick={() => openSettingsAt("manage")} />}
           </div>
         )}
