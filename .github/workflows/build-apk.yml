@@ -37,8 +37,8 @@ jobs:
       - name: Install npm dependencies
         run: npm install --legacy-peer-deps
 
-      - name: Bump app version (patch)
-        run: node scripts/bump-version.mjs patch
+      - name: Use current app version
+        run: node -e "const p=require('./package.json'); console.log('Building app version', p.version)"
 
       - name: Build SPA for Capacitor
         env:
@@ -99,16 +99,9 @@ jobs:
             KEYPASS="${ANDROID_KEY_PASSWORD:-$ANDROID_KEYSTORE_PASSWORD}"
             ALIAS="$ANDROID_KEY_ALIAS"
           else
-            KEYSTORE=$HOME/giant-debug.keystore
-            keytool -genkeypair -v \
-              -keystore "$KEYSTORE" \
-              -alias giant \
-              -keyalg RSA -keysize 2048 -validity 10000 \
-              -storepass giantapp -keypass giantapp \
-              -dname "CN=Giant, OU=Giant, O=Giant, L=Cairo, ST=Egypt, C=EG"
-            STOREPASS="giantapp"
-            KEYPASS="giantapp"
-            ALIAS="giant"
+            echo "❌ Missing Android signing secrets. Refusing to create an APK with a new random certificate because Android will reject it as a package error over installed versions."
+            echo "Add ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, and optionally ANDROID_KEY_PASSWORD."
+            exit 1
           fi
 
           BUILD_TOOLS=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -n1)
