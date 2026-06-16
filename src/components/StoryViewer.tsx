@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { X, ChevronLeft, ChevronRight, Trash2, Eye } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, Trash2, Eye, Pencil } from "lucide-react";
 import { AvatarFrame } from "@/components/AvatarFrame";
-import { fetchUserStories, viewStory, deleteStory, type StoryRow, type StoryUser } from "@/lib/use-stories";
+import { fetchUserStories, getCachedUserStories, viewStory, deleteStory, type StoryRow, type StoryUser } from "@/lib/use-stories";
+import { CreateStoryDialog } from "@/components/CreateStoryDialog";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
