@@ -143,7 +143,9 @@ function RootComponent() {
       <ThemeProvider>
         <AuthProvider>
           <LanguageSync />
-          <Outlet />
+          <PageTransition>
+            <Outlet />
+          </PageTransition>
           <Toaster position="top-center" richColors />
           <ExitConfirmDialog />
         </AuthProvider>
