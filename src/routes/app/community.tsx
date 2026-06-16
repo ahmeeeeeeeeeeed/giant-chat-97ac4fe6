@@ -11,8 +11,9 @@ import {
   ImagePlus, Video, X, Loader2, Send, MoreVertical, Trash2, Pencil,
   Flag, MessageCircle, Smile, Users, Sparkles, Bookmark, Share2, Link2,
   Filter, ArrowUpDown, TrendingUp, Clock, Star, Image as ImageIcon, Film,
-  Hash, AtSign, Search, RefreshCw, Eye,
+  Hash, AtSign, Search, RefreshCw,
 } from "lucide-react";
+
 
 export const Route = createFileRoute("/app/community")({
   component: CommunityPage,
