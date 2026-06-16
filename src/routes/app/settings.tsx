@@ -16,7 +16,7 @@ import {
 import { SUPPORTED_LANGUAGES } from "@/lib/i18n";
 import { findAdminId } from "@/lib/find-admin";
 import { APP_VERSION, getVersionCode } from "@/lib/version";
-import { isNativeAndroid, downloadAndInstallApk, applyWebBundleUpdate, shouldShowUpdate, markUpdateInstalled, getDisplayInstalledVersion, getDisplayInstalledCode, notifyNativeUpdateReady, syncNativeInstalledVersion } from "@/lib/app-update";
+import { isNativeAndroid, downloadAndInstallApk, applyWebBundleUpdate, shouldShowUpdate, shouldInstallFullApk, markUpdateInstalled, getDisplayInstalledVersion, getDisplayInstalledCode, notifyNativeUpdateReady, syncNativeInstalledVersion } from "@/lib/app-update";
 import { cacheGet, cacheSet, cacheDel } from "@/lib/offline-cache";
 import { getOnline, useOnline } from "@/lib/use-online";
 import { toast } from "sonner";
@@ -148,6 +148,19 @@ function SettingsPage() {
     setInstalling(true);
     setInstallProgress(0);
     try {
+      const needsFullApk = shouldInstallFullApk(latest);
+      if (needsFullApk) {
+        if (!(await isNativeAndroid())) {
+          window.open(latest.file_url, "_blank");
+          return;
+        }
+        await downloadAndInstallApk(
+          latest.file_url,
+          (p) => setInstallProgress(p),
+          () => markUpdateInstalled(latest.version, latest.version_code),
+        );
+        return;
+      }
       // Prefer OTA web bundle update — no full reinstall, just refresh the changed pieces.
       if (latest.web_bundle_url) {
         const v = latest.web_bundle_version || latest.version;
@@ -247,6 +260,7 @@ function SettingsPage() {
   };
 
   const hasUpdate = latest && shouldShowUpdate(latest);
+  const latestNeedsFullApk = latest ? shouldInstallFullApk(latest) : false;
   const displayVersion = getDisplayInstalledVersion();
   const displayCode = getDisplayInstalledCode();
 
@@ -517,8 +531,8 @@ function SettingsPage() {
                   تحديث جديد متاح — v{latest.version}
                 </div>
                 <p className="text-[11px] text-emerald-700/80 dark:text-emerald-300/80">
-                  {latest.web_bundle_url
-                    ? "تحديث سريع داخل التطبيق — يحدّث فقط ما تغيّر بدون إعادة تثبيت."
+                  {latest.web_bundle_url && !latestNeedsFullApk
+                    ? "تحديث سريع داخل التطبيق — يطبّق النسخة الجديدة ويعيد تشغيل التطبيق."
                     : "تحديث كامل للتطبيق — يتطلب إعادة تثبيت."}
                 </p>
                 {latest.update_message && (

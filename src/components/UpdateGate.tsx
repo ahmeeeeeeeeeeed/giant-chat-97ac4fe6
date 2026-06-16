@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { APP_VERSION } from "@/lib/version";
-import { applyWebBundleUpdate, downloadAndInstallApk, getDisplayInstalledVersion, isForceRequired, isNativeAndroid, markUpdateInstalled, notifyNativeUpdateReady, shouldShowUpdate, syncNativeInstalledVersion, type AppUpdateRow } from "@/lib/app-update";
+import { applyWebBundleUpdate, downloadAndInstallApk, getDisplayInstalledVersion, isForceRequired, isNativeAndroid, markUpdateInstalled, notifyNativeUpdateReady, shouldInstallFullApk, shouldShowUpdate, syncNativeInstalledVersion, type AppUpdateRow } from "@/lib/app-update";
 import { Download, X, AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -53,12 +53,26 @@ export function UpdateGate() {
   if (!latest || dismissed) return null;
   const force = isForceRequired(latest);
   const currentVersion = getDisplayInstalledVersion();
+  const needsFullApk = shouldInstallFullApk(latest);
 
   const handleUpdate = async () => {
     setBusy(true);
     setError(null);
     setProgress(0);
     try {
+      if (needsFullApk) {
+        if (!native) {
+          window.open(latest.file_url, "_blank");
+          return;
+        }
+        await downloadAndInstallApk(
+          latest.file_url,
+          (p) => setProgress(p),
+          () => markUpdateInstalled(latest.version, latest.version_code),
+        );
+        setDone(true);
+        return;
+      }
       if (latest.web_bundle_url) {
         await applyWebBundleUpdate(
           latest.web_bundle_url,
@@ -127,7 +141,7 @@ export function UpdateGate() {
           <div className="mb-4 space-y-2">
             <div className="flex items-center gap-2 text-sm">
               <Loader2 className="h-4 w-4 animate-spin text-primary" />
-              <span>{latest.web_bundle_url ? "جارٍ تطبيق التحديث" : "جارٍ تنزيل التحديث"}... {progress}%</span>
+              <span>{latest.web_bundle_url && !needsFullApk ? "جارٍ تطبيق التحديث" : "جارٍ تنزيل التحديث"}... {progress}%</span>
             </div>
             <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
               <div
@@ -141,7 +155,7 @@ export function UpdateGate() {
         {done && (
           <div className="mb-4 flex items-center gap-2 rounded-2xl bg-emerald-500/10 p-3 text-sm text-emerald-600">
             <CheckCircle2 className="h-5 w-5" />
-            <span>{latest.web_bundle_url ? "تم تطبيق التحديث — سيتم إعادة تشغيل التطبيق" : "اكتمل التحميل — يتم فتح المثبت..."}</span>
+            <span>{latest.web_bundle_url && !needsFullApk ? "تم تطبيق التحديث — سيتم إعادة تشغيل التطبيق" : "اكتمل التحميل — يتم فتح المثبت..."}</span>
           </div>
         )}
 
