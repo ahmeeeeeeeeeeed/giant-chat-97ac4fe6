@@ -120,6 +120,13 @@ export async function signInWithUsername(username: string, password: string) {
 export async function signOut() {
   explicitSignOutInProgress = true;
   try {
+    try {
+      await supabase.rpc("log_activity" as never, {
+        _category: "auth", _action: "logout",
+        _user_agent: navigator.userAgent,
+      } as never);
+    } catch { /* ignore */ }
+
     // Use 'local' scope so signOut never blocks on the network.
     // This always clears the local Supabase session (and fires SIGNED_OUT),
     // even when the device is offline. The server session, if any, expires
