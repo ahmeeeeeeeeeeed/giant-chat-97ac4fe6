@@ -1838,6 +1838,7 @@ export type Database = {
         Args: { _new_username: string }
         Returns: undefined
       }
+      realtime_topic_allowed: { Args: never; Returns: boolean }
       record_daily_action: {
         Args: { _amount?: number; _kind: string }
         Returns: undefined
