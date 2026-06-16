@@ -513,7 +513,12 @@ function PortalEffect() {
       />
       <div
         className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-        style={{ animation: "portal-emerge 5s ease-out forwards", filter: "drop-shadow(0 0 30px rgba(120,200,255,0.9))" }}
+        style={{
+          width: "min(90vw, 560px)",
+          height: "auto",
+          animation: "portal-emerge 5s ease-out forwards",
+          filter: "drop-shadow(0 0 30px rgba(120,200,255,0.9))",
+        }}
       >
         <CharImg src={portalImg} alt="Wizard portal" />
       </div>
