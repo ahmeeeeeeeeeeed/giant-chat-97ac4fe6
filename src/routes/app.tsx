@@ -227,6 +227,14 @@ function AppLayout() {
                 <Trophy className="h-[17px] w-[17px]" />
               </Link>
               <Link
+                to="/app/stories"
+                aria-label="القصص"
+                title="القصص"
+                className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-fuchsia-950/40 border border-fuchsia-500/30 text-fuchsia-300 backdrop-blur transition active:scale-95 hover:bg-fuchsia-900/40"
+              >
+                <Sparkles className="h-[17px] w-[17px]" />
+              </Link>
+              <Link
                 to="/app/activity"
                 aria-label="سجل النشاط"
                 title="سجل النشاط"
