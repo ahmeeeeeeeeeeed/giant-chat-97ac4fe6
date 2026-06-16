@@ -1,4 +1,11 @@
 import { useEffect, useState, useRef } from "react";
+import dragonImg from "@/assets/fx-dragon.png";
+import princessImg from "@/assets/fx-princess.png";
+import knightImg from "@/assets/fx-knight.png";
+import magicImg from "@/assets/fx-magic.png";
+import mascotImg from "@/assets/fx-mascot.png";
+import portalImg from "@/assets/fx-portal.png";
+
 
 export type EntryEffectType =
   | "dragon"
@@ -278,27 +285,42 @@ function Sparkles({ count = 24, color = "#fff" }: { count?: number; color?: stri
   );
 }
 
+function CharImg({ src, alt, style, className }: { src: string; alt: string; style?: React.CSSProperties; className?: string }) {
+  return (
+    <img
+      src={src}
+      alt={alt}
+      loading="lazy"
+      width={1024}
+      height={1024}
+      className={className}
+      style={{ width: "auto", maxWidth: "min(90vw, 560px)", maxHeight: "75vh", objectFit: "contain", ...style }}
+    />
+  );
+}
+
 function DragonEffect() {
   return (
     <div className="absolute inset-0">
-      <div className="absolute inset-0 bg-gradient-to-b from-red-900/40 via-orange-700/20 to-transparent animate-fade-in" />
+      <div className="absolute inset-0 animate-fade-in" style={{ background: "radial-gradient(circle at 50% 40%, rgba(255,90,0,0.45), transparent 65%)" }} />
       <div
         className="absolute left-1/2 -translate-x-1/2"
-        style={{ animation: "dragon-fly 5s ease-in-out forwards", fontSize: "clamp(180px, 55vw, 380px)", filter: "drop-shadow(0 0 30px rgba(255,80,0,0.8))" }}
+        style={{ animation: "dragon-fly 5s ease-in-out forwards", filter: "drop-shadow(0 0 40px rgba(255,80,0,0.85))" }}
       >
-        🐉
+        <CharImg src={dragonImg} alt="Dragon" />
       </div>
-      {/* Fire */}
-      {Array.from({ length: 20 }).map((_, i) => (
+      {/* Fire embers */}
+      {Array.from({ length: 18 }).map((_, i) => (
         <span
           key={i}
           className="absolute"
           style={{
             left: `${20 + Math.random() * 60}%`,
             top: `${30 + Math.random() * 40}%`,
-            fontSize: 30 + Math.random() * 40,
-            animation: `fire-puff 2s ${1 + Math.random() * 1.5}s ease-out forwards`,
+            fontSize: 28 + Math.random() * 30,
+            animation: `fire-puff 2s ${0.8 + Math.random() * 1.8}s ease-out forwards`,
             opacity: 0,
+            filter: "drop-shadow(0 0 8px rgba(255,140,0,0.9))",
           }}
         >
           🔥
@@ -311,24 +333,17 @@ function DragonEffect() {
 function PrincessEffect() {
   return (
     <div className="absolute inset-0">
-      <div className="absolute inset-0 bg-gradient-to-br from-pink-500/30 via-purple-500/20 to-fuchsia-500/30 animate-fade-in" />
-      <Sparkles count={30} color="#ffd6f5" />
+      <div className="absolute inset-0 animate-fade-in" style={{ background: "radial-gradient(circle at 50% 60%, rgba(255,150,220,0.35), transparent 65%)" }} />
+      <Sparkles count={36} color="#ffd6f5" />
       <div
-        className="absolute left-1/2 top-1/2"
+        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
         style={{
           animation: "princess-dance 5s ease-in-out forwards",
-          fontSize: "clamp(160px, 50vw, 320px)",
-          filter: "drop-shadow(0 0 40px rgba(255,180,230,0.9))",
+          filter: "drop-shadow(0 0 50px rgba(255,180,230,0.95))",
           transformOrigin: "center",
         }}
       >
-        👸
-      </div>
-      <div
-        className="absolute left-1/2 top-[30%] -translate-x-1/2"
-        style={{ fontSize: "clamp(60px, 18vw, 120px)", animation: "crown-bob 5s ease-in-out forwards" }}
-      >
-        👑
+        <CharImg src={princessImg} alt="Princess" />
       </div>
     </div>
   );
@@ -337,15 +352,14 @@ function PrincessEffect() {
 function KnightEffect() {
   return (
     <div className="absolute inset-0 overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-r from-amber-800/30 via-yellow-600/10 to-transparent animate-fade-in" />
-      {/* Dust */}
+      <div className="absolute inset-0 animate-fade-in" style={{ background: "linear-gradient(90deg, rgba(146,64,14,0.35), transparent 60%)" }} />
       {Array.from({ length: 25 }).map((_, i) => (
         <span
           key={i}
-          className="absolute bottom-[20%]"
+          className="absolute bottom-[15%]"
           style={{
             left: `${Math.random() * 100}%`,
-            fontSize: 24 + Math.random() * 30,
+            fontSize: 26 + Math.random() * 30,
             animation: `dust-rise 2.5s ${Math.random() * 2}s ease-out forwards`,
             opacity: 0,
           }}
@@ -355,15 +369,9 @@ function KnightEffect() {
       ))}
       <div
         className="absolute top-1/2 -translate-y-1/2"
-        style={{ animation: "knight-gallop 5s linear forwards", fontSize: "clamp(140px, 45vw, 280px)", filter: "drop-shadow(0 0 20px rgba(0,0,0,0.6))" }}
+        style={{ animation: "knight-gallop 5s linear forwards", filter: "drop-shadow(0 10px 20px rgba(0,0,0,0.55))" }}
       >
-        🐎
-      </div>
-      <div
-        className="absolute top-1/2 -translate-y-[80%]"
-        style={{ animation: "knight-gallop 5s linear forwards", fontSize: "clamp(80px, 25vw, 160px)" }}
-      >
-        🤴
+        <CharImg src={knightImg} alt="Knight" />
       </div>
     </div>
   );
@@ -372,17 +380,17 @@ function KnightEffect() {
 function MagicEffect() {
   return (
     <div className="absolute inset-0">
-      <div className="absolute inset-0 bg-gradient-radial from-purple-500/40 via-blue-500/20 to-transparent animate-fade-in"
-           style={{ background: "radial-gradient(circle at center, rgba(160,80,255,0.4), transparent 60%)" }} />
+      <div className="absolute inset-0 animate-fade-in"
+           style={{ background: "radial-gradient(circle at center, rgba(180,120,255,0.45), transparent 60%)" }} />
       <div
         className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-        style={{ animation: "magic-burst 5s ease-out forwards", fontSize: "clamp(160px, 50vw, 320px)", filter: "drop-shadow(0 0 40px gold)" }}
+        style={{ animation: "magic-burst 5s ease-out forwards", filter: "drop-shadow(0 0 50px gold)" }}
       >
-        ✨
+        <CharImg src={magicImg} alt="Magic burst" />
       </div>
-      {Array.from({ length: 40 }).map((_, i) => {
-        const angle = (i / 40) * 2 * Math.PI;
-        const dist = 200 + Math.random() * 200;
+      {Array.from({ length: 30 }).map((_, i) => {
+        const angle = (i / 30) * 2 * Math.PI;
+        const dist = 220 + Math.random() * 200;
         const dx = Math.cos(angle) * dist;
         const dy = Math.sin(angle) * dist;
         return (
@@ -390,7 +398,7 @@ function MagicEffect() {
             key={i}
             className="absolute left-1/2 top-1/2"
             style={{
-              fontSize: 20 + Math.random() * 30,
+              fontSize: 18 + Math.random() * 26,
               ["--mx" as never]: `${dx}px`,
               ["--my" as never]: `${dy}px`,
               animation: `magic-particle 2.5s ${Math.random() * 0.8}s ease-out forwards`,
@@ -408,22 +416,22 @@ function MagicEffect() {
 function MascotEffect() {
   return (
     <div className="absolute inset-0">
-      <div className="absolute inset-0 bg-gradient-to-b from-yellow-300/30 via-orange-300/20 to-transparent animate-fade-in" />
-      <Sparkles count={18} color="#fff7a8" />
+      <div className="absolute inset-0 animate-fade-in" style={{ background: "radial-gradient(circle at 50% 60%, rgba(255,200,80,0.4), transparent 65%)" }} />
+      <Sparkles count={20} color="#fff7a8" />
       <div
         className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-        style={{ animation: "mascot-bounce 5s ease-in-out forwards", fontSize: "clamp(180px, 55vw, 360px)", filter: "drop-shadow(0 0 30px rgba(255,200,0,0.7))" }}
+        style={{ animation: "mascot-bounce 5s ease-in-out forwards", filter: "drop-shadow(0 0 35px rgba(255,200,0,0.8))" }}
       >
-        🤗
+        <CharImg src={mascotImg} alt="Mascot" />
       </div>
-      {Array.from({ length: 12 }).map((_, i) => (
+      {Array.from({ length: 14 }).map((_, i) => (
         <span
           key={i}
           className="absolute"
           style={{
             left: `${10 + Math.random() * 80}%`,
             top: `${10 + Math.random() * 80}%`,
-            fontSize: 30 + Math.random() * 20,
+            fontSize: 28 + Math.random() * 22,
             animation: `confetti-fall 4s ${Math.random() * 1.5}s linear forwards`,
             opacity: 0,
           }}
@@ -438,21 +446,31 @@ function MascotEffect() {
 function PortalEffect() {
   return (
     <div className="absolute inset-0">
-      <div className="absolute inset-0 bg-gradient-radial from-cyan-500/40 via-indigo-700/30 to-transparent animate-fade-in"
-           style={{ background: "radial-gradient(circle at center, rgba(0,200,255,0.45), transparent 65%)" }} />
+      <div className="absolute inset-0 animate-fade-in"
+           style={{ background: "radial-gradient(circle at center, rgba(0,200,255,0.5), rgba(80,40,200,0.25) 40%, transparent 70%)" }} />
+      {/* Spinning portal ring (CSS) */}
+      <div
+        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full"
+        style={{
+          width: "min(80vw, 520px)",
+          height: "min(80vw, 520px)",
+          background: "conic-gradient(from 0deg, #06b6d4, #3b82f6, #8b5cf6, #06b6d4)",
+          filter: "blur(18px) drop-shadow(0 0 60px cyan)",
+          animation: "portal-ring 5s linear forwards",
+          opacity: 0.85,
+        }}
+      />
+      <div
+        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-background/60"
+        style={{ width: "min(55vw, 360px)", height: "min(55vw, 360px)", animation: "portal-ring 5s linear forwards" }}
+      />
       <div
         className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-        style={{ animation: "portal-spin 5s linear forwards", fontSize: "clamp(220px, 65vw, 420px)", filter: "drop-shadow(0 0 60px cyan)" }}
+        style={{ animation: "portal-emerge 5s ease-out forwards", filter: "drop-shadow(0 0 30px rgba(120,200,255,0.9))" }}
       >
-        🌀
+        <CharImg src={portalImg} alt="Wizard portal" />
       </div>
-      <div
-        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-        style={{ animation: "portal-emerge 5s ease-out forwards", fontSize: "clamp(80px, 25vw, 160px)" }}
-      >
-        🧙
-      </div>
-      <Sparkles count={20} color="#a0f0ff" />
+      <Sparkles count={22} color="#a0f0ff" />
     </div>
   );
 }
@@ -582,5 +600,11 @@ const KEYFRAMES = `
   60% { transform: translate(-50%,-50%) scale(1.2); opacity: 1; }
   80% { transform: translate(-50%,-50%) scale(1); opacity: 1; }
   100% { transform: translate(-50%,-200%) scale(1.4); opacity: 0; }
+}
+@keyframes portal-ring {
+  0% { transform: translate(-50%,-50%) scale(0) rotate(0); opacity: 0; }
+  20% { transform: translate(-50%,-50%) scale(1) rotate(360deg); opacity: 1; }
+  85% { transform: translate(-50%,-50%) scale(1.05) rotate(1440deg); opacity: 1; }
+  100% { transform: translate(-50%,-50%) scale(0) rotate(1800deg); opacity: 0; }
 }
 `;
