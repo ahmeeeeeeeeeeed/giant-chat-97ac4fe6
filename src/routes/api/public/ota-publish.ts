@@ -1,10 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { createHmac, timingSafeEqual } from 'crypto'
+import { createHash, createHmac, timingSafeEqual } from 'crypto'
 
 /**
  * POST /api/public/ota-publish
  *
- * يُستدعى من GitHub Actions بعد رفع bundle.zip إلى GitHub Releases.
+ * يُستدعى من GitHub Actions بعد بناء bundle.zip.
  *
  * Headers المطلوبة:
  *   - x-ota-signature: HMAC-SHA256 hex للـ raw body باستخدام OTA_PUBLISH_SECRET
@@ -12,7 +12,8 @@ import { createHmac, timingSafeEqual } from 'crypto'
  *   - content-type: application/json
  *
  * Body:
- *   { "version": "1.0.123", "url": "https://github.com/.../bundle.zip", "message": "optional" }
+ *   binary zip مع headers: x-ota-version / x-ota-sha256 / x-ota-message-b64
+ *   أو legacy JSON: { "version": "1.0.123", "url": "https://.../bundle.zip", "message": "optional" }
  *   أو للـ rollback:
  *   { "action": "rollback" }
  *
@@ -32,7 +33,9 @@ export const Route = createFileRoute('/api/public/ota-publish')({
 
         const signature = request.headers.get('x-ota-signature') ?? ''
         const timestamp = request.headers.get('x-ota-timestamp') ?? ''
-        const rawBody = await request.text()
+        const rawBuffer = await request.arrayBuffer()
+        const contentType = request.headers.get('content-type') ?? ''
+        const isBinaryBundle = contentType.includes('application/zip') || request.headers.has('x-ota-version')
 
         // 1) تحقق من timestamp (يمنع replay attacks)
         const ts = Number(timestamp)
@@ -45,9 +48,13 @@ export const Route = createFileRoute('/api/public/ota-publish')({
         }
 
         // 2) تحقق من HMAC
-        const expected = createHmac('sha256', secret)
-          .update(`${timestamp}.${rawBody}`)
-          .digest('hex')
+        const rawBody = isBinaryBundle ? '' : new TextDecoder().decode(rawBuffer)
+        const bundleVersion = request.headers.get('x-ota-version') ?? ''
+        const declaredHash = request.headers.get('x-ota-sha256') ?? ''
+        const signedPayload = isBinaryBundle
+          ? `${timestamp}.${bundleVersion}.${declaredHash}`
+          : `${timestamp}.${rawBody}`
+        const expected = createHmac('sha256', secret).update(signedPayload).digest('hex')
 
         const sigBuf = Buffer.from(signature, 'hex')
         const expBuf = Buffer.from(expected, 'hex')
@@ -58,7 +65,59 @@ export const Route = createFileRoute('/api/public/ota-publish')({
           return new Response('Invalid signature', { status: 401 })
         }
 
-        // 3) parse + validate
+        const { supabaseAdmin } = await import(
+          '@/integrations/supabase/client.server'
+        )
+
+        if (isBinaryBundle) {
+          if (!/^[0-9]+\.[0-9]+\.[0-9]+$/.test(bundleVersion)) {
+            return new Response('version must be semver X.Y.Z', { status: 400 })
+          }
+          if (!/^[a-f0-9]{64}$/i.test(declaredHash)) {
+            return new Response('Invalid bundle hash', { status: 400 })
+          }
+
+          const bundle = Buffer.from(rawBuffer)
+          const actualHash = createHash('sha256').update(bundle).digest('hex')
+          if (actualHash.toLowerCase() !== declaredHash.toLowerCase()) {
+            return new Response('Bundle hash mismatch', { status: 400 })
+          }
+
+          const messageB64 = request.headers.get('x-ota-message-b64') ?? ''
+          const message = messageB64 ? Buffer.from(messageB64, 'base64').toString('utf8') : undefined
+          const path = `ota/bundle-${bundleVersion}-${Date.now()}.zip`
+          const { error: uploadError } = await supabaseAdmin.storage
+            .from('app-updates')
+            .upload(path, bundle, {
+              contentType: 'application/zip',
+              cacheControl: '31536000',
+              upsert: true,
+            })
+          if (uploadError) {
+            return Response.json({ ok: false, error: uploadError.message }, { status: 500 })
+          }
+
+          const tenYears = 60 * 60 * 24 * 365 * 10
+          const { data: signed, error: signedError } = await supabaseAdmin.storage
+            .from('app-updates')
+            .createSignedUrl(path, tenYears)
+          if (signedError || !signed?.signedUrl) {
+            return Response.json({ ok: false, error: signedError?.message ?? 'Failed to create download URL' }, { status: 500 })
+          }
+
+          const { data, error } = await supabaseAdmin.rpc('ota_publish_bundle', {
+            _version: bundleVersion,
+            _url: signed.signedUrl,
+            _message: message,
+          })
+          if (error) {
+            return Response.json({ ok: false, error: error.message }, { status: 500 })
+          }
+
+          return Response.json({ ok: true, action: 'publish', version: bundleVersion, url: signed.signedUrl, result: data })
+        }
+
+        // 3) parse + validate legacy JSON requests
         let payload: {
           action?: 'rollback'
           version?: string
@@ -70,10 +129,6 @@ export const Route = createFileRoute('/api/public/ota-publish')({
         } catch {
           return new Response('Invalid JSON', { status: 400 })
         }
-
-        const { supabaseAdmin } = await import(
-          '@/integrations/supabase/client.server'
-        )
 
         // Rollback path
         if (payload.action === 'rollback') {
