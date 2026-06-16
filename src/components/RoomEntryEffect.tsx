@@ -133,28 +133,55 @@ function playPrincess(c: AudioContext) {
 
 function playKnight(c: AudioContext) {
   const now = c.currentTime;
-  // Gallop: thumping low noise pulses
-  for (let i = 0; i < 14; i++) {
-    const t = now + i * 0.28;
-    const src = c.createBufferSource();
-    src.buffer = noiseBuffer(c, 0.15);
-    const lp = c.createBiquadFilter();
-    lp.type = "lowpass";
-    lp.frequency.value = 180;
-    const g = envGain(c, c.destination, t, 0.15, 0.4);
-    src.connect(lp).connect(g);
-    src.start(t); src.stop(t + 0.15);
+  // Continuous gallop hoofbeats over full ~5s (paired clip-clop)
+  for (let i = 0; i < 22; i++) {
+    const base = now + i * 0.22;
+    [0, 0.07].forEach((off, k) => {
+      const t = base + off;
+      const src = c.createBufferSource();
+      src.buffer = noiseBuffer(c, 0.12);
+      const lp = c.createBiquadFilter();
+      lp.type = "lowpass";
+      lp.frequency.value = k === 0 ? 160 : 220;
+      const g = envGain(c, c.destination, t, 0.12, k === 0 ? 0.5 : 0.35);
+      src.connect(lp).connect(g);
+      src.start(t); src.stop(t + 0.12);
+    });
   }
-  // Horn
-  const t0 = now + 0.2;
+  // Horse neigh at start: descending sawtooth with vibrato
+  const t0 = now + 0.05;
   const o = c.createOscillator();
-  o.type = "square";
-  o.frequency.setValueAtTime(330, t0);
-  o.frequency.setValueAtTime(440, t0 + 0.4);
-  const g = envGain(c, c.destination, t0, 0.9, 0.15);
-  o.connect(g);
-  o.start(t0); o.stop(t0 + 0.9);
+  o.type = "sawtooth";
+  o.frequency.setValueAtTime(620, t0);
+  o.frequency.exponentialRampToValueAtTime(380, t0 + 0.8);
+  const lfo = c.createOscillator();
+  lfo.frequency.value = 14;
+  const lfoG = c.createGain();
+  lfoG.gain.value = 30;
+  lfo.connect(lfoG).connect(o.frequency);
+  const bp = c.createBiquadFilter();
+  bp.type = "bandpass";
+  bp.frequency.value = 900;
+  bp.Q.value = 4;
+  const g = envGain(c, c.destination, t0, 1.1, 0.28);
+  o.connect(bp).connect(g);
+  o.start(t0); o.stop(t0 + 1.1);
+  lfo.start(t0); lfo.stop(t0 + 1.1);
+  // Second neigh near the end (return trip)
+  const t1 = now + 3.5;
+  const o2 = c.createOscillator();
+  o2.type = "sawtooth";
+  o2.frequency.setValueAtTime(560, t1);
+  o2.frequency.exponentialRampToValueAtTime(340, t1 + 0.7);
+  const bp2 = c.createBiquadFilter();
+  bp2.type = "bandpass";
+  bp2.frequency.value = 850;
+  bp2.Q.value = 4;
+  const g2 = envGain(c, c.destination, t1, 0.9, 0.24);
+  o2.connect(bp2).connect(g2);
+  o2.start(t1); o2.stop(t1 + 0.9);
 }
+
 
 function playMagic(c: AudioContext) {
   const now = c.currentTime;
@@ -528,11 +555,10 @@ const KEYFRAMES = `
 @keyframes fx-fade { 0%{opacity:0} 8%{opacity:1} 85%{opacity:1} 100%{opacity:0} }
 @keyframes sparkle { 0%{transform:scale(0) rotate(0);opacity:0} 30%{opacity:1} 100%{transform:scale(1.6) rotate(180deg);opacity:0} }
 @keyframes dragon-fly {
-  0% { top: -40vh; transform: translateX(-50%) rotate(-8deg) scale(0.8); }
-  35% { top: 25vh; transform: translateX(-50%) rotate(0deg) scale(1.1); }
-  65% { top: 40vh; transform: translateX(-50%) rotate(6deg) scale(1.05); }
-  90% { top: -30vh; transform: translateX(-50%) rotate(-10deg) scale(0.9); opacity: 1; }
-  100% { top: -60vh; transform: translateX(-50%) rotate(-12deg) scale(0.7); opacity: 0; }
+  0%   { top: 110vh; transform: translateX(-50%) scale(0.7); opacity: 0; }
+  15%  { top: 50%;   transform: translate(-50%,-50%) scale(1); opacity: 1; }
+  70%  { top: 50%;   transform: translate(-50%,-50%) scale(1.05); opacity: 1; }
+  100% { top: -60vh; transform: translateX(-50%) scale(0.6); opacity: 0; }
 }
 @keyframes fire-puff {
   0% { transform: scale(0.4) translateY(0); opacity: 0; }
@@ -540,22 +566,19 @@ const KEYFRAMES = `
   100% { transform: scale(2.2) translateY(40px); opacity: 0; }
 }
 @keyframes princess-dance {
-  0% { transform: translate(-50%, 120vh) scale(0.6) rotate(0); }
-  20% { transform: translate(-50%, -50%) scale(1) rotate(0); }
-  40% { transform: translate(-50%, -50%) scale(1) rotate(360deg); }
-  60% { transform: translate(-50%, -50%) scale(1.1) rotate(720deg); }
-  80% { transform: translate(-50%, -50%) scale(1) rotate(1080deg); }
-  100% { transform: translate(-50%, -150vh) scale(0.7) rotate(1080deg); opacity: 0; }
-}
-@keyframes crown-bob {
-  0%, 100% { transform: translate(-50%, 0) rotate(-8deg); }
-  50% { transform: translate(-50%, -20px) rotate(8deg); }
+  0%   { transform: translate(-50%, 120vh) scale(0.6); opacity: 0; }
+  15%  { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  35%  { transform: translate(-50%, -52%) scale(1.02) rotate(-3deg); }
+  55%  { transform: translate(-50%, -48%) scale(1) rotate(3deg); }
+  75%  { transform: translate(-50%, -50%) scale(1.03); opacity: 1; }
+  100% { transform: translate(-50%, -150vh) scale(0.7); opacity: 0; }
 }
 @keyframes knight-gallop {
-  0% { left: -40vw; transform: translateY(-50%) scaleX(1); }
-  50% { left: 50%; transform: translate(-50%, -50%) scaleX(1) translateY(-10px); }
-  55% { transform: translate(-50%, -50%) scaleX(1) translateY(0); }
-  100% { left: 140vw; transform: translateY(-50%) scaleX(1); }
+  0%   { left: -50vw;  transform: translateY(-50%) scaleX(1); }
+  35%  { left: 110vw;  transform: translateY(-50%) scaleX(1); }
+  36%  { left: 110vw;  transform: translateY(-50%) scaleX(-1); }
+  85%  { left: -40vw;  transform: translateY(-50%) scaleX(-1); }
+  100% { left: -60vw;  transform: translateY(-50%) scaleX(-1); opacity: 0; }
 }
 @keyframes dust-rise {
   0% { transform: translateY(0) scale(0.5); opacity: 0; }
