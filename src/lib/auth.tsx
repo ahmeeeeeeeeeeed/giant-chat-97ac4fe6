@@ -64,18 +64,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export const useAuth = () => useContext(Ctx);
 
-// Username-only auth: map username -> synthetic email
-export const usernameToEmail = (u: string) =>
-  `${u.trim().toLowerCase().replace(/[^a-z0-9_]/g, "")}@giant.app`;
+// Username-only auth: generate a unique synthetic email per signup.
+// We keep the username verbatim (Arabic/decorated allowed) in profiles,
+// but auth.users stores a unique ascii email we control.
+export const usernameToEmail = (u: string) => {
+  const ascii = u.trim().toLowerCase().replace(/[^a-z0-9_]/g, "");
+  const base = ascii.length >= 3 ? ascii : "u";
+  return `${base}@giant.app`;
+};
+
+function uniqueAuthEmail(username: string) {
+  const ascii = username.trim().toLowerCase().replace(/[^a-z0-9_]/g, "").slice(0, 16);
+  const base = ascii.length >= 3 ? ascii : "u";
+  const rand = Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+  return `${base}_${rand}@giant.app`;
+}
 
 export async function signUpWithUsername(username: string, password: string) {
   const clean = username.trim();
-  if (!/^[a-zA-Z0-9_]{3,20}$/.test(clean)) {
-    return { error: "اسم المستخدم: 3-20 حرف، أحرف إنجليزية وأرقام و _ فقط" };
+  // Allow any visible characters and decorations. Just enforce sane length.
+  // Forbid only whitespace and control chars inside the name.
+  if (clean.length < 2 || clean.length > 32) {
+    return { error: "اسم المستخدم: من 2 إلى 32 حرفًا" };
+  }
+  if (/[\s\u0000-\u001F\u007F]/.test(clean)) {
+    return { error: "لا يُسمح بمسافات أو رموز تحكم داخل الاسم" };
   }
   if (password.length < 6) return { error: "كلمة المرور 6 أحرف على الأقل" };
 
-  // check unique username
+  // check unique username (case-insensitive handled by lookup_auth_email on login)
   const { data: existing } = await supabase
     .from("profiles")
     .select("id")
@@ -83,14 +100,16 @@ export async function signUpWithUsername(username: string, password: string) {
     .maybeSingle();
   if (existing) return { error: "اسم المستخدم مستخدم بالفعل" };
 
+  const authEmail = uniqueAuthEmail(clean);
   const { error } = await supabase.auth.signUp({
-    email: usernameToEmail(clean),
+    email: authEmail,
     password,
     options: { data: { username: clean } },
   });
   if (error) return { error: error.message };
   return { error: null };
 }
+
 
 export async function signInWithUsername(username: string, password: string) {
   const clean = username.trim();
