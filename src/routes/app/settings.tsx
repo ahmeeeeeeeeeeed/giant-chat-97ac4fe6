@@ -59,6 +59,17 @@ function SettingsPage() {
   const [installing, setInstalling] = useState(false);
   const [installProgress, setInstallProgress] = useState(0);
   const online = useOnline();
+  const [entryFxOn, setEntryFxOn] = useState<boolean>(() => {
+    try { const v = localStorage.getItem("giant:roomEntryEffects"); return v === null ? true : v === "1"; } catch { return true; }
+  });
+  const toggleEntryFx = () => {
+    setEntryFxOn((v) => {
+      const next = !v;
+      try { localStorage.setItem("giant:roomEntryEffects", next ? "1" : "0"); } catch { /* ignore */ }
+      toast.success(next ? "تم تفعيل مؤثرات دخول الغرف" : "تم إيقاف مؤثرات دخول الغرف");
+      return next;
+    });
+  };
 
   const doLogout = async () => {
     setSigningOut(true);
