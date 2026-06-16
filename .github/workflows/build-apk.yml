@@ -52,6 +52,9 @@ jobs:
           echo "✅ SPA build present:"
           ls -lah dist/client | head
 
+      - name: Verify Node version
+        run: node -v
+
       - name: Sync Capacitor assets into Android project
         run: npx cap sync android
 
