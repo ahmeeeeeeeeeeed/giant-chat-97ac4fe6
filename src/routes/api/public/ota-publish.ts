@@ -101,7 +101,7 @@ export const Route = createFileRoute('/api/public/ota-publish')({
         const { data, error } = await supabaseAdmin.rpc('ota_publish_bundle', {
           _version: payload.version,
           _url: payload.url,
-          _message: payload.message ?? null,
+          _message: payload.message ?? undefined,
         })
 
         if (error) {
