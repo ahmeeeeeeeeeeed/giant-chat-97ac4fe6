@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth";
 import { Search, UserPlus, Check, X, Loader2, Users as UsersIcon, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import { cacheGet, cacheSet, cacheKeys } from "@/lib/offline-cache";
+import { StoryRing } from "@/components/StoryRing";
 
 export const Route = createFileRoute("/app/friends")({
   component: FriendsPage,
