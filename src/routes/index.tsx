@@ -21,6 +21,8 @@ export const Route = createFileRoute("/")({
 function Welcome() {
   const navigate = useNavigate();
   const [needsPerms, setNeedsPerms] = useState(false);
+  const [sessionChecked, setSessionChecked] = useState(false);
+  const [hasSession, setHasSession] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   useEffect(() => { setNeedsPerms(!hasCompletedPermissionsGate()); }, []);
 
@@ -31,9 +33,24 @@ function Welcome() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) navigate({ to: "/app/friends" });
+      if (session) {
+        setHasSession(true);
+        navigate({ to: "/app/friends", replace: true });
+      } else {
+        setSessionChecked(true);
+      }
     });
   }, [navigate]);
+
+  // While checking session or redirecting an existing session, render nothing
+  // to avoid flashing the welcome/login UI for already-signed-in users.
+  if (!sessionChecked || hasSession) {
+    return (
+      <main className="flex min-h-dvh items-center justify-center bg-background">
+        <span aria-label="loading" className="block h-8 w-8 animate-spin rounded-full border-2 border-muted border-t-primary" />
+      </main>
+    );
+  }
 
   return (
     <main className="relative flex min-h-dvh flex-col overflow-hidden bg-background px-6 py-8 text-foreground">
