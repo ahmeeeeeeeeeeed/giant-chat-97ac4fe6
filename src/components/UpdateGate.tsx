@@ -57,7 +57,6 @@ export function UpdateGate() {
     setProgress(0);
     try {
       if (latest.web_bundle_url) {
-        markWebBundleInstalled(latest.version, latest.version_code);
         await applyWebBundleUpdate(
           latest.web_bundle_url,
           latest.web_bundle_version || latest.version,
