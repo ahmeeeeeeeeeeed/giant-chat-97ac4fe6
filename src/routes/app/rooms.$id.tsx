@@ -152,6 +152,7 @@ function RoomPage() {
     if (!(m?.message_type === "system" || !m?.user_id)) return false;
     const meta = m?.meta as any;
     if (meta?.kind === "music_broadcast" || meta?.kind === "user_share") return false;
+    if (meta?.kind === "gift" || meta?.kind === "gift_global") return false;
     if ((m?.content ?? "").startsWith("📢")) return false;
     return true;
   };
