@@ -19,6 +19,8 @@ export type AppUpdateRow = {
 
 const INSTALLED_VERSION_KEY = "giant.update.installed.v";
 const INSTALLED_CODE_KEY = "giant.update.installed.code";
+const NATIVE_VERSION_KEY = "giant.update.native.v";
+const NATIVE_CODE_KEY = "giant.update.native.code";
 const WEB_BUNDLE_VERSION_KEY = "web_bundle_version";
 
 function readStoredCode(key: string): number {
@@ -30,6 +32,12 @@ function readStoredCode(key: string): number {
   } catch { return 0; }
 }
 
+function readStoredValue(key: string): string | null {
+  try {
+    return typeof window !== "undefined" ? localStorage.getItem(key) : null;
+  } catch { return null; }
+}
+
 export function getEffectiveInstalledCode(): number {
   // APP_VERSION is baked into the APK at build time — it's the only reliable
   // source of truth for what's actually installed on the device. The stored
@@ -38,8 +46,19 @@ export function getEffectiveInstalledCode(): number {
   // of APP_VERSION and the last applied OTA web bundle.
   return Math.max(
     getVersionCode(APP_VERSION),
+    readStoredCode(NATIVE_CODE_KEY),
+    readStoredCode(NATIVE_VERSION_KEY),
     readStoredCode(WEB_BUNDLE_VERSION_KEY),
   );
+}
+
+export function getDisplayInstalledVersion(): string {
+  return readStoredValue(WEB_BUNDLE_VERSION_KEY) || readStoredValue(NATIVE_VERSION_KEY) || APP_VERSION;
+}
+
+export function getDisplayInstalledCode(): number {
+  const displayVersion = getDisplayInstalledVersion();
+  return Math.max(getVersionCode(displayVersion), getEffectiveInstalledCode());
 }
 
 export function markUpdateInstalled(version: string, versionCode = getVersionCode(version)): void {
@@ -50,11 +69,48 @@ export function markUpdateInstalled(version: string, versionCode = getVersionCod
   } catch { /* ignore */ }
 }
 
+export async function syncNativeInstalledVersion(): Promise<void> {
+  if (!(await isNativeAndroid())) return;
+  try {
+    const { App } = await import("@capacitor/app");
+    const info = await App.getInfo();
+    const version = info.version || APP_VERSION;
+    const build = String(info.build || "");
+    const code = /^\d+$/.test(build) ? parseInt(build, 10) : getVersionCode(version);
+    localStorage.setItem(NATIVE_VERSION_KEY, version);
+    localStorage.setItem(NATIVE_CODE_KEY, String(code));
+  } catch { /* ignore */ }
+}
+
+export async function notifyNativeUpdateReady(): Promise<void> {
+  if (!(await isNativeAndroid())) return;
+  try {
+    const { CapacitorUpdater } = await import("@capgo/capacitor-updater");
+    const ready = await CapacitorUpdater.notifyAppReady();
+    const activeVersion = ready?.bundle?.version;
+    if (activeVersion && activeVersion !== "builtin") {
+      localStorage.setItem(WEB_BUNDLE_VERSION_KEY, activeVersion);
+    }
+  } catch { /* ignore */ }
+}
+
 export function isNewerVersion(latestCode: number): boolean {
   return latestCode > getEffectiveInstalledCode();
 }
 
+export function isUpdateAlreadyMarked(latest: Pick<AppUpdateRow, "version" | "version_code">): boolean {
+  const storedVersion = readStoredValue(INSTALLED_VERSION_KEY);
+  const storedCode = readStoredCode(INSTALLED_CODE_KEY);
+  return storedVersion === latest.version || storedCode === latest.version_code;
+}
+
+export function shouldShowUpdate(latest: Pick<AppUpdateRow, "version" | "version_code">): boolean {
+  if (isUpdateAlreadyMarked(latest)) return false;
+  return latest.version_code > getEffectiveInstalledCode();
+}
+
 export function isForceRequired(latest: AppUpdateRow): boolean {
+  if (isUpdateAlreadyMarked(latest)) return false;
   const current = getEffectiveInstalledCode();
   if (latest.update_type === "force" && latest.version_code > current) return true;
   // Also force if installed version is below the minimum required.
@@ -77,6 +133,7 @@ export async function isNativeAndroid(): Promise<boolean> {
 export async function downloadAndInstallApk(
   url: string,
   onProgress: (percent: number) => void,
+  onReadyToInstall?: () => void,
 ): Promise<void> {
   const { Filesystem, Directory } = await import("@capacitor/filesystem");
   const filename = `giant-update-${Date.now()}.apk`;
@@ -118,6 +175,7 @@ export async function downloadAndInstallApk(
     recursive: true,
   });
   onProgress(100);
+  onReadyToInstall?.();
 
   // Open the APK with the system installer
   try {
@@ -162,6 +220,11 @@ export async function applyWebBundleUpdate(
       onProgress(1);
       const bundle = await CapacitorUpdater.download({ url: bundleUrl, version });
       onProgress(99);
+      // set() immediately destroys the JS context and reloads the app, so no
+      // caller code after await applyWebBundleUpdate() is guaranteed to run.
+      // Persist the applied web version before switching bundles to prevent the
+      // same update prompt from appearing again on the next launch.
+      try { localStorage.setItem(WEB_BUNDLE_VERSION_KEY, version); } catch { /* ignore */ }
       await CapacitorUpdater.set({ id: bundle.id });
       onProgress(100);
       // CapacitorUpdater.set() automatically reloads the WebView with the new bundle.

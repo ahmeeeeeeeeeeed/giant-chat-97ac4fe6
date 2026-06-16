@@ -16,7 +16,7 @@ import {
 import { SUPPORTED_LANGUAGES } from "@/lib/i18n";
 import { findAdminId } from "@/lib/find-admin";
 import { APP_VERSION, getVersionCode } from "@/lib/version";
-import { isNativeAndroid, downloadAndInstallApk, applyWebBundleUpdate, getEffectiveInstalledCode, markUpdateInstalled } from "@/lib/app-update";
+import { isNativeAndroid, downloadAndInstallApk, applyWebBundleUpdate, shouldShowUpdate, markUpdateInstalled, getDisplayInstalledVersion, getDisplayInstalledCode } from "@/lib/app-update";
 import { cacheGet, cacheSet } from "@/lib/offline-cache";
 import { getOnline, useOnline } from "@/lib/use-online";
 import { toast } from "sonner";
@@ -146,8 +146,8 @@ function SettingsPage() {
       // Prefer OTA web bundle update — no full reinstall, just refresh the changed pieces.
       if (latest.web_bundle_url) {
         const v = latest.web_bundle_version || String(latest.version_code) || latest.version;
-        await applyWebBundleUpdate(latest.web_bundle_url, v, (p) => setInstallProgress(p));
         markUpdateInstalled(latest.version, latest.version_code);
+        await applyWebBundleUpdate(latest.web_bundle_url, v, (p) => setInstallProgress(p));
         toast.success("تم تطبيق التحديث");
         return;
       }
@@ -156,8 +156,11 @@ function SettingsPage() {
         window.open(latest.file_url, "_blank");
         return;
       }
-      await downloadAndInstallApk(latest.file_url, (p) => setInstallProgress(p));
-      markUpdateInstalled(latest.version, latest.version_code);
+      await downloadAndInstallApk(
+        latest.file_url,
+        (p) => setInstallProgress(p),
+        () => markUpdateInstalled(latest.version, latest.version_code),
+      );
     } catch (e: any) {
       toast.error(e?.message || "فشل التحديث");
     } finally {
@@ -239,7 +242,9 @@ function SettingsPage() {
     }
   };
 
-  const hasUpdate = latest && latest.version_code > getEffectiveInstalledCode();
+  const hasUpdate = latest && shouldShowUpdate(latest);
+  const displayVersion = getDisplayInstalledVersion();
+  const displayCode = getDisplayInstalledCode();
 
   const currentLang = SUPPORTED_LANGUAGES.find((l) => l.code === i18n.language) ?? SUPPORTED_LANGUAGES[0];
 
@@ -378,7 +383,7 @@ function SettingsPage() {
               <IconBox color="bg-slate-500"><Info className="h-4 w-4" /></IconBox>
               <span className="font-medium">عن التطبيق</span>
             </div>
-            <span className="text-[11px] text-muted-foreground">v{APP_VERSION}</span>
+            <span className="text-[11px] text-muted-foreground">v{displayVersion || APP_VERSION}</span>
           </button>
         </Section>
 
@@ -400,7 +405,7 @@ function SettingsPage() {
 
       {/* App version */}
       <div className="pt-2 pb-6 text-center text-xs text-muted-foreground">
-        Giant • v{APP_VERSION}
+        Giant • v{displayVersion || APP_VERSION}
       </div>
 
 
@@ -488,8 +493,8 @@ function SettingsPage() {
             </div>
 
             <div className="rounded-2xl border border-border bg-secondary/30 p-4 space-y-2 text-sm">
-              <Row2 label="الإصدار الحالي" value={`v${APP_VERSION}`} />
-              <Row2 label="رقم البناء" value={String(getVersionCode(APP_VERSION))} />
+              <Row2 label="الإصدار الحالي" value={`v${displayVersion || APP_VERSION}`} />
+              <Row2 label="رقم البناء" value={String(displayCode || getVersionCode(APP_VERSION))} />
               <Row2 label="الجهة المطوّرة" value="فريق Giant" />
               <Row2 label="الموقع الرسمي" value="giant-chat.lovable.app" />
             </div>
