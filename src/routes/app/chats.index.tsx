@@ -7,6 +7,7 @@ import { MessageSquare, Loader2, Search, X } from "lucide-react";
 import { cacheGet, cacheSet, cacheKeys } from "@/lib/offline-cache";
 import { getOnline } from "@/lib/use-online";
 import { useCachedMediaSource } from "@/lib/use-cached-media";
+import { StoryRing } from "@/components/StoryRing";
 
 
 export const Route = createFileRoute("/app/chats/")({
