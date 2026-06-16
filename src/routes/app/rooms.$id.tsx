@@ -12,7 +12,7 @@ import {
 import { MusicPlayer } from "@/components/MusicPlayer";
 import { BroadcastCard } from "@/components/BroadcastCard";
 import { SharePostModal, SharedPostCard } from "@/components/SharePostModal";
-import { FlyingEffect } from "@/components/FlyingEffect";
+import { RoomEntryEffect, type EntryBurst, type EntryEffectType, pickRandomEffect } from "@/components/RoomEntryEffect";
 import { getEquipped } from "@/lib/equipped";
 import { markRoomSeen } from "@/lib/notify";
 import { ImageLightbox } from "@/components/ImageLightbox";
@@ -70,7 +70,7 @@ function RoomPage() {
     setTimeout(go, 350);
     setTimeout(go, 800);
   };
-  const [entryBurst, setEntryBurst] = useState<{ id: number; emoji: string; name?: string } | null>(null);
+  const [entryBurst, setEntryBurst] = useState<EntryBurst | null>(null);
   const entryChRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -238,8 +238,9 @@ function RoomPage() {
     const entryCh = supabase
       .channel(`room-entry:${roomId}`, { config: { broadcast: { self: false } } })
       .on("broadcast", { event: "entry" }, (p) => {
-        const payload = (p.payload ?? {}) as { emoji?: string; name?: string };
-        setEntryBurst({ id: Date.now() + Math.random(), emoji: payload.emoji || "✨", name: payload.name });
+        const payload = (p.payload ?? {}) as { effectType?: EntryEffectType; name?: string };
+        const type: EntryEffectType = payload.effectType ?? pickRandomEffect();
+        setEntryBurst({ id: Date.now() + Math.random(), type, name: payload.name });
       })
       .subscribe();
     entryChRef.current = entryCh;
@@ -303,12 +304,11 @@ function RoomPage() {
     loadMemberCount();
     // Broadcast entry effect to everyone in the room (including self)
     try {
-      const eq = await getEquipped(user.id);
-      const emoji = eq.effect?.emoji || "✨";
       const { data: prof } = await supabase.from("profiles").select("username").eq("id", user.id).maybeSingle();
       const name = prof?.username ?? "مستخدم";
-      setEntryBurst({ id: Date.now(), emoji, name });
-      entryChRef.current?.send({ type: "broadcast", event: "entry", payload: { emoji, name } });
+      const effectType: EntryEffectType = pickRandomEffect();
+      setEntryBurst({ id: Date.now(), type: effectType, name });
+      entryChRef.current?.send({ type: "broadcast", event: "entry", payload: { effectType, name } });
     } catch { /* ignore */ }
     try { await supabase.rpc("record_daily_action", { _kind: "join_rooms", _amount: 1 }); } catch { /* ignore */ }
   };
@@ -601,7 +601,7 @@ function RoomPage() {
 
   return (
     <div className="flex flex-col h-screen bg-gradient-to-b from-emerald-50/40 via-background to-background dark:from-emerald-950/20">
-      <FlyingEffect burst={entryBurst} />
+      <RoomEntryEffect burst={entryBurst} />
       {/* Header */}
       <header className="sticky top-0 z-10 border-b border-border bg-background/80 backdrop-blur-xl" style={{ paddingTop: "env(safe-area-inset-top)" }}>
         <div className="flex items-center justify-between px-3 py-2.5">
