@@ -1560,6 +1560,10 @@ export type Database = {
       music_skip: { Args: { _room: string }; Returns: undefined }
       music_stop: { Args: { _room: string }; Returns: undefined }
       premium_charge_points: { Args: { _cost?: number }; Returns: undefined }
+      purchase_premium_username: {
+        Args: { _new_username: string }
+        Returns: undefined
+      }
       record_daily_action: {
         Args: { _amount?: number; _kind: string }
         Returns: undefined

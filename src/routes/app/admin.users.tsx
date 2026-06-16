@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useIsAdmin } from "@/lib/use-admin";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Search, Shield, ShieldOff, Ban, CheckCircle2, Trash2, Coins, Pencil, Users as UsersIcon, Eye, KeyRound } from "lucide-react";
+import { Loader2, Search, Shield, ShieldOff, Ban, CheckCircle2, Trash2, Coins, Pencil, Users as UsersIcon, Eye, KeyRound, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { useServerFn } from "@tanstack/react-start";
@@ -110,6 +110,19 @@ function AdminUsers() {
     if (!v || !v.trim()) return;
     wrap(u.id, () => supabase.rpc("admin_reset_username", { _target: u.id, _new_username: v.trim() }));
   };
+
+  const makePremium = (u: AdminUser) => {
+    const v = prompt(
+      `إنشاء/تعيين حساب مميز لـ ${u.username ?? "المستخدم"}\nأدخل الاسم المميز (يدعم العربية والزخرفة، 2-32 حرفًا، بدون مسافات):`,
+      u.username ?? ""
+    );
+    if (!v) return;
+    const clean = v.trim();
+    if (clean.length < 2 || clean.length > 32) { toast.error("الطول غير صالح"); return; }
+    if (/[\s\u0000-\u001F\u007F]/.test(clean)) { toast.error("لا يُسمح بمسافات أو رموز تحكم"); return; }
+    wrap(u.id, () => supabase.rpc("admin_reset_username", { _target: u.id, _new_username: clean }));
+  };
+
 
   const remove = (u: AdminUser) => {
     if (u.id === user?.id) { toast.error("لا يمكنك حذف نفسك"); return; }
@@ -229,6 +242,10 @@ function AdminUsers() {
                   <button onClick={() => changePassword(u)} disabled={busy === u.id}
                     className="flex flex-col items-center gap-0.5 rounded-lg border border-border p-2 text-[10px] text-fuchsia-600 disabled:opacity-50 col-span-3">
                     <KeyRound className="h-4 w-4" /> تغيير كلمة المرور
+                  </button>
+                  <button onClick={() => makePremium(u)} disabled={busy === u.id}
+                    className="flex flex-col items-center gap-0.5 rounded-lg border border-amber-500/40 p-2 text-[10px] text-amber-600 disabled:opacity-50 col-span-5 bg-gradient-to-r from-amber-500/10 to-orange-500/10">
+                    <Sparkles className="h-4 w-4" /> إنشاء حساب مميز (اسم مزخرف/عربي)
                   </button>
                 </div>
               </div>

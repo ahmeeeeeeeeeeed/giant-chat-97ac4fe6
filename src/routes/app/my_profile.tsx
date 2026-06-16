@@ -312,6 +312,18 @@ function ProfilePage() {
         {user && <UserBadgesGrid userId={user.id} />}
         {user && <WeeklyAchievementsBadge userId={user.id} />}
 
+        <PremiumUsernameCard
+          currentUsername={username}
+          points={points}
+          onUpgraded={(newName) => {
+            setUsername(newName);
+            // refresh points
+            supabase.from("profiles").select("points").eq("id", user!.id).maybeSingle()
+              .then(({ data }) => { if (data?.points != null) setPoints(data.points); });
+          }}
+        />
+
+
         {/* Bio + identity form */}
         <form onSubmit={save} className="mt-6 flex flex-col gap-4">
           <label className="flex flex-col gap-2">
@@ -549,6 +561,97 @@ export function VipBadge() {
     </span>
   );
 }
+
+function PremiumUsernameCard({
+  currentUsername,
+  points,
+  onUpgraded,
+}: {
+  currentUsername: string;
+  points: number;
+  onUpgraded: (newName: string) => void;
+}) {
+  const PRICE = 50000;
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const canAfford = points >= PRICE;
+
+  const submit = async () => {
+    const clean = name.trim();
+    if (clean.length < 2 || clean.length > 32) { toast.error("اسم غير صالح (2-32 حرفًا)"); return; }
+    if (/[\s\u0000-\u001F\u007F]/.test(clean)) { toast.error("لا يُسمح بمسافات أو رموز تحكم"); return; }
+    if (!canAfford) { toast.error("نقاطك لا تكفي"); return; }
+    if (!confirm(`سيتم تغيير اسمك إلى:\n${clean}\nوخصم ${PRICE.toLocaleString()} نقطة. هل أنت متأكد؟`)) return;
+    setBusy(true);
+    const { error } = await supabase.rpc("purchase_premium_username", { _new_username: clean } as never);
+    setBusy(false);
+    if (error) {
+      const m = error.message || "";
+      if (m.includes("username_taken")) toast.error("الاسم مستخدم بالفعل");
+      else if (m.includes("insufficient_points")) toast.error("نقاطك لا تكفي");
+      else if (m.includes("invalid_length")) toast.error("الطول غير صالح");
+      else if (m.includes("invalid_chars")) toast.error("يحتوي رموزًا غير مسموحة");
+      else toast.error("تعذّر التنفيذ: " + m);
+      return;
+    }
+    toast.success("تمت الترقية إلى حساب مميز ✨");
+    onUpgraded(clean);
+    setOpen(false);
+    setName("");
+  };
+
+  return (
+    <div className="mt-3 overflow-hidden rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-500/10 via-card to-secondary">
+      <div className="p-4">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <div className="text-sm font-extrabold">حساب مميز ✨</div>
+            <div className="mt-1 text-[11px] text-muted-foreground">
+              غيّر اسمك إلى اسم مزخرف أو عربي بأي حروف. التكلفة 50,000 نقطة.
+            </div>
+          </div>
+          <div className="text-end">
+            <div className="text-[10px] text-muted-foreground">رصيدك</div>
+            <div className={`text-sm font-extrabold ${canAfford ? "text-amber-600" : "text-muted-foreground"}`}>
+              {points.toLocaleString()}
+            </div>
+          </div>
+        </div>
+        {!open ? (
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            disabled={!canAfford}
+            className="mt-3 h-10 w-full rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-sm font-extrabold text-white shadow disabled:opacity-50"
+          >
+            {canAfford ? "ترقية لحساب مميز (50,000 نقطة)" : `يلزمك ${(50000 - points).toLocaleString()} نقطة إضافية`}
+          </button>
+        ) : (
+          <div className="mt-3 space-y-2">
+            <input
+              autoFocus
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="الاسم الجديد (يدعم العربية والزخرفة)"
+              className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm outline-none focus:border-amber-500"
+            />
+            <div className="flex gap-2">
+              <button type="button" onClick={() => { setOpen(false); setName(""); }}
+                className="h-10 flex-1 rounded-xl border border-border text-sm font-bold">إلغاء</button>
+              <button type="button" onClick={submit} disabled={busy}
+                className="h-10 flex-1 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-sm font-bold text-white disabled:opacity-50">
+                {busy ? "..." : "تأكيد"}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 
 function PasswordChangeRow() {
   const [open, setOpen] = useState(false);
