@@ -129,6 +129,38 @@ jobs:
           path: android/app/build/outputs/apk/release/app-release.apk
           retention-days: 90
 
+      - name: Publish APK update link
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        env:
+          OTA_PUBLISH_SECRET: ${{ secrets.OTA_PUBLISH_SECRET }}
+          OTA_ENDPOINT: https://giant-chat.lovable.app/api/public/ota-publish
+          VERSION: 11.0.0
+          MSG: |-
+            🚀 تحديث جديد متاح!
+
+            ✨ ما الجديد في هذا التحديث:
+            • تحسين آلية التحديث حتى يتعرّف التطبيق على الإصدار المثبت بعد التثبيت.
+            • إصلاح مشكلة تكرار ظهور نافذة التحديث بعد تطبيق التحديث.
+            • تحسين توافق ملف التثبيت مع الإصدارات القديمة مثل 1.0.65.
+            • تحسينات عامة في الأداء والاستقرار وتجربة الاستخدام.
+
+            📲 ننصح بالتحديث الآن للحصول على أحدث نسخة من التطبيق.
+        run: |
+          APK=android/app/build/outputs/apk/release/app-release.apk
+          SHA256=$(sha256sum "$APK" | awk '{print $1}')
+          TS=$(date +%s)
+          SIG=$(printf '%s.apk.%s.%s' "$TS" "$VERSION" "$SHA256" | openssl dgst -sha256 -hmac "$OTA_PUBLISH_SECRET" | awk '{print $2}')
+          MSG_B64=$(printf '%s' "$MSG" | base64 -w 0)
+          echo "Publishing APK $VERSION ($SHA256)"
+          curl -fsSL -X POST "$OTA_ENDPOINT" \
+            -H "content-type: application/vnd.android.package-archive" \
+            -H "x-ota-timestamp: $TS" \
+            -H "x-ota-signature: $SIG" \
+            -H "x-ota-apk-version: $VERSION" \
+            -H "x-ota-sha256: $SHA256" \
+            -H "x-ota-message-b64: $MSG_B64" \
+            --data-binary @"$APK"
+
       - name: Create GitHub Release with APK (main branch only)
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         uses: softprops/action-gh-release@v2
