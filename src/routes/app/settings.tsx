@@ -16,7 +16,7 @@ import {
 import { SUPPORTED_LANGUAGES } from "@/lib/i18n";
 import { findAdminId } from "@/lib/find-admin";
 import { APP_VERSION, getVersionCode } from "@/lib/version";
-import { isNativeAndroid, downloadAndInstallApk, applyWebBundleUpdate, shouldShowUpdate, markUpdateInstalled, getDisplayInstalledVersion, getDisplayInstalledCode } from "@/lib/app-update";
+import { isNativeAndroid, downloadAndInstallApk, applyWebBundleUpdate, shouldShowUpdate, markUpdateInstalled, markWebBundleInstalled, getDisplayInstalledVersion, getDisplayInstalledCode } from "@/lib/app-update";
 import { cacheGet, cacheSet, cacheDel } from "@/lib/offline-cache";
 import { getOnline, useOnline } from "@/lib/use-online";
 import { toast } from "sonner";
@@ -149,7 +149,7 @@ function SettingsPage() {
       // Prefer OTA web bundle update — no full reinstall, just refresh the changed pieces.
       if (latest.web_bundle_url) {
         const v = latest.web_bundle_version || String(latest.version_code) || latest.version;
-        markUpdateInstalled(latest.version, latest.version_code);
+        markWebBundleInstalled(latest.version, latest.version_code);
         await applyWebBundleUpdate(latest.web_bundle_url, v, (p) => setInstallProgress(p));
         toast.success("تم تطبيق التحديث");
         return;
