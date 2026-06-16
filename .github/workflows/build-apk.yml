@@ -83,62 +83,115 @@ jobs:
         working-directory: android
         run: ./gradlew assembleRelease --no-daemon --stacktrace
 
-      - name: Sign APK with debug keystore (auto-installable, no Play Store)
+      - name: Sign release APK
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          GENERATE_NEW_KEYSTORE: ${{ vars.GENERATE_NEW_KEYSTORE }}
         run: |
-          # IMPORTANT: Android only accepts an APK update over an installed APK
-          # when both APKs are signed with the same certificate. Provide
-          # ANDROID_KEYSTORE_BASE64 + ANDROID_KEYSTORE_PASSWORD + ANDROID_KEY_ALIAS
-          # (+ optional ANDROID_KEY_PASSWORD) as repository secrets for production.
-          if [ -n "${ANDROID_KEYSTORE_BASE64:-}" ] && [ -n "${ANDROID_KEYSTORE_PASSWORD:-}" ] && [ -n "${ANDROID_KEY_ALIAS:-}" ]; then
-            KEYSTORE=$HOME/giant-release.keystore
-            # Strip any accidental whitespace/newlines that GitHub Secrets UI may have
-            # introduced when the value was pasted, then decode.
+          set -u
+          KEYSTORE=$HOME/giant-release.keystore
+
+          # ──────────────────────────────────────────────────────────────
+          # One-time bootstrap: if the repo variable GENERATE_NEW_KEYSTORE=1
+          # (Settings → Variables → Actions), create a fresh valid keystore
+          # inside the runner and print its Base64 + passwords so you can
+          # paste them into Secrets. DELETE the variable after copying,
+          # otherwise every build creates a different key and Android will
+          # refuse to install updates over the previous version.
+          # ──────────────────────────────────────────────────────────────
+          if [ "${GENERATE_NEW_KEYSTORE:-0}" = "1" ]; then
+            echo "⚠️  GENERATE_NEW_KEYSTORE=1 → generating a fresh keystore for bootstrap."
+            STOREPASS="giant-$(openssl rand -hex 8)"
+            KEYPASS="$STOREPASS"
+            ALIAS="giant"
+            keytool -genkeypair -v \
+              -keystore "$KEYSTORE" -storetype PKCS12 \
+              -storepass "$STOREPASS" -keypass "$KEYPASS" \
+              -alias "$ALIAS" -keyalg RSA -keysize 2048 -validity 10950 \
+              -dname "CN=Giant, OU=Mobile, O=Giant, L=NA, ST=NA, C=NA"
+            echo ""
+            echo "════════════════════════════════════════════════════════════"
+            echo "  COPY THESE INTO GITHUB SECRETS, THEN UNSET THE VARIABLE"
+            echo "  GENERATE_NEW_KEYSTORE BEFORE THE NEXT BUILD."
+            echo "════════════════════════════════════════════════════════════"
+            echo "ANDROID_KEY_ALIAS         = $ALIAS"
+            echo "ANDROID_KEYSTORE_PASSWORD = $STOREPASS"
+            echo "ANDROID_KEY_PASSWORD      = $KEYPASS"
+            echo "ANDROID_KEYSTORE_BASE64 ↓ (single line between the markers)"
+            echo "------------- BEGIN BASE64 -------------"
+            base64 -w 0 "$KEYSTORE"; echo
+            echo "-------------- END BASE64 --------------"
+            echo "════════════════════════════════════════════════════════════"
+          else
+            if [ -z "${ANDROID_KEYSTORE_BASE64:-}" ] || [ -z "${ANDROID_KEYSTORE_PASSWORD:-}" ] || [ -z "${ANDROID_KEY_ALIAS:-}" ]; then
+              echo "❌ Missing Android signing secrets."
+              echo "   Set ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD,"
+              echo "   or set repository variable GENERATE_NEW_KEYSTORE=1 to bootstrap a new keystore."
+              exit 1
+            fi
             printf '%s' "$ANDROID_KEYSTORE_BASE64" | tr -d '\r\n\t ' | base64 -d > "$KEYSTORE"
             STOREPASS="$ANDROID_KEYSTORE_PASSWORD"
             KEYPASS="${ANDROID_KEY_PASSWORD:-$ANDROID_KEYSTORE_PASSWORD}"
             ALIAS="$ANDROID_KEY_ALIAS"
-          else
-            echo "❌ Missing Android signing secrets. Refusing to create an APK with a new random certificate because Android will reject it as a package error over installed versions."
-            echo "Add ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, and optionally ANDROID_KEY_PASSWORD."
-            exit 1
           fi
 
           echo "🔍 Keystore debug:"
-          echo "  file size: $(wc -c < "$KEYSTORE") bytes"
-          echo "  file type: $(file "$KEYSTORE")"
-          echo "  alias requested: $ALIAS"
+          echo "  file size : $(wc -c < "$KEYSTORE") bytes"
+          echo "  file type : $(file "$KEYSTORE")"
+          HEAD_HEX=$(xxd -p -l 4 "$KEYSTORE" | tr -d '\n')
+          echo "  magic     : $HEAD_HEX"
+          case "$HEAD_HEX" in
+            feedfeed) echo "  detected  : JKS (Java KeyStore)" ;;
+            3082*)    echo "  detected  : PKCS12 (DER-encoded)" ;;
+            *)        echo "  detected  : UNKNOWN — file is probably not a Java keystore" ;;
+          esac
+          echo "  alias req : $ALIAS"
 
-          echo "🔍 Verifying keystore can be opened with ANDROID_KEYSTORE_PASSWORD..."
-          if ! keytool -list -keystore "$KEYSTORE" -storepass "$STOREPASS" > /tmp/ks-list.txt 2>&1; then
-            echo "❌ Cannot open keystore with provided ANDROID_KEYSTORE_PASSWORD."
-            echo "   This means either:"
-            echo "   1) ANDROID_KEYSTORE_PASSWORD does not match the password used when the keystore was created, OR"
-            echo "   2) ANDROID_KEYSTORE_BASE64 is truncated/corrupted (re-export with: base64 -w 0 giant-release.keystore)."
-            sed 's/^/   /' /tmp/ks-list.txt
+          # Try both storetypes with the provided store password to pinpoint
+          # whether the password is wrong vs. the file format mismatches.
+          OPENED_TYPE=""
+          for TYPE in PKCS12 JKS; do
+            echo "🔍 Trying -storetype $TYPE with ANDROID_KEYSTORE_PASSWORD..."
+            if keytool -list -keystore "$KEYSTORE" -storetype "$TYPE" -storepass "$STOREPASS" > /tmp/ks-list.txt 2>&1; then
+              OPENED_TYPE="$TYPE"
+              echo "✅ Opened as $TYPE."
+              break
+            else
+              echo "   ↳ failed as $TYPE (first lines):"
+              sed 's/^/      /' /tmp/ks-list.txt | head -n 4
+            fi
+          done
+
+          if [ -z "$OPENED_TYPE" ]; then
+            echo ""
+            echo "❌ keytool could not open the keystore as PKCS12 OR JKS with ANDROID_KEYSTORE_PASSWORD."
+            echo "   Most likely cause: ANDROID_KEYSTORE_PASSWORD is wrong."
+            echo "   Other possibilities: the Base64 was truncated, or the uploaded file is not a Java keystore."
+            echo ""
+            echo "👉 Fastest fix: set repository variable GENERATE_NEW_KEYSTORE=1 and re-run this workflow."
+            echo "   It will print a brand-new valid keystore + passwords to paste into Secrets."
             exit 1
           fi
-          echo "✅ Keystore opened successfully. Aliases inside keystore:"
+
+          echo "✅ Aliases inside keystore:"
           sed 's/^/   /' /tmp/ks-list.txt
 
           if ! grep -qi "^$ALIAS," /tmp/ks-list.txt && ! grep -qi "Alias name: $ALIAS$" /tmp/ks-list.txt; then
-            echo "⚠️  ANDROID_KEY_ALIAS='$ALIAS' was not found in the keystore listing above."
-            echo "   Update ANDROID_KEY_ALIAS to match one of the alias names printed above."
+            echo "⚠️  ANDROID_KEY_ALIAS='$ALIAS' was not found in the keystore."
+            echo "   Update ANDROID_KEY_ALIAS to match one of the aliases above."
             exit 1
           fi
 
-          echo "🔍 Verifying ANDROID_KEY_PASSWORD unlocks the private key for alias '$ALIAS'..."
-          if ! keytool -list -keystore "$KEYSTORE" -storepass "$STOREPASS" -alias "$ALIAS" -keypass "$KEYPASS" > /dev/null 2>&1; then
+          echo "🔍 Verifying ANDROID_KEY_PASSWORD unlocks alias '$ALIAS'..."
+          if ! keytool -list -keystore "$KEYSTORE" -storetype "$OPENED_TYPE" -storepass "$STOREPASS" -alias "$ALIAS" -keypass "$KEYPASS" > /dev/null 2>&1; then
             echo "❌ ANDROID_KEY_PASSWORD does not unlock the private key for alias '$ALIAS'."
-            echo "   When the keystore was created, the key password may differ from the store password."
-            echo "   Set ANDROID_KEY_PASSWORD to the correct key password (often the same as store password)."
+            echo "   Set ANDROID_KEY_PASSWORD correctly (often identical to the store password)."
             exit 1
           fi
-          echo "✅ Key password is correct."
+          echo "✅ Key password is correct. Keystore type in use: $OPENED_TYPE."
 
           BUILD_TOOLS=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -n1)
           APKSIGNER="$BUILD_TOOLS/apksigner"
@@ -157,6 +210,13 @@ jobs:
             "$ALIGNED"
           "$APKSIGNER" verify "$SIGNED"
           echo "✅ Signed APK ready: $SIGNED ($(du -h "$SIGNED" | cut -f1))"
+
+          if [ "${GENERATE_NEW_KEYSTORE:-0}" = "1" ]; then
+            echo ""
+            echo "⚠️  REMINDER: copy the Base64 + passwords above into GitHub Secrets,"
+            echo "    then DELETE the repository variable GENERATE_NEW_KEYSTORE."
+            echo "    Otherwise every build will use a different key and updates will fail."
+          fi
 
 
       - name: Verify APK version before publishing
