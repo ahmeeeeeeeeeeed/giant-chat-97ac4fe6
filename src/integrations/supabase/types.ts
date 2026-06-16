@@ -53,6 +53,57 @@ export type Database = {
         }
         Relationships: []
       }
+      activity_logs: {
+        Row: {
+          action: string
+          category: string
+          created_at: string
+          id: string
+          ip: string | null
+          meta: Json
+          new_value: string | null
+          old_value: string | null
+          points_after: number | null
+          points_before: number | null
+          points_delta: number | null
+          source: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          category: string
+          created_at?: string
+          id?: string
+          ip?: string | null
+          meta?: Json
+          new_value?: string | null
+          old_value?: string | null
+          points_after?: number | null
+          points_before?: number | null
+          points_delta?: number | null
+          source?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          category?: string
+          created_at?: string
+          id?: string
+          ip?: string | null
+          meta?: Json
+          new_value?: string | null
+          old_value?: string | null
+          points_after?: number | null
+          points_before?: number | null
+          points_delta?: number | null
+          source?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       announcements: {
         Row: {
           content: string
@@ -1409,6 +1460,31 @@ export type Database = {
       admin_broadcast: { Args: { _text: string }; Returns: undefined }
       admin_delete_post: { Args: { _post: string }; Returns: undefined }
       admin_delete_user: { Args: { _target: string }; Returns: undefined }
+      admin_get_activity: {
+        Args: { _category?: string; _limit?: number; _target: string }
+        Returns: {
+          action: string
+          category: string
+          created_at: string
+          id: string
+          ip: string | null
+          meta: Json
+          new_value: string | null
+          old_value: string | null
+          points_after: number | null
+          points_before: number | null
+          points_delta: number | null
+          source: string
+          user_agent: string | null
+          user_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "activity_logs"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       admin_get_password_hash: { Args: { _target: string }; Returns: string }
       admin_list_users: {
         Args: never
@@ -1478,6 +1554,31 @@ export type Database = {
       game_maybe_end: { Args: { _rid: string }; Returns: undefined }
       game_tick: { Args: never; Returns: undefined }
       get_bot_id: { Args: never; Returns: string }
+      get_my_activity: {
+        Args: { _category?: string; _limit?: number }
+        Returns: {
+          action: string
+          category: string
+          created_at: string
+          id: string
+          ip: string | null
+          meta: Json
+          new_value: string | null
+          old_value: string | null
+          points_after: number | null
+          points_before: number | null
+          points_delta: number | null
+          source: string
+          user_agent: string | null
+          user_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "activity_logs"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       get_my_daily_tasks: {
         Args: never
         Returns: {
@@ -1537,6 +1638,18 @@ export type Database = {
       }
       kick_room_member: {
         Args: { _room: string; _user: string }
+        Returns: undefined
+      }
+      log_activity: {
+        Args: {
+          _action: string
+          _category: string
+          _ip?: string
+          _meta?: Json
+          _new_value?: string
+          _old_value?: string
+          _user_agent?: string
+        }
         Returns: undefined
       }
       lookup_auth_email: { Args: { _username: string }; Returns: string }
