@@ -185,7 +185,8 @@ function RoomPage() {
     // 2) Skip network when offline — avoids browser errors and keeps cached UI.
     if (!getOnline()) return;
     // 3) Background sync from cloud.
-    const { data } = await supabase.from("room_messages").select("*").eq("room_id", roomId).order("created_at", { ascending: true }).limit(200);
+    const { data: raw } = await supabase.from("room_messages").select("*").eq("room_id", roomId).order("created_at", { ascending: false }).limit(50);
+    const data = raw ? [...raw].reverse() : null;
     if (data) {
       const visible = data.filter((m: any) => !isPlainSystem(m));
       setMessages(visible);
