@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { APP_VERSION } from "@/lib/version";
-import { applyWebBundleUpdate, downloadAndInstallApk, getDisplayInstalledVersion, isForceRequired, isNativeAndroid, markUpdateInstalled, shouldShowUpdate, type AppUpdateRow } from "@/lib/app-update";
+import { applyWebBundleUpdate, downloadAndInstallApk, getDisplayInstalledVersion, isForceRequired, isNativeAndroid, markUpdateInstalled, notifyNativeUpdateReady, shouldShowUpdate, syncNativeInstalledVersion, type AppUpdateRow } from "@/lib/app-update";
 import { Download, X, AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -27,6 +27,9 @@ export function UpdateGate() {
         const onAndroid = await isNativeAndroid();
         if (cancelled) return;
         setNative(onAndroid);
+        await syncNativeInstalledVersion();
+        await notifyNativeUpdateReady();
+        if (cancelled) return;
         const { data } = await supabase
           .from("app_updates")
           .select("*")
