@@ -121,9 +121,15 @@ export const Route = createFileRoute('/api/public/ota-publish')({
             .maybeSingle()
           const { data: existing } = await supabaseAdmin
             .from('app_updates')
-            .select('id')
+            .select('id, web_bundle_url, web_bundle_version, previous_web_bundle_url, previous_web_bundle_version')
             .eq('version', apkVersion)
             .maybeSingle()
+          const matchingOtaUrl = existing?.web_bundle_version === apkVersion
+            ? existing.web_bundle_url
+            : currentActive?.web_bundle_version === apkVersion
+              ? currentActive.web_bundle_url
+              : null
+          const matchingOtaVersion = matchingOtaUrl ? apkVersion : null
 
           if (existing?.id) {
             await supabaseAdmin.from('app_updates').update({ is_active: false }).neq('id', existing.id)
@@ -137,10 +143,10 @@ export const Route = createFileRoute('/api/public/ota-publish')({
                 update_type: 'optional',
                 file_url: signed.signedUrl,
                 file_size: apk.length,
-                web_bundle_url: currentActive?.web_bundle_version === apkVersion ? currentActive.web_bundle_url : null,
-                web_bundle_version: currentActive?.web_bundle_version === apkVersion ? currentActive.web_bundle_version : null,
-                previous_web_bundle_url: currentActive?.previous_web_bundle_url ?? null,
-                previous_web_bundle_version: currentActive?.previous_web_bundle_version ?? null,
+                web_bundle_url: matchingOtaUrl,
+                web_bundle_version: matchingOtaVersion,
+                previous_web_bundle_url: existing.previous_web_bundle_url ?? currentActive?.previous_web_bundle_url ?? null,
+                previous_web_bundle_version: existing.previous_web_bundle_version ?? currentActive?.previous_web_bundle_version ?? null,
                 is_active: true,
                 updated_at: new Date().toISOString(),
               })
