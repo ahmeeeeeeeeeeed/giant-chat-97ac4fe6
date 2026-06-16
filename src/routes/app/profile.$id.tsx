@@ -143,6 +143,15 @@ function OtherProfilePage() {
       </header>
 
       <div className="flex-1 px-5 py-6">
+        {profile.cover_url && (
+          <div className="relative mb-4 h-44 overflow-hidden rounded-3xl border border-border">
+            {profile.cover_type === "video" ? (
+              <video src={profile.cover_url} autoPlay loop muted playsInline className="h-full w-full object-cover" />
+            ) : (
+              <img src={profile.cover_url} alt="" className="h-full w-full object-cover" />
+            )}
+          </div>
+        )}
         <div className="rounded-3xl border border-border bg-gradient-to-br from-primary/10 via-card to-secondary p-6">
           <div className="flex flex-col items-center text-center">
             {/* Avatar */}
