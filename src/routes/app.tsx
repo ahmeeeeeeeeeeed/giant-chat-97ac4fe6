@@ -162,6 +162,7 @@ function AppLayout() {
     if (path === "/app/create-room") return "إنشاء غرفة";
     if (path === "/app/account") return "إدارة الحساب";
     if (path === "/app/activity") return "سجل النشاط";
+    if (path === "/app/stories") return "القصص";
 
     return "";
   })();
