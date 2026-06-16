@@ -65,8 +65,12 @@ export function markUpdateInstalled(version: string, versionCode = getVersionCod
   try {
     localStorage.setItem(INSTALLED_VERSION_KEY, version);
     localStorage.setItem(INSTALLED_CODE_KEY, String(versionCode));
-    localStorage.setItem(WEB_BUNDLE_VERSION_KEY, version);
   } catch { /* ignore */ }
+}
+
+export function markWebBundleInstalled(version: string, versionCode = getVersionCode(version)): void {
+  markUpdateInstalled(version, versionCode);
+  try { localStorage.setItem(WEB_BUNDLE_VERSION_KEY, version); } catch { /* ignore */ }
 }
 
 export async function syncNativeInstalledVersion(): Promise<void> {
