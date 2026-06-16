@@ -302,11 +302,26 @@ function RoomPage() {
     toast.success("تم الانضمام");
     loadMembership();
     loadMemberCount();
-    // Broadcast entry effect to everyone in the room (including self)
+    // Broadcast entry effect: prefer user's equipped entry effect, fallback to random
     try {
-      const { data: prof } = await supabase.from("profiles").select("username").eq("id", user.id).maybeSingle();
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("username, equipped_effect")
+        .eq("id", user.id)
+        .maybeSingle();
       const name = prof?.username ?? "مستخدم";
-      const effectType: EntryEffectType = pickRandomEffect();
+      let effectType: EntryEffectType = pickRandomEffect();
+      if (prof?.equipped_effect) {
+        const { data: item } = await supabase
+          .from("shop_items")
+          .select("payload")
+          .eq("id", prof.equipped_effect)
+          .maybeSingle();
+        const et = (item?.payload as { entry_type?: string } | null)?.entry_type;
+        if (et && ["dragon","princess","knight","magic","mascot","portal"].includes(et)) {
+          effectType = et as EntryEffectType;
+        }
+      }
       setEntryBurst({ id: Date.now(), type: effectType, name });
       entryChRef.current?.send({ type: "broadcast", event: "entry", payload: { effectType, name } });
     } catch { /* ignore */ }
