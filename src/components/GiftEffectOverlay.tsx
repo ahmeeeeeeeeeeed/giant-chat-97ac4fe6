@@ -68,7 +68,7 @@ export function GiftEffectOverlay({ burst }: { burst: GiftBurst | null }) {
 
   if (current.effectType === "overlay") {
     return (
-      <div className="pointer-events-none fixed inset-0 z-[60] flex items-center justify-center bg-black/20 backdrop-blur-sm">
+      <div className="pointer-events-none fixed inset-0 z-[60] flex flex-col items-center justify-center gap-4 bg-black/40 backdrop-blur-sm">
         <div className="text-[10rem] animate-gift-pop drop-shadow-2xl">{current.emoji}</div>
         <BurstLabel burst={current} />
         <style>{`@keyframes gift-pop {
