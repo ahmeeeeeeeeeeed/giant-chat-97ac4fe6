@@ -31,9 +31,13 @@ function readStoredCode(key: string): number {
 }
 
 export function getEffectiveInstalledCode(): number {
+  // APP_VERSION is baked into the APK at build time — it's the only reliable
+  // source of truth for what's actually installed on the device. The stored
+  // INSTALLED_CODE_KEY can become stale (e.g. when a published update row is
+  // later edited or replaced), so we ignore it here and only take the higher
+  // of APP_VERSION and the last applied OTA web bundle.
   return Math.max(
     getVersionCode(APP_VERSION),
-    readStoredCode(INSTALLED_CODE_KEY),
     readStoredCode(WEB_BUNDLE_VERSION_KEY),
   );
 }
