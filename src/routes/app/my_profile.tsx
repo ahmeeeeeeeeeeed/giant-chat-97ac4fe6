@@ -243,6 +243,35 @@ function ProfilePage() {
       </header>
 
       <div className="px-5 py-6">
+        {/* Cover */}
+        <div className="relative mb-4 h-44 overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-primary/15 via-card to-secondary">
+          {coverUrl ? (
+            coverType === "video" ? (
+              <video src={coverUrl} autoPlay loop muted playsInline className="h-full w-full object-cover" />
+            ) : (
+              <img src={coverUrl} alt="غلاف" className="h-full w-full object-cover" />
+            )
+          ) : (
+            <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+              <ImageIcon className="h-10 w-10 opacity-40" />
+            </div>
+          )}
+          <div className="absolute inset-x-0 bottom-0 flex items-center justify-end gap-2 bg-gradient-to-t from-black/60 to-transparent p-3">
+            <input ref={coverFileRef} type="file" accept="image/*,video/mp4,video/webm" onChange={onPickCover} className="hidden" />
+            {coverUrl && (
+              <button type="button" onClick={removeCover}
+                className="rounded-lg bg-red-500/80 px-3 py-1.5 text-xs font-bold text-white backdrop-blur hover:bg-red-500">
+                إزالة
+              </button>
+            )}
+            <button type="button" onClick={() => coverFileRef.current?.click()} disabled={coverUploading}
+              className="flex items-center gap-1.5 rounded-lg bg-white/90 px-3 py-1.5 text-xs font-bold text-black backdrop-blur hover:bg-white disabled:opacity-60">
+              {coverUploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Camera className="h-3.5 w-3.5" />}
+              {coverUrl ? "تغيير" : "إضافة غلاف"}
+            </button>
+          </div>
+        </div>
+
         {/* Hero card */}
         <div className="rounded-3xl border border-border bg-gradient-to-br from-primary/10 via-card to-secondary p-5">
           <div className="flex items-center gap-4">
