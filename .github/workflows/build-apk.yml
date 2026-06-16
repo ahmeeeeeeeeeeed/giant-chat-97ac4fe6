@@ -37,6 +37,9 @@ jobs:
       - name: Install npm dependencies
         run: npm install --legacy-peer-deps
 
+      - name: Bump app version (patch)
+        run: node scripts/bump-version.mjs patch
+
       - name: Build SPA for Capacitor
         env:
           CAPACITOR_BUILD: "1"
@@ -58,6 +61,9 @@ jobs:
       - name: Sync Capacitor assets into Android project
         run: npx cap sync android
 
+      - name: Patch Android version (code/name)
+        run: node scripts/patch-android-version.mjs
+
       - name: Confirm bundled media is inside APK assets
         run: |
           ASSET_DIR="android/app/src/main/assets/public/media"
@@ -76,17 +82,33 @@ jobs:
         run: ./gradlew assembleRelease --no-daemon --stacktrace
 
       - name: Sign APK with debug keystore (auto-installable, no Play Store)
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
-          # The CI generates a stable debug key so users can install the APK on any device.
-          # For Play Store submission, replace with your real keystore via repository secrets.
-          KEYSTORE=$HOME/giant-debug.keystore
-          if [ ! -f "$KEYSTORE" ]; then
+          # IMPORTANT: Android only accepts an APK update over an installed APK
+          # when both APKs are signed with the same certificate. Provide
+          # ANDROID_KEYSTORE_BASE64 + ANDROID_KEYSTORE_PASSWORD + ANDROID_KEY_ALIAS
+          # (+ optional ANDROID_KEY_PASSWORD) as repository secrets for production.
+          if [ -n "${ANDROID_KEYSTORE_BASE64:-}" ] && [ -n "${ANDROID_KEYSTORE_PASSWORD:-}" ] && [ -n "${ANDROID_KEY_ALIAS:-}" ]; then
+            KEYSTORE=$HOME/giant-release.keystore
+            printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$KEYSTORE"
+            STOREPASS="$ANDROID_KEYSTORE_PASSWORD"
+            KEYPASS="${ANDROID_KEY_PASSWORD:-$ANDROID_KEYSTORE_PASSWORD}"
+            ALIAS="$ANDROID_KEY_ALIAS"
+          else
+            KEYSTORE=$HOME/giant-debug.keystore
             keytool -genkeypair -v \
               -keystore "$KEYSTORE" \
               -alias giant \
               -keyalg RSA -keysize 2048 -validity 10000 \
               -storepass giantapp -keypass giantapp \
               -dname "CN=Giant, OU=Giant, O=Giant, L=Cairo, ST=Egypt, C=EG"
+            STOREPASS="giantapp"
+            KEYPASS="giantapp"
+            ALIAS="giant"
           fi
 
           BUILD_TOOLS=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -n1)
@@ -99,8 +121,9 @@ jobs:
           "$ZIPALIGN" -p 4 "$UNSIGNED" "$ALIGNED"
           "$APKSIGNER" sign \
             --ks "$KEYSTORE" \
-            --ks-pass pass:giantapp \
-            --key-pass pass:giantapp \
+            --ks-key-alias "$ALIAS" \
+            --ks-pass "pass:$STOREPASS" \
+            --key-pass "pass:$KEYPASS" \
             --out "$SIGNED" \
             "$ALIGNED"
           "$APKSIGNER" verify "$SIGNED"

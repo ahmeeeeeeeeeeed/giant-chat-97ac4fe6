@@ -20,6 +20,7 @@ import { setAutoTranslateLanguage } from "@/lib/auto-translate";
 import { registerAppServiceWorker } from "@/lib/register-sw";
 import { schedulePrewarm } from "@/lib/prewarm";
 import { initCapacitorChrome } from "@/lib/capacitor-init";
+import { notifyNativeUpdateReady, syncNativeInstalledVersion } from "@/lib/app-update";
 
 import appCss from "../styles.css?url";
 import welcomeBg from "@/assets/welcome-bg.png.asset.json";
@@ -130,6 +131,8 @@ function LanguageSync() {
     return () => { i18n.off("languageChanged", onChange); };
   }, []);
   useEffect(() => {
+    void syncNativeInstalledVersion();
+    void notifyNativeUpdateReady();
     registerAppServiceWorker();
     schedulePrewarm();
     initCapacitorChrome();

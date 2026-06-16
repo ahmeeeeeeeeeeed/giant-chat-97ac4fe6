@@ -35,6 +35,11 @@ const config: CapacitorConfig = {
       androidSplashResourceName: "splash",
       showSpinner: false,
     },
+    CapacitorUpdater: {
+      autoUpdate: false,
+      appReadyTimeout: 20000,
+      keepUrlPathAfterReload: true,
+    },
   },
 };
 

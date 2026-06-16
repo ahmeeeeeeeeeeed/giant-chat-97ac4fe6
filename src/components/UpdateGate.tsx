@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { APP_VERSION } from "@/lib/version";
-import { applyWebBundleUpdate, downloadAndInstallApk, getEffectiveInstalledCode, isForceRequired, isNativeAndroid, markUpdateInstalled, type AppUpdateRow } from "@/lib/app-update";
+import { applyWebBundleUpdate, downloadAndInstallApk, getDisplayInstalledVersion, isForceRequired, isNativeAndroid, markUpdateInstalled, shouldShowUpdate, type AppUpdateRow } from "@/lib/app-update";
 import { Download, X, AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -36,9 +36,7 @@ export function UpdateGate() {
           .maybeSingle();
         if (cancelled || !data) return;
         const row = data as AppUpdateRow;
-        // Effective installed code = APK build version + any OTA bundle already applied.
-        const installedCode = getEffectiveInstalledCode();
-        if (row.version_code <= installedCode) return;
+        if (!shouldShowUpdate(row)) return;
         setLatest(row);
         const skipped = typeof window !== "undefined" ? localStorage.getItem(DISMISS_KEY) : null;
         if (skipped === row.version && !isForceRequired(row)) setDismissed(true);
@@ -51,6 +49,7 @@ export function UpdateGate() {
 
   if (!latest || dismissed) return null;
   const force = isForceRequired(latest);
+  const currentVersion = getDisplayInstalledVersion();
 
   const handleUpdate = async () => {
     setBusy(true);
@@ -63,7 +62,6 @@ export function UpdateGate() {
           latest.web_bundle_version || latest.version,
           (p) => setProgress(p),
         );
-        markUpdateInstalled(latest.version, latest.version_code);
         setDone(true);
         return;
       }
@@ -73,10 +71,11 @@ export function UpdateGate() {
         setDismissed(true);
         return;
       }
-      await downloadAndInstallApk(latest.file_url, (p) => setProgress(p));
-      // Persist immediately — after the OS installer takes over, the user
-      // returns to a fresh app process with no in-memory state.
-      markUpdateInstalled(latest.version, latest.version_code);
+      await downloadAndInstallApk(
+        latest.file_url,
+        (p) => setProgress(p),
+        () => markUpdateInstalled(latest.version, latest.version_code),
+      );
       setDone(true);
     } catch (e) {
       const message = errorMessage(e, "فشل التحديث");
@@ -105,7 +104,7 @@ export function UpdateGate() {
               {force ? "تحديث إجباري" : "تحديث جديد متاح"}
             </h2>
             <p className="text-xs text-muted-foreground">
-              الإصدار {latest.version} • الحالي {APP_VERSION}
+              الإصدار {latest.version} • الحالي {currentVersion || APP_VERSION}
             </p>
           </div>
           {!force && !busy && !done && (
