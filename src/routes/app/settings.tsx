@@ -294,6 +294,18 @@ function SettingsPage() {
             </div>
             <span className={`h-2.5 w-2.5 rounded-full ${online ? "bg-emerald-500" : "bg-zinc-400"}`} />
           </div>
+          <button onClick={toggleEntryFx} className="flex w-full items-center justify-between p-4 active:bg-secondary/60 text-start">
+            <div className="flex items-center gap-3">
+              <IconBox color="bg-fuchsia-500"><Sparkles className="h-4 w-4" /></IconBox>
+              <div className="flex flex-col items-start">
+                <span className="font-medium">مؤثرات دخول الغرف</span>
+                <span className="text-[11px] text-muted-foreground">تنين، أميرة، فارس، بوابة سحرية…</span>
+              </div>
+            </div>
+            <span className={`relative h-6 w-11 rounded-full transition ${entryFxOn ? "bg-emerald-500" : "bg-zinc-400"}`}>
+              <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition ${entryFxOn ? "left-0.5" : "left-[22px]"}`} />
+            </span>
+          </button>
         </Section>
 
         {/* Storage */}
