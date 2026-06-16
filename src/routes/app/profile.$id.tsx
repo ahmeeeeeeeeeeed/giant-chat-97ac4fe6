@@ -9,6 +9,7 @@ import { UserBadgesGrid } from "@/components/UserBadges";
 import { RoomEntryEffect, type EntryBurst, type EntryEffectType } from "@/components/RoomEntryEffect";
 import { cacheGet, cacheSet, cacheKeys } from "@/lib/offline-cache";
 import { getOnline } from "@/lib/use-online";
+import { StoryRing } from "@/components/StoryRing";
 
 export const Route = createFileRoute("/app/profile/$id")({
   component: OtherProfilePage,
