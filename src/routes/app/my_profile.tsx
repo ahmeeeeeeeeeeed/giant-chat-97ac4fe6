@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { WeeklyAchievementsBadge } from "@/components/WeeklyAchievementsBadge";
+import { UserBadgesGrid } from "@/components/UserBadges";
 import { toast } from "sonner";
 import { Loader2, Camera, User as UserIcon, Bell, Info, Shield, ChevronLeft, Lock, EyeOff, Globe, Eye, Mail, CheckCircle2, KeyRound, History, Trash2, ImageIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
