@@ -18,6 +18,7 @@ import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app/index'
 import { Route as ProfileIdRouteImport } from './routes/profile.$id'
+import { Route as AppStoriesRouteImport } from './routes/app/stories'
 import { Route as AppStoreRouteImport } from './routes/app/store'
 import { Route as AppSettingsRouteImport } from './routes/app/settings'
 import { Route as AppNotificationsRouteImport } from './routes/app/notifications'
@@ -86,6 +87,11 @@ const ProfileIdRoute = ProfileIdRouteImport.update({
   id: '/profile/$id',
   path: '/profile/$id',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppStoriesRoute = AppStoriesRouteImport.update({
+  id: '/stories',
+  path: '/stories',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppStoreRoute = AppStoreRouteImport.update({
   id: '/store',
@@ -224,6 +230,7 @@ export interface FileRoutesByFullPath {
   '/app/notifications': typeof AppNotificationsRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/store': typeof AppStoreRoute
+  '/app/stories': typeof AppStoriesRoute
   '/profile/$id': typeof ProfileIdRoute
   '/app/': typeof AppIndexRoute
   '/api/public/search-track': typeof ApiPublicSearchTrackRoute
@@ -256,6 +263,7 @@ export interface FileRoutesByTo {
   '/app/notifications': typeof AppNotificationsRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/store': typeof AppStoreRoute
+  '/app/stories': typeof AppStoriesRoute
   '/profile/$id': typeof ProfileIdRoute
   '/app': typeof AppIndexRoute
   '/api/public/search-track': typeof ApiPublicSearchTrackRoute
@@ -291,6 +299,7 @@ export interface FileRoutesById {
   '/app/notifications': typeof AppNotificationsRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/store': typeof AppStoreRoute
+  '/app/stories': typeof AppStoriesRoute
   '/profile/$id': typeof ProfileIdRoute
   '/app/': typeof AppIndexRoute
   '/api/public/search-track': typeof ApiPublicSearchTrackRoute
@@ -327,6 +336,7 @@ export interface FileRouteTypes {
     | '/app/notifications'
     | '/app/settings'
     | '/app/store'
+    | '/app/stories'
     | '/profile/$id'
     | '/app/'
     | '/api/public/search-track'
@@ -359,6 +369,7 @@ export interface FileRouteTypes {
     | '/app/notifications'
     | '/app/settings'
     | '/app/store'
+    | '/app/stories'
     | '/profile/$id'
     | '/app'
     | '/api/public/search-track'
@@ -393,6 +404,7 @@ export interface FileRouteTypes {
     | '/app/notifications'
     | '/app/settings'
     | '/app/store'
+    | '/app/stories'
     | '/profile/$id'
     | '/app/'
     | '/api/public/search-track'
@@ -483,6 +495,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/profile/$id'
       preLoaderRoute: typeof ProfileIdRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/app/stories': {
+      id: '/app/stories'
+      path: '/stories'
+      fullPath: '/app/stories'
+      preLoaderRoute: typeof AppStoriesRouteImport
+      parentRoute: typeof AppRoute
     }
     '/app/store': {
       id: '/app/store'
@@ -682,6 +701,7 @@ interface AppRouteChildren {
   AppNotificationsRoute: typeof AppNotificationsRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppStoreRoute: typeof AppStoreRoute
+  AppStoriesRoute: typeof AppStoriesRoute
   AppIndexRoute: typeof AppIndexRoute
   AppChatsIdRoute: typeof AppChatsIdRoute
   AppProfileIdRoute: typeof AppProfileIdRoute
@@ -703,6 +723,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppNotificationsRoute: AppNotificationsRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppStoreRoute: AppStoreRoute,
+  AppStoriesRoute: AppStoriesRoute,
   AppIndexRoute: AppIndexRoute,
   AppChatsIdRoute: AppChatsIdRoute,
   AppProfileIdRoute: AppProfileIdRoute,

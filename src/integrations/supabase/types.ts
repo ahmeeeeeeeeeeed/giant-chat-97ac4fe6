@@ -1294,6 +1294,65 @@ export type Database = {
         }
         Relationships: []
       }
+      stories: {
+        Row: {
+          background: string | null
+          content: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          media_type: string | null
+          media_url: string | null
+          user_id: string
+        }
+        Insert: {
+          background?: string | null
+          content?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          media_type?: string | null
+          media_url?: string | null
+          user_id: string
+        }
+        Update: {
+          background?: string | null
+          content?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          media_type?: string | null
+          media_url?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      story_views: {
+        Row: {
+          story_id: string
+          viewed_at: string
+          viewer_id: string
+        }
+        Insert: {
+          story_id: string
+          viewed_at?: string
+          viewer_id: string
+        }
+        Update: {
+          story_id?: string
+          viewed_at?: string
+          viewer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "story_views_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
+            referencedRelation: "stories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_badges: {
         Row: {
           awarded_at: string | null
@@ -1526,6 +1585,7 @@ export type Database = {
         Returns: undefined
       }
       claim_daily_reward: { Args: { _kind: string }; Returns: Json }
+      cleanup_expired_stories: { Args: never; Returns: undefined }
       compute_level: { Args: { _points: number }; Returns: number }
       confirm_email_verification_code: {
         Args: { _code: string }
@@ -1553,6 +1613,18 @@ export type Database = {
       game_join: { Args: never; Returns: Json }
       game_maybe_end: { Args: { _rid: string }; Returns: undefined }
       game_tick: { Args: never; Returns: undefined }
+      get_active_stories: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          equipped_frame: string
+          has_unseen: boolean
+          latest_at: string
+          story_count: number
+          user_id: string
+          username: string
+        }[]
+      }
       get_bot_id: { Args: never; Returns: string }
       get_my_activity: {
         Args: { _category?: string; _limit?: number }
@@ -1605,6 +1677,25 @@ export type Database = {
           username: string
           wins: number
         }[]
+      }
+      get_user_stories: {
+        Args: { _user: string }
+        Returns: {
+          background: string | null
+          content: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          media_type: string | null
+          media_url: string | null
+          user_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "stories"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       get_weekly_leaderboards: { Args: { _limit?: number }; Returns: Json }
       get_weekly_user_stats: { Args: { _user: string }; Returns: Json }
@@ -1683,6 +1774,15 @@ export type Database = {
       music_skip: { Args: { _room: string }; Returns: undefined }
       music_stop: { Args: { _room: string }; Returns: undefined }
       premium_charge_points: { Args: { _cost?: number }; Returns: undefined }
+      publish_story: {
+        Args: {
+          _background: string
+          _content: string
+          _media_type: string
+          _media_url: string
+        }
+        Returns: string
+      }
       purchase_premium_username: {
         Args: { _new_username: string }
         Returns: undefined
@@ -1764,6 +1864,8 @@ export type Database = {
         Args: { _room: string; _user: string }
         Returns: undefined
       }
+      user_has_active_story: { Args: { _user: string }; Returns: boolean }
+      view_story: { Args: { _story: string }; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "user"

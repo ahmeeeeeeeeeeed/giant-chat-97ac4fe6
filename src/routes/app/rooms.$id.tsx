@@ -22,6 +22,7 @@ import { ensureMediaLibraryPermission } from "@/lib/app-permissions";
 import { cacheGet, cacheSet, cacheKeys } from "@/lib/offline-cache";
 import { getOnline, useOnline } from "@/lib/use-online";
 import { UserBadgesInline } from "@/components/UserBadges";
+import { StoryRing } from "@/components/StoryRing";
 
 type Rank = "owner" | "admin" | "moderator" | "member";
 
@@ -887,25 +888,27 @@ function RoomPage() {
                     className="shrink-0 transition active:scale-95"
                     aria-label="عرض البروفايل"
                   >
-                    {displayAvatar ? (
-                      <img
-                        src={displayAvatar}
-                        alt=""
-                        className={`h-9 w-9 rounded-full object-cover ring-2 ${
-                          isOwn ? "ring-emerald-500/50" : "ring-emerald-500/25"
-                        }`}
-                      />
-                    ) : (
-                      <div
-                        className={`flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold text-white shadow ${
-                          isOwn
-                            ? "bg-gradient-to-br from-emerald-400 to-emerald-600"
-                            : "bg-gradient-to-br from-emerald-500 to-emerald-700"
-                        }`}
-                      >
-                        {displayName.charAt(0).toUpperCase()}
-                      </div>
-                    )}
+                    <StoryRing userId={msg.user_id} size="xs">
+                      {displayAvatar ? (
+                        <img
+                          src={displayAvatar}
+                          alt=""
+                          className={`h-9 w-9 rounded-full object-cover ring-2 ${
+                            isOwn ? "ring-emerald-500/50" : "ring-emerald-500/25"
+                          }`}
+                        />
+                      ) : (
+                        <div
+                          className={`flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold text-white shadow ${
+                            isOwn
+                              ? "bg-gradient-to-br from-emerald-400 to-emerald-600"
+                              : "bg-gradient-to-br from-emerald-500 to-emerald-700"
+                          }`}
+                        >
+                          {displayName.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                    </StoryRing>
                   </button>
                 )}
                 <div className={`flex max-w-[82%] flex-col ${isOwn ? "items-end" : "items-start"}`}>
@@ -1331,9 +1334,11 @@ function SettingsSheet({ roomId, room, canModerate, myRank, isOwner, ownerId, on
                         return (
                           <li key={m.user_id} className="flex items-center gap-3 rounded-xl bg-background border border-border/50 p-3 hover:border-emerald-500/30 transition">
                             <div className="relative">
-                              <div className="h-10 w-10 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-bold overflow-hidden">
-                                {p?.avatar_url ? <img src={p.avatar_url} alt="" className="h-full w-full object-cover" /> : (p?.username?.[0] ?? "?")}
-                              </div>
+                              <StoryRing userId={m.user_id} size="sm">
+                                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-bold overflow-hidden">
+                                  {p?.avatar_url ? <img src={p.avatar_url} alt="" className="h-full w-full object-cover" /> : (p?.username?.[0] ?? "?")}
+                                </div>
+                              </StoryRing>
                               {m.rank === "owner" && (
                                 <Crown className="absolute -top-1 -end-1 h-4 w-4 text-amber-500 fill-amber-500" />
                               )}

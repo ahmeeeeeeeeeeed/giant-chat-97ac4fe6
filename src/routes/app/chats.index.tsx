@@ -7,6 +7,7 @@ import { MessageSquare, Loader2, Search, X } from "lucide-react";
 import { cacheGet, cacheSet, cacheKeys } from "@/lib/offline-cache";
 import { getOnline } from "@/lib/use-online";
 import { useCachedMediaSource } from "@/lib/use-cached-media";
+import { StoryRing } from "@/components/StoryRing";
 
 
 export const Route = createFileRoute("/app/chats/")({
@@ -228,7 +229,7 @@ function ChatsPage() {
                     {unreadActive && (
                       <span className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-emerald-400 to-emerald-600" />
                     )}
-                    <CachedAvatar url={c.avatar_url} username={c.username} />
+                    <StoryRing userId={c.otherId} size="sm"><CachedAvatar url={c.avatar_url} username={c.username} /></StoryRing>
                     <div className="min-w-0 flex-1">
                       <div className="truncate font-bold text-foreground">{c.username}</div>
                       <div className={`truncate text-sm ${unreadActive ? "text-emerald-200/80" : "text-muted-foreground"}`}>{c.last}</div>

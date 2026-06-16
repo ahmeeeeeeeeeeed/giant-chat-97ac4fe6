@@ -9,6 +9,7 @@ import { UserBadgesGrid } from "@/components/UserBadges";
 import { RoomEntryEffect, type EntryBurst, type EntryEffectType } from "@/components/RoomEntryEffect";
 import { cacheGet, cacheSet, cacheKeys } from "@/lib/offline-cache";
 import { getOnline } from "@/lib/use-online";
+import { StoryRing } from "@/components/StoryRing";
 
 export const Route = createFileRoute("/app/profile/$id")({
   component: OtherProfilePage,
@@ -200,15 +201,17 @@ function OtherProfilePage() {
         <div className="rounded-3xl border border-border bg-gradient-to-br from-primary/10 via-card to-secondary p-6">
           <div className="flex flex-col items-center text-center">
             {/* Avatar */}
-            <div className="relative h-28 w-28 overflow-hidden rounded-full bg-primary text-4xl font-bold text-primary-foreground ring-4 ring-background shadow-xl">
-              {profile.avatar_url ? (
-                <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" />
-              ) : (
-                <span className="flex h-full w-full items-center justify-center">
-                  {profile.username.charAt(0).toUpperCase()}
-                </span>
-              )}
-            </div>
+            <StoryRing userId={profile.id} size="xl">
+              <div className="relative h-28 w-28 overflow-hidden rounded-full bg-primary text-4xl font-bold text-primary-foreground ring-4 ring-background shadow-xl">
+                {profile.avatar_url ? (
+                  <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <span className="flex h-full w-full items-center justify-center">
+                    {profile.username.charAt(0).toUpperCase()}
+                  </span>
+                )}
+              </div>
+            </StoryRing>
 
             {/* Username */}
             <h1 className="mt-4 text-2xl font-extrabold">{profile.username}</h1>

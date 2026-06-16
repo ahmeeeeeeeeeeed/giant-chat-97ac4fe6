@@ -16,6 +16,7 @@ import { enqueueMessage } from "@/lib/offline-queue";
 import { getOnline } from "@/lib/use-online";
 import { ensureMediaLibraryPermission, ensureMicPermission } from "@/lib/app-permissions";
 import { useCachedMediaSource } from "@/lib/use-cached-media";
+import { StoryRing } from "@/components/StoryRing";
 
 export const Route = createFileRoute("/app/chats/$id")({
   component: DMPage,
@@ -514,13 +515,15 @@ function DMPage() {
           className="focus:outline-none"
           aria-label="عرض البروفايل"
         >
-          {otherAvatarSource ? (
-            <img src={otherAvatarSource} alt="" className="h-10 w-10 rounded-full object-cover ring-2 ring-primary-foreground/30 transition-transform active:scale-95" />
-          ) : (
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-foreground/20 font-bold transition-transform active:scale-95">
-              {(other?.username ?? "?").charAt(0).toUpperCase()}
-            </div>
-          )}
+          <StoryRing userId={other?.id} size="sm">
+            {otherAvatarSource ? (
+              <img src={otherAvatarSource} alt="" className="h-10 w-10 rounded-full object-cover ring-2 ring-primary-foreground/30 transition-transform active:scale-95" />
+            ) : (
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-foreground/20 font-bold transition-transform active:scale-95">
+                {(other?.username ?? "?").charAt(0).toUpperCase()}
+              </div>
+            )}
+          </StoryRing>
         </button>
         
         {/* Clickable Username and Status */}
