@@ -638,6 +638,7 @@ function RoomPage() {
     <div className="relative flex flex-col h-screen bg-gradient-to-b from-emerald-50/40 via-background to-background dark:from-emerald-950/20">
       <RoomBackground url={room.background_url} type={room.background_type} />
       <RoomEntryEffect burst={entryBurst} />
+      <GiftEffectOverlay burst={giftBurst} />
       {/* Header */}
       <header className="sticky top-0 z-10 border-b border-border bg-background/80 backdrop-blur-xl" style={{ paddingTop: "env(safe-area-inset-top)" }}>
         <div className="flex items-center justify-between px-3 py-2.5">
