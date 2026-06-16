@@ -28,7 +28,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // event — or an explicit user sign-out in progress — should clear the
       // session. This prevents auto-logout/hang when the app resumes from
       // background with a flaky network.
-      if (!s && evt !== "SIGNED_OUT" && true && !explicitSignOutInProgress) {
+      if (!s && evt !== "SIGNED_OUT" && !explicitSignOutInProgress) {
         setLoading(false);
         return;
       }
