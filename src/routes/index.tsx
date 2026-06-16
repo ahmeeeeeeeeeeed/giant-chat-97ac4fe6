@@ -2,18 +2,18 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { LogIn, MessageCircle, Users, Music, Sparkles } from "lucide-react";
-import welcomeVideo from "@/assets/welcome-video.mp4.asset.json";
-import welcomePoster from "@/assets/welcome-poster.jpg.asset.json";
-import { assetUrl } from "@/lib/asset-url";
 import PermissionsGate, { hasCompletedPermissionsGate } from "@/components/PermissionsGate";
 
+// Local bundled media — shipped inside the APK assets folder and the web build.
+const WELCOME_VIDEO = "/media/welcome-video.mp4";
+const WELCOME_POSTER = "/media/welcome-poster.jpg";
 
 export const Route = createFileRoute("/")({
   component: Welcome,
   head: () => ({
     links: [
-      { rel: "preload", as: "video", href: assetUrl(welcomeVideo.url), type: "video/mp4" },
-      { rel: "preload", as: "image", href: assetUrl(welcomePoster.url) },
+      { rel: "preload", as: "video", href: WELCOME_VIDEO, type: "video/mp4" },
+      { rel: "preload", as: "image", href: WELCOME_POSTER },
     ],
   }),
 });
@@ -41,8 +41,8 @@ function Welcome() {
       {/* Background video (autoplay, muted, loop) with poster fallback */}
       <video
         ref={videoRef}
-        src={assetUrl(welcomeVideo.url)}
-        poster={assetUrl(welcomePoster.url)}
+        src={WELCOME_VIDEO}
+        poster={WELCOME_POSTER}
         autoPlay
         loop
         muted
