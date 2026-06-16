@@ -238,8 +238,9 @@ function RoomPage() {
     const entryCh = supabase
       .channel(`room-entry:${roomId}`, { config: { broadcast: { self: false } } })
       .on("broadcast", { event: "entry" }, (p) => {
-        const payload = (p.payload ?? {}) as { emoji?: string; name?: string };
-        setEntryBurst({ id: Date.now() + Math.random(), emoji: payload.emoji || "✨", name: payload.name });
+        const payload = (p.payload ?? {}) as { effectType?: EntryEffectType; name?: string };
+        const type: EntryEffectType = payload.effectType ?? pickRandomEffect();
+        setEntryBurst({ id: Date.now() + Math.random(), type, name: payload.name });
       })
       .subscribe();
     entryChRef.current = entryCh;
