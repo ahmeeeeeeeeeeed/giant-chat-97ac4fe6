@@ -28,6 +28,10 @@ function ProfilePage() {
   const [username, setUsername] = useState("");
   const [bio, setBio] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [coverUrl, setCoverUrl] = useState<string | null>(null);
+  const [coverType, setCoverType] = useState<string | null>(null);
+  const [coverUploading, setCoverUploading] = useState(false);
+  const coverFileRef = useRef<HTMLInputElement>(null);
   const [points, setPoints] = useState<number>(0);
   const [gender, setGender] = useState<"male" | "female" | null>(null);
   const [country, setCountry] = useState<string>("");
