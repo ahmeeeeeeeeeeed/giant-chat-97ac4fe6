@@ -248,9 +248,10 @@ function SearchUsers({ existing }: { existing: Friendship[] }) {
 }
 
 function AvatarSm({ profile }: { profile?: Profile }) {
-  if (profile?.avatar_url) return <img src={profile.avatar_url} alt="" className="h-10 w-10 rounded-full object-cover" />;
-  const l = (profile?.username ?? "?").charAt(0).toUpperCase();
-  return <div className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary font-bold">{l}</div>;
+  const inner = profile?.avatar_url
+    ? <img src={profile.avatar_url} alt="" className="h-10 w-10 rounded-full object-cover" />
+    : <div className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary font-bold">{(profile?.username ?? "?").charAt(0).toUpperCase()}</div>;
+  return <StoryRing userId={profile?.id} size="sm">{inner}</StoryRing>;
 }
 
 function EmptyBox({ icon, text }: { icon: React.ReactNode; text: string }) {
