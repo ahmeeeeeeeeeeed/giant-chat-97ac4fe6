@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useIsAdmin } from "@/lib/use-admin";
 import { supabase } from "@/integrations/supabase/client";
-import { Shield, Coins, Megaphone, Hash, Loader2, ChevronLeft, Newspaper, Users as UsersIcon, Package, Crown, Trash2, Check, X } from "lucide-react";
+import { Shield, Coins, Megaphone, Hash, Loader2, ChevronLeft, Newspaper, Users as UsersIcon, Package, Crown, Trash2, Check, X, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { PremiumCreateModal } from "@/components/PremiumCreateModal";
 import { useServerFn } from "@tanstack/react-start";
@@ -125,6 +125,20 @@ function AdminHome() {
             <div>
               <div className="font-bold">التحديثات</div>
               <div className="text-xs text-muted-foreground">رفع APK جديد، إجباري أو اختياري</div>
+            </div>
+          </div>
+          <ChevronLeft className="h-5 w-5 text-muted-foreground" />
+        </Link>
+
+        <Link to="/app/admin/stories"
+          className="flex items-center justify-between rounded-2xl border border-border bg-card p-4 hover:bg-secondary/40 transition">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/15 text-amber-600">
+              <Sparkles className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="font-bold">تحكم شامل بالقصص</div>
+              <div className="text-xs text-muted-foreground">عرض، إخفاء، وحذف قصص أي مستخدم + إحصائيات</div>
             </div>
           </div>
           <ChevronLeft className="h-5 w-5 text-muted-foreground" />

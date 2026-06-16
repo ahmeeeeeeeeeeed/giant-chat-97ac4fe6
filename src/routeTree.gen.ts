@@ -39,6 +39,7 @@ import { Route as AppProfileIdRouteImport } from './routes/app/profile.$id'
 import { Route as AppChatsIdRouteImport } from './routes/app/chats.$id'
 import { Route as AppAdminUsersRouteImport } from './routes/app/admin.users'
 import { Route as AppAdminUpdatesRouteImport } from './routes/app/admin.updates'
+import { Route as AppAdminStoriesRouteImport } from './routes/app/admin.stories'
 import { Route as AppAdminRoomsRouteImport } from './routes/app/admin.rooms'
 import { Route as AppAdminCommunityRouteImport } from './routes/app/admin.community'
 import { Route as ApiPublicSearchTrackRouteImport } from './routes/api/public/search-track'
@@ -193,6 +194,11 @@ const AppAdminUpdatesRoute = AppAdminUpdatesRouteImport.update({
   path: '/updates',
   getParentRoute: () => AppAdminRoute,
 } as any)
+const AppAdminStoriesRoute = AppAdminStoriesRouteImport.update({
+  id: '/stories',
+  path: '/stories',
+  getParentRoute: () => AppAdminRoute,
+} as any)
 const AppAdminRoomsRoute = AppAdminRoomsRouteImport.update({
   id: '/rooms',
   path: '/rooms',
@@ -236,6 +242,7 @@ export interface FileRoutesByFullPath {
   '/api/public/search-track': typeof ApiPublicSearchTrackRoute
   '/app/admin/community': typeof AppAdminCommunityRoute
   '/app/admin/rooms': typeof AppAdminRoomsRoute
+  '/app/admin/stories': typeof AppAdminStoriesRoute
   '/app/admin/updates': typeof AppAdminUpdatesRoute
   '/app/admin/users': typeof AppAdminUsersRoute
   '/app/chats/$id': typeof AppChatsIdRoute
@@ -269,6 +276,7 @@ export interface FileRoutesByTo {
   '/api/public/search-track': typeof ApiPublicSearchTrackRoute
   '/app/admin/community': typeof AppAdminCommunityRoute
   '/app/admin/rooms': typeof AppAdminRoomsRoute
+  '/app/admin/stories': typeof AppAdminStoriesRoute
   '/app/admin/updates': typeof AppAdminUpdatesRoute
   '/app/admin/users': typeof AppAdminUsersRoute
   '/app/chats/$id': typeof AppChatsIdRoute
@@ -305,6 +313,7 @@ export interface FileRoutesById {
   '/api/public/search-track': typeof ApiPublicSearchTrackRoute
   '/app/admin/community': typeof AppAdminCommunityRoute
   '/app/admin/rooms': typeof AppAdminRoomsRoute
+  '/app/admin/stories': typeof AppAdminStoriesRoute
   '/app/admin/updates': typeof AppAdminUpdatesRoute
   '/app/admin/users': typeof AppAdminUsersRoute
   '/app/chats/$id': typeof AppChatsIdRoute
@@ -342,6 +351,7 @@ export interface FileRouteTypes {
     | '/api/public/search-track'
     | '/app/admin/community'
     | '/app/admin/rooms'
+    | '/app/admin/stories'
     | '/app/admin/updates'
     | '/app/admin/users'
     | '/app/chats/$id'
@@ -375,6 +385,7 @@ export interface FileRouteTypes {
     | '/api/public/search-track'
     | '/app/admin/community'
     | '/app/admin/rooms'
+    | '/app/admin/stories'
     | '/app/admin/updates'
     | '/app/admin/users'
     | '/app/chats/$id'
@@ -410,6 +421,7 @@ export interface FileRouteTypes {
     | '/api/public/search-track'
     | '/app/admin/community'
     | '/app/admin/rooms'
+    | '/app/admin/stories'
     | '/app/admin/updates'
     | '/app/admin/users'
     | '/app/chats/$id'
@@ -643,6 +655,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminUpdatesRouteImport
       parentRoute: typeof AppAdminRoute
     }
+    '/app/admin/stories': {
+      id: '/app/admin/stories'
+      path: '/stories'
+      fullPath: '/app/admin/stories'
+      preLoaderRoute: typeof AppAdminStoriesRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
     '/app/admin/rooms': {
       id: '/app/admin/rooms'
       path: '/rooms'
@@ -670,6 +689,7 @@ declare module '@tanstack/react-router' {
 interface AppAdminRouteChildren {
   AppAdminCommunityRoute: typeof AppAdminCommunityRoute
   AppAdminRoomsRoute: typeof AppAdminRoomsRoute
+  AppAdminStoriesRoute: typeof AppAdminStoriesRoute
   AppAdminUpdatesRoute: typeof AppAdminUpdatesRoute
   AppAdminUsersRoute: typeof AppAdminUsersRoute
   AppAdminIndexRoute: typeof AppAdminIndexRoute
@@ -678,6 +698,7 @@ interface AppAdminRouteChildren {
 const AppAdminRouteChildren: AppAdminRouteChildren = {
   AppAdminCommunityRoute: AppAdminCommunityRoute,
   AppAdminRoomsRoute: AppAdminRoomsRoute,
+  AppAdminStoriesRoute: AppAdminStoriesRoute,
   AppAdminUpdatesRoute: AppAdminUpdatesRoute,
   AppAdminUsersRoute: AppAdminUsersRoute,
   AppAdminIndexRoute: AppAdminIndexRoute,

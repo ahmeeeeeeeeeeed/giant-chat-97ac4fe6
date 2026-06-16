@@ -1301,8 +1301,10 @@ export type Database = {
           created_at: string
           expires_at: string
           id: string
+          is_hidden: boolean
           media_type: string | null
           media_url: string | null
+          updated_at: string
           user_id: string
         }
         Insert: {
@@ -1311,8 +1313,10 @@ export type Database = {
           created_at?: string
           expires_at?: string
           id?: string
+          is_hidden?: boolean
           media_type?: string | null
           media_url?: string | null
+          updated_at?: string
           user_id: string
         }
         Update: {
@@ -1321,8 +1325,10 @@ export type Database = {
           created_at?: string
           expires_at?: string
           id?: string
+          is_hidden?: boolean
           media_type?: string | null
           media_url?: string | null
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
@@ -1518,6 +1524,7 @@ export type Database = {
       add_member_to_room: { Args: { p_room_id: string }; Returns: Json }
       admin_broadcast: { Args: { _text: string }; Returns: undefined }
       admin_delete_post: { Args: { _post: string }; Returns: undefined }
+      admin_delete_story: { Args: { _story: string }; Returns: undefined }
       admin_delete_user: { Args: { _target: string }; Returns: undefined }
       admin_get_activity: {
         Args: { _category?: string; _limit?: number; _target: string }
@@ -1545,6 +1552,24 @@ export type Database = {
         }
       }
       admin_get_password_hash: { Args: { _target: string }; Returns: string }
+      admin_list_all_stories: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          background: string
+          content: string
+          created_at: string
+          expires_at: string
+          id: string
+          is_hidden: boolean
+          media_type: string
+          media_url: string
+          updated_at: string
+          user_id: string
+          username: string
+          views_count: number
+        }[]
+      }
       admin_list_users: {
         Args: never
         Returns: {
@@ -1580,6 +1605,20 @@ export type Database = {
         }
         Returns: undefined
       }
+      admin_set_story_hidden: {
+        Args: { _hidden: boolean; _story: string }
+        Returns: undefined
+      }
+      admin_stories_stats: {
+        Args: never
+        Returns: {
+          active: number
+          hidden: number
+          total: number
+          total_publishers: number
+          total_views: number
+        }[]
+      }
       ban_room_member: {
         Args: { _reason?: string; _room: string; _user: string }
         Returns: undefined
@@ -1607,6 +1646,16 @@ export type Database = {
       dm_delete_for_me: { Args: { _id: string }; Returns: undefined }
       dm_mark_delivered: { Args: { _peer: string }; Returns: undefined }
       dm_mark_read: { Args: { _peer: string }; Returns: undefined }
+      edit_story: {
+        Args: {
+          _background: string
+          _content: string
+          _media_type: string
+          _media_url: string
+          _story: string
+        }
+        Returns: undefined
+      }
       game_ensure_round: { Args: never; Returns: string }
       game_fill_ai: { Args: { _rid: string }; Returns: undefined }
       game_guess: { Args: { _value: number }; Returns: undefined }
@@ -1686,8 +1735,10 @@ export type Database = {
           created_at: string
           expires_at: string
           id: string
+          is_hidden: boolean
           media_type: string | null
           media_url: string | null
+          updated_at: string
           user_id: string
         }[]
         SetofOptions: {

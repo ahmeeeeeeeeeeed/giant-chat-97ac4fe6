@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { X, ChevronLeft, ChevronRight, Trash2, Eye } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, Trash2, Eye, Pencil } from "lucide-react";
 import { AvatarFrame } from "@/components/AvatarFrame";
-import { fetchUserStories, viewStory, deleteStory, type StoryRow, type StoryUser } from "@/lib/use-stories";
+import { fetchUserStories, getCachedUserStories, viewStory, deleteStory, type StoryRow, type StoryUser } from "@/lib/use-stories";
+import { CreateStoryDialog } from "@/components/CreateStoryDialog";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -26,6 +27,7 @@ export function StoryViewer({
   const [paused, setPaused] = useState(false);
   const [viewers, setViewers] = useState<{ viewer_id: string; viewed_at: string; username: string | null; avatar_url: string | null }[]>([]);
   const [showViewers, setShowViewers] = useState(false);
+  const [editing, setEditing] = useState<StoryRow | null>(null);
   const rafRef = useRef<number | null>(null);
   const startRef = useRef<number>(0);
   const elapsedRef = useRef<number>(0);
@@ -36,7 +38,9 @@ export function StoryViewer({
   useEffect(() => {
     if (!currentUser) return;
     setStoryIdx(0);
-    setStories([]);
+    // Hydrate from local cache instantly, then refresh from server
+    const cached = getCachedUserStories(currentUser.user_id);
+    setStories(cached ?? []);
     fetchUserStories(currentUser.user_id).then((s) => setStories(s));
   }, [currentUser?.user_id]);
 
@@ -144,9 +148,14 @@ export function StoryViewer({
           </div>
           <div className="flex items-center gap-1">
             {currentUser.user_id === myId && currentStory && (
-              <button onClick={handleDelete} className="h-9 w-9 grid place-items-center rounded-full bg-white/10 text-white hover:bg-white/20" aria-label="حذف">
-                <Trash2 className="h-4 w-4" />
-              </button>
+              <>
+                <button onClick={() => { setPaused(true); setEditing(currentStory); }} className="h-9 w-9 grid place-items-center rounded-full bg-white/10 text-white hover:bg-white/20" aria-label="تعديل">
+                  <Pencil className="h-4 w-4" />
+                </button>
+                <button onClick={handleDelete} className="h-9 w-9 grid place-items-center rounded-full bg-white/10 text-white hover:bg-white/20" aria-label="حذف">
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </>
             )}
             <button onClick={onClose} className="h-9 w-9 grid place-items-center rounded-full bg-white/10 text-white hover:bg-white/20" aria-label="إغلاق">
               <X className="h-5 w-5" />
@@ -222,6 +231,15 @@ export function StoryViewer({
           <div className="absolute left-1 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none"><ChevronLeft className="h-6 w-6" /></div>
         )}
       </div>
+
+      <CreateStoryDialog
+        open={!!editing}
+        editing={editing}
+        onClose={() => { setEditing(null); setPaused(false); }}
+        onCreated={() => {
+          if (currentUser) fetchUserStories(currentUser.user_id).then((s) => setStories(s));
+        }}
+      />
     </div>
   );
 }
