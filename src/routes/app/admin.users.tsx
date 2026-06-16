@@ -243,6 +243,10 @@ function AdminUsers() {
                     className="flex flex-col items-center gap-0.5 rounded-lg border border-border p-2 text-[10px] text-fuchsia-600 disabled:opacity-50 col-span-3">
                     <KeyRound className="h-4 w-4" /> تغيير كلمة المرور
                   </button>
+                  <button onClick={() => makePremium(u)} disabled={busy === u.id}
+                    className="flex flex-col items-center gap-0.5 rounded-lg border border-amber-500/40 p-2 text-[10px] text-amber-600 disabled:opacity-50 col-span-5 bg-gradient-to-r from-amber-500/10 to-orange-500/10">
+                    <Sparkles className="h-4 w-4" /> إنشاء حساب مميز (اسم مزخرف/عربي)
+                  </button>
                 </div>
               </div>
             );
