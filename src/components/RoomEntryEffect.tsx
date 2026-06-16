@@ -555,11 +555,10 @@ const KEYFRAMES = `
 @keyframes fx-fade { 0%{opacity:0} 8%{opacity:1} 85%{opacity:1} 100%{opacity:0} }
 @keyframes sparkle { 0%{transform:scale(0) rotate(0);opacity:0} 30%{opacity:1} 100%{transform:scale(1.6) rotate(180deg);opacity:0} }
 @keyframes dragon-fly {
-  0% { top: -40vh; transform: translateX(-50%) rotate(-8deg) scale(0.8); }
-  35% { top: 25vh; transform: translateX(-50%) rotate(0deg) scale(1.1); }
-  65% { top: 40vh; transform: translateX(-50%) rotate(6deg) scale(1.05); }
-  90% { top: -30vh; transform: translateX(-50%) rotate(-10deg) scale(0.9); opacity: 1; }
-  100% { top: -60vh; transform: translateX(-50%) rotate(-12deg) scale(0.7); opacity: 0; }
+  0%   { top: 110vh; transform: translateX(-50%) scale(0.7); opacity: 0; }
+  15%  { top: 50%;   transform: translate(-50%,-50%) scale(1); opacity: 1; }
+  70%  { top: 50%;   transform: translate(-50%,-50%) scale(1.05); opacity: 1; }
+  100% { top: -60vh; transform: translateX(-50%) scale(0.6); opacity: 0; }
 }
 @keyframes fire-puff {
   0% { transform: scale(0.4) translateY(0); opacity: 0; }
@@ -567,22 +566,19 @@ const KEYFRAMES = `
   100% { transform: scale(2.2) translateY(40px); opacity: 0; }
 }
 @keyframes princess-dance {
-  0% { transform: translate(-50%, 120vh) scale(0.6) rotate(0); }
-  20% { transform: translate(-50%, -50%) scale(1) rotate(0); }
-  40% { transform: translate(-50%, -50%) scale(1) rotate(360deg); }
-  60% { transform: translate(-50%, -50%) scale(1.1) rotate(720deg); }
-  80% { transform: translate(-50%, -50%) scale(1) rotate(1080deg); }
-  100% { transform: translate(-50%, -150vh) scale(0.7) rotate(1080deg); opacity: 0; }
-}
-@keyframes crown-bob {
-  0%, 100% { transform: translate(-50%, 0) rotate(-8deg); }
-  50% { transform: translate(-50%, -20px) rotate(8deg); }
+  0%   { transform: translate(-50%, 120vh) scale(0.6); opacity: 0; }
+  15%  { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  35%  { transform: translate(-50%, -52%) scale(1.02) rotate(-3deg); }
+  55%  { transform: translate(-50%, -48%) scale(1) rotate(3deg); }
+  75%  { transform: translate(-50%, -50%) scale(1.03); opacity: 1; }
+  100% { transform: translate(-50%, -150vh) scale(0.7); opacity: 0; }
 }
 @keyframes knight-gallop {
-  0% { left: -40vw; transform: translateY(-50%) scaleX(1); }
-  50% { left: 50%; transform: translate(-50%, -50%) scaleX(1) translateY(-10px); }
-  55% { transform: translate(-50%, -50%) scaleX(1) translateY(0); }
-  100% { left: 140vw; transform: translateY(-50%) scaleX(1); }
+  0%   { left: -50vw;  transform: translateY(-50%) scaleX(1); }
+  35%  { left: 110vw;  transform: translateY(-50%) scaleX(1); }
+  36%  { left: 110vw;  transform: translateY(-50%) scaleX(-1); }
+  85%  { left: -40vw;  transform: translateY(-50%) scaleX(-1); }
+  100% { left: -60vw;  transform: translateY(-50%) scaleX(-1); opacity: 0; }
 }
 @keyframes dust-rise {
   0% { transform: translateY(0) scale(0.5); opacity: 0; }
