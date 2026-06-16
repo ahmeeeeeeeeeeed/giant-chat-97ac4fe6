@@ -223,6 +223,15 @@ function AppLayout() {
               >
                 <Trophy className="h-[17px] w-[17px]" />
               </Link>
+              <Link
+                to="/app/activity"
+                aria-label="سجل النشاط"
+                title="سجل النشاط"
+                className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-950/40 border border-indigo-500/30 text-indigo-300 backdrop-blur transition active:scale-95 hover:bg-indigo-900/40"
+              >
+                <Activity className="h-[17px] w-[17px]" />
+              </Link>
+
               <button
                 onClick={() => setReportOpen(true)}
                 aria-label="الإبلاغ والشكاوى"
