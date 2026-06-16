@@ -61,24 +61,42 @@ function OtherProfilePage() {
     const fetchProfile = async () => {
       setLoading(true);
 
+      // 1) Show cached profile immediately if we have one.
+      const cached = await cacheGet<Profile>(cacheKeys.profile(otherId));
+      if (cached) {
+        setProfile(cached);
+        setLoading(false);
+      }
+
+      // 2) If offline, stop here — don't retry network or show error toast.
+      if (!getOnline()) {
+        if (!cached) {
+          toast.error("أنت غير متصل بالإنترنت");
+          setLoading(false);
+        }
+        return;
+      }
+
       const selectCols = "id, username, avatar_url, bio, points, gender, country, hide_last_seen, dm_locked, last_seen_at, cover_url, cover_type";
       let p: any = null;
       let lastErr: any = null;
-      // Retry up to 3 times — session token may still be attaching on cold load.
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < 2; i++) {
         const res = await supabase.from("profiles").select(selectCols).eq("id", otherId).maybeSingle();
         if (res.data) { p = res.data; lastErr = null; break; }
         lastErr = res.error;
-        await new Promise((r) => setTimeout(r, 400));
+        await new Promise((r) => setTimeout(r, 300));
       }
 
       if (!p) {
-        console.error("profile fetch failed", { otherId, lastErr });
-        toast.error(lastErr?.message ? `تعذر تحميل البروفايل: ${lastErr.message}` : "تعذر تحميل البروفايل، حاول مرة أخرى");
+        if (!cached) {
+          console.error("profile fetch failed", { otherId, lastErr });
+          toast.error(lastErr?.message ? `تعذر تحميل البروفايل: ${lastErr.message}` : "تعذر تحميل البروفايل، حاول مرة أخرى");
+        }
         setLoading(false);
         return;
       }
       setProfile(p as Profile);
+      void cacheSet(cacheKeys.profile(otherId), p);
 
       // Check block + friendship status
       const [{ data: blockMe }, { data: blockByMe }, { data: fr }] = await Promise.all([
