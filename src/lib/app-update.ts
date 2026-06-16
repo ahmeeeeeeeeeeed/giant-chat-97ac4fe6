@@ -171,9 +171,14 @@ export function isUpdateAlreadyMarked(latest: Pick<AppUpdateRow, "version" | "ve
   return webVersion === latest.version || getVersionCode(webVersion || "0.0.0") === latest.version_code;
 }
 
-export function shouldShowUpdate(latest: Pick<AppUpdateRow, "version" | "version_code">): boolean {
+export function shouldShowUpdate(latest: Pick<AppUpdateRow, "version" | "version_code"> & Partial<Pick<AppUpdateRow, "file_url" | "web_bundle_url" | "web_bundle_version">>): boolean {
   if ("file_url" in latest && shouldInstallFullApk(latest as Pick<AppUpdateRow, "file_url" | "version_code">)) return true;
   if (isUpdateAlreadyMarked(latest)) return false;
+  if (latest.web_bundle_url) {
+    const bundleVersion = latest.web_bundle_version || latest.version;
+    const bundleCode = getVersionCode(bundleVersion);
+    if (bundleCode >= getEffectiveInstalledCode()) return true;
+  }
   return latest.version_code > getEffectiveInstalledCode();
 }
 
