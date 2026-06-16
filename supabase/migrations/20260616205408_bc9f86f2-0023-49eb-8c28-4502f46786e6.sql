@@ -1,0 +1,3 @@
+UPDATE public.app_updates
+SET file_url = 'https://gfuusohydgpumgardbyn.supabase.co/storage/v1/object/sign/app-updates/apk/giant-1.0.65-1781589841166.apk?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8yZjM4YWQyMi02ZTA5LTQyMWMtOWM1MS02ZGQyZGFlZDY4ZDkiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtdXBkYXRlcy9hcGsvZ2lhbnQtMS4wLjY1LTE3ODE1ODk4NDExNjYuYXBrIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc4MTY0MzIzMywiZXhwIjoyMDk3MDAzMjMzfQ.ihF5RZoge6OHz5fi5CoNnFXxgh2rLpPUDJzLR0cpnwE'
+WHERE id = 'aca113ef-cae3-4267-8a0c-d505ee3afeb9';
