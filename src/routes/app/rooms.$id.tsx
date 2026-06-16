@@ -816,18 +816,17 @@ function RoomPage() {
               if (meta?.kind === "gift" || meta?.kind === "gift_global") {
                 const isG = meta.kind === "gift_global" || meta.scope === "global";
                 return (
-                  <div key={msg.id} className={`mx-auto max-w-[92%] rounded-2xl border p-3 shadow-sm ${isG ? "border-amber-400/40 bg-gradient-to-br from-amber-50 via-pink-50 to-fuchsia-50 dark:from-amber-950/30 dark:via-pink-950/30 dark:to-fuchsia-950/30" : "border-pink-400/30 bg-gradient-to-br from-pink-50 to-fuchsia-50 dark:from-pink-950/30 dark:to-fuchsia-950/30"}`}>
-                    <div className="flex items-center gap-2">
-                      <div className="text-4xl shrink-0">{meta.emoji ?? "🎁"}</div>
-                      <div className="min-w-0 flex-1">
-                        <div className="text-xs font-bold text-pink-600 dark:text-pink-300 flex items-center gap-1">
-                          {isG && <span className="text-amber-500">🌍</span>} هدية {isG ? "عالمية" : ""}
-                        </div>
-                        <p className="text-sm font-medium">
-                          <span className="font-bold">{meta.receiver_name}</span> استلم هدية <span className="font-bold">{meta.gift_name}</span> من <span className="font-bold">{meta.sender_name}</span>
-                        </p>
-                        <p className="text-[10px] text-muted-foreground" suppressHydrationWarning>{meta.cost} نقطة · {time}</p>
-                      </div>
+                  <div key={msg.id} className="flex justify-center my-2">
+                    <div className={`inline-flex items-center gap-2 max-w-[92%] rounded-full border px-4 py-2 shadow-sm ${isG ? "border-amber-400/50 bg-gradient-to-r from-amber-50 via-pink-50 to-fuchsia-50 dark:from-amber-950/40 dark:via-pink-950/40 dark:to-fuchsia-950/40" : "border-pink-400/40 bg-gradient-to-r from-pink-50 to-fuchsia-50 dark:from-pink-950/40 dark:to-fuchsia-950/40"}`}>
+                      <span className="text-2xl leading-none">{meta.emoji ?? "🎁"}</span>
+                      <p className="text-xs sm:text-sm font-medium leading-tight">
+                        {isG && <span className="text-amber-500 me-1">🌍</span>}
+                        <span className="font-bold text-pink-600 dark:text-pink-300">{meta.receiver_name}</span>
+                        <span className="opacity-80"> استلمت هدية </span>
+                        <span className="font-bold">{meta.gift_name}</span>
+                        <span className="opacity-80"> من </span>
+                        <span className="font-bold text-emerald-600 dark:text-emerald-300">{meta.sender_name}</span>
+                      </p>
                     </div>
                   </div>
                 );
