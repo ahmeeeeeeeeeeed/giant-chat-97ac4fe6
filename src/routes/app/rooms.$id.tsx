@@ -21,6 +21,7 @@ import { ImageLightbox } from "@/components/ImageLightbox";
 import { ensureMediaLibraryPermission } from "@/lib/app-permissions";
 import { cacheGet, cacheSet, cacheKeys } from "@/lib/offline-cache";
 import { getOnline, useOnline } from "@/lib/use-online";
+import { UserBadgesInline } from "@/components/UserBadges";
 
 type Rank = "owner" | "admin" | "moderator" | "member";
 
@@ -924,6 +925,7 @@ function RoomPage() {
                     >
                       {displayName}
                     </button>
+                    {msg.user_id && <UserBadgesInline userId={msg.user_id} size={12} max={3} />}
                     <span className="text-[10px] text-muted-foreground/70" suppressHydrationWarning>
                       {time}
                     </span>
@@ -1340,6 +1342,7 @@ function SettingsSheet({ roomId, room, canModerate, myRank, isOwner, ownerId, on
                               <div className="flex items-center gap-2">
                                 <span className="font-semibold truncate">{p?.username ?? "..."}</span>
                                 <RankBadge rank={m.rank} />
+                                <UserBadgesInline userId={m.user_id} size={12} max={3} />
                               </div>
                             </div>
                             {canModerate && m.user_id !== ownerId && (

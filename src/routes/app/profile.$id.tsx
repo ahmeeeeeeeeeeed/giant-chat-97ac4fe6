@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 import { Loader2, ArrowRight, MessageCircle, Ban, Flag, Globe, Lock, EyeOff } from "lucide-react";
 import { WeeklyAchievementsBadge } from "@/components/WeeklyAchievementsBadge";
+import { UserBadgesGrid } from "@/components/UserBadges";
 import { RoomEntryEffect, type EntryBurst, type EntryEffectType } from "@/components/RoomEntryEffect";
 import { cacheGet, cacheSet, cacheKeys } from "@/lib/offline-cache";
 import { getOnline } from "@/lib/use-online";
@@ -259,6 +260,8 @@ function OtherProfilePage() {
                 </span>
               )}
             </div>
+
+            <UserBadgesGrid userId={profile.id} />
 
             <div className="mt-2 w-full max-w-md">
               <WeeklyAchievementsBadge userId={profile.id} />
