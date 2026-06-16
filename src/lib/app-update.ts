@@ -99,9 +99,8 @@ export function isNewerVersion(latestCode: number): boolean {
 }
 
 export function isUpdateAlreadyMarked(latest: Pick<AppUpdateRow, "version" | "version_code">): boolean {
-  const storedVersion = readStoredValue(INSTALLED_VERSION_KEY);
-  const storedCode = readStoredCode(INSTALLED_CODE_KEY);
-  return storedVersion === latest.version || storedCode === latest.version_code;
+  const webVersion = readStoredValue(WEB_BUNDLE_VERSION_KEY);
+  return webVersion === latest.version || getVersionCode(webVersion || "0.0.0") === latest.version_code;
 }
 
 export function shouldShowUpdate(latest: Pick<AppUpdateRow, "version" | "version_code">): boolean {
