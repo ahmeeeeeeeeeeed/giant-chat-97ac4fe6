@@ -35,7 +35,10 @@ type LatestUpdate = {
   version_code: number;
   update_message: string;
   file_url: string;
+  web_bundle_url: string | null;
+  web_bundle_version: string | null;
 } | null;
+
 
 function SettingsPage() {
   const { theme, toggle } = useTheme();
