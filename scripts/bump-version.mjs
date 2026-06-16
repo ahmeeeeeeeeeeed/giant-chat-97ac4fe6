@@ -15,7 +15,7 @@ const pkg = JSON.parse(readFileSync(pkgPath, "utf8"));
 const current = (pkg.version || "1.0.0").split(".").map((n) => parseInt(n, 10) || 0);
 let [maj, min, pat] = current;
 
-const run = parseInt(process.env.GITHUB_RUN_NUMBER || "", 10);
+const run = parseInt(process.env.APP_VERSION_PATCH || process.env.GITHUB_RUN_NUMBER || "", 10);
 if (Number.isFinite(run) && run > 0) {
   // Stable scheme on CI: 1.<MINOR>.<RUN_NUMBER>, keep current major/minor.
   pat = run;
