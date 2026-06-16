@@ -117,8 +117,13 @@ function RoomPage() {
   }, []);
 
   const loadRoom = async () => {
-    const { data, error } = await supabase.from("rooms").select("id, name, description, owner_id, created_at, type, max_members, is_active, background_url, background_type").eq("id", roomId).single();
-    if (error || !data) {
+    const { data, error } = await supabase.from("rooms").select("id, name, description, owner_id, created_at, type, max_members, is_active, background_url, background_type").eq("id", roomId).maybeSingle();
+    if (error) {
+      // Network/RLS hiccup — keep loading state, don't navigate away.
+      console.error("loadRoom error", error);
+      return;
+    }
+    if (!data) {
       toast.error("الغرفة غير موجودة");
       navigate({ to: "/app" });
       return;
@@ -126,6 +131,7 @@ function RoomPage() {
     setRoom(data);
     setLoading(false);
   };
+
 
   const checkBanned = async () => {
     if (!user) return false;
