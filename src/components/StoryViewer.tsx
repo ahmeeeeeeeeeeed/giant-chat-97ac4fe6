@@ -74,6 +74,41 @@ export function StoryViewer({
     })();
   }, [currentStory?.id, currentUser?.user_id, myId]);
 
+  // load reactions for current story
+  useEffect(() => {
+    if (!currentStory) { setReactions([]); return; }
+    getStoryReactions(currentStory.id).then(setReactions).catch(() => setReactions([]));
+  }, [currentStory?.id]);
+
+  const handleReact = async (emoji: string) => {
+    if (!currentStory) return;
+    const mineNow = reactions.find((r) => r.mine);
+    setFlyEmoji(emoji);
+    window.setTimeout(() => setFlyEmoji(null), 900);
+    try {
+      if (mineNow && mineNow.emoji === emoji) {
+        await unreactToStory(currentStory.id);
+      } else {
+        await reactToStory(currentStory.id, emoji);
+      }
+      const fresh = await getStoryReactions(currentStory.id);
+      setReactions(fresh);
+    } catch (e: any) { toast.error(e.message || "تعذر إرسال التفاعل"); }
+  };
+
+  const handleSendComment = async () => {
+    if (!currentStory || !comment.trim() || sending) return;
+    setSending(true);
+    try {
+      await commentOnStory(currentStory.id, comment.trim());
+      setComment("");
+      toast.success("تم إرسال التعليق في المحادثة");
+    } catch (e: any) { toast.error(e.message || "فشل الإرسال"); }
+    finally { setSending(false); }
+  };
+
+
+
   const next = () => {
     if (storyIdx + 1 < stories.length) setStoryIdx(storyIdx + 1);
     else if (userIdx + 1 < users.length) setUserIdx(userIdx + 1);
