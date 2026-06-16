@@ -8,14 +8,15 @@ import { clearEquippedCache } from "@/lib/equipped";
 
 type ShopItem = {
   id: string;
-  kind: "badge" | "name_color" | "chat_color" | "effect";
+  kind: "badge" | "name_color" | "chat_color" | "effect" | "avatar_frame";
   code: string;
   name_ar: string;
   price: number;
-  payload: Record<string, string>;
+  payload: Record<string, any>;
   sort_order: number;
   gender_target?: string | null;
 };
+
 
 type GiftItem = {
   id: string;
