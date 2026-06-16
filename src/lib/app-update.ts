@@ -10,17 +10,48 @@ export type AppUpdateRow = {
   update_message: string;
   update_type: "force" | "optional";
   file_url: string;
+  web_bundle_url?: string | null;
+  web_bundle_version?: string | null;
   file_size: number | null;
   is_active: boolean;
   created_at: string;
 };
 
+const INSTALLED_VERSION_KEY = "giant.update.installed.v";
+const INSTALLED_CODE_KEY = "giant.update.installed.code";
+const WEB_BUNDLE_VERSION_KEY = "web_bundle_version";
+
+function readStoredCode(key: string): number {
+  try {
+    const raw = typeof window !== "undefined" ? localStorage.getItem(key) : null;
+    if (!raw) return 0;
+    if (/^\d+$/.test(raw)) return parseInt(raw, 10);
+    return getVersionCode(raw);
+  } catch { return 0; }
+}
+
+export function getEffectiveInstalledCode(): number {
+  return Math.max(
+    getVersionCode(APP_VERSION),
+    readStoredCode(INSTALLED_CODE_KEY),
+    readStoredCode(WEB_BUNDLE_VERSION_KEY),
+  );
+}
+
+export function markUpdateInstalled(version: string, versionCode = getVersionCode(version)): void {
+  try {
+    localStorage.setItem(INSTALLED_VERSION_KEY, version);
+    localStorage.setItem(INSTALLED_CODE_KEY, String(versionCode));
+    localStorage.setItem(WEB_BUNDLE_VERSION_KEY, version);
+  } catch { /* ignore */ }
+}
+
 export function isNewerVersion(latestCode: number): boolean {
-  return latestCode > getVersionCode(APP_VERSION);
+  return latestCode > getEffectiveInstalledCode();
 }
 
 export function isForceRequired(latest: AppUpdateRow): boolean {
-  const current = getVersionCode(APP_VERSION);
+  const current = getEffectiveInstalledCode();
   if (latest.update_type === "force" && latest.version_code > current) return true;
   // Also force if installed version is below the minimum required.
   if (current < latest.minimum_required_code) return true;
@@ -152,7 +183,7 @@ export async function applyWebBundleUpdate(
     }
   } catch { /* ignore */ }
   onProgress(95);
-  try { localStorage.setItem("web_bundle_version", version); } catch { /* ignore */ }
+  try { localStorage.setItem(WEB_BUNDLE_VERSION_KEY, version); } catch { /* ignore */ }
   onProgress(100);
   // small delay so the user sees 100%
   await new Promise((r) => setTimeout(r, 250));
