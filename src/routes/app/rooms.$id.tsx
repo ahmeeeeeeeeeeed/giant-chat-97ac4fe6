@@ -1500,6 +1500,108 @@ function ManageTab({ room, roomId, onDeleted }: { room: any; roomId: string; onD
   );
 }
 
+function BackgroundTab({ room, roomId }: { room: any; roomId: string }) {
+  const { user } = useAuth();
+  const [url, setUrl] = useState<string | null>(room.background_url ?? null);
+  const [type, setType] = useState<string | null>(room.background_type ?? null);
+  const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const fileRef = useRef<HTMLInputElement | null>(null);
+
+  const pick = () => fileRef.current?.click();
+
+  const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    if (file.size > 15 * 1024 * 1024) { toast.error("الحد الأقصى 15 ميجابايت"); return; }
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop()?.toLowerCase() || "bin";
+      const path = `${user.id}/${roomId}-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("room-backgrounds")
+        .upload(path, file, { upsert: true, contentType: file.type });
+      if (upErr) throw upErr;
+      const { data: signed } = await supabase.storage.from("room-backgrounds")
+        .createSignedUrl(path, 60 * 60 * 24 * 365 * 10);
+      const u = signed?.signedUrl ?? null;
+      if (!u) throw new Error("no_url");
+      const t = file.type.startsWith("video") ? "video" : (file.type === "image/gif" ? "gif" : "image");
+      setUrl(u); setType(t);
+      toast.success("تم الرفع — اضغط حفظ للتطبيق");
+    } catch (err: any) {
+      toast.error("فشل الرفع: " + (err?.message ?? ""));
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const save = async () => {
+    setSaving(true);
+    const { error } = await supabase.rpc("set_room_background" as never, { _room: roomId, _url: url, _type: type } as never);
+    setSaving(false);
+    if (error) toast.error("فشل: " + error.message);
+    else toast.success("تم تطبيق الخلفية على الغرفة");
+  };
+
+  const clear = async () => {
+    setSaving(true);
+    const { error } = await supabase.rpc("set_room_background" as never, { _room: roomId, _url: null, _type: null } as never);
+    setSaving(false);
+    if (error) toast.error("فشل: " + error.message);
+    else { setUrl(null); setType(null); toast.success("تمت إزالة الخلفية"); }
+  };
+
+  return (
+    <div className="space-y-4 p-1">
+      <div className="rounded-2xl border border-border bg-background overflow-hidden">
+        <div className="relative h-44 bg-gradient-to-br from-muted/50 to-muted flex items-center justify-center">
+          {url ? (
+            type === "video" ? (
+              <video src={url} autoPlay loop muted playsInline className="h-full w-full object-cover" />
+            ) : (
+              <img src={url} alt="معاينة" className="h-full w-full object-cover" />
+            )
+          ) : (
+            <div className="text-center text-muted-foreground">
+              <ImageIcon className="h-10 w-10 mx-auto mb-2 opacity-50" />
+              <p className="text-xs">لا توجد خلفية</p>
+            </div>
+          )}
+        </div>
+        <div className="p-3 text-[11px] text-muted-foreground">
+          معاينة الخلفية كما ستظهر للأعضاء (مع طبقة شفافة فوقها لتسهيل القراءة).
+        </div>
+      </div>
+
+      <input ref={fileRef} type="file" accept="image/*,video/mp4,video/webm" hidden onChange={onFile} />
+
+      <button onClick={pick} disabled={uploading}
+        className="w-full h-12 rounded-2xl border-2 border-dashed border-emerald-500/40 bg-emerald-500/5 text-emerald-600 font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50">
+        {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageIcon className="h-4 w-4" />}
+        {uploading ? "جاري الرفع..." : "اختر صورة / GIF / فيديو"}
+      </button>
+
+      <div className="flex gap-2">
+        <button onClick={save} disabled={saving || !url}
+          className="flex-1 h-11 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50">
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          حفظ وتطبيق
+        </button>
+        {(room.background_url || url) && (
+          <button onClick={clear} disabled={saving}
+            className="h-11 px-4 rounded-xl bg-red-500/10 text-red-600 text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-50">
+            <Trash2 className="h-4 w-4" /> إزالة
+          </button>
+        )}
+      </div>
+
+      <div className="rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200/50 dark:border-amber-800/30 p-3 text-[11px] text-amber-700 dark:text-amber-300">
+        💡 يدعم الصور (JPG/PNG)، الصور المتحركة (GIF)، والفيديوهات القصيرة (MP4/WebM). الحد الأقصى 15 ميجابايت.
+      </div>
+    </div>
+  );
+}
+
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
