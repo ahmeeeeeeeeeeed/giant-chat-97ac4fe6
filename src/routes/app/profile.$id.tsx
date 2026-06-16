@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 import { Loader2, ArrowRight, MessageCircle, Ban, Flag, Globe, Lock, EyeOff } from "lucide-react";
 import { WeeklyAchievementsBadge } from "@/components/WeeklyAchievementsBadge";
+import { RoomEntryEffect, type EntryBurst, type EntryEffectType } from "@/components/RoomEntryEffect";
 
 export const Route = createFileRoute("/app/profile/$id")({
   component: OtherProfilePage,
@@ -34,6 +35,23 @@ function OtherProfilePage() {
   const [isBlocked, setIsBlocked] = useState(false);
   const [isBlockedBy, setIsBlockedBy] = useState(false);
   const [isFriend, setIsFriend] = useState(false);
+  const [entryBurst, setEntryBurst] = useState<EntryBurst | null>(null);
+
+  // Play the profile owner's equipped entry effect once per profile open
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data: p } = await supabase.from("profiles")
+        .select("username, equipped_effect").eq("id", otherId).maybeSingle();
+      if (cancelled || !p?.equipped_effect) return;
+      const { data: item } = await supabase.from("shop_items")
+        .select("code, kind").eq("id", p.equipped_effect).maybeSingle();
+      if (cancelled || !item?.code?.startsWith("entry_")) return;
+      const type = item.code.replace("entry_", "") as EntryEffectType;
+      setEntryBurst({ id: Date.now() + Math.random(), type, name: p.username });
+    })();
+    return () => { cancelled = true; };
+  }, [otherId]);
 
   useEffect(() => {
     if (!user) return;
@@ -132,6 +150,7 @@ function OtherProfilePage() {
 
   return (
     <main className="flex flex-1 flex-col min-h-screen bg-background">
+      <RoomEntryEffect burst={entryBurst} />
       <header className="sticky top-0 z-10 border-b border-border bg-background/90 px-5 py-4 backdrop-blur">
         <button
           onClick={() => navigate({ to: "/app/chats" })}
