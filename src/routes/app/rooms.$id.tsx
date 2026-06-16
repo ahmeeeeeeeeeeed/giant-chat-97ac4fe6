@@ -21,6 +21,7 @@ import { ImageLightbox } from "@/components/ImageLightbox";
 import { ensureMediaLibraryPermission } from "@/lib/app-permissions";
 import { cacheGet, cacheSet, cacheKeys } from "@/lib/offline-cache";
 import { getOnline, useOnline } from "@/lib/use-online";
+import { UserBadgesInline } from "@/components/UserBadges";
 
 type Rank = "owner" | "admin" | "moderator" | "member";
 
