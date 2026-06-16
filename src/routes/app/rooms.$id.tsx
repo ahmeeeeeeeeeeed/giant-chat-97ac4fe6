@@ -94,26 +94,35 @@ function RoomPage() {
   const ensureProfiles = useCallback(async (ids: string[]) => {
     const need = Array.from(new Set(ids.filter((id) => id && !userMapRef.current[id])));
     if (need.length === 0) return;
-    const { data } = await supabase.from("profiles").select("id, username, avatar_url").in("id", need);
-    if (data && data.length) {
-      setUserMap((prev) => {
-        const next = { ...prev };
-        data.forEach((p: any) => { next[p.id] = { username: p.username, avatar_url: p.avatar_url }; });
-        return next;
-      });
+    // Batch fetch: profiles + their equipped shop items in 2 queries total
+    // (was N+1 per user before, causing slow room load with many senders).
+    const { data: profs } = await supabase
+      .from("profiles")
+      .select("id, username, avatar_url, equipped_name_color, equipped_chat_color")
+      .in("id", need);
+    if (!profs || !profs.length) return;
+    setUserMap((prev) => {
+      const next = { ...prev };
+      profs.forEach((p: any) => { next[p.id] = { username: p.username, avatar_url: p.avatar_url }; });
+      return next;
+    });
+    const itemIds = Array.from(new Set(
+      profs.flatMap((p: any) => [p.equipped_name_color, p.equipped_chat_color]).filter(Boolean)
+    )) as string[];
+    const itemMap: Record<string, any> = {};
+    if (itemIds.length) {
+      const { data: items } = await supabase.from("shop_items").select("id,payload").in("id", itemIds);
+      (items ?? []).forEach((it: any) => { itemMap[it.id] = it; });
     }
-    // Fetch equipped colors (name/chat) in parallel — applied live in room messages.
-    try {
-      const sets = await Promise.all(need.map((id) => getEquipped(id).catch(() => ({} as any))));
-      setColorMap((prev) => {
-        const next = { ...prev };
-        need.forEach((id, i) => {
-          const s: any = sets[i] ?? {};
-          next[id] = { name: s.name_color?.color ?? undefined, chat: s.chat_color?.color ?? undefined };
-        });
-        return next;
+    setColorMap((prev) => {
+      const next = { ...prev };
+      profs.forEach((p: any) => {
+        const nc = p.equipped_name_color ? itemMap[p.equipped_name_color]?.payload?.color : undefined;
+        const cc = p.equipped_chat_color ? itemMap[p.equipped_chat_color]?.payload?.color : undefined;
+        next[p.id] = { name: nc, chat: cc };
       });
-    } catch { /* ignore */ }
+      return next;
+    });
   }, []);
 
   const loadRoom = async () => {
@@ -176,7 +185,8 @@ function RoomPage() {
     // 2) Skip network when offline — avoids browser errors and keeps cached UI.
     if (!getOnline()) return;
     // 3) Background sync from cloud.
-    const { data } = await supabase.from("room_messages").select("*").eq("room_id", roomId).order("created_at", { ascending: true }).limit(200);
+    const { data: raw } = await supabase.from("room_messages").select("*").eq("room_id", roomId).order("created_at", { ascending: false }).limit(50);
+    const data = raw ? [...raw].reverse() : null;
     if (data) {
       const visible = data.filter((m: any) => !isPlainSystem(m));
       setMessages(visible);
