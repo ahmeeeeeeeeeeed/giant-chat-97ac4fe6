@@ -69,8 +69,7 @@ export function GiftPickerModal({
       _receiver: receiverId,
       _gift: gift.id,
       _room: roomId,
-      _message: null,
-    });
+    } as any);
     setSending(false);
     if (error) {
       toast.error("تعذر إرسال الهدية: " + error.message);
