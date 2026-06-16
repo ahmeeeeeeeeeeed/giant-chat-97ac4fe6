@@ -16,6 +16,7 @@ import { enqueueMessage } from "@/lib/offline-queue";
 import { getOnline } from "@/lib/use-online";
 import { ensureMediaLibraryPermission, ensureMicPermission } from "@/lib/app-permissions";
 import { useCachedMediaSource } from "@/lib/use-cached-media";
+import { StoryRing } from "@/components/StoryRing";
 
 export const Route = createFileRoute("/app/chats/$id")({
   component: DMPage,
