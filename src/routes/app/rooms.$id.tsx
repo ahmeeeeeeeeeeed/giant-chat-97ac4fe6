@@ -7,7 +7,7 @@ import {
   Send, Loader2, ArrowLeft, Users, Hash, Lock, Settings, Shield, Ban, UserMinus,
   ArrowUp, ArrowDown, Crown, FileText, X, KeyRound, MoreVertical, Megaphone,
   UserPlus, AtSign, Edit3, Trash2, Power, Globe, Search, Info, Save, AlertTriangle,
-  Image as ImageIcon, Mic, Square, Play, Pause, Share2, Copy,
+  Image as ImageIcon, Mic, Square, Play, Pause, Share2, Copy, Bot,
 } from "lucide-react";
 import { MusicPlayer } from "@/components/MusicPlayer";
 import { BroadcastCard } from "@/components/BroadcastCard";
@@ -50,6 +50,7 @@ function RoomPage() {
   const [isBanned, setIsBanned] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [showAnnounce, setShowAnnounce] = useState(false);
+  const [showBots, setShowBots] = useState(false);
   const [announceText, setAnnounceText] = useState("");
   const [showInfo, setShowInfo] = useState(false);
   const [search, setSearch] = useState("");
@@ -691,6 +692,7 @@ function RoomPage() {
         {isMember && (
           <div className="flex gap-1.5 overflow-x-auto px-3 pb-2 scrollbar-thin">
             <ChipBtn icon={<Share2 className="h-3 w-3" />} label="نشر" onClick={() => setShowShare(true)} highlight />
+            <ChipBtn icon={<Bot className="h-3 w-3" />} label="البوتات" onClick={() => setShowBots(true)} highlight />
             <ChipBtn icon={<UserPlus className="h-3 w-3" />} label="دعوة" onClick={() => openSettingsAt("invite")} />
             <ChipBtn icon={<Users className="h-3 w-3" />} label={`الأعضاء (${memberCount})`} onClick={() => openSettingsAt("members")} />
             {canModerate && <ChipBtn icon={<Megaphone className="h-3 w-3" />} label="إعلان" onClick={() => setShowAnnounce(true)} highlight />}
@@ -889,6 +891,8 @@ function RoomPage() {
       </form>
 
       {showShare && <SharePostModal roomId={roomId} onClose={() => setShowShare(false)} />}
+
+      {showBots && <BotCommandsModal onClose={() => setShowBots(false)} />}
 
       {askPassword && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setAskPassword(false)}>
@@ -1537,6 +1541,119 @@ function MemberMenu({ myRank, rank, onMakeAdmin, onMakeModerator, onMakeMember, 
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+function BotCommandsModal({ onClose }: { onClose: () => void }) {
+  const bots = [
+    {
+      name: "بوت الترحيب",
+      emoji: "👋",
+      color: "from-emerald-500 to-teal-600",
+      desc: "يرحّب تلقائياً بكل عضو جديد يدخل الغرفة.",
+      commands: [
+        { trigger: "سلام / مرحبا / هلا / hi / hello", reply: "يرد بتحية ترحيبية" },
+        { trigger: "شكراً / مشكور / thanks", reply: "العفو! نحن هنا لخدمتك" },
+      ],
+    },
+    {
+      name: "بوت المساعدة",
+      emoji: "🛟",
+      color: "from-sky-500 to-indigo-600",
+      desc: "يعرض قائمة الأوامر المتاحة.",
+      commands: [
+        { trigger: "مساعدة / help / أوامر", reply: "يعرض قائمة بكل الأوامر" },
+      ],
+    },
+    {
+      name: "بوت المسابقات",
+      emoji: "🧠",
+      color: "from-amber-500 to-orange-600",
+      desc: "يطرح أسئلة وألغاز للأعضاء.",
+      commands: [
+        { trigger: "مسابقة / سؤال / quiz", reply: "يرسل سؤالاً جديداً" },
+      ],
+    },
+    {
+      name: "بوت الألعاب",
+      emoji: "🎮",
+      color: "from-fuchsia-500 to-pink-600",
+      desc: "يقترح ألعاباً ممتعة داخل الغرفة.",
+      commands: [
+        { trigger: "لعب / game / ألعاب", reply: "يقترح ألعاباً للمجموعة" },
+      ],
+    },
+    {
+      name: "بوت الإدارة",
+      emoji: "🛡️",
+      color: "from-rose-500 to-red-600",
+      desc: "يعرض أوامر الإدارة للمشرفين.",
+      commands: [
+        { trigger: "إدارة / admin / مشرف", reply: "يعرض أوامر الإدارة المتاحة" },
+      ],
+    },
+    {
+      name: "بوت الردود التلقائية",
+      emoji: "💬",
+      color: "from-violet-500 to-purple-600",
+      desc: "يرد تلقائياً على كلمات مفتاحية شائعة.",
+      commands: [
+        { trigger: "أي كلمة مفتاحية من القائمة", reply: "رد فوري مناسب" },
+      ],
+    },
+  ];
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm sm:items-center" onClick={onClose}>
+      <div
+        className="w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-t-3xl border-t border-border bg-card p-5 pb-8 shadow-2xl sm:rounded-3xl sm:border"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-muted sm:hidden" />
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md">
+              <Bot className="h-5 w-5" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold leading-tight">أوامر البوتات</h3>
+              <p className="text-xs text-muted-foreground">اكتب الأمر في المحادثة وسيرد البوت تلقائياً</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="text-muted-foreground"><X className="h-5 w-5" /></button>
+        </div>
+
+        <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-3 mb-4">
+          <p className="text-xs text-amber-700 dark:text-amber-400 leading-relaxed">
+            💡 <strong>كيف تستخدم البوتات؟</strong> فقط اكتب الكلمة المفتاحية في الدردشة وسيرد البوت المناسب تلقائياً خلال ثوانٍ.
+          </p>
+        </div>
+
+        <div className="space-y-3">
+          {bots.map((bot) => (
+            <div key={bot.name} className="rounded-2xl border border-border bg-background p-3">
+              <div className="flex items-center gap-2.5 mb-2">
+                <div className={`flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br ${bot.color} text-white text-lg shadow-sm`}>
+                  {bot.emoji}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="font-bold text-sm">{bot.name}</div>
+                  <div className="text-[11px] text-muted-foreground truncate">{bot.desc}</div>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                {bot.commands.map((c, i) => (
+                  <div key={i} className="flex items-start gap-2 rounded-lg bg-secondary/50 px-2.5 py-1.5">
+                    <code className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 shrink-0">{c.trigger}</code>
+                    <span className="text-[11px] text-muted-foreground">← {c.reply}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
