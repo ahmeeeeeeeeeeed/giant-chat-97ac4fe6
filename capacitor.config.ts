@@ -15,7 +15,7 @@ import type { CapacitorConfig } from "@capacitor/cli";
 const config: CapacitorConfig = {
   appId: "app.lovable.giant",
   appName: "Giant",
-  webDir: "dist",
+  webDir: "dist/client",
   android: {
     allowMixedContent: false,
   },
