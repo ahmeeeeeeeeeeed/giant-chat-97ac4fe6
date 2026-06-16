@@ -1,10 +1,4 @@
 import { useEffect, useState, useRef } from "react";
-import dragonVid from "@/assets/fx-dragon.mp4.asset.json";
-import princessVid from "@/assets/fx-princess.mp4.asset.json";
-import knightVid from "@/assets/fx-knight.mp4.asset.json";
-import magicVid from "@/assets/fx-magic.mp4.asset.json";
-import mascotVid from "@/assets/fx-mascot.mp4.asset.json";
-import portalVid from "@/assets/fx-portal.mp4.asset.json";
 
 export type EntryEffectType =
   | "dragon"
@@ -256,12 +250,12 @@ function playSound(type: EntryEffectType) {
 /* ===================== Visuals ===================== */
 
 const VIDEO_SRC: Record<EntryEffectType, string> = {
-  dragon: dragonVid.url,
-  princess: princessVid.url,
-  knight: knightVid.url,
-  magic: magicVid.url,
-  mascot: mascotVid.url,
-  portal: portalVid.url,
+  dragon: "/effects/fx-dragon.webm",
+  princess: "/effects/fx-princess.webm",
+  knight: "/effects/fx-knight.webm",
+  magic: "/effects/fx-magic.webm",
+  mascot: "/effects/fx-mascot.webm",
+  portal: "/effects/fx-portal.webm",
 };
 
 const EFFECT_COLOR: Record<EntryEffectType, string> = {
@@ -296,67 +290,15 @@ const MOTION: Record<EntryEffectType, { wrapper: string; inner: string }> = {
   portal: { wrapper: "fx-cam-pulse", inner: "fx-portal-warp" },
 };
 
-/* Canvas-based background remover: draws video frames and strips dark pixels
-   to fully transparent alpha. Result: the effect floats with NO background. */
 function VideoEffect({ type }: { type: EntryEffectType }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
     const v = videoRef.current;
-    const c = canvasRef.current;
-    if (!v || !c) return;
-
-    const ctx2d = c.getContext("2d", { willReadFrequently: true });
-    if (!ctx2d) return;
-
-    let raf = 0;
-    let stopped = false;
-
-    const setup = () => {
-      c.width = v.videoWidth || 512;
-      c.height = v.videoHeight || 512;
-    };
-
-    const draw = () => {
-      if (stopped) return;
-      if (v.readyState >= 2 && v.videoWidth > 0) {
-        if (c.width !== v.videoWidth) setup();
-        ctx2d.drawImage(v, 0, 0, c.width, c.height);
-        try {
-          const img = ctx2d.getImageData(0, 0, c.width, c.height);
-          const d = img.data;
-          // Remove dark background: luminance threshold + soft edges.
-          // Pixels with low brightness → alpha 0. Mid brightness → partial alpha.
-          for (let i = 0; i < d.length; i += 4) {
-            const r = d[i], g = d[i + 1], b = d[i + 2];
-            const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-            if (lum < 25) {
-              d[i + 3] = 0;
-            } else if (lum < 80) {
-              // soft feather so edges don't look cut
-              d[i + 3] = Math.round(((lum - 25) / 55) * 255);
-            }
-          }
-          ctx2d.putImageData(img, 0, 0);
-        } catch {
-          /* CORS-tainted canvas: fallback silently to plain draw */
-        }
-      }
-      raf = requestAnimationFrame(draw);
-    };
-
+    if (!v) return;
     v.currentTime = 0;
     const p = v.play();
     if (p && typeof p.catch === "function") p.catch(() => {});
-    v.addEventListener("loadedmetadata", setup);
-    raf = requestAnimationFrame(draw);
-
-    return () => {
-      stopped = true;
-      cancelAnimationFrame(raf);
-      v.removeEventListener("loadedmetadata", setup);
-    };
   }, [type]);
 
   const m = MOTION[type];
@@ -376,11 +318,6 @@ function VideoEffect({ type }: { type: EntryEffectType }) {
         playsInline
         autoPlay
         preload="auto"
-        crossOrigin="anonymous"
-        style={{ display: "none" }}
-      />
-      <canvas
-        ref={canvasRef}
         style={{
           position: "absolute",
           top: 0,
@@ -389,7 +326,7 @@ function VideoEffect({ type }: { type: EntryEffectType }) {
           height: "100%",
           objectFit: "contain",
           background: "transparent",
-          filter: "saturate(1.15) contrast(1.05)",
+          filter: "saturate(1.12) contrast(1.04)",
         }}
       />
     </div>
