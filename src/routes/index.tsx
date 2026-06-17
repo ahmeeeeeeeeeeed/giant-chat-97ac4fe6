@@ -264,6 +264,22 @@ function PublicWebsite() {
         </div>
       </section>
 
+      {/* Reviews preview */}
+      <section id="reviews" className="border-b border-border/60 bg-card/20">
+        <div className="mx-auto max-w-6xl px-5 py-16">
+          <div className="mb-10 flex flex-col items-center gap-3 text-center sm:flex-row sm:justify-between sm:text-start">
+            <div>
+              <span className="mb-2 inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">تقييمات المستخدمين</span>
+              <h2 className="text-2xl font-black md:text-3xl">ماذا يقول مستخدمو Giant؟</h2>
+            </div>
+            <Link to="/reviews" className="inline-flex items-center gap-1.5 rounded-2xl border border-border bg-card px-5 py-2.5 text-sm font-bold transition hover:bg-accent">
+              كل التقييمات <ArrowRight className="h-4 w-4 rtl:rotate-180" />
+            </Link>
+          </div>
+          <HomeReviewsPreview />
+        </div>
+      </section>
+
       {/* Stats strip */}
       <section className="border-y border-border/60 bg-card/30">
         <div className="mx-auto grid max-w-6xl grid-cols-2 gap-6 px-5 py-10 md:grid-cols-4">
