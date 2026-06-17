@@ -66,6 +66,9 @@ jobs:
       - name: Sync Capacitor assets into Android project
         run: npx cap sync android
 
+      - name: Patch AndroidManifest permissions
+        run: node scripts/patch-android-permissions.mjs
+
       - name: Patch Android version (code/name)
         run: node scripts/patch-android-version.mjs
 
