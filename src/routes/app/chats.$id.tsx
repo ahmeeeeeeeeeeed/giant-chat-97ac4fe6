@@ -812,3 +812,28 @@ function relativeTime(iso: string): string {
   if (diff < 86400) return `قبل ${Math.floor(diff / 3600)} ساعة`;
   return `قبل ${Math.floor(diff / 86400)} يوم`;
 }
+function CallButtons({ peer }: { peer: Profile }) {
+  const { startCall, status } = useCalls();
+  const busy = status !== "idle" && status !== "ended";
+  const p = { id: peer.id, username: peer.username, avatar_url: peer.avatar_url };
+  return (
+    <div className="flex items-center gap-1">
+      <button
+        onClick={() => startCall(p, "audio")}
+        disabled={busy}
+        aria-label="اتصال صوتي"
+        className="p-2 rounded-full hover:bg-primary-foreground/15 active:scale-95 transition disabled:opacity-40"
+      >
+        <Phone className="h-5 w-5" />
+      </button>
+      <button
+        onClick={() => startCall(p, "video")}
+        disabled={busy}
+        aria-label="اتصال فيديو"
+        className="p-2 rounded-full hover:bg-primary-foreground/15 active:scale-95 transition disabled:opacity-40"
+      >
+        <Video className="h-5 w-5" />
+      </button>
+    </div>
+  );
+}
