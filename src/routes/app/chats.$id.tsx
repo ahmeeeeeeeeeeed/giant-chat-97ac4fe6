@@ -577,7 +577,7 @@ function DMPage() {
     <main className="flex flex-col bg-background" style={{ height: "100dvh" }}>
       {/* HEADER — premium gradient, glass shine, clickable avatar/name */}
       <header
-        className="sticky top-0 z-30 flex items-center gap-3 overflow-hidden border-b border-emerald-500/20 bg-gradient-to-l from-emerald-700 via-emerald-800 to-slate-900 px-3 py-3 text-white shadow-[0_10px_30px_-15px_rgba(16,185,129,0.6)]"
+        className="sticky top-0 z-30 flex items-center gap-3 border-b border-emerald-500/20 bg-gradient-to-l from-emerald-700 via-emerald-800 to-slate-900 px-3 py-3 text-white shadow-[0_10px_30px_-15px_rgba(16,185,129,0.6)]"
         style={{ paddingTop: "calc(env(safe-area-inset-top) + 0.75rem)" }}
       >
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,rgba(255,255,255,0.18),transparent_55%),radial-gradient(circle_at_90%_100%,rgba(16,185,129,0.25),transparent_60%)]" />
