@@ -749,7 +749,11 @@ function ActionItem({ icon, label, onClick, destructive }: { icon: React.ReactNo
 function MessageBubble({ m, mine, replied, onPress }: { m: DM; mine: boolean; replied: DM | null; onPress?: () => void }) {
   const [lightbox, setLightbox] = useState(false);
   const mediaSource = useCachedMediaSource(m.media_url);
-  const base = `rounded-2xl px-3.5 py-2 shadow-sm ${mine ? "rounded-br-md bg-primary text-primary-foreground" : "rounded-bl-md bg-card border border-border"}`;
+  const base = `rounded-2xl px-3.5 py-2 shadow-md ${
+    mine
+      ? "rounded-br-md bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-emerald-600/25"
+      : "rounded-bl-md bg-card border border-border/70 backdrop-blur"
+  }`;
   const replyBlock = replied && (
     <div className={`mb-1 rounded-lg border-s-2 px-2 py-1 text-[11px] ${mine ? "border-primary-foreground/60 bg-primary-foreground/10" : "border-primary bg-secondary"}`}>
       <div className="font-bold opacity-80">رد</div>
