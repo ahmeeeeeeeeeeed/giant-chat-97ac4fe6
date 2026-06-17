@@ -558,7 +558,7 @@ function DMPage() {
         )}
 
         <div className="relative">
-          <button onClick={() => setMenuOpen(v => !v)} aria-label="القائمة" className="p-1.5 rounded-full hover:bg-primary-foreground/10">
+          <button onClick={() => setMenuOpen(v => !v)} aria-label="القائمة" className="relative p-1.5 rounded-full hover:bg-white/10 active:scale-95 transition">
             <MoreVertical className="h-5 w-5" />
           </button>
           {menuOpen && (
