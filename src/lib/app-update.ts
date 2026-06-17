@@ -273,8 +273,14 @@ export async function downloadAndInstallApk(
   onProgress(100);
   onReadyToInstall?.();
 
-  await openDownloadedApk(written.uri);
-  return { filePath: written.uri, installerOpened: true };
+  try {
+    await openDownloadedApk(written.uri);
+    return { filePath: written.uri, installerOpened: true };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "";
+    if (msg.includes("فعّل إذن")) return { filePath: written.uri, installerOpened: false };
+    throw e;
+  }
 }
 
 export async function openDownloadedApk(filePath: string): Promise<void> {
