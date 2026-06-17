@@ -504,40 +504,47 @@ function DMPage() {
 
   return (
     <main className="flex flex-col bg-background" style={{ height: "100dvh" }}>
-      {/* HEADER - MODIFIED: avatar, username, and status are now clickable */}
-      <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-primary/20 bg-primary text-primary-foreground px-3 py-3 shadow-sm" style={{ paddingTop: "calc(env(safe-area-inset-top) + 0.75rem)" }}>
-        <button onClick={() => navigate({ to: "/app/chats" })} aria-label="رجوع" className="p-1.5 rounded-full hover:bg-primary-foreground/10">
+      {/* HEADER — premium gradient, glass shine, clickable avatar/name */}
+      <header
+        className="sticky top-0 z-30 flex items-center gap-3 overflow-hidden border-b border-emerald-500/20 bg-gradient-to-l from-emerald-700 via-emerald-800 to-slate-900 px-3 py-3 text-white shadow-[0_10px_30px_-15px_rgba(16,185,129,0.6)]"
+        style={{ paddingTop: "calc(env(safe-area-inset-top) + 0.75rem)" }}
+      >
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,rgba(255,255,255,0.18),transparent_55%),radial-gradient(circle_at_90%_100%,rgba(16,185,129,0.25),transparent_60%)]" />
+        <button onClick={() => navigate({ to: "/app/chats" })} aria-label="رجوع" className="relative p-1.5 rounded-full hover:bg-white/10 active:scale-95 transition">
           <ArrowRight className="h-5 w-5 rtl:rotate-180" />
         </button>
-        
+
         {/* Clickable Avatar */}
-        <button 
+        <button
           onClick={goToProfile}
-          className="focus:outline-none"
+          className="relative focus:outline-none"
           aria-label="عرض البروفايل"
         >
           <StoryRing userId={other?.id} size="sm">
             {otherAvatarSource ? (
-              <img src={otherAvatarSource} alt="" className="h-10 w-10 rounded-full object-cover ring-2 ring-primary-foreground/30 transition-transform active:scale-95" />
+              <img src={otherAvatarSource} alt="" className="h-11 w-11 rounded-full object-cover ring-2 ring-white/40 shadow-lg transition-transform active:scale-95" />
             ) : (
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-foreground/20 font-bold transition-transform active:scale-95">
+              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white/15 ring-2 ring-white/30 font-bold transition-transform active:scale-95">
                 {(other?.username ?? "?").charAt(0).toUpperCase()}
               </div>
             )}
           </StoryRing>
+          {isFriend && otherOnline && (
+            <span className="absolute -bottom-0.5 -end-0.5 h-3 w-3 rounded-full bg-emerald-400 ring-2 ring-emerald-800 shadow" />
+          )}
         </button>
-        
+
         {/* Clickable Username and Status */}
-        <button 
+        <button
           onClick={goToProfile}
-          className="min-w-0 flex-1 text-left focus:outline-none"
+          className="relative min-w-0 flex-1 text-start focus:outline-none"
           aria-label="عرض البروفايل"
         >
-          <h1 className="truncate text-base font-bold leading-tight hover:underline">
+          <h1 className="truncate text-base font-extrabold leading-tight tracking-tight">
             {other?.username ?? "…"}
           </h1>
           {presenceLabel && (
-            <div className="flex items-center gap-1.5 text-[11px] opacity-90">
+            <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-white/85">
               {isFriend && (otherOnline || otherActivity !== "idle") && (
                 <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-300 animate-pulse" />
               )}
