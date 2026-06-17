@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as RecoveryRouteImport } from './routes/recovery'
@@ -45,6 +46,11 @@ import { Route as AppAdminCommunityRouteImport } from './routes/app/admin.commun
 import { Route as ApiPublicSearchTrackRouteImport } from './routes/api/public/search-track'
 import { Route as ApiPublicOtaPublishRouteImport } from './routes/api/public/ota-publish'
 
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
@@ -229,6 +235,7 @@ export interface FileRoutesByFullPath {
   '/recovery': typeof RecoveryRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/app/account': typeof AppAccountRoute
   '/app/achievements': typeof AppAchievementsRoute
   '/app/activity': typeof AppActivityRoute
@@ -265,6 +272,7 @@ export interface FileRoutesByTo {
   '/recovery': typeof RecoveryRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/app/account': typeof AppAccountRoute
   '/app/achievements': typeof AppAchievementsRoute
   '/app/activity': typeof AppActivityRoute
@@ -302,6 +310,7 @@ export interface FileRoutesById {
   '/recovery': typeof RecoveryRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/app/account': typeof AppAccountRoute
   '/app/achievements': typeof AppAchievementsRoute
   '/app/activity': typeof AppActivityRoute
@@ -341,6 +350,7 @@ export interface FileRouteTypes {
     | '/recovery'
     | '/register'
     | '/reset-password'
+    | '/sitemap.xml'
     | '/app/account'
     | '/app/achievements'
     | '/app/activity'
@@ -377,6 +387,7 @@ export interface FileRouteTypes {
     | '/recovery'
     | '/register'
     | '/reset-password'
+    | '/sitemap.xml'
     | '/app/account'
     | '/app/achievements'
     | '/app/activity'
@@ -413,6 +424,7 @@ export interface FileRouteTypes {
     | '/recovery'
     | '/register'
     | '/reset-password'
+    | '/sitemap.xml'
     | '/app/account'
     | '/app/achievements'
     | '/app/activity'
@@ -451,6 +463,7 @@ export interface RootRouteChildren {
   RecoveryRoute: typeof RecoveryRoute
   RegisterRoute: typeof RegisterRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   ProfileIdRoute: typeof ProfileIdRoute
   ApiPublicOtaPublishRoute: typeof ApiPublicOtaPublishRoute
   ApiPublicSearchTrackRoute: typeof ApiPublicSearchTrackRoute
@@ -458,6 +471,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reset-password': {
       id: '/reset-password'
       path: '/reset-password'
@@ -782,6 +802,7 @@ const rootRouteChildren: RootRouteChildren = {
   RecoveryRoute: RecoveryRoute,
   RegisterRoute: RegisterRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   ProfileIdRoute: ProfileIdRoute,
   ApiPublicOtaPublishRoute: ApiPublicOtaPublishRoute,
   ApiPublicSearchTrackRoute: ApiPublicSearchTrackRoute,
@@ -789,13 +810,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

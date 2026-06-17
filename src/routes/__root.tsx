@@ -85,6 +85,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:title", content: "Giant — دردشة مجتمعات وغرف" },
       { property: "og:description", content: "Giant: غرف دردشة مجتمعات ومحادثات خاصة فورية." },
       { property: "og:type", content: "website" },
+      { name: "google-site-verification", content: "2vf6z8pDOFFfBBBw-WbJK9a9O33Fst_FFTnhInQOsuQ" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
