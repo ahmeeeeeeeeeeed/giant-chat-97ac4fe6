@@ -149,13 +149,16 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <AuthProvider>
-          <LanguageSync />
-          <PageTransition>
-            <Outlet />
-          </PageTransition>
-          <UpdateGate />
-          <Toaster position="top-center" richColors />
-          <ExitConfirmDialog />
+          <CallProvider>
+            <LanguageSync />
+            <PageTransition>
+              <Outlet />
+            </PageTransition>
+            <UpdateGate />
+            <Toaster position="top-center" richColors />
+            <ExitConfirmDialog />
+            <CallOverlay />
+          </CallProvider>
         </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>
