@@ -2,6 +2,7 @@ package app.lovable.giant;
 
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.provider.Settings;
@@ -15,6 +16,7 @@ import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
 import java.io.File;
+import java.util.List;
 
 @CapacitorPlugin(name = "ApkInstaller")
 public class ApkInstallerPlugin extends Plugin {
@@ -61,6 +63,10 @@ public class ApkInstallerPlugin extends Plugin {
                         ? Uri.parse(filePath).getPath()
                         : filePath;
                 File apkFile = new File(normalizedPath);
+                if (!apkFile.exists() || apkFile.length() == 0) {
+                    call.reject("ملف التحديث غير موجود، أعد تنزيل التحديث مرة واحدة");
+                    return;
+                }
                 apkUri = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N
                         ? FileProvider.getUriForFile(
                                 getContext(),
@@ -77,16 +83,27 @@ public class ApkInstallerPlugin extends Plugin {
             );
             intent.setDataAndType(apkUri, contentType);
             intent.putExtra(Intent.EXTRA_NOT_UNKNOWN_SOURCE, true);
+            intent.putExtra(Intent.EXTRA_RETURN_RESULT, true);
+            intent.putExtra(Intent.EXTRA_INSTALLER_PACKAGE_NAME, getContext().getPackageName());
             intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
             PackageManager pm = getContext().getPackageManager();
-            if (intent.resolveActivity(pm) == null) {
+            List<ResolveInfo> installers = pm.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY);
+            if (installers == null || installers.isEmpty()) {
                 call.reject("تعذر العثور على مثبت Android");
                 return;
             }
+            for (ResolveInfo installer : installers) {
+                if (installer.activityInfo != null && installer.activityInfo.packageName != null) {
+                    getContext().grantUriPermission(
+                            installer.activityInfo.packageName,
+                            apkUri,
+                            Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    );
+                }
+            }
 
-            getContext().startActivity(intent);
+            getActivity().startActivity(intent);
             JSObject result = new JSObject();
             result.put("started", true);
             call.resolve(result);
