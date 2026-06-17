@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -191,6 +191,7 @@ function PublicWebsite() {
             <a href="#features" className="hover:text-foreground">المميزات</a>
             <a href="#gallery" className="hover:text-foreground">داخل التطبيق</a>
             <a href="#download" className="hover:text-foreground">التحميل</a>
+            <Link to="/privacy" className="hover:text-foreground">الخصوصية</Link>
           </nav>
           <DownloadButton />
         </div>
@@ -360,6 +361,9 @@ function PublicWebsite() {
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-emerald-400 text-xs font-black text-primary-foreground">G</div>
             <span className="font-bold text-foreground">Giant</span>
           </div>
+          <nav className="flex items-center gap-5">
+            <Link to="/privacy" className="hover:text-foreground">سياسة الخصوصية</Link>
+          </nav>
           <span>© {new Date().getFullYear()} Giant. جميع الحقوق محفوظة.</span>
         </div>
       </footer>
