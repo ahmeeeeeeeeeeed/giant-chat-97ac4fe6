@@ -65,5 +65,23 @@ for (const f of FEATURES) {
   }
 }
 
+// Android 11+ package visibility: without a <queries> block the APK installer
+// intent resolves to nothing and FileOpener silently fails to launch.
+const QUERIES_BLOCK = `    <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:mimeType="application/vnd.android.package-archive" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.INSTALL_PACKAGE" />
+            <data android:mimeType="application/vnd.android.package-archive" />
+        </intent>
+    </queries>
+`;
+if (!xml.includes("<queries>")) {
+  xml = xml.replace(/<\/manifest>/, QUERIES_BLOCK + "</manifest>");
+  added++;
+}
+
 writeFileSync(manifestPath, xml);
 console.log(`[patch-android] AndroidManifest.xml patched (+${added} entries).`);
