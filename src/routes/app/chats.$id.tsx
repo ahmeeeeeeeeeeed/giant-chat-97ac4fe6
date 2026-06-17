@@ -17,6 +17,7 @@ import { getOnline } from "@/lib/use-online";
 import { ensureMediaLibraryPermission, ensureMicPermission } from "@/lib/app-permissions";
 import { useCachedMediaSource } from "@/lib/use-cached-media";
 import { StoryRing } from "@/components/StoryRing";
+import { useCalls } from "@/lib/use-calls";
 
 export const Route = createFileRoute("/app/chats/$id")({
   component: DMPage,
