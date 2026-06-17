@@ -84,6 +84,7 @@ function DMPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { startCall: startCallFn } = useCalls();
   const [messages, setMessages] = useState<DM[]>([]);
   const [other, setOther] = useState<Profile | null>(null);
   const [text, setText] = useState("");
