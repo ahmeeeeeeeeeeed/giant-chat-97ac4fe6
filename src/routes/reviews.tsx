@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, Star, Loader2, Send, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -260,5 +260,3 @@ function StarRow({ value, size = 16 }: { value: number; size?: number }) {
   );
 }
 
-// keep navigate import used (avoids tree-shake warning on some configs)
-void useNavigate;

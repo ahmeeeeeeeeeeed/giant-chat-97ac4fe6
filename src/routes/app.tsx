@@ -47,7 +47,12 @@ function AppLayout() {
 
 
   useEffect(() => {
-    if (!loading && !session) navigate({ to: "/" });
+    if (loading) return;
+    if (!session) { navigate({ to: "/" }); return; }
+    // Site accounts (created via /site/*) must not access the app.
+    const u = session.user;
+    const isSite = u?.user_metadata?.kind === "site" || (u?.email && !u.email.endsWith("@giant.app"));
+    if (isSite) navigate({ to: "/site/account" as any });
   }, [loading, session, navigate]);
 
   useEffect(() => {

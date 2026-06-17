@@ -11,6 +11,8 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WatchRouteImport } from './routes/watch'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as SiteRouteImport } from './routes/site'
+import { Route as ReviewsRouteImport } from './routes/reviews'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as RecoveryRouteImport } from './routes/recovery'
@@ -20,6 +22,9 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app/index'
+import { Route as SiteRegisterRouteImport } from './routes/site/register'
+import { Route as SiteLoginRouteImport } from './routes/site/login'
+import { Route as SiteAccountRouteImport } from './routes/site/account'
 import { Route as ProfileIdRouteImport } from './routes/profile.$id'
 import { Route as AppStoriesRouteImport } from './routes/app/stories'
 import { Route as AppStoreRouteImport } from './routes/app/store'
@@ -56,6 +61,16 @@ const WatchRoute = WatchRouteImport.update({
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SiteRoute = SiteRouteImport.update({
+  id: '/site',
+  path: '/site',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReviewsRoute = ReviewsRouteImport.update({
+  id: '/reviews',
+  path: '/reviews',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -102,6 +117,21 @@ const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AppRoute,
+} as any)
+const SiteRegisterRoute = SiteRegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteLoginRoute = SiteLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteAccountRoute = SiteAccountRouteImport.update({
+  id: '/account',
+  path: '/account',
+  getParentRoute: () => SiteRoute,
 } as any)
 const ProfileIdRoute = ProfileIdRouteImport.update({
   id: '/profile/$id',
@@ -248,6 +278,8 @@ export interface FileRoutesByFullPath {
   '/recovery': typeof RecoveryRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/reviews': typeof ReviewsRoute
+  '/site': typeof SiteRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/watch': typeof WatchRoute
   '/app/account': typeof AppAccountRoute
@@ -265,6 +297,9 @@ export interface FileRoutesByFullPath {
   '/app/store': typeof AppStoreRoute
   '/app/stories': typeof AppStoriesRoute
   '/profile/$id': typeof ProfileIdRoute
+  '/site/account': typeof SiteAccountRoute
+  '/site/login': typeof SiteLoginRoute
+  '/site/register': typeof SiteRegisterRoute
   '/app/': typeof AppIndexRoute
   '/api/public/ota-publish': typeof ApiPublicOtaPublishRoute
   '/api/public/search-track': typeof ApiPublicSearchTrackRoute
@@ -287,6 +322,8 @@ export interface FileRoutesByTo {
   '/recovery': typeof RecoveryRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/reviews': typeof ReviewsRoute
+  '/site': typeof SiteRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/watch': typeof WatchRoute
   '/app/account': typeof AppAccountRoute
@@ -303,6 +340,9 @@ export interface FileRoutesByTo {
   '/app/store': typeof AppStoreRoute
   '/app/stories': typeof AppStoriesRoute
   '/profile/$id': typeof ProfileIdRoute
+  '/site/account': typeof SiteAccountRoute
+  '/site/login': typeof SiteLoginRoute
+  '/site/register': typeof SiteRegisterRoute
   '/app': typeof AppIndexRoute
   '/api/public/ota-publish': typeof ApiPublicOtaPublishRoute
   '/api/public/search-track': typeof ApiPublicSearchTrackRoute
@@ -327,6 +367,8 @@ export interface FileRoutesById {
   '/recovery': typeof RecoveryRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/reviews': typeof ReviewsRoute
+  '/site': typeof SiteRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/watch': typeof WatchRoute
   '/app/account': typeof AppAccountRoute
@@ -344,6 +386,9 @@ export interface FileRoutesById {
   '/app/store': typeof AppStoreRoute
   '/app/stories': typeof AppStoriesRoute
   '/profile/$id': typeof ProfileIdRoute
+  '/site/account': typeof SiteAccountRoute
+  '/site/login': typeof SiteLoginRoute
+  '/site/register': typeof SiteRegisterRoute
   '/app/': typeof AppIndexRoute
   '/api/public/ota-publish': typeof ApiPublicOtaPublishRoute
   '/api/public/search-track': typeof ApiPublicSearchTrackRoute
@@ -369,6 +414,8 @@ export interface FileRouteTypes {
     | '/recovery'
     | '/register'
     | '/reset-password'
+    | '/reviews'
+    | '/site'
     | '/sitemap.xml'
     | '/watch'
     | '/app/account'
@@ -386,6 +433,9 @@ export interface FileRouteTypes {
     | '/app/store'
     | '/app/stories'
     | '/profile/$id'
+    | '/site/account'
+    | '/site/login'
+    | '/site/register'
     | '/app/'
     | '/api/public/ota-publish'
     | '/api/public/search-track'
@@ -408,6 +458,8 @@ export interface FileRouteTypes {
     | '/recovery'
     | '/register'
     | '/reset-password'
+    | '/reviews'
+    | '/site'
     | '/sitemap.xml'
     | '/watch'
     | '/app/account'
@@ -424,6 +476,9 @@ export interface FileRouteTypes {
     | '/app/store'
     | '/app/stories'
     | '/profile/$id'
+    | '/site/account'
+    | '/site/login'
+    | '/site/register'
     | '/app'
     | '/api/public/ota-publish'
     | '/api/public/search-track'
@@ -447,6 +502,8 @@ export interface FileRouteTypes {
     | '/recovery'
     | '/register'
     | '/reset-password'
+    | '/reviews'
+    | '/site'
     | '/sitemap.xml'
     | '/watch'
     | '/app/account'
@@ -464,6 +521,9 @@ export interface FileRouteTypes {
     | '/app/store'
     | '/app/stories'
     | '/profile/$id'
+    | '/site/account'
+    | '/site/login'
+    | '/site/register'
     | '/app/'
     | '/api/public/ota-publish'
     | '/api/public/search-track'
@@ -488,6 +548,8 @@ export interface RootRouteChildren {
   RecoveryRoute: typeof RecoveryRoute
   RegisterRoute: typeof RegisterRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  ReviewsRoute: typeof ReviewsRoute
+  SiteRoute: typeof SiteRouteWithChildren
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   WatchRoute: typeof WatchRoute
   ProfileIdRoute: typeof ProfileIdRoute
@@ -509,6 +571,20 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/site': {
+      id: '/site'
+      path: '/site'
+      fullPath: '/site'
+      preLoaderRoute: typeof SiteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reviews': {
+      id: '/reviews'
+      path: '/reviews'
+      fullPath: '/reviews'
+      preLoaderRoute: typeof ReviewsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reset-password': {
@@ -573,6 +649,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/'
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/site/register': {
+      id: '/site/register'
+      path: '/register'
+      fullPath: '/site/register'
+      preLoaderRoute: typeof SiteRegisterRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/site/login': {
+      id: '/site/login'
+      path: '/login'
+      fullPath: '/site/login'
+      preLoaderRoute: typeof SiteLoginRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/site/account': {
+      id: '/site/account'
+      path: '/account'
+      fullPath: '/site/account'
+      preLoaderRoute: typeof SiteAccountRouteImport
+      parentRoute: typeof SiteRoute
     }
     '/profile/$id': {
       id: '/profile/$id'
@@ -834,6 +931,20 @@ const AppRouteChildren: AppRouteChildren = {
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
+interface SiteRouteChildren {
+  SiteAccountRoute: typeof SiteAccountRoute
+  SiteLoginRoute: typeof SiteLoginRoute
+  SiteRegisterRoute: typeof SiteRegisterRoute
+}
+
+const SiteRouteChildren: SiteRouteChildren = {
+  SiteAccountRoute: SiteAccountRoute,
+  SiteLoginRoute: SiteLoginRoute,
+  SiteRegisterRoute: SiteRegisterRoute,
+}
+
+const SiteRouteWithChildren = SiteRoute._addFileChildren(SiteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
@@ -843,6 +954,8 @@ const rootRouteChildren: RootRouteChildren = {
   RecoveryRoute: RecoveryRoute,
   RegisterRoute: RegisterRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  ReviewsRoute: ReviewsRoute,
+  SiteRoute: SiteRouteWithChildren,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   WatchRoute: WatchRoute,
   ProfileIdRoute: ProfileIdRoute,
