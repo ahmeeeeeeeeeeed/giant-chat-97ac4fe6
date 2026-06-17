@@ -60,10 +60,20 @@ jobs:
       - name: Install deps
         run: bun install --frozen-lockfile
 
-      - name: Show app version (frozen, from package.json)
+      - name: Auto-bump app version (match triggering APK build)
+        run: node scripts/bump-version.mjs patch
+        env:
+          # Use the run number of the triggering Build-APK workflow so the OTA
+          # bundle version matches the APK version exactly. Falls back to this
+          # workflow's run number for manual dispatches.
+          GITHUB_RUN_NUMBER: ${{ github.event.workflow_run.run_number || github.run_number }}
+
+
+      - name: Show app version
         run: |
           VERSION=$(node -p "require('./package.json').version")
-          echo "📌 Building OTA bundle for frozen version: $VERSION"
+          echo "📌 Building OTA bundle for version: $VERSION"
+
 
 
 

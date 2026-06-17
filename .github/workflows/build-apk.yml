@@ -37,10 +37,16 @@ jobs:
       - name: Install npm dependencies
         run: npm install --legacy-peer-deps
 
-      - name: Show app version (frozen, from package.json)
+      - name: Auto-bump app version from CI run number
+        run: node scripts/bump-version.mjs patch
+        env:
+          GITHUB_RUN_NUMBER: ${{ github.run_number }}
+
+      - name: Show app version
         run: |
           VERSION=$(node -p "require('./package.json').version")
-          echo "📌 Building with frozen version: $VERSION"
+          echo "📌 Building version: $VERSION"
+
 
 
 
@@ -69,8 +75,12 @@ jobs:
       - name: Patch AndroidManifest permissions
         run: node scripts/patch-android-permissions.mjs
 
+      - name: Patch Android launcher icon (custom Giant icon)
+        run: node scripts/patch-android-icon.mjs
+
       - name: Patch Android version (code/name)
         run: node scripts/patch-android-version.mjs
+
 
       - name: Confirm bundled media is inside APK assets
         run: |
