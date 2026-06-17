@@ -22,6 +22,9 @@ const INSTALLED_CODE_KEY = "giant.update.installed.code";
 const NATIVE_VERSION_KEY = "giant.update.native.v";
 const NATIVE_CODE_KEY = "giant.update.native.code";
 const WEB_BUNDLE_VERSION_KEY = "web_bundle_version";
+const DOWNLOADED_APK_PATH_KEY = "giant.update.apk.path";
+const DOWNLOADED_APK_URL_KEY = "giant.update.apk.url";
+const DOWNLOADED_APK_AT_KEY = "giant.update.apk.at";
 
 function getSafeVersionCode(version?: string | null): number {
   if (!version || version === "builtin") return 0;
@@ -101,6 +104,34 @@ export type ApkInstallLaunch = {
   filePath: string;
   installerOpened: boolean;
 };
+
+function getErrorText(error: unknown): string {
+  return error instanceof Error ? error.message : String(error || "");
+}
+
+function rememberDownloadedApk(filePath: string, url: string): void {
+  try {
+    localStorage.setItem(DOWNLOADED_APK_PATH_KEY, filePath);
+    localStorage.setItem(DOWNLOADED_APK_URL_KEY, url);
+    localStorage.setItem(DOWNLOADED_APK_AT_KEY, String(Date.now()));
+  } catch { /* ignore */ }
+}
+
+export function getRememberedDownloadedApk(url: string): string | null {
+  try {
+    const savedUrl = localStorage.getItem(DOWNLOADED_APK_URL_KEY);
+    const savedPath = localStorage.getItem(DOWNLOADED_APK_PATH_KEY);
+    return savedUrl === url && savedPath ? savedPath : null;
+  } catch { return null; }
+}
+
+export function clearRememberedDownloadedApk(): void {
+  try {
+    localStorage.removeItem(DOWNLOADED_APK_PATH_KEY);
+    localStorage.removeItem(DOWNLOADED_APK_URL_KEY);
+    localStorage.removeItem(DOWNLOADED_APK_AT_KEY);
+  } catch { /* ignore */ }
+}
 
 async function getNativeApkInstaller(): Promise<NativeApkInstaller | null> {
   if (!(await isNativeAndroid())) return null;
@@ -272,12 +303,13 @@ export async function downloadAndInstallApk(
   });
   onProgress(100);
   onReadyToInstall?.();
+  rememberDownloadedApk(written.uri, url);
 
   try {
     await openDownloadedApk(written.uri);
     return { filePath: written.uri, installerOpened: true };
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "";
+    const msg = getErrorText(e);
     if (msg.includes("فعّل إذن")) return { filePath: written.uri, installerOpened: false };
     throw e;
   }
@@ -297,8 +329,9 @@ export async function openDownloadedApk(filePath: string): Promise<void> {
       await nativeInstaller.installApk({ filePath, contentType });
       return;
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "";
+      const msg = getErrorText(e);
       if (msg.includes("فعّل إذن")) throw e;
+      if (msg.includes("ملف التحديث غير موجود")) throw e;
       // Fall through to the community opener for older APKs that do not yet
       // contain the native installer bridge.
     }
