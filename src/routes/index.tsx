@@ -191,6 +191,7 @@ function PublicWebsite() {
             <a href="#features" className="hover:text-foreground">المميزات</a>
             <a href="#gallery" className="hover:text-foreground">داخل التطبيق</a>
             <a href="#download" className="hover:text-foreground">التحميل</a>
+            <Link to="/privacy" className="hover:text-foreground">الخصوصية</Link>
           </nav>
           <DownloadButton />
         </div>
