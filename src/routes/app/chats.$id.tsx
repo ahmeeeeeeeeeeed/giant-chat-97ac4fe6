@@ -604,10 +604,22 @@ function DMPage() {
         <div className="bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 text-center text-xs py-2 px-3">لقد قمت بحظر هذا المستخدم</div>
       )}
 
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-4">
+      <div
+        ref={scrollRef}
+        className="relative flex-1 overflow-y-auto px-3 py-4"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle at 20% 10%, rgba(16,185,129,0.06), transparent 45%), radial-gradient(circle at 85% 90%, rgba(6,182,212,0.05), transparent 50%)",
+        }}
+      >
         {messages.length === 0 ? (
           <div className="flex h-full items-center justify-center">
-            <p className="text-sm text-muted-foreground">ابدأ المحادثة بإرسال رسالة 👋</p>
+            <div className="flex flex-col items-center gap-3 text-center">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500/10 ring-1 ring-emerald-500/20 text-emerald-400">
+                <Send className="h-6 w-6 rtl:-scale-x-100" />
+              </div>
+              <p className="text-sm text-muted-foreground">ابدأ المحادثة بإرسال رسالة 👋</p>
+            </div>
           </div>
         ) : (
           <ul className="flex flex-col gap-2.5">
