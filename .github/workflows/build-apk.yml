@@ -95,15 +95,20 @@ jobs:
           KEYSTORE=$HOME/giant-release.keystore
 
           # ──────────────────────────────────────────────────────────────
-          # One-time bootstrap: if the repo variable GENERATE_NEW_KEYSTORE=1
-          # (Settings → Variables → Actions), create a fresh valid keystore
-          # inside the runner and print its Base64 + passwords so you can
-          # paste them into Secrets. DELETE the variable after copying,
-          # otherwise every build creates a different key and Android will
-          # refuse to install updates over the previous version.
+          # One-time bootstrap: if signing secrets are missing (or the repo
+          # variable GENERATE_NEW_KEYSTORE=1 is set), create a fresh valid
+          # keystore inside the runner and print its Base64 + passwords so
+          # they can be copied into GitHub Secrets. Once copied, future builds
+          # reuse the same key and Android updates install normally.
           # ──────────────────────────────────────────────────────────────
-          if [ "${GENERATE_NEW_KEYSTORE:-0}" = "1" ]; then
-            echo "⚠️  GENERATE_NEW_KEYSTORE=1 → generating a fresh keystore for bootstrap."
+          BOOTSTRAPPED_KEYSTORE=0
+          if [ "${GENERATE_NEW_KEYSTORE:-0}" = "1" ] || [ -z "${ANDROID_KEYSTORE_BASE64:-}" ] || [ -z "${ANDROID_KEYSTORE_PASSWORD:-}" ] || [ -z "${ANDROID_KEY_ALIAS:-}" ]; then
+            BOOTSTRAPPED_KEYSTORE=1
+            if [ "${GENERATE_NEW_KEYSTORE:-0}" = "1" ]; then
+              echo "⚠️  GENERATE_NEW_KEYSTORE=1 → generating a fresh keystore for bootstrap."
+            else
+              echo "⚠️  Android signing secrets are missing → generating a fresh keystore so this build can continue."
+            fi
             STOREPASS="giant-$(openssl rand -hex 8)"
             KEYPASS="$STOREPASS"
             ALIAS="giant"
@@ -126,12 +131,6 @@ jobs:
             echo "-------------- END BASE64 --------------"
             echo "════════════════════════════════════════════════════════════"
           else
-            if [ -z "${ANDROID_KEYSTORE_BASE64:-}" ] || [ -z "${ANDROID_KEYSTORE_PASSWORD:-}" ] || [ -z "${ANDROID_KEY_ALIAS:-}" ]; then
-              echo "❌ Missing Android signing secrets."
-              echo "   Set ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD,"
-              echo "   or set repository variable GENERATE_NEW_KEYSTORE=1 to bootstrap a new keystore."
-              exit 1
-            fi
             printf '%s' "$ANDROID_KEYSTORE_BASE64" | tr -d '\r\n\t ' | base64 -d > "$KEYSTORE"
             STOREPASS="$ANDROID_KEYSTORE_PASSWORD"
             KEYPASS="${ANDROID_KEY_PASSWORD:-$ANDROID_KEYSTORE_PASSWORD}"
@@ -212,11 +211,11 @@ jobs:
           "$APKSIGNER" verify "$SIGNED"
           echo "✅ Signed APK ready: $SIGNED ($(du -h "$SIGNED" | cut -f1))"
 
-          if [ "${GENERATE_NEW_KEYSTORE:-0}" = "1" ]; then
+          if [ "$BOOTSTRAPPED_KEYSTORE" = "1" ]; then
             echo ""
             echo "⚠️  REMINDER: copy the Base64 + passwords above into GitHub Secrets,"
-            echo "    then DELETE the repository variable GENERATE_NEW_KEYSTORE."
-            echo "    Otherwise every build will use a different key and updates will fail."
+            echo "    and keep GENERATE_NEW_KEYSTORE unset/disabled after that."
+            echo "    Otherwise future builds may use a different key and updates will fail."
           fi
 
 
