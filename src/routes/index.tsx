@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   LogIn, MessageCircle, Users, Music, Sparkles, Download, Shield, Zap,
   CheckCircle2, Gift, Trophy, Bell, Heart, Star, Globe, Lock,
+  ArrowRight, Loader2,
 } from "lucide-react";
 import PermissionsGate, { hasCompletedPermissionsGate } from "@/components/PermissionsGate";
 import siteChat from "@/assets/site-chat.jpg";
@@ -107,6 +108,98 @@ function NativeWelcome() {
    - Single CTA: download the latest APK directly.
    - Version history & changelogs are NOT shown here; they live inside the APK.
    ============================================================ */
+
+type Review = {
+  id: string;
+  rating: number;
+  comment: string | null;
+  display_name: string | null;
+  is_anonymous: boolean;
+  created_at: string;
+};
+
+function StarRow({ value, size = 14 }: { value: number; size?: number }) {
+  return (
+    <div className="flex items-center gap-0.5" dir="ltr">
+      {[1, 2, 3, 4, 5].map((n) => (
+        <Star
+          key={n}
+          style={{ width: size, height: size }}
+          className={n <= value ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/30"}
+        />
+      ))}
+    </div>
+  );
+}
+
+function HomeReviewsPreview() {
+  const [reviews, setReviews] = useState<Review[] | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from("app_reviews" as never)
+        .select("id,rating,comment,display_name,is_anonymous,created_at")
+        .order("created_at", { ascending: false })
+        .limit(6);
+      if (!cancelled) {
+        setReviews((data as unknown as Review[]) ?? []);
+        setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  if (loading) {
+    return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
+  }
+
+  if (!reviews || reviews.length === 0) {
+    return (
+      <div className="rounded-3xl border border-dashed border-border bg-card/50 py-10 text-center text-muted-foreground">
+        لا توجد تقييمات بعد — <Link to="/reviews" className="font-bold text-primary underline">كن أول من يقيّم</Link>
+      </div>
+    );
+  }
+
+  const avg = reviews.reduce((s, r) => s + r.rating, 0) / reviews.length;
+
+  return (
+    <>
+      <div className="mb-6 flex items-center gap-4 rounded-2xl border border-border bg-card/60 p-4">
+        <div className="text-4xl font-black">{avg.toFixed(1)}</div>
+        <div>
+          <StarRow value={Math.round(avg)} size={18} />
+          <div className="mt-0.5 text-xs text-muted-foreground">بناءً على {reviews.length} تقييم</div>
+        </div>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {reviews.map((r) => {
+          const name = r.is_anonymous ? "مجهول" : (r.display_name || "مستخدم");
+          const initial = name.charAt(0).toUpperCase();
+          return (
+            <div key={r.id} className="rounded-2xl border border-border bg-card p-5 shadow-sm transition hover:border-primary/40 hover:shadow-md">
+              <div className="flex items-center gap-2.5">
+                <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sm font-black text-white ${r.is_anonymous ? "bg-gradient-to-br from-slate-500 to-slate-700" : "bg-gradient-to-br from-primary to-emerald-500"}`}>
+                  {r.is_anonymous ? "؟" : initial}
+                </div>
+                <div className="min-w-0">
+                  <div className="truncate text-sm font-bold">{name}</div>
+                  <StarRow value={r.rating} size={12} />
+                </div>
+              </div>
+              {r.comment && (
+                <p className="mt-3 text-sm leading-relaxed text-foreground/80 line-clamp-3">{r.comment}</p>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </>
+  );
+}
 
 function PublicWebsite() {
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
@@ -261,6 +354,22 @@ function PublicWebsite() {
               <span className="ms-1 text-foreground">4.9 / 5</span>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Reviews preview */}
+      <section id="reviews" className="border-b border-border/60 bg-card/20">
+        <div className="mx-auto max-w-6xl px-5 py-16">
+          <div className="mb-10 flex flex-col items-center gap-3 text-center sm:flex-row sm:justify-between sm:text-start">
+            <div>
+              <span className="mb-2 inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">تقييمات المستخدمين</span>
+              <h2 className="text-2xl font-black md:text-3xl">ماذا يقول مستخدمو Giant؟</h2>
+            </div>
+            <Link to="/reviews" className="inline-flex items-center gap-1.5 rounded-2xl border border-border bg-card px-5 py-2.5 text-sm font-bold transition hover:bg-accent">
+              كل التقييمات <ArrowRight className="h-4 w-4 rtl:rotate-180" />
+            </Link>
+          </div>
+          <HomeReviewsPreview />
         </div>
       </section>
 
