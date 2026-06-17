@@ -343,7 +343,7 @@ export function CallProvider({ children }: { children: ReactNode }) {
         { event: "INSERT", schema: "public", table: "calls", filter: `callee_id=eq.${user.id}` },
         async (p) => {
           const row = p.new as { id: string; caller_id: string; call_type: CallType; status: string };
-          if (state.status !== "idle" && state.status !== "ended") {
+          if (statusRef.current !== "idle" && statusRef.current !== "ended") {
             // already busy
             await supabase.from("call_signals").insert({
               call_id: row.id, from_user: user.id, to_user: row.caller_id,
