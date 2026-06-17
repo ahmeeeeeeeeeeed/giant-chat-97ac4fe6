@@ -94,6 +94,7 @@ export function UpdateGate() {
   const needsFullApk = shouldInstallFullApk(latest);
 
   const handleUpdate = async () => {
+    if (needsFullApk && downloadedApkPath) return void handleOpenInstaller();
     setBusy(true);
     setError(null);
     setProgress(0);
