@@ -60,10 +60,14 @@ jobs:
       - name: Install deps
         run: bun install --frozen-lockfile
 
-      - name: Auto-bump app version from CI run number
+      - name: Auto-bump app version (match triggering APK build)
         run: node scripts/bump-version.mjs patch
         env:
-          GITHUB_RUN_NUMBER: ${{ github.run_number }}
+          # Use the run number of the triggering Build-APK workflow so the OTA
+          # bundle version matches the APK version exactly. Falls back to this
+          # workflow's run number for manual dispatches.
+          GITHUB_RUN_NUMBER: ${{ github.event.workflow_run.run_number || github.run_number }}
+
 
       - name: Show app version
         run: |
