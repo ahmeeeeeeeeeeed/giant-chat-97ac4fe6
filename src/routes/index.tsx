@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   LogIn, MessageCircle, Users, Music, Sparkles, Download, Shield, Zap,
   CheckCircle2, Gift, Trophy, Bell, Heart, Star, Globe, Lock,
+  ArrowRight, Loader2,
 } from "lucide-react";
 import PermissionsGate, { hasCompletedPermissionsGate } from "@/components/PermissionsGate";
 import siteChat from "@/assets/site-chat.jpg";
