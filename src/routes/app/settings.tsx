@@ -16,7 +16,7 @@ import {
 import { SUPPORTED_LANGUAGES } from "@/lib/i18n";
 import { findAdminId } from "@/lib/find-admin";
 import { APP_VERSION, getVersionCode } from "@/lib/version";
-import { isNativeAndroid, downloadAndInstallApk, applyWebBundleUpdate, shouldShowUpdate, shouldInstallFullApk, getDisplayInstalledVersion, getDisplayInstalledCode, notifyNativeUpdateReady, syncNativeInstalledVersion } from "@/lib/app-update";
+import { isNativeAndroid, downloadAndInstallApk, applyWebBundleUpdate, shouldShowUpdate, shouldInstallFullApk, getDisplayInstalledVersion, getDisplayInstalledCode, notifyNativeUpdateReady, syncNativeInstalledVersion, getRememberedDownloadedApk, openDownloadedApk } from "@/lib/app-update";
 import { cacheGet, cacheSet, cacheDel } from "@/lib/offline-cache";
 import { getOnline, useOnline } from "@/lib/use-online";
 import { toast } from "sonner";
@@ -62,6 +62,7 @@ function SettingsPage() {
   const [checkingUpdate, setCheckingUpdate] = useState(false);
   const [installing, setInstalling] = useState(false);
   const [installProgress, setInstallProgress] = useState(0);
+  const [downloadedApkPath, setDownloadedApkPath] = useState<string | null>(null);
   const online = useOnline();
 
   const doLogout = async () => {
@@ -130,10 +131,13 @@ function SettingsPage() {
         .limit(1)
         .maybeSingle();
       if (data && shouldShowUpdate(data)) {
-        setLatest(data as LatestUpdate);
+        const update = data as NonNullable<LatestUpdate>;
+        setLatest(update);
+        setDownloadedApkPath(update.file_url ? getRememberedDownloadedApk(update.file_url) : null);
         void cacheSet("settings:latestUpdate", data);
       } else {
         setLatest(null);
+        setDownloadedApkPath(null);
         void cacheDel("settings:latestUpdate");
       }
     } catch { /* offline */ }
@@ -154,10 +158,16 @@ function SettingsPage() {
           window.open(latest.file_url, "_blank");
           return;
         }
-        await downloadAndInstallApk(
+        if (downloadedApkPath) {
+          await openDownloadedApk(downloadedApkPath);
+          toast.success("تم فتح نافذة التثبيت");
+          return;
+        }
+        const result = await downloadAndInstallApk(
           latest.file_url,
           (p) => setInstallProgress(p),
         );
+        setDownloadedApkPath(result.filePath);
         return;
       }
       // Prefer OTA web bundle update — no full reinstall, just refresh the changed pieces.
@@ -177,6 +187,7 @@ function SettingsPage() {
         (p) => setInstallProgress(p),
       );
     } catch (e: any) {
+      if (String(e?.message || "").includes("ملف التحديث غير موجود")) setDownloadedApkPath(null);
       toast.error(e?.message || "فشل التحديث");
     } finally {
       setInstalling(false);
@@ -259,6 +270,7 @@ function SettingsPage() {
 
   const hasUpdate = latest && shouldShowUpdate(latest);
   const latestNeedsFullApk = latest ? shouldInstallFullApk(latest) : false;
+  const apkReadyToInstall = latestNeedsFullApk && Boolean(downloadedApkPath);
   const displayVersion = getDisplayInstalledVersion();
   const displayCode = getDisplayInstalledCode();
 
@@ -547,7 +559,7 @@ function SettingsPage() {
                   disabled={installing}
                   className="mt-1 h-11 w-full rounded-xl bg-emerald-500 text-white font-bold disabled:opacity-60 flex items-center justify-center gap-2"
                 >
-                  {installing ? <><Loader2 className="h-4 w-4 animate-spin" /> {installProgress}%</> : <><Download className="h-4 w-4" /> تحديث الآن</>}
+                  {installing ? <><Loader2 className="h-4 w-4 animate-spin" /> {installProgress}%</> : <><Download className="h-4 w-4" /> {apkReadyToInstall ? "فتح نافذة التثبيت" : "تحديث الآن"}</>}
                 </button>
               </div>
             )}

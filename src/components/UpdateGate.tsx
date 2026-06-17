@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { APP_VERSION } from "@/lib/version";
-import { applyWebBundleUpdate, downloadAndInstallApk, getDisplayInstalledVersion, isForceRequired, isNativeAndroid, markUpdateInstalled, notifyNativeUpdateReady, openDownloadedApk, shouldInstallFullApk, shouldShowUpdate, syncNativeInstalledVersion, type AppUpdateRow } from "@/lib/app-update";
+import { applyWebBundleUpdate, clearRememberedDownloadedApk, downloadAndInstallApk, getDisplayInstalledVersion, getRememberedDownloadedApk, isForceRequired, isNativeAndroid, markUpdateInstalled, notifyNativeUpdateReady, openDownloadedApk, shouldInstallFullApk, shouldShowUpdate, syncNativeInstalledVersion, type AppUpdateRow } from "@/lib/app-update";
 import { Download, X, AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -48,6 +48,13 @@ export function UpdateGate() {
         const row = data as AppUpdateRow;
         if (!shouldShowUpdate(row)) return;
         setLatest(row);
+        const savedApk = getRememberedDownloadedApk(row.file_url);
+        if (savedApk && shouldInstallFullApk(row)) {
+          setDownloadedApkPath(savedApk);
+          setDone(true);
+          setWaitingForInstall(false);
+          setProgress(100);
+        }
         const skipped = typeof window !== "undefined" ? localStorage.getItem(DISMISS_KEY) : null;
         if (skipped === row.version && !isForceRequired(row)) setDismissed(true);
       } catch {
@@ -66,6 +73,7 @@ export function UpdateGate() {
           await syncNativeInstalledVersion();
           setLatest((current) => {
             if (current && !shouldShowUpdate(current)) {
+              clearRememberedDownloadedApk();
               setDismissed(true);
               setDone(false);
               setBusy(false);
@@ -86,6 +94,7 @@ export function UpdateGate() {
   const needsFullApk = shouldInstallFullApk(latest);
 
   const handleUpdate = async () => {
+    if (needsFullApk && downloadedApkPath) return void handleOpenInstaller();
     setBusy(true);
     setError(null);
     setProgress(0);
@@ -144,6 +153,11 @@ export function UpdateGate() {
       setWaitingForInstall(true);
     } catch (e) {
       const message = errorMessage(e, "تعذر فتح المثبت");
+      if (message.includes("ملف التحديث غير موجود")) {
+        clearRememberedDownloadedApk();
+        setDownloadedApkPath(null);
+        setDone(false);
+      }
       setError(message);
       toast.error(message);
     } finally {
