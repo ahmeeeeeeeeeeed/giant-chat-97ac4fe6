@@ -91,6 +91,27 @@ export function getDisplayInstalledCode(): number {
   return Math.max(getVersionCode(displayVersion), getEffectiveInstalledCode());
 }
 
+type NativeApkInstaller = {
+  canInstallPackages: () => Promise<{ allowed: boolean }>;
+  openInstallPermissionSettings: () => Promise<void>;
+  installApk: (options: { filePath: string; contentType?: string }) => Promise<{ started: boolean }>;
+};
+
+export type ApkInstallLaunch = {
+  filePath: string;
+  installerOpened: boolean;
+};
+
+async function getNativeApkInstaller(): Promise<NativeApkInstaller | null> {
+  if (!(await isNativeAndroid())) return null;
+  try {
+    const { registerPlugin } = await import("@capacitor/core");
+    return registerPlugin<NativeApkInstaller>("ApkInstaller");
+  } catch {
+    return null;
+  }
+}
+
 export function markUpdateInstalled(version: string, versionCode = getVersionCode(version)): void {
   try {
     localStorage.setItem(INSTALLED_VERSION_KEY, version);
@@ -209,7 +230,7 @@ export async function downloadAndInstallApk(
   url: string,
   onProgress: (percent: number) => void,
   onReadyToInstall?: () => void,
-): Promise<void> {
+): Promise<ApkInstallLaunch> {
   const { Filesystem, Directory } = await import("@capacitor/filesystem");
   const filename = `giant-update-${Date.now()}.apk`;
 
@@ -252,17 +273,47 @@ export async function downloadAndInstallApk(
   onProgress(100);
   onReadyToInstall?.();
 
-  // Open the APK with the system installer
+  try {
+    await openDownloadedApk(written.uri);
+    return { filePath: written.uri, installerOpened: true };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "";
+    if (msg.includes("فعّل إذن")) return { filePath: written.uri, installerOpened: false };
+    throw e;
+  }
+}
+
+export async function openDownloadedApk(filePath: string): Promise<void> {
+  const contentType = "application/vnd.android.package-archive";
+  const nativeInstaller = await getNativeApkInstaller();
+
+  if (nativeInstaller) {
+    try {
+      const permission = await nativeInstaller.canInstallPackages();
+      if (!permission.allowed) {
+        await nativeInstaller.openInstallPermissionSettings();
+        throw new Error("فعّل إذن تثبيت التطبيقات من هذا المصدر، ثم ارجع واضغط فتح المثبت مرة أخرى");
+      }
+      await nativeInstaller.installApk({ filePath, contentType });
+      return;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "";
+      if (msg.includes("فعّل إذن")) throw e;
+      // Fall through to the community opener for older APKs that do not yet
+      // contain the native installer bridge.
+    }
+  }
+
   try {
     const mod = await import("@capacitor-community/file-opener");
     const FileOpener = (mod as any).FileOpener;
     await FileOpener.open({
-      filePath: written.uri,
-      contentType: "application/vnd.android.package-archive",
+      filePath,
+      contentType,
       openWithDefault: true,
     });
-  } catch (e) {
-    throw new Error("تعذر فتح المثبت — تأكد من السماح بتثبيت التطبيقات من مصادر غير معروفة");
+  } catch {
+    throw new Error("تعذر فتح المثبت — ثبّت هذا الإصدار يدويًا مرة واحدة، ثم ستعمل التحديثات التالية من داخل التطبيق");
   }
 }
 

@@ -79,7 +79,11 @@ const QUERIES_BLOCK = `    <queries>
     </queries>
 `;
 if (!xml.includes("<queries>")) {
-  xml = xml.replace(/<\/manifest>/, QUERIES_BLOCK + "</manifest>");
+  if (xml.includes("<application")) {
+    xml = xml.replace(/\s*<application/, `\n${QUERIES_BLOCK}\n    <application`);
+  } else {
+    xml = xml.replace(/<\/manifest>/, QUERIES_BLOCK + "</manifest>");
+  }
   added++;
 }
 
