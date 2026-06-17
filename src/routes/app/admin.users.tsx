@@ -6,7 +6,7 @@ import { Loader2, Search, Shield, ShieldOff, Ban, CheckCircle2, Trash2, Coins, P
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { useServerFn } from "@tanstack/react-start";
-import { adminChangePassword, adminGetPasswordHash } from "@/lib/admin.functions";
+import { adminChangePassword } from "@/lib/admin.functions";
 
 type AdminUser = {
   id: string;
@@ -130,19 +130,14 @@ function AdminUsers() {
     wrap(u.id, () => supabase.rpc("admin_delete_user", { _target: u.id }));
   };
 
-  const getHash = useServerFn(adminGetPasswordHash);
   const changePwd = useServerFn(adminChangePassword);
 
   const revealPassword = async (u: AdminUser) => {
-    setBusy(u.id);
-    try {
-      const res = await getHash({ data: { userId: u.id } });
-      alert(
-        `🔐 كلمة مرور ${u.username ?? "المستخدم"} مخزّنة كـ hash مشفّر (bcrypt) ولا يمكن استرجاعها كنص.\n\nHash:\n${res.hash}\n\nلتغييرها استخدم زر "تغيير كلمة المرور".`
-      );
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "خطأ");
-    } finally { setBusy(null); }
+    // SECURITY: password hashes are never sent to the browser. Show an
+    // informational message and direct the admin to the rotation flow.
+    alert(
+      `🔐 كلمات المرور مخزّنة كـ hash مشفّر (bcrypt) داخل قاعدة البيانات فقط، ولا يمكن استرجاعها — لا كنص ولا حتى كـ hash — حفاظاً على أمان حساب ${u.username ?? "المستخدم"}.\n\nلتغييرها استخدم زر "تغيير كلمة المرور".`
+    );
   };
 
   const changePassword = async (u: AdminUser) => {
