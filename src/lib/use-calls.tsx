@@ -391,7 +391,7 @@ export function CallProvider({ children }: { children: ReactNode }) {
       )
       .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, [user, buildPc, sendSignal, endCall, state.status]);
+  }, [user, buildPc, sendSignal, endCall]);
 
   // ===== Per-call signal channel =====
   useEffect(() => {
