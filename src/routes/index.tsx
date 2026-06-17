@@ -592,3 +592,12 @@ function PublicWebsite() {
     </main>
   );
 }
+
+function Feat({ icon: Icon, children }: { icon: React.ComponentType<{ className?: string }>; children: React.ReactNode }) {
+  return (
+    <li className="flex items-start gap-2.5 text-foreground/90">
+      <Icon className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
+      <span className="leading-relaxed">{children}</span>
+    </li>
+  );
+}
