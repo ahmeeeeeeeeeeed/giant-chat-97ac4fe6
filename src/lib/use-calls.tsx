@@ -88,6 +88,8 @@ export function CallProvider({ children }: { children: ReactNode }) {
   const stopDialRef = useRef<(() => void) | null>(null);
   const signalChRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const remoteSetRef = useRef(false);
+  const statusRef = useRef<CallStatus>("idle");
+  useEffect(() => { statusRef.current = state.status; }, [state.status]);
 
   const stopRing = () => { stopRingRef.current?.(); stopRingRef.current = null; };
   const stopDial = () => { stopDialRef.current?.(); stopDialRef.current = null; };
