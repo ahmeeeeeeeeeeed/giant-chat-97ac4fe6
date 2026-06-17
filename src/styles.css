@@ -189,3 +189,8 @@
   20%  { transform: translate(-50%, -10px) scale(1.2); opacity: 1; }
   100% { transform: translate(-50%, -120px) scale(1.6); opacity: 0; }
 }
+
+@keyframes slide {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(300%); }
+}
