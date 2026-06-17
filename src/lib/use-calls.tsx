@@ -114,7 +114,7 @@ export function CallProvider({ children }: { children: ReactNode }) {
         from_user: user.id,
         to_user: peerIdRef.current,
         signal_type,
-        payload: payload as Record<string, unknown> | null,
+        payload: (payload ?? null) as never,
       });
     },
     [user]
@@ -122,7 +122,7 @@ export function CallProvider({ children }: { children: ReactNode }) {
 
   const updateCallRow = useCallback(async (patch: Record<string, unknown>) => {
     if (!callIdRef.current) return;
-    await supabase.from("calls").update(patch).eq("id", callIdRef.current);
+    await supabase.from("calls").update(patch as never).eq("id", callIdRef.current);
   }, []);
 
   const endCall = useCallback(
