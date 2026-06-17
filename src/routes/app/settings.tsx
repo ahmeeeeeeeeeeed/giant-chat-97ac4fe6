@@ -131,10 +131,13 @@ function SettingsPage() {
         .limit(1)
         .maybeSingle();
       if (data && shouldShowUpdate(data)) {
-        setLatest(data as LatestUpdate);
+        const update = data as LatestUpdate;
+        setLatest(update);
+        setDownloadedApkPath(update.file_url ? getRememberedDownloadedApk(update.file_url) : null);
         void cacheSet("settings:latestUpdate", data);
       } else {
         setLatest(null);
+        setDownloadedApkPath(null);
         void cacheDel("settings:latestUpdate");
       }
     } catch { /* offline */ }
@@ -155,10 +158,16 @@ function SettingsPage() {
           window.open(latest.file_url, "_blank");
           return;
         }
-        await downloadAndInstallApk(
+        if (downloadedApkPath) {
+          await openDownloadedApk(downloadedApkPath);
+          toast.success("تم فتح نافذة التثبيت");
+          return;
+        }
+        const result = await downloadAndInstallApk(
           latest.file_url,
           (p) => setInstallProgress(p),
         );
+        setDownloadedApkPath(result.filePath);
         return;
       }
       // Prefer OTA web bundle update — no full reinstall, just refresh the changed pieces.
