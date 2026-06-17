@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/auth";
 import {
   ArrowRight, Send, Loader2, ImagePlus, Mic, Square, Play, Pause,
   MoreVertical, Reply, Copy, Trash2, Share2, BellOff, Bell, Ban, X,
-  Check, CheckCheck, Clock, Phone, Video,
+  Check, CheckCheck, Clock, Phone, Video, PhoneIncoming, PhoneOutgoing, PhoneMissed, History,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
