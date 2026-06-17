@@ -36,6 +36,7 @@ import { Route as AppFriendsRouteImport } from './routes/app/friends'
 import { Route as AppDailyTasksRouteImport } from './routes/app/daily-tasks'
 import { Route as AppCreateRoomRouteImport } from './routes/app/create-room'
 import { Route as AppCommunityRouteImport } from './routes/app/community'
+import { Route as AppCallsRouteImport } from './routes/app/calls'
 import { Route as AppAdminRouteImport } from './routes/app/admin'
 import { Route as AppActivityRouteImport } from './routes/app/activity'
 import { Route as AppAchievementsRouteImport } from './routes/app/achievements'
@@ -188,6 +189,11 @@ const AppCommunityRoute = AppCommunityRouteImport.update({
   path: '/community',
   getParentRoute: () => AppRoute,
 } as any)
+const AppCallsRoute = AppCallsRouteImport.update({
+  id: '/calls',
+  path: '/calls',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAdminRoute = AppAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -286,6 +292,7 @@ export interface FileRoutesByFullPath {
   '/app/achievements': typeof AppAchievementsRoute
   '/app/activity': typeof AppActivityRoute
   '/app/admin': typeof AppAdminRouteWithChildren
+  '/app/calls': typeof AppCallsRoute
   '/app/community': typeof AppCommunityRoute
   '/app/create-room': typeof AppCreateRoomRoute
   '/app/daily-tasks': typeof AppDailyTasksRoute
@@ -329,6 +336,7 @@ export interface FileRoutesByTo {
   '/app/account': typeof AppAccountRoute
   '/app/achievements': typeof AppAchievementsRoute
   '/app/activity': typeof AppActivityRoute
+  '/app/calls': typeof AppCallsRoute
   '/app/community': typeof AppCommunityRoute
   '/app/create-room': typeof AppCreateRoomRoute
   '/app/daily-tasks': typeof AppDailyTasksRoute
@@ -375,6 +383,7 @@ export interface FileRoutesById {
   '/app/achievements': typeof AppAchievementsRoute
   '/app/activity': typeof AppActivityRoute
   '/app/admin': typeof AppAdminRouteWithChildren
+  '/app/calls': typeof AppCallsRoute
   '/app/community': typeof AppCommunityRoute
   '/app/create-room': typeof AppCreateRoomRoute
   '/app/daily-tasks': typeof AppDailyTasksRoute
@@ -422,6 +431,7 @@ export interface FileRouteTypes {
     | '/app/achievements'
     | '/app/activity'
     | '/app/admin'
+    | '/app/calls'
     | '/app/community'
     | '/app/create-room'
     | '/app/daily-tasks'
@@ -465,6 +475,7 @@ export interface FileRouteTypes {
     | '/app/account'
     | '/app/achievements'
     | '/app/activity'
+    | '/app/calls'
     | '/app/community'
     | '/app/create-room'
     | '/app/daily-tasks'
@@ -510,6 +521,7 @@ export interface FileRouteTypes {
     | '/app/achievements'
     | '/app/activity'
     | '/app/admin'
+    | '/app/calls'
     | '/app/community'
     | '/app/create-room'
     | '/app/daily-tasks'
@@ -748,6 +760,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCommunityRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/calls': {
+      id: '/app/calls'
+      path: '/calls'
+      fullPath: '/app/calls'
+      preLoaderRoute: typeof AppCallsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/admin': {
       id: '/app/admin'
       path: '/admin'
@@ -890,6 +909,7 @@ interface AppRouteChildren {
   AppAchievementsRoute: typeof AppAchievementsRoute
   AppActivityRoute: typeof AppActivityRoute
   AppAdminRoute: typeof AppAdminRouteWithChildren
+  AppCallsRoute: typeof AppCallsRoute
   AppCommunityRoute: typeof AppCommunityRoute
   AppCreateRoomRoute: typeof AppCreateRoomRoute
   AppDailyTasksRoute: typeof AppDailyTasksRoute
@@ -912,6 +932,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAchievementsRoute: AppAchievementsRoute,
   AppActivityRoute: AppActivityRoute,
   AppAdminRoute: AppAdminRouteWithChildren,
+  AppCallsRoute: AppCallsRoute,
   AppCommunityRoute: AppCommunityRoute,
   AppCreateRoomRoute: AppCreateRoomRoute,
   AppDailyTasksRoute: AppDailyTasksRoute,
