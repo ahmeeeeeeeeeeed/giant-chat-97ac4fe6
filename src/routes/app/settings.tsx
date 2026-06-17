@@ -187,6 +187,7 @@ function SettingsPage() {
         (p) => setInstallProgress(p),
       );
     } catch (e: any) {
+      if (String(e?.message || "").includes("ملف التحديث غير موجود")) setDownloadedApkPath(null);
       toast.error(e?.message || "فشل التحديث");
     } finally {
       setInstalling(false);
