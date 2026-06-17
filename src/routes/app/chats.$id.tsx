@@ -54,6 +54,31 @@ function MessageTicks({ status, isFriend }: { status: MessageStatus; isFriend: b
 }
 type Profile = { id: string; username: string; avatar_url: string | null; last_seen_at: string | null; hide_last_seen: boolean };
 
+type CallRow = {
+  id: string;
+  caller_id: string;
+  callee_id: string;
+  call_type: "audio" | "video";
+  status: string;
+  started_at: string;
+  answered_at: string | null;
+  ended_at: string | null;
+  duration_seconds: number | null;
+  end_reason: string | null;
+};
+
+function fmtCallDuration(s: number): string {
+  if (!s || s <= 0) return "";
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  const parts: string[] = [];
+  if (h) parts.push(`${h} ساعة`);
+  if (m) parts.push(`${m} دقيقة`);
+  if (!h && !m) parts.push(`${sec} ثانية`);
+  return parts.join(" و ");
+}
+
 function DMPage() {
   const { id: otherId } = Route.useParams();
   const { user } = useAuth();
