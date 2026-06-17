@@ -60,10 +60,25 @@ jobs:
       - name: Install deps
         run: bun install --frozen-lockfile
 
+      - name: Compute next patch (above DB max)
+        id: nextpatch
+        run: |
+          MAX=$(curl -fsSL "https://gfuusohydgpumgardbyn.supabase.co/rest/v1/app_updates?select=version_code&order=version_code.desc&limit=1" \
+            -H "apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdmdXVzb2h5ZGdwdW1nYXJkYnluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3MzE0NDcsImV4cCI6MjA5NTMwNzQ0N30.0uy2KsvLHqaO1vmfiDsNaZgiKpOynf1oQGfCcjzh4Gc" \
+            | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{const a=JSON.parse(d);console.log(a[0]?.version_code||0)})")
+          NEXT=$(( MAX + 1 ))
+          MAJ=$(( NEXT / 10000 ))
+          REST=$(( NEXT - MAJ * 10000 ))
+          MIN=$(( REST / 100 ))
+          PAT=$(( REST - MIN * 100 ))
+          echo "Latest in DB code: $MAX -> next: $MAJ.$MIN.$PAT"
+          echo "patch=$PAT" >> "$GITHUB_OUTPUT"
+
       - name: Match APK build version
         env:
-          APP_VERSION_PATCH: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.run_number || github.run_number }}
+          APP_VERSION_PATCH: ${{ steps.nextpatch.outputs.patch }}
         run: node scripts/bump-version.mjs patch
+
 
       - name: Build web bundle
         env:
