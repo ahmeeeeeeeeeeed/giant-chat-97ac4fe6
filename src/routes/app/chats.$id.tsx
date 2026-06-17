@@ -504,40 +504,47 @@ function DMPage() {
 
   return (
     <main className="flex flex-col bg-background" style={{ height: "100dvh" }}>
-      {/* HEADER - MODIFIED: avatar, username, and status are now clickable */}
-      <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-primary/20 bg-primary text-primary-foreground px-3 py-3 shadow-sm" style={{ paddingTop: "calc(env(safe-area-inset-top) + 0.75rem)" }}>
-        <button onClick={() => navigate({ to: "/app/chats" })} aria-label="رجوع" className="p-1.5 rounded-full hover:bg-primary-foreground/10">
+      {/* HEADER — premium gradient, glass shine, clickable avatar/name */}
+      <header
+        className="sticky top-0 z-30 flex items-center gap-3 overflow-hidden border-b border-emerald-500/20 bg-gradient-to-l from-emerald-700 via-emerald-800 to-slate-900 px-3 py-3 text-white shadow-[0_10px_30px_-15px_rgba(16,185,129,0.6)]"
+        style={{ paddingTop: "calc(env(safe-area-inset-top) + 0.75rem)" }}
+      >
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,rgba(255,255,255,0.18),transparent_55%),radial-gradient(circle_at_90%_100%,rgba(16,185,129,0.25),transparent_60%)]" />
+        <button onClick={() => navigate({ to: "/app/chats" })} aria-label="رجوع" className="relative p-1.5 rounded-full hover:bg-white/10 active:scale-95 transition">
           <ArrowRight className="h-5 w-5 rtl:rotate-180" />
         </button>
-        
+
         {/* Clickable Avatar */}
-        <button 
+        <button
           onClick={goToProfile}
-          className="focus:outline-none"
+          className="relative focus:outline-none"
           aria-label="عرض البروفايل"
         >
           <StoryRing userId={other?.id} size="sm">
             {otherAvatarSource ? (
-              <img src={otherAvatarSource} alt="" className="h-10 w-10 rounded-full object-cover ring-2 ring-primary-foreground/30 transition-transform active:scale-95" />
+              <img src={otherAvatarSource} alt="" className="h-11 w-11 rounded-full object-cover ring-2 ring-white/40 shadow-lg transition-transform active:scale-95" />
             ) : (
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-foreground/20 font-bold transition-transform active:scale-95">
+              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white/15 ring-2 ring-white/30 font-bold transition-transform active:scale-95">
                 {(other?.username ?? "?").charAt(0).toUpperCase()}
               </div>
             )}
           </StoryRing>
+          {isFriend && otherOnline && (
+            <span className="absolute -bottom-0.5 -end-0.5 h-3 w-3 rounded-full bg-emerald-400 ring-2 ring-emerald-800 shadow" />
+          )}
         </button>
-        
+
         {/* Clickable Username and Status */}
-        <button 
+        <button
           onClick={goToProfile}
-          className="min-w-0 flex-1 text-left focus:outline-none"
+          className="relative min-w-0 flex-1 text-start focus:outline-none"
           aria-label="عرض البروفايل"
         >
-          <h1 className="truncate text-base font-bold leading-tight hover:underline">
+          <h1 className="truncate text-base font-extrabold leading-tight tracking-tight">
             {other?.username ?? "…"}
           </h1>
           {presenceLabel && (
-            <div className="flex items-center gap-1.5 text-[11px] opacity-90">
+            <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-white/85">
               {isFriend && (otherOnline || otherActivity !== "idle") && (
                 <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-300 animate-pulse" />
               )}
@@ -551,7 +558,7 @@ function DMPage() {
         )}
 
         <div className="relative">
-          <button onClick={() => setMenuOpen(v => !v)} aria-label="القائمة" className="p-1.5 rounded-full hover:bg-primary-foreground/10">
+          <button onClick={() => setMenuOpen(v => !v)} aria-label="القائمة" className="relative p-1.5 rounded-full hover:bg-white/10 active:scale-95 transition">
             <MoreVertical className="h-5 w-5" />
           </button>
           {menuOpen && (
@@ -597,10 +604,22 @@ function DMPage() {
         <div className="bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 text-center text-xs py-2 px-3">لقد قمت بحظر هذا المستخدم</div>
       )}
 
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-4">
+      <div
+        ref={scrollRef}
+        className="relative flex-1 overflow-y-auto px-3 py-4"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle at 20% 10%, rgba(16,185,129,0.06), transparent 45%), radial-gradient(circle at 85% 90%, rgba(6,182,212,0.05), transparent 50%)",
+        }}
+      >
         {messages.length === 0 ? (
           <div className="flex h-full items-center justify-center">
-            <p className="text-sm text-muted-foreground">ابدأ المحادثة بإرسال رسالة 👋</p>
+            <div className="flex flex-col items-center gap-3 text-center">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500/10 ring-1 ring-emerald-500/20 text-emerald-400">
+                <Send className="h-6 w-6 rtl:-scale-x-100" />
+              </div>
+              <p className="text-sm text-muted-foreground">ابدأ المحادثة بإرسال رسالة 👋</p>
+            </div>
           </div>
         ) : (
           <ul className="flex flex-col gap-2.5">
@@ -730,7 +749,11 @@ function ActionItem({ icon, label, onClick, destructive }: { icon: React.ReactNo
 function MessageBubble({ m, mine, replied, onPress }: { m: DM; mine: boolean; replied: DM | null; onPress?: () => void }) {
   const [lightbox, setLightbox] = useState(false);
   const mediaSource = useCachedMediaSource(m.media_url);
-  const base = `rounded-2xl px-3.5 py-2 shadow-sm ${mine ? "rounded-br-md bg-primary text-primary-foreground" : "rounded-bl-md bg-card border border-border"}`;
+  const base = `rounded-2xl px-3.5 py-2 shadow-md ${
+    mine
+      ? "rounded-br-md bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-emerald-600/25"
+      : "rounded-bl-md bg-card border border-border/70 backdrop-blur"
+  }`;
   const replyBlock = replied && (
     <div className={`mb-1 rounded-lg border-s-2 px-2 py-1 text-[11px] ${mine ? "border-primary-foreground/60 bg-primary-foreground/10" : "border-primary bg-secondary"}`}>
       <div className="font-bold opacity-80">رد</div>

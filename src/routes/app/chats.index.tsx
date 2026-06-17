@@ -153,9 +153,17 @@ function ChatsPage() {
 
   return (
     <main className="flex flex-1 flex-col">
-      <header className="sticky top-0 z-10 border-b border-emerald-500/10 bg-slate-950/70 px-5 py-4 backdrop-blur-xl">
-        <h1 className="text-2xl font-extrabold text-white">{t("chats.title")}</h1>
-        <p className="text-xs text-emerald-300/60">{t("chats.subtitle")}</p>
+      <header className="sticky top-0 z-10 overflow-hidden border-b border-emerald-500/15 bg-gradient-to-b from-slate-950/90 via-slate-950/80 to-slate-950/60 px-5 py-5 backdrop-blur-2xl">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_30%,theme(colors.emerald.500/0.18),transparent_55%),radial-gradient(circle_at_85%_70%,theme(colors.cyan.500/0.10),transparent_55%)]" />
+        <div className="relative flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-400 to-emerald-600 text-white shadow-[0_8px_24px_-8px_rgba(16,185,129,0.6)]">
+            <MessageSquare className="h-5 w-5" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h1 className="truncate text-2xl font-black text-white tracking-tight">{t("chats.title")}</h1>
+            <p className="text-xs text-emerald-300/70">{t("chats.subtitle")}</p>
+          </div>
+        </div>
       </header>
 
       <div className="px-4 pt-4">
@@ -296,28 +304,30 @@ function ChatRow({ convo, unreadActive, onDeleted }: { convo: Convo; unreadActiv
         onPointerUp={cancelPress}
         onPointerLeave={cancelPress}
         onPointerCancel={cancelPress}
-        className={`relative flex items-center gap-3 overflow-hidden rounded-2xl border p-3 transition active:scale-[0.99] cursor-pointer select-none ${
+        className={`group relative flex items-center gap-3 overflow-hidden rounded-2xl border p-3 transition active:scale-[0.99] cursor-pointer select-none ${
           unreadActive
-            ? "border-emerald-400/30 bg-emerald-950/40 shadow-[0_6px_20px_-12px_rgba(16,185,129,0.5)]"
-            : "border-emerald-500/10 bg-gradient-to-l from-emerald-950/15 to-transparent hover:bg-emerald-900/15"
+            ? "border-emerald-400/40 bg-gradient-to-l from-emerald-950/55 via-emerald-950/30 to-transparent shadow-[0_10px_30px_-15px_rgba(16,185,129,0.55)]"
+            : "border-emerald-500/10 bg-gradient-to-l from-slate-900/60 via-slate-900/30 to-transparent hover:border-emerald-500/25 hover:from-emerald-950/30"
         }`}
       >
         {unreadActive && (
-          <span className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-emerald-400 to-emerald-600" />
+          <span className="absolute inset-y-0 left-0 w-1 rounded-r-full bg-gradient-to-b from-emerald-300 via-emerald-400 to-emerald-600 shadow-[0_0_18px_2px_rgba(16,185,129,0.5)]" />
         )}
         <StoryRing userId={convo.otherId} size="sm"><CachedAvatar url={convo.avatar_url} username={convo.username} /></StoryRing>
         <div className="min-w-0 flex-1">
-          <div className="truncate font-bold text-foreground">{convo.username}</div>
-          <div className={`truncate text-sm ${unreadActive ? "text-emerald-200/80" : "text-muted-foreground"}`}>{convo.last}</div>
+          <div className="flex items-baseline gap-2">
+            <div className="truncate font-bold text-foreground">{convo.username}</div>
+          </div>
+          <div className={`truncate text-sm ${unreadActive ? "text-emerald-200/90" : "text-muted-foreground"}`}>{convo.last}</div>
         </div>
         {unreadActive && (
-          <span className="flex h-6 min-w-[24px] items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 px-2 text-[11px] font-bold text-white shadow-[0_4px_10px_-2px_rgba(16,185,129,0.6)]">
+          <span className="flex h-6 min-w-[24px] items-center justify-center rounded-full bg-gradient-to-br from-emerald-300 via-emerald-400 to-emerald-600 px-2 text-[11px] font-extrabold text-emerald-950 shadow-[0_6px_18px_-4px_rgba(16,185,129,0.7)] ring-1 ring-emerald-200/50">
             {convo.unread > 99 ? "99+" : convo.unread}
           </span>
         )}
         <button
           onClick={(e) => { e.stopPropagation(); setMenu(true); }}
-          className="ml-1 grid h-9 w-9 place-items-center rounded-xl text-emerald-300/80 hover:bg-emerald-500/15 hover:text-emerald-200"
+          className="ml-1 grid h-9 w-9 place-items-center rounded-xl text-emerald-300/70 opacity-0 group-hover:opacity-100 hover:bg-emerald-500/15 hover:text-emerald-200 transition"
           aria-label="خيارات المحادثة"
         >
           <MoreVertical className="h-4 w-4" />

@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   LogIn, MessageCircle, Users, Music, Sparkles, Download, Shield, Zap,
   CheckCircle2, Gift, Trophy, Bell, Heart, Star, Globe, Lock,
-  ArrowRight, Loader2,
+  ArrowRight, Loader2, Phone, Video, ShieldCheck, Wifi,
 } from "lucide-react";
 import PermissionsGate, { hasCompletedPermissionsGate } from "@/components/PermissionsGate";
 import siteChat from "@/assets/site-chat.jpg";
@@ -15,6 +15,8 @@ import siteGames from "@/assets/site-games.jpg";
 import siteStore from "@/assets/site-store.jpg";
 import siteCommunity from "@/assets/site-community.jpg";
 import siteNotifications from "@/assets/site-notifications.jpg";
+import siteCallAudio from "@/assets/site-call-audio.jpg";
+import siteCallVideo from "@/assets/site-call-video.jpg";
 
 declare const __CAPACITOR_BUILD__: boolean | undefined;
 
@@ -431,6 +433,98 @@ function PublicWebsite() {
         </div>
       </section>
 
+      {/* Calls feature */}
+      <section id="calls" className="relative overflow-hidden border-b border-border/60 bg-gradient-to-br from-emerald-950/30 via-background to-background">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,theme(colors.emerald.500/0.15),transparent_55%),radial-gradient(circle_at_85%_70%,theme(colors.cyan.500/0.10),transparent_50%)]" />
+        <div className="relative mx-auto max-w-6xl px-5 py-20">
+          <div className="mb-12 text-center">
+            <span className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-bold text-emerald-400 ring-1 ring-emerald-500/30">
+              <Phone className="h-3 w-3" /> جديد
+            </span>
+            <h2 className="text-3xl font-black md:text-4xl">مكالمات صوت وفيديو احترافية</h2>
+            <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">
+              اتصل بأصدقائك مجاناً بدقة عالية وزمن استجابة منخفض — مكالمات حقيقية مبنية على WebRTC مباشرة بين الأجهزة، بدون أي رسوم أو وسطاء.
+            </p>
+          </div>
+
+          <div className="grid items-center gap-8 md:grid-cols-2">
+            <div className="relative order-2 md:order-1">
+              <div className="absolute -inset-4 -z-10 rounded-[2rem] bg-gradient-to-br from-emerald-500/20 via-cyan-500/10 to-transparent blur-2xl" />
+              <img
+                src={siteCallAudio}
+                alt="مكالمة صوتية داخل تطبيق Giant"
+                width={832}
+                height={1216}
+                loading="lazy"
+                className="mx-auto w-full max-w-sm rounded-[2rem] border border-emerald-500/20 shadow-2xl shadow-emerald-500/20"
+              />
+            </div>
+            <div className="order-1 md:order-2 space-y-4">
+              <div className="flex items-center gap-2 text-emerald-400">
+                <Phone className="h-5 w-5" />
+                <span className="text-sm font-bold uppercase tracking-wider">مكالمات صوتية</span>
+              </div>
+              <h3 className="text-2xl font-black">صوت نقي بدون تشويش</h3>
+              <p className="text-muted-foreground leading-relaxed">
+                تقنيات حذف الضوضاء وإلغاء الصدى المدمجة تضمن لك مكالمة صوتية واضحة حتى في الأماكن المزدحمة. يكفي زر واحد لتسمع صديقك.
+              </p>
+              <ul className="space-y-2.5 text-sm">
+                <Feat icon={CheckCircle2}>اتصال فوري من داخل المحادثة الخاصة</Feat>
+                <Feat icon={CheckCircle2}>نغمة رنين حقيقية وإشعار وارد على أي شاشة</Feat>
+                <Feat icon={CheckCircle2}>كتم الميكروفون وتفعيل السماعة بضغطة واحدة</Feat>
+                <Feat icon={CheckCircle2}>سجل مكالمات كامل: واردة، صادرة، فائتة</Feat>
+              </ul>
+            </div>
+          </div>
+
+          <div className="mt-16 grid items-center gap-8 md:grid-cols-2">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-cyan-400">
+                <Video className="h-5 w-5" />
+                <span className="text-sm font-bold uppercase tracking-wider">مكالمات فيديو</span>
+              </div>
+              <h3 className="text-2xl font-black">وجهاً لوجه بدقة HD</h3>
+              <p className="text-muted-foreground leading-relaxed">
+                مكالمات فيديو بجودة 720p مع نافذة معاينة ذاتية، تبديل بين الكاميرا الأمامية والخلفية، وإطفاء الكاميرا أثناء المكالمة دون قطع الصوت.
+              </p>
+              <ul className="space-y-2.5 text-sm">
+                <Feat icon={CheckCircle2}>دقة عالية وأداء سلس حتى على شبكات 4G</Feat>
+                <Feat icon={CheckCircle2}>تبديل سريع بين الكاميرا الأمامية والخلفية</Feat>
+                <Feat icon={CheckCircle2}>إطفاء الكاميرا والاستمرار بالصوت فقط</Feat>
+                <Feat icon={CheckCircle2}>إعادة اتصال تلقائي عند ضعف الشبكة</Feat>
+              </ul>
+            </div>
+            <div className="relative">
+              <div className="absolute -inset-4 -z-10 rounded-[2rem] bg-gradient-to-br from-cyan-500/20 via-emerald-500/10 to-transparent blur-2xl" />
+              <img
+                src={siteCallVideo}
+                alt="مكالمة فيديو داخل تطبيق Giant"
+                width={832}
+                height={1216}
+                loading="lazy"
+                className="mx-auto w-full max-w-sm rounded-[2rem] border border-cyan-500/20 shadow-2xl shadow-cyan-500/20"
+              />
+            </div>
+          </div>
+
+          <div className="mt-14 grid gap-4 sm:grid-cols-3">
+            {[
+              { Icon: ShieldCheck, title: "تشفير DTLS-SRTP", desc: "اتصال مباشر مشفّر بين الأجهزة." },
+              { Icon: Wifi, title: "بدون وسطاء", desc: "WebRTC نقي، أقل تأخير ممكن." },
+              { Icon: Zap, title: "مجاني تماماً", desc: "بدون أي رسوم أو اشتراكات." },
+            ].map((t) => (
+              <div key={t.title} className="rounded-2xl border border-emerald-500/15 bg-card/60 p-5 backdrop-blur">
+                <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-400">
+                  <t.Icon className="h-5 w-5" />
+                </div>
+                <h4 className="font-extrabold">{t.title}</h4>
+                <p className="mt-1 text-xs text-muted-foreground">{t.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Gallery */}
       <section id="gallery" className="border-b border-border/60 bg-card/20">
         <div className="mx-auto max-w-6xl px-5 py-20">
@@ -496,5 +590,14 @@ function PublicWebsite() {
         </div>
       </footer>
     </main>
+  );
+}
+
+function Feat({ icon: Icon, children }: { icon: React.ComponentType<{ className?: string }>; children: React.ReactNode }) {
+  return (
+    <li className="flex items-start gap-2.5 text-foreground/90">
+      <Icon className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
+      <span className="leading-relaxed">{children}</span>
+    </li>
   );
 }
