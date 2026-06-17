@@ -88,11 +88,11 @@ public class ApkInstallerPlugin extends Plugin {
             intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
 
             PackageManager pm = getContext().getPackageManager();
-            List<ResolveInfo> installers = pm.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY);
-            if (installers == null || installers.isEmpty()) {
+            if (intent.resolveActivity(pm) == null) {
                 call.reject("تعذر العثور على مثبت Android");
                 return;
             }
+            List<ResolveInfo> installers = pm.queryIntentActivities(intent, 0);
             for (ResolveInfo installer : installers) {
                 if (installer.activityInfo != null && installer.activityInfo.packageName != null) {
                     getContext().grantUriPermission(
