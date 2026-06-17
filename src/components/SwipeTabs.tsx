@@ -1,5 +1,5 @@
 import { useEffect, useRef, type ReactNode } from "react";
-import { useNavigate, useLocation } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 
 type Props = {
   /** Ordered list of tab root paths (visual order in the bottom nav, LTR sense). */
@@ -11,41 +11,40 @@ type Props = {
  * Wraps tab content and lets the user swipe horizontally to move between
  * tab roots — in addition to the bottom nav buttons (not a replacement).
  *
- * Activation rules (to avoid hijacking real horizontal scrolls inside chats,
- * carousels, sliders, etc.):
- *  - only active when current path === one of the tab roots
- *  - ignores gestures that start on interactive/scrollable elements
- *  - requires a clearly horizontal, fast-enough flick
+ * Tuned for responsiveness: lower distance, more time, looser angle ratio,
+ * and a velocity fallback so even slower drags still feel intentional.
+ * Listeners are bound ONCE (not on every navigation) — tabRoots reads via ref.
  */
 export function SwipeTabs({ tabRoots, children }: Props) {
   const navigate = useNavigate();
-  const location = useLocation();
+  const tabRootsRef = useRef(tabRoots);
+  tabRootsRef.current = tabRoots;
   const startRef = useRef<{ x: number; y: number; t: number; valid: boolean } | null>(null);
 
   useEffect(() => {
-    const MIN_DX = 70;     // px — minimum horizontal travel
-    const MAX_DY = 50;     // px — maximum vertical drift
-    const MAX_MS = 600;    // ms — must be a flick, not a slow drag
-    const EDGE_IGNORE = 16; // ignore swipes that begin at the very screen edge (system back/refresh)
+    const MIN_DX = 45;          // px (was 70)
+    const MAX_DY = 70;          // px (was 50)
+    const MAX_MS = 900;         // ms (was 600)
+    const MIN_VELOCITY = 0.25;  // px/ms — fallback for short but quick swipes
+    const EDGE_IGNORE = 16;
 
     const isInteractiveStart = (target: EventTarget | null): boolean => {
       if (!(target instanceof Element)) return false;
-      // Skip swipes that start inside something the user is likely interacting with
-      // horizontally on purpose: sliders, carousels, scrollable rows, inputs, audio/video.
       if (target.closest(
         'input,textarea,select,button,a,[role="slider"],[role="tablist"],' +
         '[data-swipe-ignore],audio,video,canvas,.swiper,.embla,' +
         '[data-radix-scroll-area-viewport]'
       )) return true;
-      // Walk up looking for an element that scrolls horizontally.
       let el: Element | null = target;
-      while (el && el !== document.body) {
+      let hops = 0;
+      while (el && el !== document.body && hops < 8) {
         const cs = window.getComputedStyle(el);
         const ox = cs.overflowX;
         if ((ox === "auto" || ox === "scroll") && (el as HTMLElement).scrollWidth > (el as HTMLElement).clientWidth) {
           return true;
         }
         el = el.parentElement;
+        hops++;
       }
       return false;
     };
@@ -54,7 +53,7 @@ export function SwipeTabs({ tabRoots, children }: Props) {
       if (e.touches.length !== 1) { startRef.current = null; return; }
       const t = e.touches[0];
       const path = window.location.pathname.replace(/\/$/, "") || "/";
-      const onTabRoot = (tabRoots as readonly string[]).includes(path);
+      const onTabRoot = tabRootsRef.current.includes(path);
       const nearEdge = t.clientX < EDGE_IGNORE || t.clientX > window.innerWidth - EDGE_IGNORE;
       const interactive = isInteractiveStart(e.target);
       startRef.current = {
@@ -73,33 +72,39 @@ export function SwipeTabs({ tabRoots, children }: Props) {
       if (!t) return;
       const dx = t.clientX - s.x;
       const dy = t.clientY - s.y;
-      const dt = Date.now() - s.t;
+      const dt = Math.max(1, Date.now() - s.t);
       if (dt > MAX_MS) return;
-      if (Math.abs(dx) < MIN_DX) return;
-      if (Math.abs(dy) > MAX_DY) return;
-      if (Math.abs(dx) < Math.abs(dy) * 1.6) return;
+      const absDx = Math.abs(dx);
+      const absDy = Math.abs(dy);
+      const velocity = absDx / dt;
+      if (absDx < MIN_DX && velocity < MIN_VELOCITY) return;
+      if (absDy > MAX_DY) return;
+      if (absDx < absDy * 1.2) return;
 
       const path = window.location.pathname.replace(/\/$/, "") || "/";
-      const idx = (tabRoots as readonly string[]).indexOf(path);
+      const idx = tabRootsRef.current.indexOf(path);
       if (idx < 0) return;
 
-      // Respect document direction: in RTL, swipe-right = next, swipe-left = previous.
       const isRTL = (document.documentElement.getAttribute("dir") || "ltr").toLowerCase() === "rtl";
       const goingNext = isRTL ? dx > 0 : dx < 0;
       const nextIdx = goingNext ? idx + 1 : idx - 1;
-      if (nextIdx < 0 || nextIdx >= tabRoots.length) return;
+      if (nextIdx < 0 || nextIdx >= tabRootsRef.current.length) return;
 
-      navigate({ to: tabRoots[nextIdx] as any });
+      navigate({ to: tabRootsRef.current[nextIdx] as any });
     };
+
+    const onCancel = () => { startRef.current = null; };
 
     window.addEventListener("touchstart", onStart, { passive: true });
     window.addEventListener("touchend", onEnd, { passive: true });
-    window.addEventListener("touchcancel", () => { startRef.current = null; }, { passive: true });
+    window.addEventListener("touchcancel", onCancel, { passive: true });
     return () => {
       window.removeEventListener("touchstart", onStart);
       window.removeEventListener("touchend", onEnd);
+      window.removeEventListener("touchcancel", onCancel);
     };
-  }, [navigate, tabRoots, location.pathname]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return <>{children}</>;
 }
