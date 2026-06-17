@@ -149,6 +149,9 @@ export function UpdateGate() {
             <p className="text-xs text-muted-foreground">
               الإصدار {latest.version} • الحالي {currentVersion || APP_VERSION}
             </p>
+            <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-bold ${needsFullApk ? "bg-sky-500/15 text-sky-600" : "bg-emerald-500/15 text-emerald-600"}`}>
+              {needsFullApk ? "تثبيت كامل (APK)" : "تحديث داخلي تلقائي"}
+            </span>
           </div>
           {!force && !busy && !done && (
             <button onClick={handleLater} className="text-muted-foreground hover:text-foreground">
