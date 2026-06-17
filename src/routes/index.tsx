@@ -317,6 +317,18 @@ function PublicWebsite() {
 
             <div className="mt-9 flex flex-col gap-3">
               <DownloadButton large />
+
+              <Link to="/reviews" className="inline-flex items-center justify-center gap-2 rounded-full border border-yellow-400/40 bg-yellow-400/10 px-5 py-2.5 text-sm font-bold text-yellow-500 transition hover:bg-yellow-400/20">
+                <span className="flex items-center gap-1" dir="ltr">
+                  <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                  <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                  <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                  <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                  <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                </span>
+                <span>قيّم التطبيق الآن</span>
+              </Link>
+
               <a href="/watch" className="inline-flex items-center justify-center gap-2 rounded-full border border-primary/40 bg-primary/5 px-5 py-3 text-sm font-bold text-primary hover:bg-primary/10 transition">
                 ▶ شاهد الفيديو التعريفي
               </a>
