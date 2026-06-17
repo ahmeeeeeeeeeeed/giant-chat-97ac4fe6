@@ -14,7 +14,7 @@ import { scheduleDataPrewarm } from "@/lib/data-prewarm";
 import { recordDailyAction } from "@/lib/daily-tasks";
 import { usePresenceHeartbeat } from "@/lib/use-presence-heartbeat";
 import { ensurePersistentOfflineStorage } from "@/lib/offline-cache";
-import { SwipeTabs } from "@/components/SwipeTabs";
+
 
 export const Route = createFileRoute("/app")({
   component: AppLayout,
@@ -273,9 +273,7 @@ function AppLayout() {
           </div>
         </header>
       )}
-      <SwipeTabs tabRoots={tabRootsList}>
-        <Outlet />
-      </SwipeTabs>
+      <Outlet />
       {!hideChrome && (
         <nav className="fixed inset-x-0 bottom-0 z-40 px-2 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
           <ul className="mx-auto flex max-w-md items-stretch justify-around rounded-[24px] border border-emerald-500/15 bg-slate-950/85 px-1.5 py-2 shadow-[0_-8px_40px_-12px_rgba(0,0,0,0.6),0_20px_50px_-15px_rgba(6,78,59,0.5)] backdrop-blur-xl">
