@@ -253,6 +253,48 @@ function DMPage() {
     return () => { supabase.removeChannel(ch); };
   }, [user, otherId]);
 
+  // load + subscribe to call history for this pair
+  useEffect(() => {
+    if (!user) return;
+    if (!getOnline()) return;
+    let mounted = true;
+    (async () => {
+      const { data } = await supabase
+        .from("calls")
+        .select("id, caller_id, callee_id, call_type, status, started_at, answered_at, ended_at, duration_seconds, end_reason")
+        .or(`and(caller_id.eq.${user.id},callee_id.eq.${otherId}),and(caller_id.eq.${otherId},callee_id.eq.${user.id})`)
+        .order("started_at", { ascending: true })
+        .limit(200);
+      if (mounted && data) setCalls(data as CallRow[]);
+    })();
+
+    const ch = supabase
+      .channel(`dm-calls:${[user.id, otherId].sort().join(":")}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "calls" }, (p) => {
+        const r = (p.new ?? p.old) as CallRow | undefined;
+        if (!r) return;
+        const involves =
+          (r.caller_id === user.id && r.callee_id === otherId) ||
+          (r.caller_id === otherId && r.callee_id === user.id);
+        if (!involves) return;
+        if (p.eventType === "DELETE") {
+          setCalls((old) => old.filter((x) => x.id !== r.id));
+        } else {
+          const next = p.new as CallRow;
+          setCalls((old) => {
+            const i = old.findIndex((x) => x.id === next.id);
+            if (i < 0) return [...old, next];
+            const copy = [...old];
+            copy[i] = next;
+            return copy;
+          });
+        }
+      })
+      .subscribe();
+    return () => { mounted = false; supabase.removeChannel(ch); };
+  }, [user, otherId]);
+
+
   // presence + typing channel (shared by both peers — same name)
   useEffect(() => {
     if (!user) return;
