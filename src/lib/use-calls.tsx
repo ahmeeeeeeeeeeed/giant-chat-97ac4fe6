@@ -382,7 +382,7 @@ export function CallProvider({ children }: { children: ReactNode }) {
           // Auto-mark missed after 45s
           setTimeout(() => {
             if (callIdRef.current === row.id && !remoteSetRef.current && pcRef.current?.connectionState !== "connected") {
-              if (state.status === "ringing-in" || pcRef.current) {
+              if (statusRef.current === "ringing-in" || pcRef.current) {
                 endCall("missed", false).catch(() => {});
               }
             }
