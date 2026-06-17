@@ -153,9 +153,17 @@ function ChatsPage() {
 
   return (
     <main className="flex flex-1 flex-col">
-      <header className="sticky top-0 z-10 border-b border-emerald-500/10 bg-slate-950/70 px-5 py-4 backdrop-blur-xl">
-        <h1 className="text-2xl font-extrabold text-white">{t("chats.title")}</h1>
-        <p className="text-xs text-emerald-300/60">{t("chats.subtitle")}</p>
+      <header className="sticky top-0 z-10 overflow-hidden border-b border-emerald-500/15 bg-gradient-to-b from-slate-950/90 via-slate-950/80 to-slate-950/60 px-5 py-5 backdrop-blur-2xl">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_30%,theme(colors.emerald.500/0.18),transparent_55%),radial-gradient(circle_at_85%_70%,theme(colors.cyan.500/0.10),transparent_55%)]" />
+        <div className="relative flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-400 to-emerald-600 text-white shadow-[0_8px_24px_-8px_rgba(16,185,129,0.6)]">
+            <MessageSquare className="h-5 w-5" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h1 className="truncate text-2xl font-black text-white tracking-tight">{t("chats.title")}</h1>
+            <p className="text-xs text-emerald-300/70">{t("chats.subtitle")}</p>
+          </div>
+        </div>
       </header>
 
       <div className="px-4 pt-4">
