@@ -15,6 +15,8 @@ import siteGames from "@/assets/site-games.jpg";
 import siteStore from "@/assets/site-store.jpg";
 import siteCommunity from "@/assets/site-community.jpg";
 import siteNotifications from "@/assets/site-notifications.jpg";
+import siteCallAudio from "@/assets/site-call-audio.jpg";
+import siteCallVideo from "@/assets/site-call-video.jpg";
 
 declare const __CAPACITOR_BUILD__: boolean | undefined;
 
