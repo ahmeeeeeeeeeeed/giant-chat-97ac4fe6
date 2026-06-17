@@ -106,6 +106,7 @@ export function CallProvider({ children }: { children: ReactNode }) {
     isCallerRef.current = false;
     pendingIceRef.current = [];
     remoteSetRef.current = false;
+    pendingSignalsRef.current = new Map();
   }, [localStream]);
 
   const sendSignal = useCallback(
