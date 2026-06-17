@@ -237,31 +237,63 @@ function AdminUpdates() {
         </div>
 
         <div>
-          <label className="text-xs text-muted-foreground">ملف APK</label>
-          <input id="apk-input" type="file" accept="*/*"
-            onChange={(e) => setFile(e.target.files?.[0] || null)}
-            className="mt-1 block w-full text-sm file:mr-3 file:rounded-xl file:border-0 file:bg-secondary file:px-4 file:py-2 file:text-sm file:font-semibold" />
-          {file && <p className="mt-1 text-xs text-muted-foreground">{file.name} — {(file.size / 1024 / 1024).toFixed(2)} MB</p>}
+          <label className="text-xs text-muted-foreground">آلية التحديث</label>
+          <div className="mt-1 flex gap-2">
+            <button onClick={() => setUpdateKind("bundle")}
+              className={`flex-1 h-11 rounded-xl border font-semibold text-xs ${updateKind === "bundle" ? "bg-emerald-500 text-white border-emerald-500" : "border-border bg-background"}`}>
+              تحديث داخلي تلقائي (ZIP)
+            </button>
+            <button onClick={() => setUpdateKind("apk")}
+              className={`flex-1 h-11 rounded-xl border font-semibold text-xs ${updateKind === "apk" ? "bg-sky-500 text-white border-sky-500" : "border-border bg-background"}`}>
+              تثبيت كامل (APK)
+            </button>
+          </div>
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            {updateKind === "bundle"
+              ? "حزمة ويب (zip) تُطبَّق تلقائياً داخل التطبيق بدون إعادة تثبيت — مناسب لتعديلات الواجهة والمنطق."
+              : "ملف APK كامل — يحتاج المستخدم لفتح نافذة التثبيت يدوياً. استخدمه عند تغيير الأيقونة/الصلاحيات/الإضافات."}
+          </p>
         </div>
 
-        {(busy || progress > 0) && file && (
+        {updateKind === "apk" && (
+          <div>
+            <label className="text-xs text-muted-foreground">ملف APK</label>
+            <input id="apk-input" type="file" accept=".apk,application/vnd.android.package-archive"
+              onChange={(e) => setFile(e.target.files?.[0] || null)}
+              className="mt-1 block w-full text-sm file:mr-3 file:rounded-xl file:border-0 file:bg-secondary file:px-4 file:py-2 file:text-sm file:font-semibold" />
+            {file && <p className="mt-1 text-xs text-muted-foreground">{file.name} — {(file.size / 1024 / 1024).toFixed(2)} MB</p>}
+          </div>
+        )}
+
+        {updateKind === "bundle" && (
+          <div>
+            <label className="text-xs text-muted-foreground">حزمة الويب (.zip لمحتوى dist)</label>
+            <input id="bundle-input" type="file" accept=".zip,application/zip"
+              onChange={(e) => setBundleFile(e.target.files?.[0] || null)}
+              className="mt-1 block w-full text-sm file:mr-3 file:rounded-xl file:border-0 file:bg-secondary file:px-4 file:py-2 file:text-sm file:font-semibold" />
+            {bundleFile && <p className="mt-1 text-xs text-muted-foreground">{bundleFile.name} — {(bundleFile.size / 1024 / 1024).toFixed(2)} MB</p>}
+          </div>
+        )}
+
+        {(busy || progress > 0) && (
           <div className="space-y-1">
             <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
               <div className="h-full bg-emerald-500 transition-all" style={{ width: `${progress}%` }} />
             </div>
             <div className="flex justify-between text-[11px] text-muted-foreground tabular-nums">
-              <span>{(uploaded / 1024 / 1024).toFixed(2)} / {(file.size / 1024 / 1024).toFixed(2)} MB</span>
+              <span>{(uploaded / 1024 / 1024).toFixed(2)} MB</span>
               <span>{progress}%</span>
             </div>
           </div>
         )}
 
-        <button onClick={handleUpload} disabled={busy || !file || !version}
+        <button onClick={handleUpload} disabled={busy || !version || (updateKind === "apk" ? !file : !bundleFile)}
           className="h-12 w-full rounded-xl bg-primary text-primary-foreground font-bold disabled:opacity-50 flex items-center justify-center gap-2">
           {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <Upload className="h-5 w-5" />}
           {busy ? "جارٍ الرفع..." : "رفع ونشر"}
         </button>
       </section>
+
 
       <section className="rounded-2xl border border-border bg-card p-4">
         <h2 className="mb-3 font-bold">الإصدارات السابقة</h2>
