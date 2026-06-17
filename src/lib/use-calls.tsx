@@ -335,18 +335,110 @@ export function CallProvider({ children }: { children: ReactNode }) {
     }
   }, [localStream, state.callType, state.facing]);
 
-  // ===== Global incoming-call listener =====
+  // Buffer for signals that arrive before our PC is ready (offer can land
+  // before / racing with the calls INSERT row on the callee side).
+  const pendingSignalsRef = useRef<Map<string, Array<{ signal_type: string; payload: unknown }>>>(new Map());
+
+  const handleSignal = useCallback(async (s: { from_user: string; to_user: string; signal_type: string; payload: unknown; call_id: string }) => {
+    if (!user || s.to_user !== user.id) return;
+
+    // If signal is for a different call than the one we're handling, buffer
+    // (offer can arrive before the calls INSERT row event).
+    if (callIdRef.current && callIdRef.current !== s.call_id) {
+      // Ignore — different call (or stale).
+      return;
+    }
+    const pc = pcRef.current;
+    if (!pc && (s.signal_type === "offer" || s.signal_type === "answer" || s.signal_type === "ice")) {
+      const arr = pendingSignalsRef.current.get(s.call_id) ?? [];
+      arr.push({ signal_type: s.signal_type, payload: s.payload });
+      pendingSignalsRef.current.set(s.call_id, arr);
+      return;
+    }
+
+    switch (s.signal_type) {
+      case "offer": {
+        if (!pc) return;
+        const sdp = s.payload as RTCSessionDescriptionInit;
+        try { await pc.setRemoteDescription(sdp); remoteSetRef.current = true; } catch { /* noop */ }
+        for (const c of pendingIceRef.current) {
+          try { await pc.addIceCandidate(c); } catch { /* noop */ }
+        }
+        pendingIceRef.current = [];
+        break;
+      }
+      case "answer": {
+        if (!pc) return;
+        const sdp = s.payload as RTCSessionDescriptionInit;
+        try { await pc.setRemoteDescription(sdp); remoteSetRef.current = true; } catch { /* noop */ }
+        for (const c of pendingIceRef.current) {
+          try { await pc.addIceCandidate(c); } catch { /* noop */ }
+        }
+        pendingIceRef.current = [];
+        setState((st) => st.status === "connected" ? st : { ...st, status: "connecting" });
+        break;
+      }
+      case "ice": {
+        if (!pc) return;
+        const cand = s.payload as RTCIceCandidateInit;
+        if (pc.remoteDescription) {
+          try { await pc.addIceCandidate(cand); } catch { /* noop */ }
+        } else {
+          pendingIceRef.current.push(cand);
+        }
+        break;
+      }
+      case "ringing": {
+        setState((st) => st.status === "outgoing" ? { ...st, status: "ringing-out" } : st);
+        break;
+      }
+      case "accept": {
+        setState((st) => ({ ...st, status: "connecting" }));
+        stopDial();
+        break;
+      }
+      case "reject": {
+        stopRing(); stopDial();
+        toast.info("تم رفض المكالمة");
+        await endCall("rejected", false);
+        break;
+      }
+      case "busy": {
+        stopDial();
+        toast.info("المستخدم مشغول الآن");
+        await endCall("rejected", false);
+        break;
+      }
+      case "hangup": {
+        await endCall("hangup", false);
+        break;
+      }
+    }
+  }, [user, endCall]);
+
+  // Drain any buffered signals for the active call (used after PC is built).
+  const drainPendingSignals = useCallback(async () => {
+    const id = callIdRef.current;
+    if (!id) return;
+    const arr = pendingSignalsRef.current.get(id);
+    if (!arr || arr.length === 0) return;
+    pendingSignalsRef.current.delete(id);
+    for (const s of arr) {
+      await handleSignal({ from_user: peerIdRef.current ?? "", to_user: user?.id ?? "", signal_type: s.signal_type, payload: s.payload, call_id: id });
+    }
+  }, [handleSignal, user]);
+
+  // ===== Global incoming-call + signal listener (single subscription) =====
   useEffect(() => {
     if (!user) return;
     const ch = supabase
-      .channel(`calls-incoming:${user.id}`)
+      .channel(`calls-global:${user.id}`)
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "calls", filter: `callee_id=eq.${user.id}` },
         async (p) => {
           const row = p.new as { id: string; caller_id: string; call_type: CallType; status: string };
           if (statusRef.current !== "idle" && statusRef.current !== "ended") {
-            // already busy
             await supabase.from("call_signals").insert({
               call_id: row.id, from_user: user.id, to_user: row.caller_id,
               signal_type: "busy", payload: null,
@@ -354,7 +446,6 @@ export function CallProvider({ children }: { children: ReactNode }) {
             await supabase.from("calls").update({ status: "busy", end_reason: "busy", ended_at: new Date().toISOString() }).eq("id", row.id);
             return;
           }
-          // Load caller profile
           const { data: prof } = await supabase
             .from("profiles").select("id, username, avatar_url").eq("id", row.caller_id).maybeSingle();
           const peer: PeerProfile = prof ?? { id: row.caller_id, username: "مستخدم", avatar_url: null };
@@ -362,7 +453,6 @@ export function CallProvider({ children }: { children: ReactNode }) {
           callIdRef.current = row.id;
           peerIdRef.current = row.caller_id;
           isCallerRef.current = false;
-          // Build PC early so we can drain ICE that arrives before accept
           const pc = buildPc();
           pcRef.current = pc;
 
@@ -379,7 +469,19 @@ export function CallProvider({ children }: { children: ReactNode }) {
           stopRingRef.current = playRingtone();
           await sendSignal("ringing");
 
-          // Auto-mark missed after 45s
+          // Backfill any signals already in DB (offer likely arrived first).
+          const { data: existing } = await supabase
+            .from("call_signals")
+            .select("from_user, to_user, signal_type, payload, call_id")
+            .eq("call_id", row.id)
+            .eq("to_user", user.id)
+            .order("created_at", { ascending: true });
+          for (const s of existing ?? []) {
+            await handleSignal(s as never);
+          }
+          // Drain any buffered live signals
+          await drainPendingSignals();
+
           setTimeout(() => {
             if (callIdRef.current === row.id && !remoteSetRef.current && pcRef.current?.connectionState !== "connected") {
               if (statusRef.current === "ringing-in" || pcRef.current) {
@@ -389,85 +491,17 @@ export function CallProvider({ children }: { children: ReactNode }) {
           }, 45000);
         }
       )
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
-  }, [user, buildPc, sendSignal, endCall]);
-
-  // ===== Per-call signal channel =====
-  useEffect(() => {
-    if (!user || !state.callId) return;
-    const callId = state.callId;
-    const ch = supabase
-      .channel(`call-signals:${callId}`)
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "call_signals", filter: `call_id=eq.${callId}` },
+        { event: "INSERT", schema: "public", table: "call_signals", filter: `to_user=eq.${user.id}` },
         async (p) => {
-          const s = p.new as { from_user: string; to_user: string; signal_type: string; payload: unknown };
-          if (s.to_user !== user.id) return;
-          const pc = pcRef.current;
-          switch (s.signal_type) {
-            case "offer": {
-              if (!pc) return;
-              const sdp = s.payload as RTCSessionDescriptionInit;
-              await pc.setRemoteDescription(sdp);
-              remoteSetRef.current = true;
-              break;
-            }
-            case "answer": {
-              if (!pc) return;
-              const sdp = s.payload as RTCSessionDescriptionInit;
-              await pc.setRemoteDescription(sdp);
-              remoteSetRef.current = true;
-              for (const c of pendingIceRef.current) {
-                try { await pc.addIceCandidate(c); } catch { /* noop */ }
-              }
-              pendingIceRef.current = [];
-              setState((st) => st.status === "connected" ? st : { ...st, status: "connecting" });
-              break;
-            }
-            case "ice": {
-              if (!pc) return;
-              const cand = s.payload as RTCIceCandidateInit;
-              if (pc.remoteDescription) {
-                try { await pc.addIceCandidate(cand); } catch { /* noop */ }
-              } else {
-                pendingIceRef.current.push(cand);
-              }
-              break;
-            }
-            case "ringing": {
-              setState((st) => st.status === "outgoing" ? { ...st, status: "ringing-out" } : st);
-              break;
-            }
-            case "accept": {
-              // caller side: answer will follow
-              setState((st) => ({ ...st, status: "connecting" }));
-              stopDial();
-              break;
-            }
-            case "reject": {
-              stopRing(); stopDial();
-              toast.info("تم رفض المكالمة");
-              await endCall("rejected", false);
-              break;
-            }
-            case "busy": {
-              stopDial();
-              toast.info("المستخدم مشغول الآن");
-              await endCall("rejected", false);
-              break;
-            }
-            case "hangup": {
-              await endCall("hangup", false);
-              break;
-            }
-          }
+          const s = p.new as { from_user: string; to_user: string; signal_type: string; payload: unknown; call_id: string };
+          await handleSignal(s);
         }
       )
       .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, [user, state.callId, endCall]);
+  }, [user, buildPc, sendSignal, endCall, handleSignal, drainPendingSignals]);
 
   // Cleanup on unmount
   useEffect(() => () => { cleanup(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
