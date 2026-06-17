@@ -1,15 +1,29 @@
 import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const PREMIUM_COST = 50_000;
 
-// Username: 2..30 chars, anything visible (Arabic / decorated / latin), no whitespace at ends.
-// Disallow control chars and '@' to avoid conflicts with emails.
+// Strict runtime schema for premium creation. TypeScript types are erased
+// at runtime, so we MUST validate explicitly to keep malformed payloads
+// (object/array username, oversized password, control chars) from reaching
+// the admin auth API.
+const premiumInputSchema = z.object({
+  username: z
+    .string()
+    .min(2, "اسم المستخدم يجب أن يكون بين 2 و 30 حرفاً")
+    .max(30, "اسم المستخدم يجب أن يكون بين 2 و 30 حرفاً")
+    // Disallow whitespace, '@', and control characters.
+    .regex(/^[^\s@\u0000-\u001F\u007F]+$/, "اسم المستخدم يحتوي على رموز غير مسموحة"),
+  password: z
+    .string()
+    .min(6, "كلمة المرور 6 أحرف على الأقل")
+    .max(128, "كلمة المرور طويلة جداً"),
+});
+
 function validateUsername(u: string): string {
-  const v = (u ?? "").trim();
-  if (v.length < 2 || v.length > 30) throw new Error("اسم المستخدم يجب أن يكون بين 2 و 30 حرفاً");
-  if (/[\s@\u0000-\u001F\u007F]/.test(v)) throw new Error("اسم المستخدم يحتوي على رموز غير مسموحة");
-  return v;
+  // Defence-in-depth — also called from inside createPremiumUser.
+  return premiumInputSchema.shape.username.parse((u ?? "").trim());
 }
 
 function syntheticEmail(): string {
@@ -41,15 +55,12 @@ async function createPremiumUser(opts: { username: string; password: string }) {
   });
   if (cErr || !created.user) throw new Error(cErr?.message ?? "تعذّر إنشاء الحساب");
 
-  // The handle_new_user trigger inserted a profile from metadata.
-  // Stamp it as premium and persist the auth email for username->email lookup.
   const { error: mErr } = await supabaseAdmin.rpc("mark_profile_premium", {
     _target: created.user.id,
     _username: username,
     _email: email,
   } as never);
   if (mErr) {
-    // best-effort cleanup
     await supabaseAdmin.auth.admin.deleteUser(created.user.id);
     throw new Error(mErr.message);
   }
@@ -58,9 +69,8 @@ async function createPremiumUser(opts: { username: string; password: string }) {
 
 export const createPremiumByPoints = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { username: string; password: string }) => input)
+  .inputValidator((input: unknown) => premiumInputSchema.parse(input))
   .handler(async ({ data, context }) => {
-    // Atomically charge points from the signed-in user (RLS as that user).
     const { error: payErr } = await context.supabase.rpc("premium_charge_points", { _cost: PREMIUM_COST } as never);
     if (payErr) {
       if (String(payErr.message).includes("insufficient_points")) {
@@ -71,7 +81,6 @@ export const createPremiumByPoints = createServerFn({ method: "POST" })
     try {
       return await createPremiumUser(data);
     } catch (e) {
-      // refund on failure using admin client (caller is not admin)
       try {
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { data: prof } = await supabaseAdmin.from("profiles").select("points").eq("id", context.userId).maybeSingle();
@@ -83,7 +92,7 @@ export const createPremiumByPoints = createServerFn({ method: "POST" })
 
 export const adminCreatePremium = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { username: string; password: string }) => input)
+  .inputValidator((input: unknown) => premiumInputSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { data: isAdmin } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
     if (!isAdmin) throw new Error("Forbidden");
