@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/auth";
 import {
   ArrowRight, Send, Loader2, ImagePlus, Mic, Square, Play, Pause,
   MoreVertical, Reply, Copy, Trash2, Share2, BellOff, Bell, Ban, X,
-  Check, CheckCheck, Clock, Phone, Video,
+  Check, CheckCheck, Clock, Phone, Video, PhoneIncoming, PhoneOutgoing, PhoneMissed, History,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
@@ -54,11 +54,37 @@ function MessageTicks({ status, isFriend }: { status: MessageStatus; isFriend: b
 }
 type Profile = { id: string; username: string; avatar_url: string | null; last_seen_at: string | null; hide_last_seen: boolean };
 
+type CallRow = {
+  id: string;
+  caller_id: string;
+  callee_id: string;
+  call_type: "audio" | "video";
+  status: string;
+  started_at: string;
+  answered_at: string | null;
+  ended_at: string | null;
+  duration_seconds: number | null;
+  end_reason: string | null;
+};
+
+function fmtCallDuration(s: number): string {
+  if (!s || s <= 0) return "";
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  const parts: string[] = [];
+  if (h) parts.push(`${h} ساعة`);
+  if (m) parts.push(`${m} دقيقة`);
+  if (!h && !m) parts.push(`${sec} ثانية`);
+  return parts.join(" و ");
+}
+
 function DMPage() {
   const { id: otherId } = Route.useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { startCall: startCallFn } = useCalls();
   const [messages, setMessages] = useState<DM[]>([]);
   const [other, setOther] = useState<Profile | null>(null);
   const [text, setText] = useState("");
@@ -76,6 +102,9 @@ function DMPage() {
   const [isFriend, setIsFriend] = useState(false);
   const [pendingMedia, setPendingMedia] = useState<{ kind: "image" | "voice"; file: Blob; previewUrl: string; durationMs?: number } | null>(null);
   const otherAvatarSource = useCachedMediaSource(other?.avatar_url);
+
+  const [calls, setCalls] = useState<CallRow[]>([]);
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -224,6 +253,48 @@ function DMPage() {
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [user, otherId]);
+
+  // load + subscribe to call history for this pair
+  useEffect(() => {
+    if (!user) return;
+    if (!getOnline()) return;
+    let mounted = true;
+    (async () => {
+      const { data } = await supabase
+        .from("calls")
+        .select("id, caller_id, callee_id, call_type, status, started_at, answered_at, ended_at, duration_seconds, end_reason")
+        .or(`and(caller_id.eq.${user.id},callee_id.eq.${otherId}),and(caller_id.eq.${otherId},callee_id.eq.${user.id})`)
+        .order("started_at", { ascending: true })
+        .limit(200);
+      if (mounted && data) setCalls(data as CallRow[]);
+    })();
+
+    const ch = supabase
+      .channel(`dm-calls:${[user.id, otherId].sort().join(":")}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "calls" }, (p) => {
+        const r = (p.new ?? p.old) as CallRow | undefined;
+        if (!r) return;
+        const involves =
+          (r.caller_id === user.id && r.callee_id === otherId) ||
+          (r.caller_id === otherId && r.callee_id === user.id);
+        if (!involves) return;
+        if (p.eventType === "DELETE") {
+          setCalls((old) => old.filter((x) => x.id !== r.id));
+        } else {
+          const next = p.new as CallRow;
+          setCalls((old) => {
+            const i = old.findIndex((x) => x.id === next.id);
+            if (i < 0) return [...old, next];
+            const copy = [...old];
+            copy[i] = next;
+            return copy;
+          });
+        }
+      })
+      .subscribe();
+    return () => { mounted = false; supabase.removeChannel(ch); };
+  }, [user, otherId]);
+
 
   // presence + typing channel (shared by both peers — same name)
   useEffect(() => {
@@ -576,6 +647,11 @@ function DMPage() {
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
                   عرض البروفايل
                 </button>
+                <button onClick={() => { setMenuOpen(false); setHistoryOpen(true); }}
+                  className="flex w-full items-center gap-3 px-4 py-3 text-sm hover:bg-secondary text-start">
+                  <History className="h-4 w-4" />
+                  سجل المكالمات
+                </button>
                 <button onClick={() => { setMenuOpen(false); toggleMute(); }}
                   className="flex w-full items-center gap-3 px-4 py-3 text-sm hover:bg-secondary text-start">
                   {muted ? <Bell className="h-4 w-4" /> : <BellOff className="h-4 w-4" />}
@@ -623,47 +699,63 @@ function DMPage() {
           </div>
         ) : (
           <ul className="flex flex-col gap-2.5">
-            {messages.map(m => {
-              const mine = m.sender_id === user?.id;
-              const replied = m.reply_to_id ? messagesById.get(m.reply_to_id) : null;
-              return (
-                <li key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-                  <div className={`flex items-end gap-1.5 max-w-[85%] ${mine ? "flex-row" : "flex-row-reverse"}`}>
-                    {/* Dots button as a sibling — never covers message text */}
-                    <div className="relative shrink-0 self-center">
-                      <button
-                        onClick={() => setMenuFor(menuFor === m.id ? null : m.id)}
-                        className="flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground/70 hover:text-foreground hover:bg-secondary transition"
-                        aria-label="خيارات الرسالة"
-                      >
-                        <MoreVertical className="h-4 w-4" />
-                      </button>
-                      {menuFor === m.id && (
-                        <>
-                          <div className="fixed inset-0 z-40" onClick={() => setMenuFor(null)} />
-                          <div className={`absolute z-50 mt-1 ${mine ? "left-0" : "right-0"} top-full w-48 overflow-hidden rounded-xl border border-border bg-card shadow-lg`}>
-                            <ActionItem icon={<Reply className="h-4 w-4" />} label="رد" onClick={() => { setReplyTo(m); setMenuFor(null); }} />
-                            <ActionItem icon={<Copy className="h-4 w-4" />} label="نسخ" onClick={() => copyMessage(m)} />
-                            <ActionItem icon={<Share2 className="h-4 w-4" />} label="مشاركة" onClick={() => shareMessage(m)} />
-                            <ActionItem icon={<Trash2 className="h-4 w-4" />} label="حذف لدي فقط" onClick={() => deleteForMe(m)} />
-                            {mine && (
-                              <ActionItem icon={<Trash2 className="h-4 w-4 text-destructive" />} label="حذف لدى الجميع" onClick={() => deleteForAll(m)} destructive />
-                            )}
-                          </div>
-                        </>
-                      )}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <MessageBubble m={m} mine={mine} replied={replied ?? null} onPress={() => setMenuFor(m.id)} />
-                      <div className={`mt-1 flex items-center gap-1 text-[10px] text-muted-foreground/80 ${mine ? "justify-end" : "justify-start"}`} suppressHydrationWarning>
-                        <span>{formatDateTime(m.created_at)}</span>
-                        {mine && <MessageTicks status={statusOf(m)} isFriend={isFriend} />}
+            {(() => {
+              type Item =
+                | { kind: "msg"; t: number; m: DM }
+                | { kind: "call"; t: number; c: CallRow };
+              const items: Item[] = [];
+              messages.forEach((m) => items.push({ kind: "msg", t: new Date(m.created_at).getTime(), m }));
+              calls
+                .filter((c) => !!c.ended_at && c.status !== "ringing" && c.status !== "accepted")
+                .forEach((c) => items.push({ kind: "call", t: new Date(c.ended_at ?? c.started_at).getTime(), c }));
+              items.sort((a, b) => a.t - b.t);
+
+              return items.map((it) => {
+                if (it.kind === "call") {
+                  const mine = it.c.caller_id === user?.id;
+                  return <li key={`c_${it.c.id}`}><CallEvent c={it.c} mine={mine} /></li>;
+                }
+                const m = it.m;
+                const mine = m.sender_id === user?.id;
+                const replied = m.reply_to_id ? messagesById.get(m.reply_to_id) : null;
+                return (
+                  <li key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
+                    <div className={`flex items-end gap-1.5 max-w-[85%] ${mine ? "flex-row" : "flex-row-reverse"}`}>
+                      <div className="relative shrink-0 self-center">
+                        <button
+                          onClick={() => setMenuFor(menuFor === m.id ? null : m.id)}
+                          className="flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground/70 hover:text-foreground hover:bg-secondary transition"
+                          aria-label="خيارات الرسالة"
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </button>
+                        {menuFor === m.id && (
+                          <>
+                            <div className="fixed inset-0 z-40" onClick={() => setMenuFor(null)} />
+                            <div className={`absolute z-50 mt-1 ${mine ? "left-0" : "right-0"} top-full w-48 overflow-hidden rounded-xl border border-border bg-card shadow-lg`}>
+                              <ActionItem icon={<Reply className="h-4 w-4" />} label="رد" onClick={() => { setReplyTo(m); setMenuFor(null); }} />
+                              <ActionItem icon={<Copy className="h-4 w-4" />} label="نسخ" onClick={() => copyMessage(m)} />
+                              <ActionItem icon={<Share2 className="h-4 w-4" />} label="مشاركة" onClick={() => shareMessage(m)} />
+                              <ActionItem icon={<Trash2 className="h-4 w-4" />} label="حذف لدي فقط" onClick={() => deleteForMe(m)} />
+                              {mine && (
+                                <ActionItem icon={<Trash2 className="h-4 w-4 text-destructive" />} label="حذف لدى الجميع" onClick={() => deleteForAll(m)} destructive />
+                              )}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <MessageBubble m={m} mine={mine} replied={replied ?? null} onPress={() => setMenuFor(m.id)} />
+                        <div className={`mt-1 flex items-center gap-1 text-[10px] text-muted-foreground/80 ${mine ? "justify-end" : "justify-start"}`} suppressHydrationWarning>
+                          <span>{formatDateTime(m.created_at)}</span>
+                          {mine && <MessageTicks status={statusOf(m)} isFriend={isFriend} />}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </li>
-              );
-            })}
+                  </li>
+                );
+              });
+            })()}
           </ul>
         )}
       </div>
@@ -734,7 +826,124 @@ function DMPage() {
           )}
         </form>
       )}
+      {historyOpen && other && (
+        <div
+          className="fixed inset-0 z-[60] flex items-end justify-center bg-black/60 backdrop-blur-sm sm:items-center"
+          onClick={() => setHistoryOpen(false)}
+        >
+          <div
+            className="w-full max-h-[80vh] overflow-hidden rounded-t-2xl bg-card shadow-2xl sm:max-w-md sm:rounded-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-border bg-gradient-to-l from-emerald-700 to-slate-900 px-4 py-3 text-white">
+              <div className="flex items-center gap-2">
+                <History className="h-5 w-5" />
+                <h3 className="font-bold">سجل المكالمات مع {other.username}</h3>
+              </div>
+              <button onClick={() => setHistoryOpen(false)} className="rounded-full p-1 hover:bg-white/10" aria-label="إغلاق">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="max-h-[70vh] divide-y divide-border overflow-y-auto">
+              {calls.length === 0 ? (
+                <div className="flex flex-col items-center gap-2 p-10 text-center text-sm text-muted-foreground">
+                  <Phone className="h-8 w-8 opacity-40" />
+                  <span>لا توجد مكالمات سابقة</span>
+                </div>
+              ) : (
+                [...calls].reverse().map((c) => {
+                  const outgoing = c.caller_id === user?.id;
+                  const isVideo = c.call_type === "video";
+                  const missed = c.status === "missed" || (c.status === "rejected" && !outgoing);
+                  const Icon = isVideo ? Video : Phone;
+                  const DirIcon = missed ? PhoneMissed : outgoing ? PhoneOutgoing : PhoneIncoming;
+                  const dur = fmtCallDuration(c.duration_seconds ?? 0);
+                  let label = "";
+                  if (c.status === "missed") label = outgoing ? "لم يُرد على المكالمة" : "مكالمة فائتة";
+                  else if (c.status === "rejected") label = outgoing ? "تم رفض المكالمة" : "رفضت المكالمة";
+                  else if (c.status === "canceled") label = "تم الإلغاء";
+                  else if (c.status === "failed") label = "فشلت";
+                  else if (c.status === "busy") label = "مشغول";
+                  else label = dur ? `المدة: ${dur}` : "منتهية";
+                  return (
+                    <div key={c.id} className="flex items-center gap-3 px-4 py-3">
+                      <div className={`flex h-11 w-11 items-center justify-center rounded-full ${missed ? "bg-rose-500/10 text-rose-500" : outgoing ? "bg-emerald-500/10 text-emerald-600" : "bg-sky-500/10 text-sky-600"}`}>
+                        <Icon className="h-5 w-5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 text-sm font-semibold">
+                          <DirIcon className={`h-3.5 w-3.5 ${missed ? "text-rose-500" : "text-muted-foreground"}`} />
+                          <span>{isVideo ? "فيديو" : "صوتية"}</span>
+                          <span className="text-muted-foreground">·</span>
+                          <span className="text-xs font-normal text-muted-foreground">{label}</span>
+                        </div>
+                        <div className="text-[11px] text-muted-foreground">{formatDateTime(c.started_at)}</div>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setHistoryOpen(false);
+                          if (other) startCallFn({ id: other.id, username: other.username, avatar_url: other.avatar_url }, c.call_type);
+                        }}
+                        className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20"
+                        aria-label="إعادة الاتصال"
+                      >
+                        {isVideo ? <Video className="h-4 w-4" /> : <Phone className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </main>
+  );
+}
+
+function CallEvent({ c, mine }: { c: CallRow; mine: boolean }) {
+  const isVideo = c.call_type === "video";
+  const Icon = isVideo ? Video : Phone;
+  const missed = c.status === "missed" || (c.status === "rejected" && !mine);
+  const DirIcon = missed ? PhoneMissed : mine ? PhoneOutgoing : PhoneIncoming;
+  const dur = fmtCallDuration(c.duration_seconds ?? 0);
+  let label = "";
+  let tone = "border-border bg-card/80 text-foreground";
+  if (c.status === "missed") {
+    label = mine ? "لم يُرد على المكالمة" : "مكالمة فائتة";
+    tone = "border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-300";
+  } else if (c.status === "rejected") {
+    label = mine ? "تم رفض المكالمة" : "رفضت المكالمة";
+    tone = "border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-300";
+  } else if (c.status === "canceled") {
+    label = "تم إلغاء المكالمة";
+  } else if (c.status === "failed") {
+    label = "فشلت المكالمة";
+    tone = "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300";
+  } else if (c.status === "busy") {
+    label = "كان مشغولاً";
+  } else {
+    label = `مكالمة منتهية${dur ? ` · المدة ${dur}` : ""}`;
+    tone = "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300";
+  }
+  return (
+    <div className="my-1 flex justify-center">
+      <div className={`flex max-w-[90%] items-center gap-2.5 rounded-full border px-3 py-1.5 shadow-sm backdrop-blur ${tone}`}>
+        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-background/40">
+          <Icon className="h-3.5 w-3.5" />
+        </div>
+        <div className="flex flex-col text-[11px] leading-tight">
+          <div className="flex items-center gap-1 font-bold">
+            <DirIcon className="h-3 w-3" />
+            <span>{isVideo ? "مكالمة فيديو" : "مكالمة صوتية"}</span>
+            <span className="opacity-70">·</span>
+            <span className="opacity-80">{mine ? "صادرة" : "واردة"}</span>
+          </div>
+          <div className="opacity-80">{label}</div>
+          <div className="text-[10px] opacity-60">{formatDateTime(c.ended_at ?? c.started_at)}</div>
+        </div>
+      </div>
+    </div>
   );
 }
 
