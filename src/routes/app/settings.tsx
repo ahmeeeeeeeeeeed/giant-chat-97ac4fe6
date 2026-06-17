@@ -392,13 +392,13 @@ function SettingsPage() {
 
         {/* Legal */}
         <Section title="الخصوصية والقانونية">
-          <button onClick={() => setShowPrivacy(true)} className="flex w-full items-center justify-between p-4 active:bg-secondary/60 text-start">
+          <Link to="/privacy" className="flex w-full items-center justify-between p-4 active:bg-secondary/60 text-start">
             <div className="flex items-center gap-3">
               <IconBox color="bg-indigo-500"><FileText className="h-4 w-4" /></IconBox>
               <span className="font-medium">سياسة الخصوصية</span>
             </div>
             <ChevronLeft className="h-4 w-4 text-muted-foreground rtl:rotate-180" />
-          </button>
+          </Link>
           <button onClick={() => setShowTerms(true)} className="flex w-full items-center justify-between p-4 active:bg-secondary/60 text-start">
             <div className="flex items-center gap-3">
               <IconBox color="bg-purple-500"><ScrollText className="h-4 w-4" /></IconBox>
