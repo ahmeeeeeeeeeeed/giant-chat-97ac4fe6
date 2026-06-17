@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { APP_VERSION } from "@/lib/version";
-import { applyWebBundleUpdate, downloadAndInstallApk, getDisplayInstalledVersion, isForceRequired, isNativeAndroid, markUpdateInstalled, notifyNativeUpdateReady, shouldInstallFullApk, shouldShowUpdate, syncNativeInstalledVersion, type AppUpdateRow } from "@/lib/app-update";
+import { applyWebBundleUpdate, downloadAndInstallApk, getDisplayInstalledVersion, isForceRequired, isNativeAndroid, markUpdateInstalled, notifyNativeUpdateReady, openDownloadedApk, shouldInstallFullApk, shouldShowUpdate, syncNativeInstalledVersion, type AppUpdateRow } from "@/lib/app-update";
 import { Download, X, AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -24,6 +24,8 @@ export function UpdateGate() {
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [native, setNative] = useState(false);
+  const [downloadedApkPath, setDownloadedApkPath] = useState<string | null>(null);
+  const [waitingForInstall, setWaitingForInstall] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -97,6 +99,12 @@ export function UpdateGate() {
           latest.file_url,
           (p) => setProgress(p),
         );
+        const result = await downloadAndInstallApk(
+          latest.file_url,
+          (p) => setProgress(p),
+        );
+        setDownloadedApkPath(result.filePath);
+        setWaitingForInstall(true);
         setDone(true);
         return;
       }
@@ -115,13 +123,31 @@ export function UpdateGate() {
         setDismissed(true);
         return;
       }
-      await downloadAndInstallApk(
+      const result = await downloadAndInstallApk(
         latest.file_url,
         (p) => setProgress(p),
       );
+      setDownloadedApkPath(result.filePath);
+      setWaitingForInstall(true);
       setDone(true);
     } catch (e) {
       const message = errorMessage(e, "فشل التحديث");
+      setError(message);
+      toast.error(message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleOpenInstaller = async () => {
+    if (!downloadedApkPath) return void handleUpdate();
+    setBusy(true);
+    setError(null);
+    try {
+      await openDownloadedApk(downloadedApkPath);
+      setWaitingForInstall(true);
+    } catch (e) {
+      const message = errorMessage(e, "تعذر فتح المثبت");
       setError(message);
       toast.error(message);
     } finally {
@@ -188,7 +214,7 @@ export function UpdateGate() {
               <span className="font-bold">
                 {latest.web_bundle_url && !needsFullApk
                   ? "تم تطبيق التحديث — سيتم إعادة تشغيل التطبيق"
-                  : "اكتمل التحميل — افتح نافذة التثبيت"}
+                  : waitingForInstall ? "تم فتح المثبّت — أكمل التثبيت من نافذة Android" : "اكتمل التحميل — افتح المثبّت"}
               </span>
             </div>
             {(!latest.web_bundle_url || needsFullApk) && (
@@ -197,7 +223,7 @@ export function UpdateGate() {
                   <div className="h-full w-1/3 animate-[slide_1.2s_ease-in-out_infinite] rounded-full bg-emerald-500" />
                 </div>
                 <ol className="list-decimal space-y-1 pr-5 text-xs leading-relaxed text-emerald-700/90 dark:text-emerald-300/90">
-                  <li>اضغط "تثبيت الآن" بالأسفل لفتح نافذة المثبت.</li>
+                  <li>اضغط "فتح المثبّت" إذا لم تظهر نافذة Android تلقائيًا.</li>
                   <li>في نافذة Android اضغط "تثبيت" ثم انتظر حتى تنتهي.</li>
                   <li>إذا ظهرت رسالة "مصادر غير معروفة" فعّل الإذن ثم أعد المحاولة.</li>
                   <li>بعد انتهاء التثبيت اضغط "فتح" لتشغيل النسخة الجديدة.</li>
@@ -224,10 +250,11 @@ export function UpdateGate() {
           )}
           {done && (
             <button
-              onClick={handleUpdate}
-              className="flex-1 h-12 rounded-2xl bg-primary text-primary-foreground font-bold"
+              onClick={handleOpenInstaller}
+              disabled={busy}
+              className="flex-1 h-12 rounded-2xl bg-primary text-primary-foreground font-bold disabled:opacity-50"
             >
-              تثبيت الآن
+              {busy ? "جارٍ فتح المثبت" : "فتح المثبّت"}
             </button>
           )}
           {!force && !busy && !done && (
