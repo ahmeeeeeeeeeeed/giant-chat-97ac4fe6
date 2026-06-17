@@ -693,47 +693,63 @@ function DMPage() {
           </div>
         ) : (
           <ul className="flex flex-col gap-2.5">
-            {messages.map(m => {
-              const mine = m.sender_id === user?.id;
-              const replied = m.reply_to_id ? messagesById.get(m.reply_to_id) : null;
-              return (
-                <li key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-                  <div className={`flex items-end gap-1.5 max-w-[85%] ${mine ? "flex-row" : "flex-row-reverse"}`}>
-                    {/* Dots button as a sibling — never covers message text */}
-                    <div className="relative shrink-0 self-center">
-                      <button
-                        onClick={() => setMenuFor(menuFor === m.id ? null : m.id)}
-                        className="flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground/70 hover:text-foreground hover:bg-secondary transition"
-                        aria-label="خيارات الرسالة"
-                      >
-                        <MoreVertical className="h-4 w-4" />
-                      </button>
-                      {menuFor === m.id && (
-                        <>
-                          <div className="fixed inset-0 z-40" onClick={() => setMenuFor(null)} />
-                          <div className={`absolute z-50 mt-1 ${mine ? "left-0" : "right-0"} top-full w-48 overflow-hidden rounded-xl border border-border bg-card shadow-lg`}>
-                            <ActionItem icon={<Reply className="h-4 w-4" />} label="رد" onClick={() => { setReplyTo(m); setMenuFor(null); }} />
-                            <ActionItem icon={<Copy className="h-4 w-4" />} label="نسخ" onClick={() => copyMessage(m)} />
-                            <ActionItem icon={<Share2 className="h-4 w-4" />} label="مشاركة" onClick={() => shareMessage(m)} />
-                            <ActionItem icon={<Trash2 className="h-4 w-4" />} label="حذف لدي فقط" onClick={() => deleteForMe(m)} />
-                            {mine && (
-                              <ActionItem icon={<Trash2 className="h-4 w-4 text-destructive" />} label="حذف لدى الجميع" onClick={() => deleteForAll(m)} destructive />
-                            )}
-                          </div>
-                        </>
-                      )}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <MessageBubble m={m} mine={mine} replied={replied ?? null} onPress={() => setMenuFor(m.id)} />
-                      <div className={`mt-1 flex items-center gap-1 text-[10px] text-muted-foreground/80 ${mine ? "justify-end" : "justify-start"}`} suppressHydrationWarning>
-                        <span>{formatDateTime(m.created_at)}</span>
-                        {mine && <MessageTicks status={statusOf(m)} isFriend={isFriend} />}
+            {(() => {
+              type Item =
+                | { kind: "msg"; t: number; m: DM }
+                | { kind: "call"; t: number; c: CallRow };
+              const items: Item[] = [];
+              messages.forEach((m) => items.push({ kind: "msg", t: new Date(m.created_at).getTime(), m }));
+              calls
+                .filter((c) => !!c.ended_at && c.status !== "ringing" && c.status !== "accepted")
+                .forEach((c) => items.push({ kind: "call", t: new Date(c.ended_at ?? c.started_at).getTime(), c }));
+              items.sort((a, b) => a.t - b.t);
+
+              return items.map((it) => {
+                if (it.kind === "call") {
+                  const mine = it.c.caller_id === user?.id;
+                  return <li key={`c_${it.c.id}`}><CallEvent c={it.c} mine={mine} /></li>;
+                }
+                const m = it.m;
+                const mine = m.sender_id === user?.id;
+                const replied = m.reply_to_id ? messagesById.get(m.reply_to_id) : null;
+                return (
+                  <li key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
+                    <div className={`flex items-end gap-1.5 max-w-[85%] ${mine ? "flex-row" : "flex-row-reverse"}`}>
+                      <div className="relative shrink-0 self-center">
+                        <button
+                          onClick={() => setMenuFor(menuFor === m.id ? null : m.id)}
+                          className="flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground/70 hover:text-foreground hover:bg-secondary transition"
+                          aria-label="خيارات الرسالة"
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </button>
+                        {menuFor === m.id && (
+                          <>
+                            <div className="fixed inset-0 z-40" onClick={() => setMenuFor(null)} />
+                            <div className={`absolute z-50 mt-1 ${mine ? "left-0" : "right-0"} top-full w-48 overflow-hidden rounded-xl border border-border bg-card shadow-lg`}>
+                              <ActionItem icon={<Reply className="h-4 w-4" />} label="رد" onClick={() => { setReplyTo(m); setMenuFor(null); }} />
+                              <ActionItem icon={<Copy className="h-4 w-4" />} label="نسخ" onClick={() => copyMessage(m)} />
+                              <ActionItem icon={<Share2 className="h-4 w-4" />} label="مشاركة" onClick={() => shareMessage(m)} />
+                              <ActionItem icon={<Trash2 className="h-4 w-4" />} label="حذف لدي فقط" onClick={() => deleteForMe(m)} />
+                              {mine && (
+                                <ActionItem icon={<Trash2 className="h-4 w-4 text-destructive" />} label="حذف لدى الجميع" onClick={() => deleteForAll(m)} destructive />
+                              )}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <MessageBubble m={m} mine={mine} replied={replied ?? null} onPress={() => setMenuFor(m.id)} />
+                        <div className={`mt-1 flex items-center gap-1 text-[10px] text-muted-foreground/80 ${mine ? "justify-end" : "justify-start"}`} suppressHydrationWarning>
+                          <span>{formatDateTime(m.created_at)}</span>
+                          {mine && <MessageTicks status={statusOf(m)} isFriend={isFriend} />}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </li>
-              );
-            })}
+                  </li>
+                );
+              });
+            })()}
           </ul>
         )}
       </div>
