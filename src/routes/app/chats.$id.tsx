@@ -102,6 +102,9 @@ function DMPage() {
   const [pendingMedia, setPendingMedia] = useState<{ kind: "image" | "voice"; file: Blob; previewUrl: string; durationMs?: number } | null>(null);
   const otherAvatarSource = useCachedMediaSource(other?.avatar_url);
 
+  const [calls, setCalls] = useState<CallRow[]>([]);
+  const [historyOpen, setHistoryOpen] = useState(false);
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mediaRecRef = useRef<MediaRecorder | null>(null);
