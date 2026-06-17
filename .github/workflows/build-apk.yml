@@ -75,8 +75,12 @@ jobs:
       - name: Patch AndroidManifest permissions
         run: node scripts/patch-android-permissions.mjs
 
+      - name: Patch Android launcher icon (custom Giant icon)
+        run: node scripts/patch-android-icon.mjs
+
       - name: Patch Android version (code/name)
         run: node scripts/patch-android-version.mjs
+
 
       - name: Confirm bundled media is inside APK assets
         run: |
