@@ -428,6 +428,19 @@ export function CallProvider({ children }: { children: ReactNode }) {
     }
   }, [handleSignal, user]);
 
+  // Stabilize handler refs so the realtime subscription doesn't tear down
+  // and re-subscribe on every state change (which would drop in-flight signals).
+  const handleSignalRef = useRef(handleSignal);
+  const buildPcRef = useRef(buildPc);
+  const sendSignalRef = useRef(sendSignal);
+  const endCallRef = useRef(endCall);
+  const drainPendingRef = useRef(drainPendingSignals);
+  useEffect(() => { handleSignalRef.current = handleSignal; }, [handleSignal]);
+  useEffect(() => { buildPcRef.current = buildPc; }, [buildPc]);
+  useEffect(() => { sendSignalRef.current = sendSignal; }, [sendSignal]);
+  useEffect(() => { endCallRef.current = endCall; }, [endCall]);
+  useEffect(() => { drainPendingRef.current = drainPendingSignals; }, [drainPendingSignals]);
+
   // ===== Global incoming-call + signal listener (single subscription) =====
   useEffect(() => {
     if (!user) return;
@@ -453,7 +466,7 @@ export function CallProvider({ children }: { children: ReactNode }) {
           callIdRef.current = row.id;
           peerIdRef.current = row.caller_id;
           isCallerRef.current = false;
-          const pc = buildPc();
+          const pc = buildPcRef.current();
           pcRef.current = pc;
 
           setState({
@@ -467,9 +480,9 @@ export function CallProvider({ children }: { children: ReactNode }) {
           });
           stopRing();
           stopRingRef.current = playRingtone();
-          await sendSignal("ringing");
+          await sendSignalRef.current("ringing");
 
-          // Backfill any signals already in DB (offer likely arrived first).
+          // Backfill any signals already in DB (offer usually arrives first).
           const { data: existing } = await supabase
             .from("call_signals")
             .select("from_user, to_user, signal_type, payload, call_id")
@@ -477,15 +490,14 @@ export function CallProvider({ children }: { children: ReactNode }) {
             .eq("to_user", user.id)
             .order("created_at", { ascending: true });
           for (const s of existing ?? []) {
-            await handleSignal(s as never);
+            await handleSignalRef.current(s as never);
           }
-          // Drain any buffered live signals
-          await drainPendingSignals();
+          await drainPendingRef.current();
 
           setTimeout(() => {
             if (callIdRef.current === row.id && !remoteSetRef.current && pcRef.current?.connectionState !== "connected") {
               if (statusRef.current === "ringing-in" || pcRef.current) {
-                endCall("missed", false).catch(() => {});
+                endCallRef.current("missed", false).catch(() => {});
               }
             }
           }, 45000);
@@ -496,12 +508,12 @@ export function CallProvider({ children }: { children: ReactNode }) {
         { event: "INSERT", schema: "public", table: "call_signals", filter: `to_user=eq.${user.id}` },
         async (p) => {
           const s = p.new as { from_user: string; to_user: string; signal_type: string; payload: unknown; call_id: string };
-          await handleSignal(s);
+          await handleSignalRef.current(s);
         }
       )
       .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, [user, buildPc, sendSignal, endCall, handleSignal, drainPendingSignals]);
+  }, [user]);
 
   // Cleanup on unmount
   useEffect(() => () => { cleanup(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
