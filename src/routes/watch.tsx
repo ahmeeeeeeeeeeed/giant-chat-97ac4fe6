@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import videoAsset from "../../public/videos/giant-promo.mp4.asset.json";
+import videoAsset from "@/assets/giant-promo.mp4.asset.json";
 
 export const Route = createFileRoute("/watch")({
   head: () => ({

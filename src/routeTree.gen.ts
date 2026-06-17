@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WatchRouteImport } from './routes/watch'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RegisterRouteImport } from './routes/register'
@@ -47,6 +48,11 @@ import { Route as AppAdminCommunityRouteImport } from './routes/app/admin.commun
 import { Route as ApiPublicSearchTrackRouteImport } from './routes/api/public/search-track'
 import { Route as ApiPublicOtaPublishRouteImport } from './routes/api/public/ota-publish'
 
+const WatchRoute = WatchRouteImport.update({
+  id: '/watch',
+  path: '/watch',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
@@ -243,6 +249,7 @@ export interface FileRoutesByFullPath {
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/watch': typeof WatchRoute
   '/app/account': typeof AppAccountRoute
   '/app/achievements': typeof AppAchievementsRoute
   '/app/activity': typeof AppActivityRoute
@@ -281,6 +288,7 @@ export interface FileRoutesByTo {
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/watch': typeof WatchRoute
   '/app/account': typeof AppAccountRoute
   '/app/achievements': typeof AppAchievementsRoute
   '/app/activity': typeof AppActivityRoute
@@ -320,6 +328,7 @@ export interface FileRoutesById {
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/watch': typeof WatchRoute
   '/app/account': typeof AppAccountRoute
   '/app/achievements': typeof AppAchievementsRoute
   '/app/activity': typeof AppActivityRoute
@@ -361,6 +370,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/reset-password'
     | '/sitemap.xml'
+    | '/watch'
     | '/app/account'
     | '/app/achievements'
     | '/app/activity'
@@ -399,6 +409,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/reset-password'
     | '/sitemap.xml'
+    | '/watch'
     | '/app/account'
     | '/app/achievements'
     | '/app/activity'
@@ -437,6 +448,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/reset-password'
     | '/sitemap.xml'
+    | '/watch'
     | '/app/account'
     | '/app/achievements'
     | '/app/activity'
@@ -477,6 +489,7 @@ export interface RootRouteChildren {
   RegisterRoute: typeof RegisterRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  WatchRoute: typeof WatchRoute
   ProfileIdRoute: typeof ProfileIdRoute
   ApiPublicOtaPublishRoute: typeof ApiPublicOtaPublishRoute
   ApiPublicSearchTrackRoute: typeof ApiPublicSearchTrackRoute
@@ -484,6 +497,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/watch': {
+      id: '/watch'
+      path: '/watch'
+      fullPath: '/watch'
+      preLoaderRoute: typeof WatchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sitemap.xml': {
       id: '/sitemap.xml'
       path: '/sitemap.xml'
@@ -824,6 +844,7 @@ const rootRouteChildren: RootRouteChildren = {
   RegisterRoute: RegisterRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  WatchRoute: WatchRoute,
   ProfileIdRoute: ProfileIdRoute,
   ApiPublicOtaPublishRoute: ApiPublicOtaPublishRoute,
   ApiPublicSearchTrackRoute: ApiPublicSearchTrackRoute,
