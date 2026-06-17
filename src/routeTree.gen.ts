@@ -13,6 +13,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as RecoveryRouteImport } from './routes/recovery'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as OfflineRouteImport } from './routes/offline'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/app'
@@ -64,6 +65,11 @@ const RegisterRoute = RegisterRouteImport.update({
 const RecoveryRoute = RecoveryRouteImport.update({
   id: '/recovery',
   path: '/recovery',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OfflineRoute = OfflineRouteImport.update({
@@ -232,6 +238,7 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/offline': typeof OfflineRoute
+  '/privacy': typeof PrivacyRoute
   '/recovery': typeof RecoveryRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -269,6 +276,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/offline': typeof OfflineRoute
+  '/privacy': typeof PrivacyRoute
   '/recovery': typeof RecoveryRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -307,6 +315,7 @@ export interface FileRoutesById {
   '/app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/offline': typeof OfflineRoute
+  '/privacy': typeof PrivacyRoute
   '/recovery': typeof RecoveryRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -347,6 +356,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/login'
     | '/offline'
+    | '/privacy'
     | '/recovery'
     | '/register'
     | '/reset-password'
@@ -384,6 +394,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/offline'
+    | '/privacy'
     | '/recovery'
     | '/register'
     | '/reset-password'
@@ -421,6 +432,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/login'
     | '/offline'
+    | '/privacy'
     | '/recovery'
     | '/register'
     | '/reset-password'
@@ -460,6 +472,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
   OfflineRoute: typeof OfflineRoute
+  PrivacyRoute: typeof PrivacyRoute
   RecoveryRoute: typeof RecoveryRoute
   RegisterRoute: typeof RegisterRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
@@ -497,6 +510,13 @@ declare module '@tanstack/react-router' {
       path: '/recovery'
       fullPath: '/recovery'
       preLoaderRoute: typeof RecoveryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/offline': {
@@ -799,6 +819,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
   OfflineRoute: OfflineRoute,
+  PrivacyRoute: PrivacyRoute,
   RecoveryRoute: RecoveryRoute,
   RegisterRoute: RegisterRoute,
   ResetPasswordRoute: ResetPasswordRoute,
