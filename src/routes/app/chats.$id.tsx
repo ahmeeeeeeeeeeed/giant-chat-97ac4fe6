@@ -546,6 +546,10 @@ function DMPage() {
           )}
         </button>
         
+        {other && !blocked && !blockedByOther && (
+          <CallButtons peer={other} />
+        )}
+
         <div className="relative">
           <button onClick={() => setMenuOpen(v => !v)} aria-label="القائمة" className="p-1.5 rounded-full hover:bg-primary-foreground/10">
             <MoreVertical className="h-5 w-5" />
