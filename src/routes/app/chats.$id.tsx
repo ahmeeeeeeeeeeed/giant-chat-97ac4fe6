@@ -826,7 +826,124 @@ function DMPage() {
           )}
         </form>
       )}
+      {historyOpen && other && (
+        <div
+          className="fixed inset-0 z-[60] flex items-end justify-center bg-black/60 backdrop-blur-sm sm:items-center"
+          onClick={() => setHistoryOpen(false)}
+        >
+          <div
+            className="w-full max-h-[80vh] overflow-hidden rounded-t-2xl bg-card shadow-2xl sm:max-w-md sm:rounded-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-border bg-gradient-to-l from-emerald-700 to-slate-900 px-4 py-3 text-white">
+              <div className="flex items-center gap-2">
+                <History className="h-5 w-5" />
+                <h3 className="font-bold">سجل المكالمات مع {other.username}</h3>
+              </div>
+              <button onClick={() => setHistoryOpen(false)} className="rounded-full p-1 hover:bg-white/10" aria-label="إغلاق">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="max-h-[70vh] divide-y divide-border overflow-y-auto">
+              {calls.length === 0 ? (
+                <div className="flex flex-col items-center gap-2 p-10 text-center text-sm text-muted-foreground">
+                  <Phone className="h-8 w-8 opacity-40" />
+                  <span>لا توجد مكالمات سابقة</span>
+                </div>
+              ) : (
+                [...calls].reverse().map((c) => {
+                  const outgoing = c.caller_id === user?.id;
+                  const isVideo = c.call_type === "video";
+                  const missed = c.status === "missed" || (c.status === "rejected" && !outgoing);
+                  const Icon = isVideo ? Video : Phone;
+                  const DirIcon = missed ? PhoneMissed : outgoing ? PhoneOutgoing : PhoneIncoming;
+                  const dur = fmtCallDuration(c.duration_seconds ?? 0);
+                  let label = "";
+                  if (c.status === "missed") label = outgoing ? "لم يُرد على المكالمة" : "مكالمة فائتة";
+                  else if (c.status === "rejected") label = outgoing ? "تم رفض المكالمة" : "رفضت المكالمة";
+                  else if (c.status === "canceled") label = "تم الإلغاء";
+                  else if (c.status === "failed") label = "فشلت";
+                  else if (c.status === "busy") label = "مشغول";
+                  else label = dur ? `المدة: ${dur}` : "منتهية";
+                  return (
+                    <div key={c.id} className="flex items-center gap-3 px-4 py-3">
+                      <div className={`flex h-11 w-11 items-center justify-center rounded-full ${missed ? "bg-rose-500/10 text-rose-500" : outgoing ? "bg-emerald-500/10 text-emerald-600" : "bg-sky-500/10 text-sky-600"}`}>
+                        <Icon className="h-5 w-5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 text-sm font-semibold">
+                          <DirIcon className={`h-3.5 w-3.5 ${missed ? "text-rose-500" : "text-muted-foreground"}`} />
+                          <span>{isVideo ? "فيديو" : "صوتية"}</span>
+                          <span className="text-muted-foreground">·</span>
+                          <span className="text-xs font-normal text-muted-foreground">{label}</span>
+                        </div>
+                        <div className="text-[11px] text-muted-foreground">{formatDateTime(c.started_at)}</div>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setHistoryOpen(false);
+                          if (other) startCallFn({ id: other.id, username: other.username, avatar_url: other.avatar_url }, c.call_type);
+                        }}
+                        className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20"
+                        aria-label="إعادة الاتصال"
+                      >
+                        {isVideo ? <Video className="h-4 w-4" /> : <Phone className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </main>
+  );
+}
+
+function CallEvent({ c, mine }: { c: CallRow; mine: boolean }) {
+  const isVideo = c.call_type === "video";
+  const Icon = isVideo ? Video : Phone;
+  const missed = c.status === "missed" || (c.status === "rejected" && !mine);
+  const DirIcon = missed ? PhoneMissed : mine ? PhoneOutgoing : PhoneIncoming;
+  const dur = fmtCallDuration(c.duration_seconds ?? 0);
+  let label = "";
+  let tone = "border-border bg-card/80 text-foreground";
+  if (c.status === "missed") {
+    label = mine ? "لم يُرد على المكالمة" : "مكالمة فائتة";
+    tone = "border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-300";
+  } else if (c.status === "rejected") {
+    label = mine ? "تم رفض المكالمة" : "رفضت المكالمة";
+    tone = "border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-300";
+  } else if (c.status === "canceled") {
+    label = "تم إلغاء المكالمة";
+  } else if (c.status === "failed") {
+    label = "فشلت المكالمة";
+    tone = "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300";
+  } else if (c.status === "busy") {
+    label = "كان مشغولاً";
+  } else {
+    label = `مكالمة منتهية${dur ? ` · المدة ${dur}` : ""}`;
+    tone = "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300";
+  }
+  return (
+    <div className="my-1 flex justify-center">
+      <div className={`flex max-w-[90%] items-center gap-2.5 rounded-full border px-3 py-1.5 shadow-sm backdrop-blur ${tone}`}>
+        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-background/40">
+          <Icon className="h-3.5 w-3.5" />
+        </div>
+        <div className="flex flex-col text-[11px] leading-tight">
+          <div className="flex items-center gap-1 font-bold">
+            <DirIcon className="h-3 w-3" />
+            <span>{isVideo ? "مكالمة فيديو" : "مكالمة صوتية"}</span>
+            <span className="opacity-70">·</span>
+            <span className="opacity-80">{mine ? "صادرة" : "واردة"}</span>
+          </div>
+          <div className="opacity-80">{label}</div>
+          <div className="text-[10px] opacity-60">{formatDateTime(c.ended_at ?? c.started_at)}</div>
+        </div>
+      </div>
+    </div>
   );
 }
 
