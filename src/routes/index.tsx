@@ -216,9 +216,12 @@ function PublicWebsite() {
               كل شيء بتجربة عربية واحدة سريعة وأنيقة.
             </p>
 
-            <div className="mt-9">
+            <div className="mt-9 flex flex-col gap-3">
               <DownloadButton large />
-              <p className="mt-3 text-xs text-muted-foreground">
+              <a href="/watch" className="inline-flex items-center justify-center gap-2 rounded-full border border-primary/40 bg-primary/5 px-5 py-3 text-sm font-bold text-primary hover:bg-primary/10 transition">
+                ▶ شاهد الفيديو التعريفي
+              </a>
+              <p className="mt-1 text-xs text-muted-foreground">
                 التحديثات تصلك تلقائياً داخل التطبيق بعد التثبيت • متوافق مع Android 7+
               </p>
             </div>
