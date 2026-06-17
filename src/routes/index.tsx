@@ -361,6 +361,9 @@ function PublicWebsite() {
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-emerald-400 text-xs font-black text-primary-foreground">G</div>
             <span className="font-bold text-foreground">Giant</span>
           </div>
+          <nav className="flex items-center gap-5">
+            <Link to="/privacy" className="hover:text-foreground">سياسة الخصوصية</Link>
+          </nav>
           <span>© {new Date().getFullYear()} Giant. جميع الحقوق محفوظة.</span>
         </div>
       </footer>
