@@ -52,7 +52,30 @@ export function UpdateGate() {
         // Offline / reconnect race — do not show a red error toast.
       }
     })();
-    return () => { cancelled = true; };
+
+    // When the user returns from Android's installer, re-check the installed
+    // version. If the APK was installed successfully, the dialog auto-closes.
+    let removeResume: (() => void) | null = null;
+    (async () => {
+      if (!(await isNativeAndroid())) return;
+      try {
+        const { App } = await import("@capacitor/app");
+        const handle = await App.addListener("resume", async () => {
+          await syncNativeInstalledVersion();
+          setLatest((current) => {
+            if (current && !shouldShowUpdate(current)) {
+              setDismissed(true);
+              setDone(false);
+              setBusy(false);
+            }
+            return current;
+          });
+        });
+        removeResume = () => { handle.remove(); };
+      } catch { /* ignore */ }
+    })();
+
+    return () => { cancelled = true; if (removeResume) removeResume(); };
   }, []);
 
   if (!latest || dismissed) return null;
