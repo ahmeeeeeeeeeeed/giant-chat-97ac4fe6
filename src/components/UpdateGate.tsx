@@ -100,7 +100,7 @@ export function UpdateGate() {
           (p) => setProgress(p),
         );
         setDownloadedApkPath(result.filePath);
-        setWaitingForInstall(true);
+        setWaitingForInstall(result.installerOpened);
         setDone(true);
         return;
       }
@@ -124,7 +124,7 @@ export function UpdateGate() {
         (p) => setProgress(p),
       );
       setDownloadedApkPath(result.filePath);
-      setWaitingForInstall(true);
+      setWaitingForInstall(result.installerOpened);
       setDone(true);
     } catch (e) {
       const message = errorMessage(e, "فشل التحديث");
