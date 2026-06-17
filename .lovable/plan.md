@@ -1,44 +1,81 @@
-## الهدف
-إضافة نظام حسابات مستقل للموقع (منفصل تمامًا عن حسابات التطبيق) + تقييم التطبيق بالنجوم والتعليقات.
+## نظام المكالمات الصوتية والفيديو (WebRTC + Supabase Realtime)
 
-## 1) حسابات الموقع المنفصلة
+سأبني نظام مكالمات حقيقي داخل Giant Chat باستخدام WebRTC peer-to-peer مع Supabase Realtime كـ Signaling Server (مجاني بالكامل، بدون Agora/Twilio).
 
-- جدول جديد `site_users` في قاعدة البيانات (منفصل عن `profiles` الخاص بالتطبيق):
-  - `id` (uuid)، `auth_user_id` (uuid يربط `auth.users`)، `email`، `display_name`، `provider` (`google` | `email`)، `created_at`.
-- استخدام Supabase Auth بالبريد + كلمة المرور + Google OAuth، لكن **بدون** أي ربط بجدول `profiles` الخاص بالتطبيق.
-- حارس `site-auth` خاص بصفحات الموقع فقط — لا يمنح أي صلاحية داخل `/app`.
-- صفحات الموقع الجديدة:
-  - `/site/login` — تسجيل دخول (بريد/كلمة مرور + زر Google).
-  - `/site/register` — إنشاء حساب موقع.
-  - `/site/account` — صفحة الحساب البسيطة (تسجيل خروج).
-- **حساب الموقع لا يفتح التطبيق**: `/app` يبقى يستخدم `signInWithUsername` كما هو، ولن نقبل جلسة الموقع كبديل (سنفصل الجلسات منطقيًا عبر `metadata.kind = "site"` ومنع الدخول للتطبيق إن لم يكن لديه `profile` في جدول التطبيق).
+### 1. قاعدة البيانات (migration واحدة)
 
-## 2) تقييم التطبيق بالنجوم والتعليقات
+**جدول `calls`** — سجل المكالمات والـ signaling:
+- `caller_id`, `callee_id`, `call_type` ('audio' | 'video')
+- `status` ('ringing' | 'accepted' | 'rejected' | 'missed' | 'ended' | 'busy')
+- `started_at`, `answered_at`, `ended_at`, `duration_seconds`
+- `end_reason` ('hangup' | 'rejected' | 'missed' | 'failed')
 
-- جدول `app_reviews`:
-  - `id`, `rating` (1..5), `comment` (نص اختياري حتى 1000 حرف), `is_anonymous` (bool), `display_name` (مشتق: البريد المختصر أو "مجهول"), `site_user_id` (nullable للسماح بمجهول كامل), `created_at`.
-- صفحة `/reviews`:
-  - عرض المتوسط + عدد التقييمات + توزيع النجوم.
-  - قائمة التعليقات بشكل أنيق (بطاقات، نجوم ذهبية، تاريخ نسبي).
-  - نموذج كتابة تقييم: 5 نجوم تفاعلية + textarea + checkbox "نشر باسم البريد" / "نشر بمجهول".
-  - يتطلب تسجيل دخول للموقع للنشر (يوجّه إلى `/site/login`).
-- زر "تقييم التطبيق" داخل التطبيق (في `/app/settings` أو ما يقابلها) يفتح `https://giant-chat.lovable.app/reviews` في المتصفح الخارجي.
+**جدول `call_signals`** — تبادل SDP/ICE بين الطرفين عبر Realtime:
+- `call_id`, `from_user`, `to_user`, `signal_type` ('offer'|'answer'|'ice'|'hangup'|'ringing'), `payload` (jsonb)
 
-## 3) الأمان
-- RLS على `site_users` و`app_reviews`:
-  - قراءة التقييمات عامة (`anon` + `authenticated`).
-  - الإدراج: `authenticated` فقط، و`site_user_id = auth.uid()`.
-  - التعديل/الحذف: المالك فقط.
-- GRANTs كاملة على الجدولين الجديدين.
+- RLS صارمة: المستخدم يرى فقط مكالماته (caller أو callee).
+- تفعيل Realtime على الجدولين.
+- GRANT للأدوار المطلوبة.
 
-## 4) ملفات التعديل
-- ترحيل قاعدة بيانات جديد (`site_users` + `app_reviews` + RLS + GRANTs).
-- `supabase--configure_social_auth` لتفعيل Google.
-- إنشاء: `src/routes/site/login.tsx`، `src/routes/site/register.tsx`، `src/routes/site/account.tsx`، `src/routes/reviews.tsx`، `src/lib/site-auth.tsx`.
-- تعديل `src/routes/index.tsx` لإضافة روابط (دخول الموقع + التقييمات).
-- تعديل صفحة الإعدادات في التطبيق لإضافة زر "قيّم التطبيق" يفتح الموقع.
+### 2. STUN/TURN (مجاني)
 
-## تفاصيل تقنية
-- استخدام `lovable.auth.signInWithOAuth("google", …)` لـ Google.
-- تخزين `kind: "site"` ضمن `user_metadata` عند إنشاء حساب الموقع.
-- مزوّد React Context منفصل `SiteAuthProvider` يُستخدم فقط في مسارات `/site/*` و`/reviews` — لا يُلف على `/app`.
+- STUN: خوادم Google المجانية (`stun:stun.l.google.com:19302` + احتياطية).
+- TURN: استخدام **Open Relay Project** المجاني (`openrelay.metered.ca`) كـ fallback للشبكات المقيدة — صفر تكلفة. يمكن للمستخدم لاحقاً استبداله بـ coturn ذاتي الاستضافة عبر متغير بيئة `VITE_TURN_URL/USERNAME/CREDENTIAL`.
+
+### 3. الواجهة
+
+**في `src/routes/app/chats.$id.tsx`** (أعلى المحادثة):
+- زر اتصال صوتي 📞 + زر اتصال فيديو 🎥 بتصميم أنيق دائري بجانب اسم المستخدم.
+
+**شاشة المكالمة `src/components/CallScreen.tsx`** (Dialog ملء الشاشة بأسلوب Telegram):
+- خلفية متدرجة داكنة + صورة المستخدم الكبيرة + الاسم + حالة الاتصال (يرن/متصل/...).
+- مؤقت مدة المكالمة.
+- فيديو محلي صغير (PiP) + فيديو الطرف الآخر بملء الشاشة (لمكالمات الفيديو).
+- أزرار: كتم مايك، تشغيل/إيقاف كاميرا، تبديل أمامية/خلفية، مكبر صوت، إنهاء (أحمر دائري كبير).
+- شاشة مكالمة واردة منفصلة: قبول (أخضر) / رفض (أحمر) + رنين صوتي + اهتزاز.
+
+**مزود عام `CallProvider`** يُركّب في `__root.tsx`:
+- يستمع لإشارات `call_signals` عبر Realtime على مستوى التطبيق كله.
+- يعرض شاشة المكالمة الواردة من أي صفحة.
+- يدير حالة WebRTC PeerConnection.
+
+### 4. منطق WebRTC (`src/lib/webrtc/`)
+
+- `call-manager.ts`: إنشاء/إدارة RTCPeerConnection، تبادل SDP/ICE عبر Supabase channel، معالجة إعادة الاتصال (ICE restart عند الانقطاع).
+- جودة تكيفية: قيود فيديو 1280×720 افتراضياً مع `degradationPreference: 'maintain-framerate'`.
+- معالجة الصوت: `echoCancellation`, `noiseSuppression`, `autoGainControl`.
+- نغمات: ملف رنين قصير + نغمة اتصال (تولّد عبر Web Audio API لتجنب assets جديدة).
+
+### 5. سجل المكالمات
+
+- صفحة `src/routes/app/calls.tsx`: قائمة جميع المكالمات (واردة/صادرة/فائتة) بأيقونات ملوّنة، اضغط لإعادة الاتصال.
+- شارة المكالمات الفائتة في التبويب السفلي.
+
+### 6. صلاحيات + Capacitor
+
+- توسيع `src/lib/app-permissions.ts` لطلب الميك+الكاميرا قبل بدء/قبول المكالمة.
+- إضافة `RECORD_AUDIO`, `CAMERA`, `MODIFY_AUDIO_SETTINGS`, `BLUETOOTH_CONNECT` في `AndroidManifest.xml` (عبر سكربت patch موجود).
+- WebView يدعم WebRTC افتراضياً على Android 5+.
+
+### 7. الأمان
+
+- RLS تمنع أي مستخدم من رؤية signals لا تخصه.
+- المكالمات end-to-end عبر DTLS-SRTP (مدمج بـ WebRTC).
+- لا يمر الصوت/الفيديو بسيرفرنا — فقط الـ signaling.
+
+### ملفات سيتم إنشاؤها/تعديلها
+- migration جديدة (calls + call_signals + RLS + realtime).
+- `src/lib/webrtc/call-manager.ts`, `src/lib/webrtc/ice-servers.ts`, `src/lib/webrtc/ringtones.ts`
+- `src/lib/use-calls.tsx` (CallProvider + hooks)
+- `src/components/CallScreen.tsx`, `src/components/IncomingCallDialog.tsx`
+- `src/routes/app/calls.tsx` (سجل)
+- تعديل `src/routes/app/chats.$id.tsx` (الزرّان)
+- تعديل `src/routes/__root.tsx` (تركيب CallProvider)
+- تعديل `src/lib/app-permissions.ts`
+- تعديل `scripts/patch-android-permissions.mjs`
+
+### ملاحظات تشغيلية
+- TURN المجاني (Open Relay) كافٍ للاستخدام الخفيف والاختبار؛ للإنتاج الكثيف يُنصح بإعداد coturn على VPS لاحقاً (السكربت سيقرأ من `VITE_TURN_*` تلقائياً عند توفرها).
+- لا توجد أي رسوم خدمات خارجية.
+
+هل أبدأ التنفيذ؟

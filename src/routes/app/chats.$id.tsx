@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/auth";
 import {
   ArrowRight, Send, Loader2, ImagePlus, Mic, Square, Play, Pause,
   MoreVertical, Reply, Copy, Trash2, Share2, BellOff, Bell, Ban, X,
-  Check, CheckCheck, Clock,
+  Check, CheckCheck, Clock, Phone, Video,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
@@ -17,6 +17,7 @@ import { getOnline } from "@/lib/use-online";
 import { ensureMediaLibraryPermission, ensureMicPermission } from "@/lib/app-permissions";
 import { useCachedMediaSource } from "@/lib/use-cached-media";
 import { StoryRing } from "@/components/StoryRing";
+import { useCalls } from "@/lib/use-calls";
 
 export const Route = createFileRoute("/app/chats/$id")({
   component: DMPage,
@@ -545,6 +546,10 @@ function DMPage() {
           )}
         </button>
         
+        {other && !blocked && !blockedByOther && (
+          <CallButtons peer={other} />
+        )}
+
         <div className="relative">
           <button onClick={() => setMenuOpen(v => !v)} aria-label="القائمة" className="p-1.5 rounded-full hover:bg-primary-foreground/10">
             <MoreVertical className="h-5 w-5" />
@@ -806,4 +811,29 @@ function relativeTime(iso: string): string {
   if (diff < 3600) return `قبل ${Math.floor(diff / 60)} دقيقة`;
   if (diff < 86400) return `قبل ${Math.floor(diff / 3600)} ساعة`;
   return `قبل ${Math.floor(diff / 86400)} يوم`;
+}
+function CallButtons({ peer }: { peer: Profile }) {
+  const { startCall, status } = useCalls();
+  const busy = status !== "idle" && status !== "ended";
+  const p = { id: peer.id, username: peer.username, avatar_url: peer.avatar_url };
+  return (
+    <div className="flex items-center gap-1">
+      <button
+        onClick={() => startCall(p, "audio")}
+        disabled={busy}
+        aria-label="اتصال صوتي"
+        className="p-2 rounded-full hover:bg-primary-foreground/15 active:scale-95 transition disabled:opacity-40"
+      >
+        <Phone className="h-5 w-5" />
+      </button>
+      <button
+        onClick={() => startCall(p, "video")}
+        disabled={busy}
+        aria-label="اتصال فيديو"
+        className="p-2 rounded-full hover:bg-primary-foreground/15 active:scale-95 transition disabled:opacity-40"
+      >
+        <Video className="h-5 w-5" />
+      </button>
+    </div>
+  );
 }

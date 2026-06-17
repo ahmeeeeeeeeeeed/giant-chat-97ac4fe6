@@ -21,6 +21,8 @@ import { registerAppServiceWorker } from "@/lib/register-sw";
 import { schedulePrewarm } from "@/lib/prewarm";
 import { initCapacitorChrome } from "@/lib/capacitor-init";
 import { notifyNativeUpdateReady, syncNativeInstalledVersion } from "@/lib/app-update";
+import { CallProvider } from "@/lib/use-calls";
+import { CallOverlay } from "@/components/CallOverlay";
 
 import appCss from "../styles.css?url";
 import welcomeBg from "@/assets/welcome-bg.png.asset.json";
@@ -147,13 +149,16 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <AuthProvider>
-          <LanguageSync />
-          <PageTransition>
-            <Outlet />
-          </PageTransition>
-          <UpdateGate />
-          <Toaster position="top-center" richColors />
-          <ExitConfirmDialog />
+          <CallProvider>
+            <LanguageSync />
+            <PageTransition>
+              <Outlet />
+            </PageTransition>
+            <UpdateGate />
+            <Toaster position="top-center" richColors />
+            <ExitConfirmDialog />
+            <CallOverlay />
+          </CallProvider>
         </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>
