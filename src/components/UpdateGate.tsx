@@ -153,6 +153,11 @@ export function UpdateGate() {
       setWaitingForInstall(true);
     } catch (e) {
       const message = errorMessage(e, "تعذر فتح المثبت");
+      if (message.includes("ملف التحديث غير موجود")) {
+        clearRememberedDownloadedApk();
+        setDownloadedApkPath(null);
+        setDone(false);
+      }
       setError(message);
       toast.error(message);
     } finally {
