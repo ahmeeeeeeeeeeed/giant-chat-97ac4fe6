@@ -363,14 +363,20 @@ function SettingsPage() {
           <button onClick={openReports} className="flex w-full items-center justify-between p-4 active:bg-secondary/60 text-start">
             <div className="flex items-center gap-3">
               <IconBox color="bg-orange-500"><Flag className="h-4 w-4" /></IconBox>
-              <span className="font-medium">الإبلاغ والشكاوى</span>
+              <div className="flex flex-col items-start">
+                <span className="font-medium">الإبلاغ والشكاوى</span>
+                <span className="text-[11px] text-muted-foreground">تواصل مع الإدارة للإبلاغ عن مشكلة أو إساءة</span>
+              </div>
             </div>
             <ChevronLeft className="h-4 w-4 text-muted-foreground rtl:rotate-180" />
           </button>
           <button onClick={openShare} className="flex w-full items-center justify-between p-4 active:bg-secondary/60 text-start">
             <div className="flex items-center gap-3">
               <IconBox color="bg-sky-500"><Share2 className="h-4 w-4" /></IconBox>
-              <span className="font-medium">شارك التطبيق</span>
+              <div className="flex flex-col items-start">
+                <span className="font-medium">شارك التطبيق</span>
+                <span className="text-[11px] text-muted-foreground">انشر رابط التطبيق مع أصدقائك على أي منصة</span>
+              </div>
             </div>
             <ChevronLeft className="h-4 w-4 text-muted-foreground rtl:rotate-180" />
           </button>
@@ -387,9 +393,9 @@ function SettingsPage() {
           >
             <div className="flex items-center gap-3">
               <IconBox color="bg-yellow-500"><Star className="h-4 w-4" /></IconBox>
-              <div className="flex flex-col">
+              <div className="flex flex-col items-start">
                 <span className="font-medium">قيّم التطبيق</span>
-                <span className="text-[11px] text-muted-foreground">يفتح صفحة التقييمات في الموقع</span>
+                <span className="text-[11px] text-muted-foreground">شاركنا رأيك واطّلع على آراء المستخدمين</span>
               </div>
             </div>
             <ChevronLeft className="h-4 w-4 text-muted-foreground rtl:rotate-180" />
@@ -397,7 +403,10 @@ function SettingsPage() {
           <button onClick={() => setShowHelp(true)} className="flex w-full items-center justify-between p-4 active:bg-secondary/60 text-start">
             <div className="flex items-center gap-3">
               <IconBox color="bg-teal-500"><HelpCircle className="h-4 w-4" /></IconBox>
-              <span className="font-medium">المساعدة والأسئلة الشائعة</span>
+              <div className="flex flex-col items-start">
+                <span className="font-medium">المساعدة والأسئلة الشائعة</span>
+                <span className="text-[11px] text-muted-foreground">إجابات لأشهر الأسئلة وشرح كامل لميزات التطبيق</span>
+              </div>
             </div>
             <ChevronLeft className="h-4 w-4 text-muted-foreground rtl:rotate-180" />
           </button>
