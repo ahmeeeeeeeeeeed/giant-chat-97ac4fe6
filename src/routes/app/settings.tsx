@@ -269,6 +269,7 @@ function SettingsPage() {
 
   const hasUpdate = latest && shouldShowUpdate(latest);
   const latestNeedsFullApk = latest ? shouldInstallFullApk(latest) : false;
+  const apkReadyToInstall = latestNeedsFullApk && Boolean(downloadedApkPath);
   const displayVersion = getDisplayInstalledVersion();
   const displayCode = getDisplayInstalledCode();
 
@@ -557,7 +558,7 @@ function SettingsPage() {
                   disabled={installing}
                   className="mt-1 h-11 w-full rounded-xl bg-emerald-500 text-white font-bold disabled:opacity-60 flex items-center justify-center gap-2"
                 >
-                  {installing ? <><Loader2 className="h-4 w-4 animate-spin" /> {installProgress}%</> : <><Download className="h-4 w-4" /> تحديث الآن</>}
+                  {installing ? <><Loader2 className="h-4 w-4 animate-spin" /> {installProgress}%</> : <><Download className="h-4 w-4" /> {apkReadyToInstall ? "فتح نافذة التثبيت" : "تحديث الآن"}</>}
                 </button>
               </div>
             )}
