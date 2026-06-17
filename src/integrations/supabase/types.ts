@@ -143,6 +143,42 @@ export type Database = {
         }
         Relationships: []
       }
+      app_reviews: {
+        Row: {
+          account_kind: string
+          comment: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          is_anonymous: boolean
+          rating: number
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          account_kind?: string
+          comment?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          is_anonymous?: boolean
+          rating: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          account_kind?: string
+          comment?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          is_anonymous?: boolean
+          rating?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       app_updates: {
         Row: {
           created_at: string
