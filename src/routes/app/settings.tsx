@@ -131,7 +131,7 @@ function SettingsPage() {
         .limit(1)
         .maybeSingle();
       if (data && shouldShowUpdate(data)) {
-        const update = data as LatestUpdate;
+        const update = data as NonNullable<LatestUpdate>;
         setLatest(update);
         setDownloadedApkPath(update.file_url ? getRememberedDownloadedApk(update.file_url) : null);
         void cacheSet("settings:latestUpdate", data);
