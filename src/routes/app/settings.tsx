@@ -374,10 +374,23 @@ function SettingsPage() {
             </div>
             <ChevronLeft className="h-4 w-4 text-muted-foreground rtl:rotate-180" />
           </button>
-          <button onClick={() => toast.success("شكراً لتقييمك ⭐")} className="flex w-full items-center justify-between p-4 active:bg-secondary/60 text-start">
+          <button
+            onClick={() => {
+              const url = "https://giant-chat.lovable.app/reviews";
+              try {
+                window.open(url, "_blank", "noopener,noreferrer");
+              } catch {
+                window.location.href = url;
+              }
+            }}
+            className="flex w-full items-center justify-between p-4 active:bg-secondary/60 text-start"
+          >
             <div className="flex items-center gap-3">
               <IconBox color="bg-yellow-500"><Star className="h-4 w-4" /></IconBox>
-              <span className="font-medium">قيّم التطبيق</span>
+              <div className="flex flex-col">
+                <span className="font-medium">قيّم التطبيق</span>
+                <span className="text-[11px] text-muted-foreground">يفتح صفحة التقييمات في الموقع</span>
+              </div>
             </div>
             <ChevronLeft className="h-4 w-4 text-muted-foreground rtl:rotate-180" />
           </button>

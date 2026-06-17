@@ -191,9 +191,13 @@ function PublicWebsite() {
             <a href="#features" className="hover:text-foreground">المميزات</a>
             <a href="#gallery" className="hover:text-foreground">داخل التطبيق</a>
             <a href="#download" className="hover:text-foreground">التحميل</a>
+            <Link to="/reviews" className="hover:text-foreground">التقييمات</Link>
             <Link to="/privacy" className="hover:text-foreground">الخصوصية</Link>
           </nav>
-          <DownloadButton />
+          <div className="flex items-center gap-2">
+            <Link to="/site/login" className="hidden rounded-full border border-border bg-card px-4 py-2 text-xs font-bold text-foreground transition hover:bg-accent sm:inline-flex">دخول الموقع</Link>
+            <DownloadButton />
+          </div>
         </div>
       </header>
 
@@ -362,6 +366,8 @@ function PublicWebsite() {
             <span className="font-bold text-foreground">Giant</span>
           </div>
           <nav className="flex items-center gap-5">
+            <Link to="/reviews" className="hover:text-foreground">التقييمات</Link>
+            <Link to="/site/login" className="hover:text-foreground">دخول الموقع</Link>
             <Link to="/privacy" className="hover:text-foreground">سياسة الخصوصية</Link>
           </nav>
           <span>© {new Date().getFullYear()} Giant. جميع الحقوق محفوظة.</span>
