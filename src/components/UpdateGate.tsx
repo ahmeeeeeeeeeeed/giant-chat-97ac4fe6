@@ -95,10 +95,6 @@ export function UpdateGate() {
           window.open(latest.file_url, "_blank");
           return;
         }
-        await downloadAndInstallApk(
-          latest.file_url,
-          (p) => setProgress(p),
-        );
         const result = await downloadAndInstallApk(
           latest.file_url,
           (p) => setProgress(p),
