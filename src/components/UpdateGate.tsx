@@ -7,11 +7,16 @@ import { toast } from "sonner";
 
 const DISMISS_KEY = "giant.update.dismissed.v";
 
+declare const __CAPACITOR_BUILD__: boolean | undefined;
+
 function errorMessage(error: unknown, fallback: string): string {
   return error instanceof Error ? error.message : fallback;
 }
 
 export function UpdateGate() {
+  const isNativeApp = typeof __CAPACITOR_BUILD__ !== "undefined" && __CAPACITOR_BUILD__;
+  if (!isNativeApp) return null;
+
   const [latest, setLatest] = useState<AppUpdateRow | null>(null);
   const [dismissed, setDismissed] = useState(false);
   const [busy, setBusy] = useState(false);
