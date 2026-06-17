@@ -156,9 +156,28 @@ export function UpdateGate() {
         )}
 
         {done && (
-          <div className="mb-4 flex items-center gap-2 rounded-2xl bg-emerald-500/10 p-3 text-sm text-emerald-600">
-            <CheckCircle2 className="h-5 w-5" />
-            <span>{latest.web_bundle_url && !needsFullApk ? "تم تطبيق التحديث — سيتم إعادة تشغيل التطبيق" : "اكتمل التحميل — يتم فتح المثبت..."}</span>
+          <div className="mb-4 space-y-3 rounded-2xl bg-emerald-500/10 p-3 text-sm text-emerald-600">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="h-5 w-5" />
+              <span className="font-bold">
+                {latest.web_bundle_url && !needsFullApk
+                  ? "تم تطبيق التحديث — سيتم إعادة تشغيل التطبيق"
+                  : "اكتمل التحميل — افتح نافذة التثبيت"}
+              </span>
+            </div>
+            {(!latest.web_bundle_url || needsFullApk) && (
+              <>
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-emerald-500/20">
+                  <div className="h-full w-1/3 animate-[slide_1.2s_ease-in-out_infinite] rounded-full bg-emerald-500" />
+                </div>
+                <ol className="list-decimal space-y-1 pr-5 text-xs leading-relaxed text-emerald-700/90 dark:text-emerald-300/90">
+                  <li>اضغط "تثبيت الآن" بالأسفل لفتح نافذة المثبت.</li>
+                  <li>في نافذة Android اضغط "تثبيت" ثم انتظر حتى تنتهي.</li>
+                  <li>إذا ظهرت رسالة "مصادر غير معروفة" فعّل الإذن ثم أعد المحاولة.</li>
+                  <li>بعد انتهاء التثبيت اضغط "فتح" لتشغيل النسخة الجديدة.</li>
+                </ol>
+              </>
+            )}
           </div>
         )}
 
