@@ -309,9 +309,9 @@ export async function downloadAndInstallApk(
     await openDownloadedApk(written.uri);
     return { filePath: written.uri, installerOpened: true };
   } catch (e) {
-    const msg = getErrorText(e);
-    if (msg.includes("فعّل إذن")) return { filePath: written.uri, installerOpened: false };
-    throw e;
+    // The APK is already downloaded. Do not make the next button download it
+    // again; keep the saved file and let the user retry opening the installer.
+    return { filePath: written.uri, installerOpened: false };
   }
 }
 
