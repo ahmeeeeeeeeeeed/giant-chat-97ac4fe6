@@ -18,6 +18,8 @@ type Row = {
   update_message: string;
   update_type: "force" | "optional";
   file_url: string;
+  web_bundle_url?: string | null;
+  web_bundle_version?: string | null;
   file_size: number | null;
   is_active: boolean;
   created_at: string;
@@ -33,7 +35,9 @@ function AdminUpdates() {
   const [minVersion, setMinVersion] = useState("1.0.0");
   const [message, setMessage] = useState("");
   const [type, setType] = useState<"force" | "optional">("optional");
+  const [updateKind, setUpdateKind] = useState<"apk" | "bundle">("apk");
   const [file, setFile] = useState<File | null>(null);
+  const [bundleFile, setBundleFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState(0);
   const [uploaded, setUploaded] = useState(0); // bytes
