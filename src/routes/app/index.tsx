@@ -238,31 +238,38 @@ function RoomsPage() {
 
   return (
     <main className="flex flex-1 flex-col">
-      <header className="sticky top-0 z-10 border-b border-border bg-background/90 px-5 py-4 backdrop-blur">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-extrabold">{t("app.name")}</h1>
-            <p className="text-xs text-muted-foreground">{t("rooms.title")}</p>
-          </div>
-          <button
-            onClick={goToCreateRoom}
-            className="flex h-10 items-center justify-center gap-2 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm transition active:scale-95"
-          >
-            <Plus className="h-4 w-4" />
-            <span>غرفة جديدة</span>
-          </button>
-        </div>
-        <div className="mt-3 flex items-center gap-2 rounded-2xl border border-input bg-card px-3 h-11">
+      <header className="sticky top-0 z-10 border-b border-border bg-background/90 px-4 py-3 backdrop-blur">
+        <div className="mb-2.5 flex items-center gap-2 rounded-2xl border border-input bg-card px-3 h-10">
           <Search className="h-4 w-4 text-muted-foreground" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t("rooms.search")}
-            className="flex-1 bg-transparent text-[15px] outline-none placeholder:text-muted-foreground"
+            className="flex-1 bg-transparent text-[14px] outline-none placeholder:text-muted-foreground"
           />
           {query && (
             <button onClick={() => setQuery("")} className="text-muted-foreground"><X className="h-4 w-4" /></button>
           )}
+        </div>
+        {/* تصنيفات الغرف */}
+        <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-thin -mx-1 px-1">
+          {CATS.map(({ key, label, icon: Icon, cls }) => {
+            const active = category === key;
+            return (
+              <button
+                key={key}
+                onClick={() => setCategory(key)}
+                className={`shrink-0 flex items-center gap-1.5 rounded-full px-3.5 h-8 text-[12px] font-bold transition active:scale-95 ${
+                  active
+                    ? `bg-gradient-to-r ${cls} text-white shadow-md ring-1 ring-white/30`
+                    : "bg-secondary text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Icon className="h-3.5 w-3.5" strokeWidth={active ? 2.5 : 2} />
+                {label}
+              </button>
+            );
+          })}
         </div>
       </header>
 
@@ -272,12 +279,20 @@ function RoomsPage() {
         ) : rooms.length === 0 ? (
           <EmptyState onCreate={goToCreateRoom} />
         ) : filtered.length === 0 ? (
-          <p className="mt-12 text-center text-sm text-muted-foreground">{t("rooms.no_results")}</p>
+          <p className="mt-12 text-center text-sm text-muted-foreground">لا توجد غرف في هذا القسم</p>
         ) : (
           <ul className="grid grid-cols-1 gap-3">
             {filtered.map((r, idx) => (
               <li key={r.id}>
-                <RoomCard room={r} accentIndex={idx} isOwner={r.owner_id === user.id} isMember={myRoomIds.has(r.id)} onJoin={() => handleJoin(r.id)} />
+                <RoomCard
+                  room={r}
+                  accentIndex={idx}
+                  isOwner={r.owner_id === user.id}
+                  isMember={myRoomIds.has(r.id)}
+                  isFavorite={favorites.has(r.id)}
+                  onToggleFav={() => toggleFav(r.id)}
+                  onJoin={() => handleJoin(r.id)}
+                />
               </li>
             ))}
           </ul>
