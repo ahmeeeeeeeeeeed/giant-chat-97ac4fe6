@@ -310,7 +310,9 @@ function PublicWebsite() {
           <div className="flex items-center gap-2">
             <Link to="/reviews" className="inline-flex rounded-full border border-border bg-card px-3 py-2 text-xs font-bold text-foreground transition hover:bg-accent sm:hidden">التقييمات</Link>
             <Link to="/site/login" className="inline-flex rounded-full border border-primary/40 bg-primary/10 px-3 py-2 text-xs font-bold text-foreground transition hover:bg-primary/20 sm:px-4">دخول الموقع</Link>
-            <DownloadButton />
+            <a href="#download" className="flex h-11 items-center gap-2 rounded-xl border border-primary/40 bg-card px-4 text-sm font-bold text-primary transition hover:bg-primary/10">
+              <Download className="h-4 w-4" /> تحميل
+            </a>
           </div>
         </div>
       </header>
