@@ -55,7 +55,8 @@ function extractTargetName(text: string): string | null {
     "احظر", "حظر", "فك حظر", "فك", "اطرد", "طرد", "اكتم", "كتم", "افتح",
     "ارفع", "رفع", "أنزل", "انزل", "انزّل", "نزل", "امنح", "منح",
     "اسحب", "سحب", "رتبه", "رتبة", "مشرف", "أونر", "اونر", "مالك",
-    "المالك", "من", "عن", "الى", "إلى", "البوت", "بوت",
+    "المالك", "هذا", "هذه", "الحساب", "حساب", "المستخدم", "مستخدم",
+    "من", "عن", "الى", "إلى", "البوت", "بوت",
   ];
   for (const w of stripWords) t = t.replace(new RegExp(`\\s${w}\\s`, "g"), " ");
   t = t.replace(/[@#]/g, " ").replace(/\s+/g, " ").trim();
@@ -348,9 +349,13 @@ export const Route = createFileRoute("/api/public/giant-bot-webhook")({
         if (!payload || (payload.kind !== "room_message" && payload.kind !== "dm")) {
           return new Response("Bad Request", { status: 400 });
         }
-        // Fire and forget; respond fast so pg_net doesn't time out
-        handle(payload).catch((e) => console.error("[giant-bot] handler error", e));
-        return new Response("ok", { status: 200 });
+        try {
+          await handle(payload);
+          return new Response("ok", { status: 200 });
+        } catch (e) {
+          console.error("[giant-bot] handler error", e);
+          return new Response("Bot handler failed", { status: 500 });
+        }
       },
       GET: async () => methodNotAllowed(),
     },
