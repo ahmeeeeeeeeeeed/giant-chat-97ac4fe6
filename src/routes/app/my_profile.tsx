@@ -11,6 +11,7 @@ import { Loader2, Camera, User as UserIcon, Bell, Info, Shield, ChevronLeft, Loc
 import { useTranslation } from "react-i18next";
 import { getEquipped, type EquippedSet } from "@/lib/equipped";
 import { BadgeChip } from "@/routes/app/store";
+import { EquippedFrame, EquippedEffectFloat } from "@/components/EquippedDecor";
 
 import { cacheGet, cacheSet, cacheKeys } from "@/lib/offline-cache";
 import { StoryRing } from "@/components/StoryRing";
