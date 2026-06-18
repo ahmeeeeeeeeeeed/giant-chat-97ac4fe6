@@ -218,13 +218,13 @@ function RoomPage() {
     }
   };
 
-  // Persist room messages locally on every change (offline-first cache).
+  // Reload messages whenever (re)join time becomes known/changes.
   useEffect(() => {
-    if (!roomId) return;
-    // Don't persist optimistic tmp-* items; keep cache to confirmed messages.
-    const persistable = messages.filter((m: any) => typeof m.id === "string" && !m.id.startsWith("tmp-"));
-    if (persistable.length) void cacheSet(cacheKeys.roomMessages(roomId), persistable);
-  }, [messages, roomId]);
+    if (!user?.id || !roomId) return;
+    if (!joinedAt) { setMessages([]); return; }
+    loadMessages();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [joinedAt, roomId, user?.id]);
 
   useEffect(() => {
     if (!user?.id) return; // wait for auth so RLS allows reads
