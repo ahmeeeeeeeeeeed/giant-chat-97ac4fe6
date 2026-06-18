@@ -86,7 +86,7 @@ function AppLayout() {
   // Tab-visit stack: every time the user enters a new tab-root, push it.
   // Phone back button pops one entry, so users cycle through their visited
   // tabs before the exit-confirm dialog is offered.
-  const tabRootsList = ["/app/chats", "/app", "/app/community", "/app/friends", "/app/games", "/app/settings"] as const;
+  const tabRootsList = ["/app/chats", "/app", "/app/community", "/app/friends", "/app/games", "/app/store"] as const;
   const tabHistoryRef = useRef<string[]>([]);
   useEffect(() => {
     const path = location.pathname.replace(/\/$/, "") || "/";
@@ -146,7 +146,7 @@ function AppLayout() {
 
   const path = location.pathname;
   const hideChrome = /\/app\/rooms\/[^/]+/.test(path) || /\/app\/chats\/[^/]+/.test(path);
-  const tabRoots = new Set(["/app/chats", "/app", "/app/community", "/app/friends", "/app/games", "/app/settings"]);
+  const tabRoots = new Set(["/app/chats", "/app", "/app/community", "/app/friends", "/app/games", "/app/store"]);
   const showBack = !hideChrome && !tabRoots.has(path);
 
   const pageTitle = (() => {
