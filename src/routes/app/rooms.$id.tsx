@@ -33,6 +33,7 @@ import { getOnline, useOnline } from "@/lib/use-online";
 import { UserBadgesInline } from "@/components/UserBadges";
 import { StoryRing } from "@/components/StoryRing";
 import { RoomVoiceStage } from "@/components/RoomVoiceStage";
+import { ReportModal } from "@/components/ReportModal";
 
 type Rank = "owner" | "admin" | "moderator" | "member";
 
