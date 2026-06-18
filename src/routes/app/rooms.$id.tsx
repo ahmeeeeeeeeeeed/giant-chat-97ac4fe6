@@ -167,10 +167,15 @@ function RoomPage() {
     return banned;
   };
 
+  const [joinedAt, setJoinedAt] = useState<string | null>(null);
+  const joinedAtRef = useRef<string | null>(null);
+  useEffect(() => { joinedAtRef.current = joinedAt; }, [joinedAt]);
+
   const loadMembership = async () => {
     if (!user) return;
-    const { data } = await supabase.from("room_members").select("rank").eq("room_id", roomId).eq("user_id", user.id).maybeSingle();
+    const { data } = await supabase.from("room_members").select("rank, joined_at").eq("room_id", roomId).eq("user_id", user.id).maybeSingle();
     setMyRank((data?.rank as Rank) ?? null);
+    setJoinedAt((data as any)?.joined_at ?? null);
   };
 
   const loadMemberCount = async () => {
