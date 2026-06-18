@@ -1137,22 +1137,7 @@ function RoomPage() {
       {showBots && <BotCommandsModal onClose={() => setShowBots(false)} />}
       {showGifts && <GiftPickerModal roomId={roomId} onClose={() => setShowGifts(false)} presetReceiverId={giftPreset} />}
 
-      {askPassword && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setAskPassword(false)}>
-          <div className="w-full max-w-sm rounded-2xl bg-card p-6" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center gap-2 mb-4"><KeyRound className="h-5 w-5 text-amber-500" /><h3 className="font-bold text-lg">كلمة مرور الغرفة</h3></div>
-            <input type="password" value={joinPw} onChange={(e) => setJoinPw(e.target.value)} placeholder="أدخل كلمة المرور" autoFocus
-              className="w-full h-11 rounded-xl border border-input bg-background px-4 text-sm outline-none focus:border-primary mb-4" />
-            <div className="flex gap-2">
-              <button onClick={() => setAskPassword(false)} className="flex-1 h-11 rounded-xl border border-border font-medium">إلغاء</button>
-              <button onClick={() => tryJoin(joinPw)} disabled={joining || !joinPw}
-                className="flex-1 h-11 rounded-xl bg-primary text-primary-foreground font-medium disabled:opacity-50">
-                {joining ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : "دخول"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* تم إلغاء كلمة المرور للغرف الخاصة — الدخول عبر الدعوة فقط */}
 
       {showLeaveConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setShowLeaveConfirm(false)}>
