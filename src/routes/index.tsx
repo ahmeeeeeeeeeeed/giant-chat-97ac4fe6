@@ -318,7 +318,7 @@ function PublicWebsite() {
       </header>
 
       {/* Hero */}
-      <section id="download" className="relative overflow-hidden">
+      <section className="relative overflow-hidden">
         <div className="pointer-events-none absolute -top-40 right-1/4 h-[28rem] w-[28rem] rounded-full bg-primary/25 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-32 left-1/4 h-[28rem] w-[28rem] rounded-full bg-emerald-400/15 blur-3xl" />
 
