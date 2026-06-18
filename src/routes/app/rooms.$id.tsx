@@ -195,19 +195,18 @@ function RoomPage() {
   };
 
   const loadMessages = async () => {
-    // 1) Local-first: render cached messages immediately (works fully offline).
-    const cached = await cacheGet<any[]>(cacheKeys.roomMessages(roomId));
-    if (cached && cached.length) {
-      setMessages(cached);
-      const ids = cached.map((m: any) => m.user_id).filter(Boolean);
-      ensureProfiles(ids);
-      scrollToBottom(didInitialScrollRef.current);
-      didInitialScrollRef.current = true;
-    }
-    // 2) Skip network when offline — avoids browser errors and keeps cached UI.
+    // Only show messages from after the user (re)joined the room.
+    // Previous-session messages must not be visible.
+    const since = joinedAtRef.current;
+    if (!since) { setMessages([]); return; }
     if (!getOnline()) return;
-    // 3) Background sync from cloud.
-    const { data: raw } = await supabase.from("room_messages").select("*").eq("room_id", roomId).order("created_at", { ascending: false }).limit(50);
+    const { data: raw } = await supabase
+      .from("room_messages")
+      .select("*")
+      .eq("room_id", roomId)
+      .gte("created_at", since)
+      .order("created_at", { ascending: false })
+      .limit(50);
     const data = raw ? [...raw].reverse() : null;
     if (data) {
       const visible = data.filter((m: any) => !isPlainSystem(m));
