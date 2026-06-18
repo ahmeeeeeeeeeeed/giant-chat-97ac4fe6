@@ -1655,13 +1655,8 @@ function ManageTab({ room, roomId, onDeleted }: { room: any; roomId: string; onD
     const { error } = await supabase.from("rooms").update(update).eq("id", roomId);
     if (error) { setSaving(false); toast.error("فشل الحفظ: " + error.message); return; }
 
-    // Password / type changes via secure RPC (owner-only, server-side hashing)
-    if (type === "public") {
-      await supabase.rpc("set_room_password" as never, { _room: roomId, _password: null } as never);
-    } else if (type === "private" && changePw && password.trim()) {
-      const { error: pwErr } = await supabase.rpc("set_room_password" as never, { _room: roomId, _password: password.trim() } as never);
-      if (pwErr) { setSaving(false); toast.error("فشل ضبط كلمة المرور: " + pwErr.message); return; }
-    }
+    // الغرف الخاصة بدون كلمة مرور — نمسح أي كلمة مرور سابقة دائماً
+    await supabase.rpc("set_room_password" as never, { _room: roomId, _password: null } as never);
     setSaving(false);
     toast.success("تم حفظ التغييرات");
     setChangePw(false); setPassword("");
