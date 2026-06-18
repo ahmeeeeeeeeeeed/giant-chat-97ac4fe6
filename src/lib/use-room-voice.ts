@@ -292,18 +292,26 @@ export function useRoomVoice(roomId: string, myUserId: string | undefined) {
 
   const leaveStage = useCallback(async () => {
     if (!myUserId) return;
-    // Notify peers
-    const others = speakersRef.current.map((s) => s.user_id).filter((u) => u !== myUserId);
+    // Tear down local peers + mic immediately
+    const others = Array.from(peersRef.current.keys());
     for (const uid of others) {
-      await supabase.from("room_voice_signals").insert({
-        room_id: roomId, from_user: myUserId, to_user: uid,
-        signal_type: "leave", payload: {} as any,
-      }).then(() => {});
+      try {
+        await supabase.from("room_voice_signals").insert({
+          room_id: roomId, from_user: myUserId, to_user: uid,
+          signal_type: "leave", payload: {} as any,
+        });
+      } catch { /* noop */ }
       closePeer(uid);
     }
     stopMic();
-    await supabase.from("room_speakers").delete().eq("room_id", roomId).eq("user_id", myUserId);
+    onStageRef.current = false;
+    // Optimistic UI
+    setSpeakers((prev) => prev.filter((s) => s.user_id !== myUserId));
+    const { error } = await supabase.from("room_speakers").delete()
+      .eq("room_id", roomId).eq("user_id", myUserId);
+    if (error) toast.error("تعذّر النزول من البث");
   }, [roomId, myUserId, stopMic, closePeer]);
+
 
   const toggleMute = useCallback(async () => {
     if (!myUserId) return;
