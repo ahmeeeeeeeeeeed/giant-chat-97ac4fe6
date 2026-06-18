@@ -284,13 +284,6 @@ function SettingsPage() {
       </header>
 
       <div className="flex flex-col gap-4 px-4 py-5">
-        {/* Featured */}
-        <div className="grid grid-cols-2 gap-3">
-          <FeatureTile to="/app/store" icon={ShoppingBag} title="المتجر" subtitle="شارات • مؤثرات"
-            gradient="from-violet-500 via-fuchsia-500 to-pink-500" />
-          <FeatureTile to="/app/achievements" icon={Trophy} title="الإنجازات" subtitle="ترتيب أسبوعي"
-            gradient="from-amber-400 via-orange-500 to-rose-500" />
-        </div>
 
         {/* Account */}
         <Section title="الحساب">
