@@ -1379,6 +1379,143 @@ export type Database = {
           },
         ]
       }
+      room_raised_hands: {
+        Row: {
+          created_at: string
+          id: string
+          room_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          room_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          room_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_raised_hands_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      room_speaker_invites: {
+        Row: {
+          created_at: string
+          id: string
+          invited_by: string
+          room_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          invited_by: string
+          room_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          invited_by?: string
+          room_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_speaker_invites_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      room_speakers: {
+        Row: {
+          added_by: string | null
+          id: string
+          is_muted: boolean
+          is_speaking: boolean
+          joined_at: string
+          room_id: string
+          user_id: string
+        }
+        Insert: {
+          added_by?: string | null
+          id?: string
+          is_muted?: boolean
+          is_speaking?: boolean
+          joined_at?: string
+          room_id: string
+          user_id: string
+        }
+        Update: {
+          added_by?: string | null
+          id?: string
+          is_muted?: boolean
+          is_speaking?: boolean
+          joined_at?: string
+          room_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_speakers_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      room_voice_signals: {
+        Row: {
+          created_at: string
+          from_user: string
+          id: string
+          payload: Json
+          room_id: string
+          signal_type: string
+          to_user: string
+        }
+        Insert: {
+          created_at?: string
+          from_user: string
+          id?: string
+          payload: Json
+          room_id: string
+          signal_type: string
+          to_user: string
+        }
+        Update: {
+          created_at?: string
+          from_user?: string
+          id?: string
+          payload?: Json
+          room_id?: string
+          signal_type?: string
+          to_user?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_voice_signals_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rooms: {
         Row: {
           background_type: string | null
@@ -1965,12 +2102,20 @@ export type Database = {
         }
         Returns: boolean
       }
+      has_speaker_invite: {
+        Args: { _room: string; _user: string }
+        Returns: boolean
+      }
       increment_profile_view: { Args: { _target: string }; Returns: number }
       is_room_invited: {
         Args: { _room: string; _user: string }
         Returns: boolean
       }
       is_room_member: {
+        Args: { _room: string; _user: string }
+        Returns: boolean
+      }
+      is_room_moderator: {
         Args: { _room: string; _user: string }
         Returns: boolean
       }
