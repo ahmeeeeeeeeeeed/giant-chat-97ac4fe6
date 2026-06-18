@@ -1168,6 +1168,7 @@ function RoomPage() {
             </div>
           </div>
         </div>
+      )}
 
       <AlertDialog open={confirmDeleteRoom} onOpenChange={setConfirmDeleteRoom}>
         <AlertDialogContent className="rounded-2xl">
