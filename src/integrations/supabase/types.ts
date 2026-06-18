@@ -2217,7 +2217,15 @@ export type Database = {
       }
       get_weekly_leaderboards: { Args: { _limit?: number }; Returns: Json }
       get_weekly_user_stats: { Args: { _user: string }; Returns: Json }
+      giant_bot_execute_command: {
+        Args: { _actor: string; _content: string; _room: string }
+        Returns: boolean
+      }
       giant_bot_id: { Args: never; Returns: string }
+      giant_bot_say: {
+        Args: { _room: string; _text: string }
+        Returns: undefined
+      }
       has_bot_admin: {
         Args: { _room: string; _user: string }
         Returns: boolean
