@@ -1168,7 +1168,34 @@ function RoomPage() {
             </div>
           </div>
         </div>
-      )}
+
+      <AlertDialog open={confirmDeleteRoom} onOpenChange={setConfirmDeleteRoom}>
+        <AlertDialogContent className="rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-red-600">
+              <Trash2 className="h-5 w-5" /> حذف الغرفة نهائياً
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-start">
+              سيتم حذف الغرفة <b>{room.name}</b> وجميع رسائلها وأعضائها بشكل دائم. هذا الإجراء لا يمكن التراجع عنه.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700 text-white"
+              onClick={async () => {
+                const { error } = await supabase.from("rooms").delete().eq("id", roomId);
+                if (error) { toast.error("تعذّر الحذف: " + error.message); return; }
+                toast.success("تم حذف الغرفة");
+                navigate({ to: "/app" });
+              }}
+            >
+              نعم، احذف الغرفة
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
 
       {showInfo && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 p-0 sm:p-4" onClick={() => setShowInfo(false)}>
