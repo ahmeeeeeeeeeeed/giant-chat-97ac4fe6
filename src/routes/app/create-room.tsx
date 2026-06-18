@@ -15,8 +15,6 @@ function CreateRoomPage() {
   const [roomName, setRoomName] = useState("");
   const [description, setDescription] = useState("");
   const [roomType, setRoomType] = useState<"public" | "private">("public");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [maxMembers, setMaxMembers] = useState(50);
   const [loading, setLoading] = useState(false);
 
@@ -24,9 +22,6 @@ function CreateRoomPage() {
     e.preventDefault();
     if (!user) return;
     if (!roomName.trim()) { toast.error("يرجى إدخال اسم الغرفة"); return; }
-    if (roomType === "private" && password.trim().length < 3) {
-      toast.error("كلمة المرور قصيرة جدًا"); return;
-    }
 
     setLoading(true);
     const { data, error } = await supabase
@@ -35,7 +30,7 @@ function CreateRoomPage() {
         name: roomName.trim(),
         description: description.trim() || null,
         type: roomType,
-        password_hash: roomType === "private" ? password.trim() : null,
+        password_hash: null,
         max_members: maxMembers,
         is_active: true,
         owner_id: user.id,
@@ -48,7 +43,7 @@ function CreateRoomPage() {
       toast.error("فشل إنشاء الغرفة: " + (error?.message ?? ""));
       return;
     }
-    toast.success("تم إنشاء الغرفة بنجاح!");
+    toast.success(roomType === "private" ? "تم إنشاء غرفتك الخاصة — يمكنك دعوة أصدقائك" : "تم إنشاء الغرفة بنجاح!");
     navigate({ to: "/app/rooms/$id", params: { id: (data as any).id } });
   };
 
