@@ -11,7 +11,7 @@ import { useRoomVoice, type Speaker } from "@/lib/use-room-voice";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Mic, MicOff, Hand, PhoneOff, UserPlus, X, Crown,
-  Radio, Volume2, Users as UsersIcon, Check,
+  Radio, Volume2, Users as UsersIcon, Check, Search,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
