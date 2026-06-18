@@ -11,7 +11,7 @@ import { OnlineStatusBanner } from "@/components/OnlineStatusBanner";
 import { ConnectionStatusBadge } from "@/components/ConnectionStatusBadge";
 import { ReportModal } from "@/components/ReportModal";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { ExitConfirmDialog, requestExitConfirm } from "@/components/ExitConfirmDialog";
+import { requestExitConfirm } from "@/components/ExitConfirmDialog";
 import { scheduleDataPrewarm } from "@/lib/data-prewarm";
 import { recordDailyAction } from "@/lib/daily-tasks";
 import { usePresenceHeartbeat } from "@/lib/use-presence-heartbeat";
