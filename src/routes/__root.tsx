@@ -77,6 +77,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "description", content: "Giant: غرف دردشة مجتمعات ومحادثات خاصة فورية." },
       { name: "theme-color", content: "#10b981" },
       { name: "color-scheme", content: "dark light" },
+      { name: "application-name", content: "Giant" },
       // iOS PWA / WebView chrome
       { name: "mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
