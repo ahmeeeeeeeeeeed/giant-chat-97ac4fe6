@@ -294,18 +294,26 @@ function AppLayout() {
                     البروفايل
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    onSelect={() => navigate({ to: "/app/account" })}
-                    className="cursor-pointer rounded-xl gap-2 text-sm font-semibold focus:bg-emerald-500/15 focus:text-emerald-100"
-                  >
-                    <UserCog className="h-4 w-4 text-sky-300" />
-                    تعديل البروفايل
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
                     onSelect={() => navigate({ to: "/app/settings" })}
                     className="cursor-pointer rounded-xl gap-2 text-sm font-semibold focus:bg-emerald-500/15 focus:text-emerald-100"
                   >
                     <Settings className="h-4 w-4 text-amber-300" />
                     الإعدادات
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className="bg-emerald-500/15" />
+                  <DropdownMenuItem
+                    onSelect={() => navigate({ to: "/app/activity" })}
+                    className="cursor-pointer rounded-xl gap-2 text-sm font-semibold focus:bg-indigo-500/15 focus:text-indigo-100"
+                  >
+                    <Activity className="h-4 w-4 text-indigo-300" />
+                    سجل النشاط
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onSelect={() => setReportOpen(true)}
+                    className="cursor-pointer rounded-xl gap-2 text-sm font-semibold focus:bg-rose-500/15 focus:text-rose-100"
+                  >
+                    <ShieldAlert className="h-4 w-4 text-rose-300" />
+                    الإبلاغ والشكاوى
                   </DropdownMenuItem>
                   <DropdownMenuSeparator className="bg-emerald-500/15" />
                   <DropdownMenuItem
