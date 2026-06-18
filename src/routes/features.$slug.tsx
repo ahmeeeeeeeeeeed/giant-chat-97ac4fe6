@@ -201,7 +201,7 @@ export const Route = createFileRoute("/features/$slug")({
 });
 
 function FeaturePage() {
-  const { feature: f } = Route.useLoaderData();
+  const { feature: f } = Route.useLoaderData() as { feature: Feature };
   const Icon = f.Icon;
   const others = Object.values(FEATURES).filter(x => x.slug !== f.slug).slice(0, 4);
 

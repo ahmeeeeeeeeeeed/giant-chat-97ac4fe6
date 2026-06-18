@@ -26,6 +26,7 @@ import { Route as SiteRegisterRouteImport } from './routes/site/register'
 import { Route as SiteLoginRouteImport } from './routes/site/login'
 import { Route as SiteAccountRouteImport } from './routes/site/account'
 import { Route as ProfileIdRouteImport } from './routes/profile.$id'
+import { Route as FeaturesSlugRouteImport } from './routes/features.$slug'
 import { Route as AppStoriesRouteImport } from './routes/app/stories'
 import { Route as AppStoreRouteImport } from './routes/app/store'
 import { Route as AppSettingsRouteImport } from './routes/app/settings'
@@ -138,6 +139,11 @@ const SiteAccountRoute = SiteAccountRouteImport.update({
 const ProfileIdRoute = ProfileIdRouteImport.update({
   id: '/profile/$id',
   path: '/profile/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FeaturesSlugRoute = FeaturesSlugRouteImport.update({
+  id: '/features/$slug',
+  path: '/features/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppStoriesRoute = AppStoriesRouteImport.update({
@@ -309,6 +315,7 @@ export interface FileRoutesByFullPath {
   '/app/settings': typeof AppSettingsRoute
   '/app/store': typeof AppStoreRoute
   '/app/stories': typeof AppStoriesRoute
+  '/features/$slug': typeof FeaturesSlugRoute
   '/profile/$id': typeof ProfileIdRoute
   '/site/account': typeof SiteAccountRoute
   '/site/login': typeof SiteLoginRoute
@@ -354,6 +361,7 @@ export interface FileRoutesByTo {
   '/app/settings': typeof AppSettingsRoute
   '/app/store': typeof AppStoreRoute
   '/app/stories': typeof AppStoriesRoute
+  '/features/$slug': typeof FeaturesSlugRoute
   '/profile/$id': typeof ProfileIdRoute
   '/site/account': typeof SiteAccountRoute
   '/site/login': typeof SiteLoginRoute
@@ -402,6 +410,7 @@ export interface FileRoutesById {
   '/app/settings': typeof AppSettingsRoute
   '/app/store': typeof AppStoreRoute
   '/app/stories': typeof AppStoriesRoute
+  '/features/$slug': typeof FeaturesSlugRoute
   '/profile/$id': typeof ProfileIdRoute
   '/site/account': typeof SiteAccountRoute
   '/site/login': typeof SiteLoginRoute
@@ -451,6 +460,7 @@ export interface FileRouteTypes {
     | '/app/settings'
     | '/app/store'
     | '/app/stories'
+    | '/features/$slug'
     | '/profile/$id'
     | '/site/account'
     | '/site/login'
@@ -496,6 +506,7 @@ export interface FileRouteTypes {
     | '/app/settings'
     | '/app/store'
     | '/app/stories'
+    | '/features/$slug'
     | '/profile/$id'
     | '/site/account'
     | '/site/login'
@@ -543,6 +554,7 @@ export interface FileRouteTypes {
     | '/app/settings'
     | '/app/store'
     | '/app/stories'
+    | '/features/$slug'
     | '/profile/$id'
     | '/site/account'
     | '/site/login'
@@ -576,6 +588,7 @@ export interface RootRouteChildren {
   SiteRoute: typeof SiteRouteWithChildren
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   WatchRoute: typeof WatchRoute
+  FeaturesSlugRoute: typeof FeaturesSlugRoute
   ProfileIdRoute: typeof ProfileIdRoute
   ApiPublicOtaPublishRoute: typeof ApiPublicOtaPublishRoute
   ApiPublicSearchTrackRoute: typeof ApiPublicSearchTrackRoute
@@ -700,6 +713,13 @@ declare module '@tanstack/react-router' {
       path: '/profile/$id'
       fullPath: '/profile/$id'
       preLoaderRoute: typeof ProfileIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/features/$slug': {
+      id: '/features/$slug'
+      path: '/features/$slug'
+      fullPath: '/features/$slug'
+      preLoaderRoute: typeof FeaturesSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app/stories': {
@@ -1010,6 +1030,7 @@ const rootRouteChildren: RootRouteChildren = {
   SiteRoute: SiteRouteWithChildren,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   WatchRoute: WatchRoute,
+  FeaturesSlugRoute: FeaturesSlugRoute,
   ProfileIdRoute: ProfileIdRoute,
   ApiPublicOtaPublishRoute: ApiPublicOtaPublishRoute,
   ApiPublicSearchTrackRoute: ApiPublicSearchTrackRoute,
