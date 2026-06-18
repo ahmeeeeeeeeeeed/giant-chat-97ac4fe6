@@ -54,6 +54,7 @@ import { Route as AppAdminRoomsRouteImport } from './routes/app/admin.rooms'
 import { Route as AppAdminCommunityRouteImport } from './routes/app/admin.community'
 import { Route as ApiPublicSearchTrackRouteImport } from './routes/api/public/search-track'
 import { Route as ApiPublicOtaPublishRouteImport } from './routes/api/public/ota-publish'
+import { Route as ApiPublicGiantBotWebhookRouteImport } from './routes/api/public/giant-bot-webhook'
 import { Route as AppRoomsIdInvitesRouteImport } from './routes/app/rooms.$id.invites'
 
 const WatchRoute = WatchRouteImport.update({
@@ -281,6 +282,12 @@ const ApiPublicOtaPublishRoute = ApiPublicOtaPublishRouteImport.update({
   path: '/api/public/ota-publish',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicGiantBotWebhookRoute =
+  ApiPublicGiantBotWebhookRouteImport.update({
+    id: '/api/public/giant-bot-webhook',
+    path: '/api/public/giant-bot-webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AppRoomsIdInvitesRoute = AppRoomsIdInvitesRouteImport.update({
   id: '/invites',
   path: '/invites',
@@ -321,6 +328,7 @@ export interface FileRoutesByFullPath {
   '/site/login': typeof SiteLoginRoute
   '/site/register': typeof SiteRegisterRoute
   '/app/': typeof AppIndexRoute
+  '/api/public/giant-bot-webhook': typeof ApiPublicGiantBotWebhookRoute
   '/api/public/ota-publish': typeof ApiPublicOtaPublishRoute
   '/api/public/search-track': typeof ApiPublicSearchTrackRoute
   '/app/admin/community': typeof AppAdminCommunityRoute
@@ -367,6 +375,7 @@ export interface FileRoutesByTo {
   '/site/login': typeof SiteLoginRoute
   '/site/register': typeof SiteRegisterRoute
   '/app': typeof AppIndexRoute
+  '/api/public/giant-bot-webhook': typeof ApiPublicGiantBotWebhookRoute
   '/api/public/ota-publish': typeof ApiPublicOtaPublishRoute
   '/api/public/search-track': typeof ApiPublicSearchTrackRoute
   '/app/admin/community': typeof AppAdminCommunityRoute
@@ -416,6 +425,7 @@ export interface FileRoutesById {
   '/site/login': typeof SiteLoginRoute
   '/site/register': typeof SiteRegisterRoute
   '/app/': typeof AppIndexRoute
+  '/api/public/giant-bot-webhook': typeof ApiPublicGiantBotWebhookRoute
   '/api/public/ota-publish': typeof ApiPublicOtaPublishRoute
   '/api/public/search-track': typeof ApiPublicSearchTrackRoute
   '/app/admin/community': typeof AppAdminCommunityRoute
@@ -466,6 +476,7 @@ export interface FileRouteTypes {
     | '/site/login'
     | '/site/register'
     | '/app/'
+    | '/api/public/giant-bot-webhook'
     | '/api/public/ota-publish'
     | '/api/public/search-track'
     | '/app/admin/community'
@@ -512,6 +523,7 @@ export interface FileRouteTypes {
     | '/site/login'
     | '/site/register'
     | '/app'
+    | '/api/public/giant-bot-webhook'
     | '/api/public/ota-publish'
     | '/api/public/search-track'
     | '/app/admin/community'
@@ -560,6 +572,7 @@ export interface FileRouteTypes {
     | '/site/login'
     | '/site/register'
     | '/app/'
+    | '/api/public/giant-bot-webhook'
     | '/api/public/ota-publish'
     | '/api/public/search-track'
     | '/app/admin/community'
@@ -590,6 +603,7 @@ export interface RootRouteChildren {
   WatchRoute: typeof WatchRoute
   FeaturesSlugRoute: typeof FeaturesSlugRoute
   ProfileIdRoute: typeof ProfileIdRoute
+  ApiPublicGiantBotWebhookRoute: typeof ApiPublicGiantBotWebhookRoute
   ApiPublicOtaPublishRoute: typeof ApiPublicOtaPublishRoute
   ApiPublicSearchTrackRoute: typeof ApiPublicSearchTrackRoute
 }
@@ -911,6 +925,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicOtaPublishRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/giant-bot-webhook': {
+      id: '/api/public/giant-bot-webhook'
+      path: '/api/public/giant-bot-webhook'
+      fullPath: '/api/public/giant-bot-webhook'
+      preLoaderRoute: typeof ApiPublicGiantBotWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app/rooms/$id/invites': {
       id: '/app/rooms/$id/invites'
       path: '/invites'
@@ -1032,6 +1053,7 @@ const rootRouteChildren: RootRouteChildren = {
   WatchRoute: WatchRoute,
   FeaturesSlugRoute: FeaturesSlugRoute,
   ProfileIdRoute: ProfileIdRoute,
+  ApiPublicGiantBotWebhookRoute: ApiPublicGiantBotWebhookRoute,
   ApiPublicOtaPublishRoute: ApiPublicOtaPublishRoute,
   ApiPublicSearchTrackRoute: ApiPublicSearchTrackRoute,
 }
