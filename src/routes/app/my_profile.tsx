@@ -315,16 +315,7 @@ function ProfilePage() {
         {user && <UserBadgesGrid userId={user.id} />}
         {user && <WeeklyAchievementsBadge userId={user.id} />}
 
-        <PremiumUsernameCard
-          currentUsername={username}
-          points={points}
-          onUpgraded={(newName) => {
-            setUsername(newName);
-            // refresh points
-            supabase.from("profiles").select("points").eq("id", user!.id).maybeSingle()
-              .then(({ data }) => { if (data?.points != null) setPoints(data.points); });
-          }}
-        />
+        {/* Premium upgrade moved to app Settings */}
 
 
         {/* Bio + identity form */}
