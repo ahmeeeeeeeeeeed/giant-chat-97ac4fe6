@@ -301,9 +301,92 @@ export function RoomVoiceStage({
           </div>
         </div>
       )}
+
+      {showInvitePicker && isMod && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 p-0 sm:p-4"
+          onClick={() => setShowInvitePicker(false)}
+        >
+          <div
+            className="w-full max-w-md max-h-[80vh] rounded-t-3xl sm:rounded-3xl bg-card overflow-hidden flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between p-4 border-b border-border">
+              <div className="flex items-center gap-2">
+                <UserPlus className="h-5 w-5 text-emerald-500" />
+                <span className="font-bold">دعوة عضو للبث</span>
+              </div>
+              <button onClick={() => setShowInvitePicker(false)} className="p-1 rounded-lg hover:bg-accent">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="p-3 border-b border-border">
+              <div className="flex items-center gap-2 rounded-xl border border-input bg-background px-3">
+                <Search className="h-4 w-4 text-muted-foreground" />
+                <input
+                  autoFocus
+                  value={pickerSearch}
+                  onChange={(e) => setPickerSearch(e.target.value)}
+                  placeholder="ابحث عن عضو..."
+                  className="flex-1 h-9 bg-transparent text-sm outline-none"
+                />
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto p-2 space-y-1">
+              {memberList
+                .filter((m) => {
+                  if (m.user_id === myUserId) return false;
+                  if (v.speakers.some((s) => s.user_id === m.user_id)) return false;
+                  if (!pickerSearch) return true;
+                  const p = profiles[m.user_id];
+                  return (p?.username ?? "").toLowerCase().includes(pickerSearch.toLowerCase());
+                })
+                .map((m) => {
+                  const p = profiles[m.user_id];
+                  const invited = v.allInvites.some((i) => i.user_id === m.user_id);
+                  const handRaised = v.raisedHands.some((h) => h.user_id === m.user_id);
+                  return (
+                    <div key={m.user_id} className="flex items-center gap-2 rounded-xl bg-background/60 p-2">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={p?.avatar_url ?? undefined} />
+                        <AvatarFallback>{(p?.username ?? "?").charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-bold truncate">{p?.username ?? "..."}</div>
+                        <div className="text-[10px] text-muted-foreground flex items-center gap-1">
+                          {m.rank !== "member" && <span>{m.rank}</span>}
+                          {handRaised && <span className="text-amber-500">• يد مرفوعة</span>}
+                        </div>
+                      </div>
+                      {invited ? (
+                        <button
+                          onClick={() => v.revokeInvite(m.user_id)}
+                          className="rounded-lg bg-amber-500/15 text-amber-700 px-2 py-1.5 text-[10px] font-bold"
+                        >
+                          إلغاء الدعوة
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => v.inviteToSpeak(m.user_id)}
+                          className="rounded-lg bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-3 py-1.5 text-[10px] font-bold flex items-center gap-1"
+                        >
+                          <UserPlus className="h-3 w-3" /> دعوة
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              {memberList.length === 0 && (
+                <div className="text-center text-xs text-muted-foreground py-8">جارٍ التحميل...</div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
 
 function SpeakerTile({
   sp, profile, isMe, canManage, onMute, onRemove,
