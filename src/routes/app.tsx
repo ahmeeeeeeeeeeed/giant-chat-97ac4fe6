@@ -182,7 +182,7 @@ function AppLayout() {
       {!hideChrome && (
         <header className="sticky top-0 z-50 pt-[env(safe-area-inset-top)] bg-[linear-gradient(180deg,#052e22_0%,#073d2c_60%,#073d2c_100%)] text-white shadow-[0_10px_30px_-18px_rgba(0,0,0,0.6)] border-b border-emerald-500/15 backdrop-blur-xl">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_60%_at_50%_-20%,rgba(16,185,129,0.25),transparent_60%)]" />
-          <div className="relative flex items-center justify-between px-3 py-2.5">
+          <div className="relative flex items-center justify-between px-3 py-2">
             <div className="flex min-w-0 items-center gap-2.5">
               {showBack ? (
                 <button
@@ -214,40 +214,39 @@ function AppLayout() {
               </div>
             </div>
 
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-start gap-1">
               <Link
                 to="/app/daily-tasks"
                 aria-label="المهام اليومية"
-                title="المهام اليومية"
-                className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-950/60 border border-emerald-500/30 text-emerald-300 backdrop-blur transition active:scale-95 hover:bg-emerald-900/60 hover:text-emerald-200"
+                className="relative flex flex-col items-center justify-center gap-[2px] w-10 h-[46px] rounded-xl bg-emerald-950/60 border border-emerald-500/30 text-emerald-300 backdrop-blur transition active:scale-95 hover:bg-emerald-900/60 hover:text-emerald-200"
               >
-                <Target className="h-[17px] w-[17px]" />
+                <Target className="h-[16px] w-[16px]" />
+                <span className="text-[8px] font-bold leading-none tracking-tight">المهام</span>
                 <span className="absolute -top-0.5 -end-0.5 h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_6px_2px_rgba(16,185,129,0.6)]" />
               </Link>
               <Link
                 to="/app/achievements"
                 aria-label="الإنجازات"
-                title="الإنجازات الأسبوعية"
-                className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-amber-950/40 border border-amber-500/30 text-amber-300 backdrop-blur transition active:scale-95 hover:bg-amber-900/40"
+                className="relative flex flex-col items-center justify-center gap-[2px] w-10 h-[46px] rounded-xl bg-amber-950/40 border border-amber-500/30 text-amber-300 backdrop-blur transition active:scale-95 hover:bg-amber-900/40"
               >
-                <Trophy className="h-[17px] w-[17px]" />
+                <Trophy className="h-[16px] w-[16px]" />
+                <span className="text-[8px] font-bold leading-none tracking-tight">الإنجازات</span>
               </Link>
               <Link
                 to="/app/stories"
                 aria-label="القصص"
-                title="القصص"
-                className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-fuchsia-950/40 border border-fuchsia-500/30 text-fuchsia-300 backdrop-blur transition active:scale-95 hover:bg-fuchsia-900/40"
+                className="relative flex flex-col items-center justify-center gap-[2px] w-10 h-[46px] rounded-xl bg-fuchsia-950/40 border border-fuchsia-500/30 text-fuchsia-300 backdrop-blur transition active:scale-95 hover:bg-fuchsia-900/40"
               >
-                <Sparkles className="h-[17px] w-[17px]" />
+                <Sparkles className="h-[16px] w-[16px]" />
+                <span className="text-[8px] font-bold leading-none tracking-tight">القصص</span>
               </Link>
-              {/* سجل النشاط والإبلاغ نُقلا داخل قائمة الثلاث نقاط. زر لوحة الإدارة أصبح داخل الإعدادات للمسؤولين فقط. */}
               <Link
                 to="/app/notifications"
                 aria-label="الإشعارات"
-                title="الإشعارات"
-                className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900/60 border border-emerald-500/20 text-emerald-200/90 backdrop-blur transition active:scale-95 hover:bg-slate-800/60"
+                className="relative flex flex-col items-center justify-center gap-[2px] w-10 h-[46px] rounded-xl bg-slate-900/60 border border-emerald-500/20 text-emerald-200/90 backdrop-blur transition active:scale-95 hover:bg-slate-800/60"
               >
-                <Bell className="h-[17px] w-[17px]" />
+                <Bell className="h-[16px] w-[16px]" />
+                <span className="text-[8px] font-bold leading-none tracking-tight">الإشعارات</span>
                 {bellCount > 0 && (
                   <span className="absolute -top-1 -end-1 flex h-[16px] min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white ring-2 ring-emerald-950">
                     {bellCount > 99 ? "99+" : bellCount}
@@ -255,27 +254,25 @@ function AppLayout() {
                 )}
               </Link>
 
-              {/* زر إنشاء غرفة — يظهر فقط في صفحة الغرف */}
               {(path === "/app" || path === "/app/") && (
                 <Link
                   to="/app/create-room"
                   aria-label="إنشاء غرفة"
-                  title="إنشاء غرفة"
-                  className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 text-white shadow-[0_6px_18px_-6px_rgba(16,185,129,0.8)] ring-1 ring-emerald-300/40 transition active:scale-95 hover:brightness-110"
+                  className="relative flex flex-col items-center justify-center gap-[2px] w-10 h-[46px] rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 text-white shadow-[0_6px_18px_-6px_rgba(16,185,129,0.8)] ring-1 ring-emerald-300/40 transition active:scale-95 hover:brightness-110"
                 >
-                  <Plus className="h-[18px] w-[18px]" strokeWidth={2.5} />
+                  <Plus className="h-[16px] w-[16px]" strokeWidth={2.5} />
+                  <span className="text-[8px] font-bold leading-none tracking-tight">غرفة</span>
                 </Link>
               )}
 
-              {/* قائمة ثلاث نقاط — البروفايل / الإعدادات / خروج / تسجيل خروج */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
                     aria-label="القائمة"
-                    title="القائمة"
-                    className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 via-fuchsia-500 to-pink-500 text-white shadow-[0_6px_18px_-6px_rgba(217,70,239,0.7)] ring-1 ring-fuchsia-300/40 transition active:scale-95 hover:brightness-110"
+                    className="relative flex flex-col items-center justify-center gap-[2px] w-10 h-[46px] rounded-xl bg-gradient-to-br from-violet-500 via-fuchsia-500 to-pink-500 text-white shadow-[0_6px_18px_-6px_rgba(217,70,239,0.7)] ring-1 ring-fuchsia-300/40 transition active:scale-95 hover:brightness-110"
                   >
-                    <MoreVertical className="h-[18px] w-[18px]" strokeWidth={2.5} />
+                    <MoreVertical className="h-[16px] w-[16px]" strokeWidth={2.5} />
+                    <span className="text-[8px] font-bold leading-none tracking-tight">المزيد</span>
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" sideOffset={8} className="w-56 rounded-2xl border-emerald-500/20 bg-slate-950/95 text-emerald-50 shadow-2xl backdrop-blur-xl">
