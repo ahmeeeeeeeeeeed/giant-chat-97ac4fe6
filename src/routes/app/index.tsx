@@ -172,7 +172,7 @@ function RoomsPage() {
     else if (category === "private") list = list.filter((r) => r.type === "private" && (r.owner_id === user?.id || myRoomIds.has(r.id)));
     else if (category === "mine") list = list.filter((r) => r.owner_id === user?.id);
     else if (category === "favorites") list = list.filter((r) => favorites.has(r.id));
-    else if (category === "active") list = list.filter((r) => (r.member_count ?? 0) > 0);
+    else if (category === "active") list = list.filter((r) => myRoomIds.has(r.id) || r.owner_id === user?.id);
 
     const q = query.trim().toLowerCase();
     if (!q) return list;
