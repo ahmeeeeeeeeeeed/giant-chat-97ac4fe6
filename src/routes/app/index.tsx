@@ -389,14 +389,20 @@ const CARD_THEMES = [
 
 function RoomCard({ room, accentIndex, isOwner, isMember, isFavorite, onToggleFav, onJoin }: { room: Room; accentIndex: number; isOwner: boolean; isMember: boolean; isFavorite: boolean; onToggleFav: () => void; onJoin: () => void }) {
   const [inviteOpen, setInviteOpen] = useState(false);
+  const navigate = useNavigate();
   const theme = CARD_THEMES[accentIndex % CARD_THEMES.length];
   const isPrivate = room.type === "private";
   const initial = (room.name?.trim()?.[0] ?? "#").toUpperCase();
 
   const openInvite = (e: React.MouseEvent) => {
     e.preventDefault(); e.stopPropagation();
+    if (isOwner && isPrivate) {
+      navigate({ to: "/app/rooms/$id/invites", params: { id: room.id } });
+      return;
+    }
     setInviteOpen(true);
   };
+
 
   return (
     <>
@@ -452,11 +458,11 @@ function RoomCard({ room, accentIndex, isOwner, isMember, isFavorite, onToggleFa
             >
               <Star className="h-4 w-4" fill={isFavorite ? "currentColor" : "none"} />
             </button>
-            {isMember ? (
+            {(isMember || isOwner) ? (
               <button
                 onClick={openInvite}
                 aria-label="دعوة الأصدقاء"
-                title="دعوة الأصدقاء"
+                title={isOwner && isPrivate ? "إدارة الدعوات" : "دعوة الأصدقاء"}
                 className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-sm transition hover:brightness-110 active:scale-90"
               >
                 <UserPlus className="h-4 w-4" />
@@ -468,6 +474,7 @@ function RoomCard({ room, accentIndex, isOwner, isMember, isFavorite, onToggleFa
               >
                 <LogIn className="h-3.5 w-3.5" />
                 انضمام
+
               </button>
             )}
           </div>

@@ -53,6 +53,7 @@ import { Route as AppAdminRoomsRouteImport } from './routes/app/admin.rooms'
 import { Route as AppAdminCommunityRouteImport } from './routes/app/admin.community'
 import { Route as ApiPublicSearchTrackRouteImport } from './routes/api/public/search-track'
 import { Route as ApiPublicOtaPublishRouteImport } from './routes/api/public/ota-publish'
+import { Route as AppRoomsIdInvitesRouteImport } from './routes/app/rooms.$id.invites'
 
 const WatchRoute = WatchRouteImport.update({
   id: '/watch',
@@ -274,6 +275,11 @@ const ApiPublicOtaPublishRoute = ApiPublicOtaPublishRouteImport.update({
   path: '/api/public/ota-publish',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppRoomsIdInvitesRoute = AppRoomsIdInvitesRouteImport.update({
+  id: '/invites',
+  path: '/invites',
+  getParentRoute: () => AppRoomsIdRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -317,9 +323,10 @@ export interface FileRoutesByFullPath {
   '/app/admin/users': typeof AppAdminUsersRoute
   '/app/chats/$id': typeof AppChatsIdRoute
   '/app/profile/$id': typeof AppProfileIdRoute
-  '/app/rooms/$id': typeof AppRoomsIdRoute
+  '/app/rooms/$id': typeof AppRoomsIdRouteWithChildren
   '/app/admin/': typeof AppAdminIndexRoute
   '/app/chats/': typeof AppChatsIndexRoute
+  '/app/rooms/$id/invites': typeof AppRoomsIdInvitesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -361,9 +368,10 @@ export interface FileRoutesByTo {
   '/app/admin/users': typeof AppAdminUsersRoute
   '/app/chats/$id': typeof AppChatsIdRoute
   '/app/profile/$id': typeof AppProfileIdRoute
-  '/app/rooms/$id': typeof AppRoomsIdRoute
+  '/app/rooms/$id': typeof AppRoomsIdRouteWithChildren
   '/app/admin': typeof AppAdminIndexRoute
   '/app/chats': typeof AppChatsIndexRoute
+  '/app/rooms/$id/invites': typeof AppRoomsIdInvitesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -408,9 +416,10 @@ export interface FileRoutesById {
   '/app/admin/users': typeof AppAdminUsersRoute
   '/app/chats/$id': typeof AppChatsIdRoute
   '/app/profile/$id': typeof AppProfileIdRoute
-  '/app/rooms/$id': typeof AppRoomsIdRoute
+  '/app/rooms/$id': typeof AppRoomsIdRouteWithChildren
   '/app/admin/': typeof AppAdminIndexRoute
   '/app/chats/': typeof AppChatsIndexRoute
+  '/app/rooms/$id/invites': typeof AppRoomsIdInvitesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -459,6 +468,7 @@ export interface FileRouteTypes {
     | '/app/rooms/$id'
     | '/app/admin/'
     | '/app/chats/'
+    | '/app/rooms/$id/invites'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -503,6 +513,7 @@ export interface FileRouteTypes {
     | '/app/rooms/$id'
     | '/app/admin'
     | '/app/chats'
+    | '/app/rooms/$id/invites'
   id:
     | '__root__'
     | '/'
@@ -549,6 +560,7 @@ export interface FileRouteTypes {
     | '/app/rooms/$id'
     | '/app/admin/'
     | '/app/chats/'
+    | '/app/rooms/$id/invites'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -879,6 +891,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicOtaPublishRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/rooms/$id/invites': {
+      id: '/app/rooms/$id/invites'
+      path: '/invites'
+      fullPath: '/app/rooms/$id/invites'
+      preLoaderRoute: typeof AppRoomsIdInvitesRouteImport
+      parentRoute: typeof AppRoomsIdRoute
+    }
   }
 }
 
@@ -904,6 +923,18 @@ const AppAdminRouteWithChildren = AppAdminRoute._addFileChildren(
   AppAdminRouteChildren,
 )
 
+interface AppRoomsIdRouteChildren {
+  AppRoomsIdInvitesRoute: typeof AppRoomsIdInvitesRoute
+}
+
+const AppRoomsIdRouteChildren: AppRoomsIdRouteChildren = {
+  AppRoomsIdInvitesRoute: AppRoomsIdInvitesRoute,
+}
+
+const AppRoomsIdRouteWithChildren = AppRoomsIdRoute._addFileChildren(
+  AppRoomsIdRouteChildren,
+)
+
 interface AppRouteChildren {
   AppAccountRoute: typeof AppAccountRoute
   AppAchievementsRoute: typeof AppAchievementsRoute
@@ -923,7 +954,7 @@ interface AppRouteChildren {
   AppIndexRoute: typeof AppIndexRoute
   AppChatsIdRoute: typeof AppChatsIdRoute
   AppProfileIdRoute: typeof AppProfileIdRoute
-  AppRoomsIdRoute: typeof AppRoomsIdRoute
+  AppRoomsIdRoute: typeof AppRoomsIdRouteWithChildren
   AppChatsIndexRoute: typeof AppChatsIndexRoute
 }
 
@@ -946,7 +977,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppIndexRoute: AppIndexRoute,
   AppChatsIdRoute: AppChatsIdRoute,
   AppProfileIdRoute: AppProfileIdRoute,
-  AppRoomsIdRoute: AppRoomsIdRoute,
+  AppRoomsIdRoute: AppRoomsIdRouteWithChildren,
   AppChatsIndexRoute: AppChatsIndexRoute,
 }
 
