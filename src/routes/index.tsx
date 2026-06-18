@@ -338,7 +338,15 @@ function PublicWebsite() {
             </p>
 
             <div className="mt-9 flex flex-col gap-3">
-              <DownloadButton large />
+              <a href="#features" className="group relative flex h-16 w-full max-w-sm items-center justify-center gap-3 overflow-hidden rounded-2xl bg-gradient-to-r from-primary via-emerald-500 to-success px-6 text-lg font-extrabold text-primary-foreground shadow-xl shadow-primary/40 transition hover:scale-[1.02] active:scale-[0.98]">
+                <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-1000 group-hover:translate-x-full" />
+                <Sparkles className="h-6 w-6" />
+                <span className="flex flex-col items-start leading-tight">
+                  <span>اكتشف مميزات Giant</span>
+                  <span className="text-[11px] font-medium opacity-90">تصفّح المميزات ثم حمّل التطبيق</span>
+                </span>
+              </a>
+
 
               <Link to="/reviews" className="inline-flex items-center justify-center gap-2 rounded-full border border-yellow-400/40 bg-yellow-400/10 px-5 py-2.5 text-sm font-bold text-yellow-500 transition hover:bg-yellow-400/20">
                 <span className="flex items-center gap-1" dir="ltr">
