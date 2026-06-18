@@ -1701,21 +1701,9 @@ function ManageTab({ room, roomId, onDeleted }: { room: any; roomId: string; onD
       </Field>
 
       {type === "private" && (
-        <Field label="كلمة المرور">
-          {!changePw ? (
-            <button onClick={() => setChangePw(true)}
-              className="w-full h-11 rounded-xl border border-dashed border-amber-500/50 bg-amber-500/5 text-amber-600 text-sm font-bold flex items-center justify-center gap-2">
-              <KeyRound className="h-4 w-4" /> تغيير كلمة المرور
-            </button>
-          ) : (
-            <div className="flex gap-2">
-              <input type="text" value={password} onChange={(e) => setPassword(e.target.value)}
-                placeholder="كلمة مرور جديدة"
-                className="flex-1 h-11 rounded-xl border border-input bg-background px-3 text-sm outline-none focus:border-emerald-500" />
-              <button onClick={() => { setChangePw(false); setPassword(""); }} className="h-11 px-3 rounded-xl border border-border text-xs">إلغاء</button>
-            </div>
-          )}
-        </Field>
+        <div className="text-[12px] text-muted-foreground bg-amber-500/5 border border-amber-500/20 rounded-xl p-3">
+          🔒 الغرف الخاصة لا تستخدم كلمة مرور — الدخول حصرياً عبر الدعوة من المالك أو المسؤولين.
+        </div>
       )}
 
       <Field label={`الحد الأقصى للأعضاء: ${maxMembers}`}>
