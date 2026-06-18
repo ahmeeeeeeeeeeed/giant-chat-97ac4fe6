@@ -794,15 +794,19 @@ function RoomPage() {
                   <span className="ms-auto text-[10px] text-muted-foreground">{memberCount}</span>
                 </DropdownMenuItem>
 
-                <DropdownMenuItem onClick={() => openSettingsAt("members")} className="gap-2 cursor-pointer">
-                  <ShieldCheck className="h-4 w-4 text-blue-500" />
-                  <span>المشرفون والمسؤولون</span>
-                </DropdownMenuItem>
+                {canModerate && (
+                  <DropdownMenuItem onClick={() => openSettingsAt("members")} className="gap-2 cursor-pointer">
+                    <ShieldCheck className="h-4 w-4 text-blue-500" />
+                    <span>المشرفون والمسؤولون</span>
+                  </DropdownMenuItem>
+                )}
 
-                <DropdownMenuItem onClick={() => setShowInfo(true)} className="gap-2 cursor-pointer">
-                  <Crown className="h-4 w-4 text-amber-500" />
-                  <span>المالك ومعلومات الغرفة</span>
-                </DropdownMenuItem>
+                {canModerate && (
+                  <DropdownMenuItem onClick={() => setShowInfo(true)} className="gap-2 cursor-pointer">
+                    <Crown className="h-4 w-4 text-amber-500" />
+                    <span>المالك ومعلومات الغرفة</span>
+                  </DropdownMenuItem>
+                )}
 
                 {canModerate && (
                   <DropdownMenuItem onClick={() => openSettingsAt("bans")} className="gap-2 cursor-pointer">
