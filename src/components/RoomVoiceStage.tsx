@@ -224,7 +224,17 @@ export function RoomVoiceStage({
             <Hand className="h-3.5 w-3.5" /> رفع اليد
           </button>
         )}
+
+        {isMod && (
+          <button
+            onClick={() => setShowInvitePicker(true)}
+            className="h-10 px-3 rounded-xl text-xs font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5 active:scale-95"
+          >
+            <UserPlus className="h-3.5 w-3.5" /> دعوة عضو للبث
+          </button>
+        )}
       </div>
+
 
       {/* Raised hands (mods only) */}
       {isMod && v.raisedHands.length > 0 && (
