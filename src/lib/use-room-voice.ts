@@ -105,17 +105,31 @@ export function useRoomVoice(roomId: string, myUserId: string | undefined) {
       const entry = peersRef.current.get(remoteUid);
       if (!entry) return;
       entry.stream = stream;
-      if (!entry.audio) {
-        const a = document.createElement("audio");
+      let a = entry.audio;
+      if (!a) {
+        a = document.createElement("audio");
         a.autoplay = true;
-        (a as any).playsInline = true;
-        (a as any).srcObject = stream;
+        a.setAttribute("playsinline", "true");
+        a.setAttribute("autoplay", "true");
         document.body.appendChild(a);
         entry.audio = a;
-      } else {
-        (entry.audio as any).srcObject = stream;
       }
+      (a as any).srcObject = stream;
+      a.muted = false;
+      a.volume = 1.0;
+      const tryPlay = () => a!.play().catch(() => {
+        // Autoplay blocked — unlock on next user gesture
+        const unlock = () => {
+          a!.play().catch(() => {});
+          window.removeEventListener("touchstart", unlock);
+          window.removeEventListener("click", unlock);
+        };
+        window.addEventListener("touchstart", unlock, { once: true });
+        window.addEventListener("click", unlock, { once: true });
+      });
+      tryPlay();
     };
+
 
     // attach local tracks if we have them (we're a speaker)
     if (localStreamRef.current) {
