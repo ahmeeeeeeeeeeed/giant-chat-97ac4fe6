@@ -120,6 +120,17 @@ export async function signInWithUsername(username: string, password: string) {
 export async function signOut() {
   explicitSignOutInProgress = true;
   try {
+    // Ephemeral room membership: leave every room on sign-out so the user
+    // re-joins explicitly next time.
+    try {
+      const { data: { user: u } } = await supabase.auth.getUser();
+      if (u) {
+        await supabase.from("room_members").delete().eq("user_id", u.id);
+        await supabase.from("room_speakers").delete().eq("user_id", u.id);
+        await supabase.from("room_raised_hands").delete().eq("user_id", u.id);
+      }
+    } catch { /* ignore */ }
+
     try {
       await supabase.rpc("log_activity" as never, {
         _category: "auth", _action: "logout",

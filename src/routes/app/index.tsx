@@ -172,7 +172,7 @@ function RoomsPage() {
     else if (category === "private") list = list.filter((r) => r.type === "private" && (r.owner_id === user?.id || myRoomIds.has(r.id)));
     else if (category === "mine") list = list.filter((r) => r.owner_id === user?.id);
     else if (category === "favorites") list = list.filter((r) => favorites.has(r.id));
-    else if (category === "active") list = list.filter((r) => (r.member_count ?? 0) > 0);
+    else if (category === "active") list = list.filter((r) => myRoomIds.has(r.id) || r.owner_id === user?.id);
 
     const q = query.trim().toLowerCase();
     if (!q) return list;
@@ -410,6 +410,14 @@ function RoomCard({ room, accentIndex, isOwner, isMember, isFavorite, onToggleFa
         <Link
           to="/app/rooms/$id"
           params={{ id: room.id }}
+          onClick={(e) => {
+            // If user is not already a member/owner, run the join flow first
+            // (handles password prompt for private rooms and navigation).
+            if (!isMember && !isOwner) {
+              e.preventDefault();
+              onJoin();
+            }
+          }}
           className="relative flex items-center gap-3 rounded-[calc(1.5rem-1.5px)] bg-card/95 backdrop-blur p-3.5"
         >
           <span className="pointer-events-none absolute -top-6 -end-6 h-20 w-20 rounded-full bg-white/5 blur-2xl" />
@@ -440,10 +448,12 @@ function RoomCard({ room, accentIndex, isOwner, isMember, isFavorite, onToggleFa
                 <Users className="h-3 w-3" />
                 {room.member_count ?? 0}
               </span>
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-600">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.7)]" />
-                نشطة
-              </span>
+              {(isMember || isOwner) && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-600">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.7)]" />
+                  داخل الغرفة
+                </span>
+              )}
             </div>
           </div>
 
@@ -458,7 +468,7 @@ function RoomCard({ room, accentIndex, isOwner, isMember, isFavorite, onToggleFa
             >
               <Star className="h-4 w-4" fill={isFavorite ? "currentColor" : "none"} />
             </button>
-            {(isMember || isOwner) ? (
+            {(isMember || isOwner) && (
               <button
                 onClick={openInvite}
                 aria-label="دعوة الأصدقاء"
@@ -466,15 +476,6 @@ function RoomCard({ room, accentIndex, isOwner, isMember, isFavorite, onToggleFa
                 className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-sm transition hover:brightness-110 active:scale-90"
               >
                 <UserPlus className="h-4 w-4" />
-              </button>
-            ) : (
-              <button
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); onJoin(); }}
-                className="flex items-center gap-1 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 px-3 py-2 text-xs font-bold text-white shadow-md transition hover:from-emerald-600 hover:to-emerald-700 active:scale-95"
-              >
-                <LogIn className="h-3.5 w-3.5" />
-                انضمام
-
               </button>
             )}
           </div>
