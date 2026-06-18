@@ -208,6 +208,8 @@ function PublicWebsite() {
   const [version, setVersion] = useState<string | null>(null);
   const [size, setSize] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [starting, setStarting] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -233,6 +235,22 @@ function PublicWebsite() {
 
   const sizeMb = size && size > 0 ? `${(size / (1024 * 1024)).toFixed(1)} MB` : "";
 
+  const startDownload = () => {
+    if (!downloadUrl) return;
+    setStarting(true);
+    const a = document.createElement("a");
+    a.href = downloadUrl;
+    a.download = "";
+    a.rel = "noopener";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => {
+      setStarting(false);
+      setConfirmOpen(false);
+    }, 1200);
+  };
+
   const DownloadButton = ({ large = false }: { large?: boolean }) => {
     if (loading) {
       return <div className={`animate-pulse rounded-2xl bg-card ${large ? "h-16 w-full max-w-sm" : "h-11 w-32"}`} />;
@@ -242,20 +260,20 @@ function PublicWebsite() {
     }
     if (large) {
       return (
-        <a href={downloadUrl} download className="group relative flex h-16 w-full max-w-sm items-center justify-center gap-3 overflow-hidden rounded-2xl bg-gradient-to-r from-primary via-emerald-500 to-success px-6 text-lg font-extrabold text-primary-foreground shadow-xl shadow-primary/40 transition hover:scale-[1.02] active:scale-[0.98]">
+        <button type="button" onClick={() => setConfirmOpen(true)} className="group relative flex h-16 w-full max-w-sm items-center justify-center gap-3 overflow-hidden rounded-2xl bg-gradient-to-r from-primary via-emerald-500 to-success px-6 text-lg font-extrabold text-primary-foreground shadow-xl shadow-primary/40 transition hover:scale-[1.02] active:scale-[0.98]">
           <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-1000 group-hover:translate-x-full" />
           <Download className="h-6 w-6" />
           <span className="flex flex-col items-start leading-tight">
             <span>تحميل التطبيق مباشرة</span>
             {version && <span className="text-[11px] font-medium opacity-90">آخر إصدار v{version}{sizeMb && ` • ${sizeMb}`}</span>}
           </span>
-        </a>
+        </button>
       );
     }
     return (
-      <a href={downloadUrl} download className="flex h-11 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground shadow-md shadow-primary/30 transition hover:opacity-90">
+      <button type="button" onClick={() => setConfirmOpen(true)} className="flex h-11 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground shadow-md shadow-primary/30 transition hover:opacity-90">
         <Download className="h-4 w-4" /> تحميل
-      </a>
+      </button>
     );
   };
 
