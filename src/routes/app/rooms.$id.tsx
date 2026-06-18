@@ -64,6 +64,7 @@ function RoomPage() {
   const [isBanned, setIsBanned] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [showAnnounce, setShowAnnounce] = useState(false);
+  const [showReport, setShowReport] = useState(false);
   const [showBots, setShowBots] = useState(false);
   const [showGifts, setShowGifts] = useState(false);
   const [giftPreset, setGiftPreset] = useState<string | null>(null);
