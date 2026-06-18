@@ -31,6 +31,7 @@ import { ensureMediaLibraryPermission } from "@/lib/app-permissions";
 import { cacheGet, cacheSet, cacheKeys } from "@/lib/offline-cache";
 import { getOnline, useOnline } from "@/lib/use-online";
 import { UserBadgesInline } from "@/components/UserBadges";
+import { EquippedBadgeChip } from "@/components/EquippedDecor";
 import { StoryRing } from "@/components/StoryRing";
 import { RoomVoiceStage } from "@/components/RoomVoiceStage";
 import { ReportModal } from "@/components/ReportModal";
