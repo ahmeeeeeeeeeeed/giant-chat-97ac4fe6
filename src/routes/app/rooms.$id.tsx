@@ -73,6 +73,7 @@ function RoomPage() {
   const [showSearch, setShowSearch] = useState(false);
   const [actionMsg, setActionMsg] = useState<any | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [confirmDeleteRoom, setConfirmDeleteRoom] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const didInitialScrollRef = useRef(false);
