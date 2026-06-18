@@ -108,7 +108,7 @@ export function useRoomVoice(roomId: string, myUserId: string | undefined) {
       if (!entry.audio) {
         const a = document.createElement("audio");
         a.autoplay = true;
-        a.playsInline = true;
+        (a as any).playsInline = true;
         (a as any).srcObject = stream;
         document.body.appendChild(a);
         entry.audio = a;
