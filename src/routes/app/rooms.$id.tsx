@@ -1510,6 +1510,7 @@ function SettingsSheet({ roomId, room, canModerate, myRank, isOwner, ownerId, on
                                 <UserBadgesInline userId={m.user_id} size={12} max={3} />
                               </div>
                             </div>
+                            <MemberQuickActions targetId={m.user_id} />
                             {canModerate && m.user_id !== ownerId && (
                               <MemberMenu
                                 myRank={myRank} rank={m.rank}
