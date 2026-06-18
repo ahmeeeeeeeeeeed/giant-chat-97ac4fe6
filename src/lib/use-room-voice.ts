@@ -105,17 +105,31 @@ export function useRoomVoice(roomId: string, myUserId: string | undefined) {
       const entry = peersRef.current.get(remoteUid);
       if (!entry) return;
       entry.stream = stream;
-      if (!entry.audio) {
-        const a = document.createElement("audio");
+      let a = entry.audio;
+      if (!a) {
+        a = document.createElement("audio");
         a.autoplay = true;
-        (a as any).playsInline = true;
-        (a as any).srcObject = stream;
+        a.setAttribute("playsinline", "true");
+        a.setAttribute("autoplay", "true");
         document.body.appendChild(a);
         entry.audio = a;
-      } else {
-        (entry.audio as any).srcObject = stream;
       }
+      (a as any).srcObject = stream;
+      a.muted = false;
+      a.volume = 1.0;
+      const tryPlay = () => a!.play().catch(() => {
+        // Autoplay blocked — unlock on next user gesture
+        const unlock = () => {
+          a!.play().catch(() => {});
+          window.removeEventListener("touchstart", unlock);
+          window.removeEventListener("click", unlock);
+        };
+        window.addEventListener("touchstart", unlock, { once: true });
+        window.addEventListener("click", unlock, { once: true });
+      });
+      tryPlay();
     };
+
 
     // attach local tracks if we have them (we're a speaker)
     if (localStreamRef.current) {
@@ -278,18 +292,26 @@ export function useRoomVoice(roomId: string, myUserId: string | undefined) {
 
   const leaveStage = useCallback(async () => {
     if (!myUserId) return;
-    // Notify peers
-    const others = speakersRef.current.map((s) => s.user_id).filter((u) => u !== myUserId);
+    // Tear down local peers + mic immediately
+    const others = Array.from(peersRef.current.keys());
     for (const uid of others) {
-      await supabase.from("room_voice_signals").insert({
-        room_id: roomId, from_user: myUserId, to_user: uid,
-        signal_type: "leave", payload: {} as any,
-      }).then(() => {});
+      try {
+        await supabase.from("room_voice_signals").insert({
+          room_id: roomId, from_user: myUserId, to_user: uid,
+          signal_type: "leave", payload: {} as any,
+        });
+      } catch { /* noop */ }
       closePeer(uid);
     }
     stopMic();
-    await supabase.from("room_speakers").delete().eq("room_id", roomId).eq("user_id", myUserId);
+    onStageRef.current = false;
+    // Optimistic UI
+    setSpeakers((prev) => prev.filter((s) => s.user_id !== myUserId));
+    const { error } = await supabase.from("room_speakers").delete()
+      .eq("room_id", roomId).eq("user_id", myUserId);
+    if (error) toast.error("تعذّر النزول من البث");
   }, [roomId, myUserId, stopMic, closePeer]);
+
 
   const toggleMute = useCallback(async () => {
     if (!myUserId) return;
