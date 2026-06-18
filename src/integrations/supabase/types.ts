@@ -1160,6 +1160,38 @@ export type Database = {
           },
         ]
       }
+      room_invites: {
+        Row: {
+          created_at: string
+          id: string
+          invited_by: string
+          room_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          invited_by: string
+          room_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          invited_by?: string
+          room_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_invites_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       room_logs: {
         Row: {
           actor_id: string | null
@@ -1934,7 +1966,15 @@ export type Database = {
         Returns: boolean
       }
       increment_profile_view: { Args: { _target: string }; Returns: number }
+      is_room_invited: {
+        Args: { _room: string; _user: string }
+        Returns: boolean
+      }
       is_room_member: {
+        Args: { _room: string; _user: string }
+        Returns: boolean
+      }
+      is_room_owner: {
         Args: { _room: string; _user: string }
         Returns: boolean
       }
