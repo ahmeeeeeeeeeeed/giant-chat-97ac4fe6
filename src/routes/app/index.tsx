@@ -248,20 +248,20 @@ function RoomsPage() {
           )}
         </div>
         {/* تصنيفات الغرف */}
-        <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-thin -mx-1 px-1">
+        <div className="flex gap-2 overflow-x-auto pb-1 pt-0.5 scrollbar-thin -mx-1 px-1">
           {CATS.map(({ key, label, icon: Icon, cls }) => {
             const active = category === key;
             return (
               <button
                 key={key}
                 onClick={() => setCategory(key)}
-                className={`shrink-0 flex items-center gap-1.5 rounded-full px-3.5 h-8 text-[12px] font-bold transition active:scale-95 ${
+                className={`shrink-0 flex items-center gap-2 rounded-full px-4 h-9 text-[13px] font-bold transition-all duration-200 active:scale-95 ${
                   active
-                    ? `bg-gradient-to-r ${cls} text-white shadow-md ring-1 ring-white/30`
-                    : "bg-secondary text-muted-foreground hover:text-foreground"
+                    ? `bg-gradient-to-r ${cls} text-white shadow-lg shadow-black/15 ring-[1.5px] ring-white/40`
+                    : "border border-border/70 bg-card/80 text-muted-foreground backdrop-blur-sm hover:border-primary/40 hover:text-foreground hover:bg-secondary/60 hover:shadow-sm"
                 }`}
               >
-                <Icon className="h-3.5 w-3.5" strokeWidth={active ? 2.5 : 2} />
+                <Icon className={`h-4 w-4 ${active ? "drop-shadow-sm" : ""}`} strokeWidth={active ? 2.5 : 2} />
                 {label}
               </button>
             );
