@@ -348,9 +348,13 @@ export const Route = createFileRoute("/api/public/giant-bot-webhook")({
         if (!payload || (payload.kind !== "room_message" && payload.kind !== "dm")) {
           return new Response("Bad Request", { status: 400 });
         }
-        // Fire and forget; respond fast so pg_net doesn't time out
-        handle(payload).catch((e) => console.error("[giant-bot] handler error", e));
-        return new Response("ok", { status: 200 });
+        try {
+          await handle(payload);
+          return new Response("ok", { status: 200 });
+        } catch (e) {
+          console.error("[giant-bot] handler error", e);
+          return new Response("Bot handler failed", { status: 500 });
+        }
       },
       GET: async () => methodNotAllowed(),
     },
