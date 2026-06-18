@@ -593,15 +593,21 @@ function PublicWebsite() {
         </div>
       </section>
 
-      {/* Final CTA */}
-      <section className="relative overflow-hidden border-b border-border/60 bg-gradient-to-br from-primary/15 via-background to-emerald-500/10">
+      {/* Final CTA — download lives here at the bottom */}
+      <section id="download" className="relative overflow-hidden border-b border-border/60 bg-gradient-to-br from-primary/15 via-background to-emerald-500/10 scroll-mt-20">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,theme(colors.primary/0.15),transparent_70%)]" />
         <div className="relative mx-auto flex max-w-4xl flex-col items-center px-5 py-20 text-center">
+          <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3.5 py-1.5 text-xs font-bold text-primary">
+            <Download className="h-3.5 w-3.5" /> التحميل الرسمي
+          </span>
           <h2 className="text-3xl font-black md:text-5xl">جاهز لتبدأ؟</h2>
           <p className="mt-4 max-w-lg text-muted-foreground">حمّل Giant الآن واستمتع بتجربة مجتمع كاملة على هاتفك.</p>
           <div className="mt-8 flex justify-center">
             <DownloadButton large />
           </div>
+          {version && (
+            <p className="mt-4 text-xs text-muted-foreground">آخر إصدار v{version}{sizeMb && ` • ${sizeMb}`} • متوافق مع Android 7+</p>
+          )}
         </div>
       </section>
 
@@ -620,6 +626,83 @@ function PublicWebsite() {
           <span>© {new Date().getFullYear()} Giant. جميع الحقوق محفوظة.</span>
         </div>
       </footer>
+
+      {/* Custom download confirmation modal */}
+      {confirmOpen && downloadUrl && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+          onClick={() => !starting && setConfirmOpen(false)}
+        >
+          <div
+            className="relative w-full max-w-md overflow-hidden rounded-3xl border border-primary/30 bg-card shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+            dir="rtl"
+          >
+            <div className="relative h-28 overflow-hidden bg-gradient-to-br from-primary via-emerald-500 to-success">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.25),transparent_60%)]" />
+              <div className="relative flex h-full items-center justify-center">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/15 ring-2 ring-white/40 backdrop-blur">
+                  <Download className="h-8 w-8 text-white" />
+                </div>
+              </div>
+            </div>
+            <div className="px-6 py-6 text-center">
+              <h3 className="text-xl font-black">تحميل تطبيق Giant</h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                أنت على وشك تنزيل أحدث إصدار رسمي من تطبيق Giant مباشرة من خوادمنا الآمنة.
+              </p>
+              <div className="mt-5 grid grid-cols-3 gap-2 text-center">
+                <div className="rounded-xl border border-border bg-background/50 p-2.5">
+                  <div className="text-[10px] font-bold text-muted-foreground">الإصدار</div>
+                  <div className="mt-0.5 text-sm font-extrabold text-primary">v{version ?? "—"}</div>
+                </div>
+                <div className="rounded-xl border border-border bg-background/50 p-2.5">
+                  <div className="text-[10px] font-bold text-muted-foreground">الحجم</div>
+                  <div className="mt-0.5 text-sm font-extrabold text-primary">{sizeMb || "—"}</div>
+                </div>
+                <div className="rounded-xl border border-border bg-background/50 p-2.5">
+                  <div className="text-[10px] font-bold text-muted-foreground">النظام</div>
+                  <div className="mt-0.5 text-sm font-extrabold text-primary">Android 7+</div>
+                </div>
+              </div>
+              <div className="mt-5 flex items-start gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 text-start text-xs text-emerald-600 dark:text-emerald-400">
+                <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>ملف رسمي وآمن — موقّع بمفتاح المطور وخالٍ من أي تعديلات.</span>
+              </div>
+              <div className="mt-6 flex flex-col gap-2">
+                <button
+                  type="button"
+                  onClick={startDownload}
+                  disabled={starting}
+                  className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-primary to-emerald-500 text-base font-extrabold text-primary-foreground shadow-lg shadow-primary/30 transition active:scale-[0.98] disabled:opacity-70"
+                >
+                  {starting ? (
+                    <>
+                      <Loader2 className="h-5 w-5 animate-spin" /> جارٍ بدء التحميل…
+                    </>
+                  ) : (
+                    <>
+                      <Download className="h-5 w-5" /> ابدأ التحميل الآن
+                    </>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => !starting && setConfirmOpen(false)}
+                  className="h-11 w-full rounded-2xl border border-border bg-background text-sm font-bold text-muted-foreground transition hover:bg-accent"
+                >
+                  إلغاء
+                </button>
+              </div>
+              <p className="mt-4 text-[11px] text-muted-foreground">
+                بعد التثبيت، ستصلك التحديثات تلقائياً من داخل التطبيق.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
