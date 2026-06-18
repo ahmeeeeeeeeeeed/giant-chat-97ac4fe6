@@ -768,9 +768,98 @@ function RoomPage() {
             <button onClick={() => setShowSearch((v) => !v)} className="rounded-lg p-2 hover:bg-secondary transition" aria-label="بحث">
               <Search className="h-4.5 w-4.5" />
             </button>
-            <button onClick={() => openSettingsAt("members")} className="rounded-lg p-2 hover:bg-secondary transition" aria-label="الإعدادات">
-              <Settings className="h-4.5 w-4.5" />
-            </button>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className="rounded-xl p-2 bg-gradient-to-br from-emerald-500/15 via-teal-500/15 to-cyan-500/15 hover:from-emerald-500/25 hover:to-cyan-500/25 border border-emerald-500/20 transition active:scale-95"
+                  aria-label="القائمة"
+                >
+                  <MoreVertical className="h-4.5 w-4.5 text-emerald-600 dark:text-emerald-400" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-60 rounded-2xl border-emerald-500/20 shadow-2xl backdrop-blur-xl">
+                <DropdownMenuLabel className="flex items-center gap-2 text-xs">
+                  <Crown className="h-3.5 w-3.5 text-amber-500" />
+                  <span className="truncate">{room.name}</span>
+                  <RankBadge rank={myRank ?? "member"} />
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+
+                <DropdownMenuItem onClick={() => openSettingsAt("members")} className="gap-2 cursor-pointer">
+                  <Users className="h-4 w-4 text-emerald-500" />
+                  <span>الأعضاء</span>
+                  <span className="ms-auto text-[10px] text-muted-foreground">{memberCount}</span>
+                </DropdownMenuItem>
+
+                <DropdownMenuItem onClick={() => openSettingsAt("members")} className="gap-2 cursor-pointer">
+                  <ShieldCheck className="h-4 w-4 text-blue-500" />
+                  <span>المشرفون والمسؤولون</span>
+                </DropdownMenuItem>
+
+                <DropdownMenuItem onClick={() => setShowInfo(true)} className="gap-2 cursor-pointer">
+                  <Crown className="h-4 w-4 text-amber-500" />
+                  <span>المالك ومعلومات الغرفة</span>
+                </DropdownMenuItem>
+
+                {canModerate && (
+                  <DropdownMenuItem onClick={() => openSettingsAt("bans")} className="gap-2 cursor-pointer">
+                    <Ban className="h-4 w-4 text-red-500" />
+                    <span>قائمة المحظورين</span>
+                  </DropdownMenuItem>
+                )}
+
+                {canModerate && (
+                  <DropdownMenuItem onClick={() => openSettingsAt("logs")} className="gap-2 cursor-pointer">
+                    <FileText className="h-4 w-4 text-purple-500" />
+                    <span>سجل الإجراءات</span>
+                  </DropdownMenuItem>
+                )}
+
+                {canModerate && (
+                  <DropdownMenuItem onClick={() => setShowAnnounce(true)} className="gap-2 cursor-pointer">
+                    <Megaphone className="h-4 w-4 text-orange-500" />
+                    <span>إعلان للغرفة</span>
+                  </DropdownMenuItem>
+                )}
+
+                {isOwner && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => openSettingsAt("manage")} className="gap-2 cursor-pointer">
+                      <UserCog className="h-4 w-4 text-cyan-500" />
+                      <span>إعدادات الغرفة</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => openSettingsAt("background")} className="gap-2 cursor-pointer">
+                      <ImageIcon className="h-4 w-4 text-pink-500" />
+                      <span>خلفية الغرفة</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate({ to: "/app/rooms/$id/invites", params: { id: roomId } })} className="gap-2 cursor-pointer">
+                      <UserPlus className="h-4 w-4 text-emerald-500" />
+                      <span>إدارة الدعوات</span>
+                    </DropdownMenuItem>
+                  </>
+                )}
+
+                <DropdownMenuSeparator />
+
+                <DropdownMenuItem onClick={leaveRoom} className="gap-2 cursor-pointer text-amber-600 focus:text-amber-700">
+                  <LogOut className="h-4 w-4" />
+                  <span>مغادرة الغرفة</span>
+                </DropdownMenuItem>
+
+                {isOwner && (
+                  <DropdownMenuItem
+                    onClick={() => setConfirmDeleteRoom(true)}
+                    className="gap-2 cursor-pointer text-red-600 focus:text-red-700"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    <span>حذف الغرفة نهائياً</span>
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             {isMember && (
               <button onClick={leaveRoom} className="rounded-lg bg-red-500/10 px-2.5 py-1.5 text-xs font-medium text-red-500 hover:bg-red-500/20 transition">
                 مغادرة
