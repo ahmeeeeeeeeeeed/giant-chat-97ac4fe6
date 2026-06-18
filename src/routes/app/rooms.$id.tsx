@@ -232,7 +232,8 @@ function RoomPage() {
     checkBanned();
     loadMembership();
     loadMemberCount();
-    loadMessages();
+    // messages load is driven by joinedAt effect above
+
     ensureProfiles([user.id]);
     markRoomSeen(roomId);
 
