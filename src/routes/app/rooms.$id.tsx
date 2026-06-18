@@ -1393,6 +1393,8 @@ function SettingsSheet({ roomId, room, canModerate, myRank, isOwner, ownerId, on
   const [members, setMembers] = useState<any[]>([]);
   const [bans, setBans] = useState<any[]>([]);
   const [logs, setLogs] = useState<any[]>([]);
+  const navigate = useNavigate();
+  const openProfile = (uid: string) => { onClose(); navigate({ to: "/app/profile/$id", params: { id: uid } }); };
 
   const load = async () => {
     if (tab === "members") {
