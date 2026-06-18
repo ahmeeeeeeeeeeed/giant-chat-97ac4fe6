@@ -7,9 +7,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useIsAdmin } from "@/lib/use-admin";
 import {
   Moon, Sun, LogOut, ChevronLeft, Globe, Check,
-  ShoppingBag, Flag, User, Bell,
+  ShoppingBag, Flag,
   Trophy, Shield, Info, HelpCircle,
-  Star, Share2, Lock, Crown,
+  Star, Share2, Crown,
   X, Copy, Loader2, Sparkles, Download, MessageCircle, Send, Mail,
   Trash2, FileText, ScrollText, Wifi, WifiOff,
 } from "lucide-react";
@@ -294,9 +294,6 @@ function SettingsPage() {
 
         {/* Account */}
         <Section title="الحساب">
-          <Row to="/app/my_profile" icon={User} label="ملفي الشخصي" />
-          <Row to="/app/account" icon={Lock} label="إدارة الحساب وكلمة السر" />
-          <Row to="/app/notifications" icon={Bell} label={t("notif.title")} />
           <button onClick={() => setShowPremium(true)} className="flex w-full items-center justify-between p-4 active:bg-secondary/60 text-start">
             <div className="flex items-center gap-3">
               <IconBox color="bg-amber-500"><Crown className="h-4 w-4" /></IconBox>

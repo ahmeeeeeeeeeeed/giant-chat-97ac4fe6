@@ -293,13 +293,6 @@ function AppLayout() {
                     <User className="h-4 w-4 text-emerald-300" />
                     البروفايل
                   </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onSelect={() => navigate({ to: "/app/settings" })}
-                    className="cursor-pointer rounded-xl gap-2 text-sm font-semibold focus:bg-emerald-500/15 focus:text-emerald-100"
-                  >
-                    <Settings className="h-4 w-4 text-amber-300" />
-                    الإعدادات
-                  </DropdownMenuItem>
                   <DropdownMenuSeparator className="bg-emerald-500/15" />
                   <DropdownMenuItem
                     onSelect={() => navigate({ to: "/app/activity" })}
@@ -314,6 +307,14 @@ function AppLayout() {
                   >
                     <ShieldAlert className="h-4 w-4 text-rose-300" />
                     الإبلاغ والشكاوى
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className="bg-emerald-500/15" />
+                  <DropdownMenuItem
+                    onSelect={() => navigate({ to: "/app/settings" })}
+                    className="cursor-pointer rounded-xl gap-2 text-sm font-semibold focus:bg-amber-500/15 focus:text-amber-100"
+                  >
+                    <Settings className="h-4 w-4 text-amber-300" />
+                    الإعدادات
                   </DropdownMenuItem>
                   <DropdownMenuSeparator className="bg-emerald-500/15" />
                   <DropdownMenuItem
