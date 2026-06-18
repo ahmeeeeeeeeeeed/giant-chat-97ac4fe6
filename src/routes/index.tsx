@@ -260,14 +260,14 @@ function PublicWebsite() {
   };
 
   const features = [
-    { Icon: MessageCircle, title: "محادثات فورية", desc: "دردشات خاصة وجماعية لحظية مع صور وفيديو ورسائل صوتية، تجربة سلسة بإشعارات مباشرة.", img: siteChat },
-    { Icon: Users, title: "غرف صوتية حية", desc: "ادخل غرفاً صوتية متعددة المتحدثين، أنشئ غرفتك الخاصة، وتفاعل مع جمهورك مباشرة.", img: siteRooms },
-    { Icon: Music, title: "موسيقى مشتركة", desc: "شغّل الأغاني داخل الغرف ومع أصدقائك، مع مزامنة لحظية ومؤثرات بصرية رائعة.", img: siteMusic },
-    { Icon: Trophy, title: "ملف شخصي وإنجازات", desc: "اصنع هويتك بشارات، إطارات، وإنجازات وارتقِ بالمستوى يومياً.", img: siteProfile },
-    { Icon: Sparkles, title: "ألعاب ومسابقات", desc: "ألعاب ممتعة داخل التطبيق، لوحات شرف، وجوائز يومية للمتفوقين.", img: siteGames },
-    { Icon: Gift, title: "متجر الهدايا الفاخر", desc: "هدايا متحركة بتصميم احترافي، عناصر مميزة، وعروض حصرية بشكل دوري.", img: siteStore },
-    { Icon: Heart, title: "مجتمع نابض", desc: "منشورات، قصص يومية، تعليقات وردود فعل تجمعك مع أصدقائك في تجربة واحدة.", img: siteCommunity },
-    { Icon: Bell, title: "إشعارات ذكية", desc: "تنبيهات لحظية للرسائل، الطلبات، التفاعلات — كل شيء بمكان واحد منظم.", img: siteNotifications },
+    { slug: "chat", Icon: MessageCircle, title: "محادثات فورية", desc: "دردشات خاصة وجماعية لحظية مع صور وفيديو ورسائل صوتية، تجربة سلسة بإشعارات مباشرة.", img: siteChat },
+    { slug: "rooms", Icon: Users, title: "غرف صوتية حية", desc: "ادخل غرفاً صوتية متعددة المتحدثين، أنشئ غرفتك الخاصة، وتفاعل مع جمهورك مباشرة.", img: siteRooms },
+    { slug: "music", Icon: Music, title: "موسيقى مشتركة", desc: "شغّل الأغاني داخل الغرف ومع أصدقائك، مع مزامنة لحظية ومؤثرات بصرية رائعة.", img: siteMusic },
+    { slug: "profile", Icon: Trophy, title: "ملف شخصي وإنجازات", desc: "اصنع هويتك بشارات، إطارات، وإنجازات وارتقِ بالمستوى يومياً.", img: siteProfile },
+    { slug: "games", Icon: Sparkles, title: "ألعاب ومسابقات", desc: "ألعاب ممتعة داخل التطبيق، لوحات شرف، وجوائز يومية للمتفوقين.", img: siteGames },
+    { slug: "store", Icon: Gift, title: "متجر الهدايا الفاخر", desc: "هدايا متحركة بتصميم احترافي، عناصر مميزة، وعروض حصرية بشكل دوري.", img: siteStore },
+    { slug: "community", Icon: Heart, title: "مجتمع نابض", desc: "منشورات، قصص يومية، تعليقات وردود فعل تجمعك مع أصدقائك في تجربة واحدة.", img: siteCommunity },
+    { slug: "notifications", Icon: Bell, title: "إشعارات ذكية", desc: "تنبيهات لحظية للرسائل، الطلبات، التفاعلات — كل شيء بمكان واحد منظم.", img: siteNotifications },
   ];
 
   return (
