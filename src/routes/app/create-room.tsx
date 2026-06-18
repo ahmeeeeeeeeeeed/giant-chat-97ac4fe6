@@ -3,7 +3,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
-import { Lock, Globe, ArrowRight, Loader2, Eye, EyeOff, Shield, CheckCircle } from "lucide-react";
+import { Lock, Globe, ArrowRight, Loader2, Shield, CheckCircle, Users } from "lucide-react";
 
 export const Route = createFileRoute("/app/create-room")({
   component: CreateRoomPage,
