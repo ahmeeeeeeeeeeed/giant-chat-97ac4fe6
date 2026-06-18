@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
-import { Plus, Users, Hash, Loader2, X, Search, UserPlus, Lock, Crown, Sparkles, AtSign, LogIn } from "lucide-react";
+import { Plus, Users, Hash, Loader2, X, Search, UserPlus, Lock, Crown, Sparkles, AtSign, LogIn, Globe, Star, Activity } from "lucide-react";
 import { toast } from "sonner";
 import { cacheGet, cacheSet, cacheKeys } from "@/lib/offline-cache";
 import { getOnline } from "@/lib/use-online";
@@ -32,6 +32,19 @@ function RoomsPage() {
   const [query, setQuery] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [myRoomIds, setMyRoomIds] = useState<Set<string>>(new Set());
+  const [favorites, setFavorites] = useState<Set<string>>(() => {
+    try { return new Set(JSON.parse(localStorage.getItem("fav_rooms") ?? "[]")); } catch { return new Set(); }
+  });
+  const [category, setCategory] = useState<"public" | "active" | "favorites" | "mine" | "private">("public");
+
+  const toggleFav = (id: string) => {
+    setFavorites((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      try { localStorage.setItem("fav_rooms", JSON.stringify([...next])); } catch {}
+      return next;
+    });
+  };
 
 
 
@@ -153,12 +166,28 @@ function RoomsPage() {
   }
 
   const filtered = useMemo(() => {
+    let list = rooms;
+    // فلترة حسب التصنيف
+    if (category === "public") list = list.filter((r) => (r.type ?? "public") === "public");
+    else if (category === "private") list = list.filter((r) => r.type === "private" && (r.owner_id === user?.id || myRoomIds.has(r.id)));
+    else if (category === "mine") list = list.filter((r) => r.owner_id === user?.id);
+    else if (category === "favorites") list = list.filter((r) => favorites.has(r.id));
+    else if (category === "active") list = list.filter((r) => (r.member_count ?? 0) > 0);
+
     const q = query.trim().toLowerCase();
-    if (!q) return rooms;
-    return rooms.filter(r =>
+    if (!q) return list;
+    return list.filter(r =>
       r.name.toLowerCase().includes(q) || (r.description ?? "").toLowerCase().includes(q)
     );
-  }, [rooms, query]);
+  }, [rooms, query, category, favorites, myRoomIds, user?.id]);
+
+  const CATS: { key: typeof category; label: string; icon: any; cls: string }[] = [
+    { key: "public",    label: "العامة",   icon: Globe,    cls: "from-emerald-500 to-teal-600" },
+    { key: "active",    label: "النشطة",   icon: Activity, cls: "from-sky-500 to-indigo-600" },
+    { key: "favorites", label: "المفضلة",  icon: Star,     cls: "from-amber-400 to-orange-500" },
+    { key: "mine",      label: "غرفي",     icon: Crown,    cls: "from-fuchsia-500 to-pink-600" },
+    { key: "private",   label: "الخاصة",   icon: Lock,     cls: "from-rose-500 to-red-600" },
+  ];
 
   const goToCreateRoom = () => {
     navigate({ to: "/app/create-room" });
@@ -209,31 +238,38 @@ function RoomsPage() {
 
   return (
     <main className="flex flex-1 flex-col">
-      <header className="sticky top-0 z-10 border-b border-border bg-background/90 px-5 py-4 backdrop-blur">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-extrabold">{t("app.name")}</h1>
-            <p className="text-xs text-muted-foreground">{t("rooms.title")}</p>
-          </div>
-          <button
-            onClick={goToCreateRoom}
-            className="flex h-10 items-center justify-center gap-2 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm transition active:scale-95"
-          >
-            <Plus className="h-4 w-4" />
-            <span>غرفة جديدة</span>
-          </button>
-        </div>
-        <div className="mt-3 flex items-center gap-2 rounded-2xl border border-input bg-card px-3 h-11">
+      <header className="sticky top-0 z-10 border-b border-border bg-background/90 px-4 py-3 backdrop-blur">
+        <div className="mb-2.5 flex items-center gap-2 rounded-2xl border border-input bg-card px-3 h-10">
           <Search className="h-4 w-4 text-muted-foreground" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t("rooms.search")}
-            className="flex-1 bg-transparent text-[15px] outline-none placeholder:text-muted-foreground"
+            className="flex-1 bg-transparent text-[14px] outline-none placeholder:text-muted-foreground"
           />
           {query && (
             <button onClick={() => setQuery("")} className="text-muted-foreground"><X className="h-4 w-4" /></button>
           )}
+        </div>
+        {/* تصنيفات الغرف */}
+        <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-thin -mx-1 px-1">
+          {CATS.map(({ key, label, icon: Icon, cls }) => {
+            const active = category === key;
+            return (
+              <button
+                key={key}
+                onClick={() => setCategory(key)}
+                className={`shrink-0 flex items-center gap-1.5 rounded-full px-3.5 h-8 text-[12px] font-bold transition active:scale-95 ${
+                  active
+                    ? `bg-gradient-to-r ${cls} text-white shadow-md ring-1 ring-white/30`
+                    : "bg-secondary text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Icon className="h-3.5 w-3.5" strokeWidth={active ? 2.5 : 2} />
+                {label}
+              </button>
+            );
+          })}
         </div>
       </header>
 
@@ -243,12 +279,20 @@ function RoomsPage() {
         ) : rooms.length === 0 ? (
           <EmptyState onCreate={goToCreateRoom} />
         ) : filtered.length === 0 ? (
-          <p className="mt-12 text-center text-sm text-muted-foreground">{t("rooms.no_results")}</p>
+          <p className="mt-12 text-center text-sm text-muted-foreground">لا توجد غرف في هذا القسم</p>
         ) : (
           <ul className="grid grid-cols-1 gap-3">
             {filtered.map((r, idx) => (
               <li key={r.id}>
-                <RoomCard room={r} accentIndex={idx} isOwner={r.owner_id === user.id} isMember={myRoomIds.has(r.id)} onJoin={() => handleJoin(r.id)} />
+                <RoomCard
+                  room={r}
+                  accentIndex={idx}
+                  isOwner={r.owner_id === user.id}
+                  isMember={myRoomIds.has(r.id)}
+                  isFavorite={favorites.has(r.id)}
+                  onToggleFav={() => toggleFav(r.id)}
+                  onJoin={() => handleJoin(r.id)}
+                />
               </li>
             ))}
           </ul>
@@ -343,7 +387,7 @@ const CARD_THEMES = [
   { ring: "from-rose-400/60 to-red-500/40", icon: "from-rose-500 to-red-600", glow: "shadow-rose-500/20" },
 ] as const;
 
-function RoomCard({ room, accentIndex, isOwner, isMember, onJoin }: { room: Room; accentIndex: number; isOwner: boolean; isMember: boolean; onJoin: () => void }) {
+function RoomCard({ room, accentIndex, isOwner, isMember, isFavorite, onToggleFav, onJoin }: { room: Room; accentIndex: number; isOwner: boolean; isMember: boolean; isFavorite: boolean; onToggleFav: () => void; onJoin: () => void }) {
   const [inviteOpen, setInviteOpen] = useState(false);
   const theme = CARD_THEMES[accentIndex % CARD_THEMES.length];
   const isPrivate = room.type === "private";
@@ -397,24 +441,36 @@ function RoomCard({ room, accentIndex, isOwner, isMember, onJoin }: { room: Room
             </div>
           </div>
 
-          {isMember ? (
+          <div className="flex shrink-0 items-center gap-1.5">
             <button
-              onClick={openInvite}
-              aria-label="دعوة الأصدقاء"
-              title="دعوة الأصدقاء"
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-sm transition hover:brightness-110 active:scale-90"
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleFav(); }}
+              aria-label="إضافة للمفضلة"
+              title={isFavorite ? "إزالة من المفضلة" : "إضافة للمفضلة"}
+              className={`flex h-9 w-9 items-center justify-center rounded-xl transition active:scale-90 ${
+                isFavorite ? "bg-amber-400 text-white shadow-sm" : "bg-secondary text-muted-foreground hover:text-amber-500"
+              }`}
             >
-              <UserPlus className="h-4 w-4" />
+              <Star className="h-4 w-4" fill={isFavorite ? "currentColor" : "none"} />
             </button>
-          ) : (
-            <button
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onJoin(); }}
-              className="flex shrink-0 items-center gap-1 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 px-3 py-2 text-xs font-bold text-white shadow-md transition hover:from-emerald-600 hover:to-emerald-700 active:scale-95"
-            >
-              <LogIn className="h-3.5 w-3.5" />
-              انضمام
-            </button>
-          )}
+            {isMember ? (
+              <button
+                onClick={openInvite}
+                aria-label="دعوة الأصدقاء"
+                title="دعوة الأصدقاء"
+                className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-sm transition hover:brightness-110 active:scale-90"
+              >
+                <UserPlus className="h-4 w-4" />
+              </button>
+            ) : (
+              <button
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); onJoin(); }}
+                className="flex items-center gap-1 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 px-3 py-2 text-xs font-bold text-white shadow-md transition hover:from-emerald-600 hover:to-emerald-700 active:scale-95"
+              >
+                <LogIn className="h-3.5 w-3.5" />
+                انضمام
+              </button>
+            )}
+          </div>
         </Link>
       </div>
 
