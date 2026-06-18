@@ -656,9 +656,8 @@ function RoomPage() {
 
   const openSettingsAt = (t: SettingsTab) => { setSettingsTab(t); setShowSettings(true); };
 
-  // Pre-join lobby — the user is NOT inside the room until they tap the
-  // join button. Auto-join is intentionally disabled so that going offline
-  // or signing out doesn't silently put them back in the room next time.
+  // Pre-join holding screen — auto-join is in flight. Shows a spinner,
+  // ban notice, or a network-required hint. No manual "join" button.
   if (!isMember) {
     return (
       <div className="flex flex-col min-h-screen bg-gradient-to-b from-emerald-50/40 via-background to-background dark:from-emerald-950/20">
@@ -679,39 +678,19 @@ function RoomPage() {
           }`}>
             {roomInitial}
           </div>
-          <div className="flex items-center gap-2 mb-1">
-            {room.type === "private" ? <Lock className="h-4 w-4 text-amber-500" /> : <Hash className="h-4 w-4 text-emerald-500" />}
-            <h2 className="text-xl font-extrabold">{room.name}</h2>
-          </div>
-          {room.description && (
-            <p className="text-sm text-muted-foreground max-w-md mb-4 whitespace-pre-wrap">{room.description}</p>
-          )}
-          <div className="flex items-center gap-4 text-xs text-muted-foreground mb-6">
-            <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" /> {memberCount}/{room.max_members}</span>
-            <span>•</span>
-            <span>{room.type === "private" ? "غرفة خاصة" : "غرفة عامة"}</span>
-            <span>•</span>
-            <span className={room.is_active ? "text-emerald-600" : "text-red-500"}>
-              {room.is_active ? "نشطة" : "موقوفة"}
-            </span>
-          </div>
+          <h2 className="text-xl font-extrabold mb-4">{room.name}</h2>
 
           {isBanned ? (
             <div className="rounded-2xl border border-red-500/30 bg-red-500/10 px-5 py-4 text-red-500 font-bold flex items-center gap-2">
               <Ban className="h-5 w-5" /> أنت محظور من هذه الغرفة
             </div>
+          ) : !online ? (
+            <p className="text-sm text-amber-600">⚠️ تحتاج إلى اتصال بالإنترنت للدخول</p>
           ) : (
-            <button
-              onClick={() => tryJoin()} disabled={joining || !room.is_active}
-              className="h-14 px-10 rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-extrabold text-base shadow-[0_10px_30px_-10px_rgba(16,185,129,0.7)] disabled:opacity-50 flex items-center justify-center gap-2 transition active:scale-[0.98]"
-            >
-              {joining ? <Loader2 className="h-5 w-5 animate-spin" /> : <UserPlus className="h-5 w-5" />}
-              {joining ? "جارٍ الانضمام..." : "انضمام إلى الغرفة"}
-            </button>
-          )}
-
-          {!online && (
-            <p className="mt-4 text-xs text-amber-600">⚠️ تحتاج إلى اتصال بالإنترنت للانضمام</p>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-5 w-5 animate-spin text-emerald-500" />
+              جارٍ الدخول إلى الغرفة...
+            </div>
           )}
         </div>
       </div>
