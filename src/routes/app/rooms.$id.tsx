@@ -8,7 +8,7 @@ import {
   ArrowUp, ArrowDown, Crown, FileText, X, KeyRound, MoreVertical, Megaphone,
   UserPlus, AtSign, Edit3, Trash2, Power, Globe, Search, Info, Save, AlertTriangle,
   Image as ImageIcon, Mic, Square, Play, Pause, Share2, Copy, Bot, Gift,
-  LogOut, ShieldCheck, UserCog,
+  LogOut, ShieldCheck, UserCog, MessageCircle,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent,
@@ -1314,6 +1314,67 @@ function InfoStat({ icon, value, label }: { icon: React.ReactNode; value: string
 
 type SettingsTab = "members" | "invite" | "bans" | "logs" | "manage" | "background";
 
+function MemberQuickActions({ targetId }: { targetId: string }) {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [busy, setBusy] = useState(false);
+  if (!user || user.id === targetId) return null;
+
+  const openChat = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigate({ to: "/app/chats/$id", params: { id: targetId } });
+  };
+
+  const addFriend = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (busy) return;
+    setBusy(true);
+    const { data: existing } = await supabase.from("friendships").select("id, status")
+      .or(`and(requester_id.eq.${user.id},addressee_id.eq.${targetId}),and(requester_id.eq.${targetId},addressee_id.eq.${user.id})`)
+      .maybeSingle();
+    if (existing) {
+      toast.info(existing.status === "accepted" ? "هذا الشخص صديقك بالفعل" : "تم إرسال الطلب مسبقاً");
+      setBusy(false); return;
+    }
+    const { error } = await supabase.from("friendships").insert({
+      requester_id: user.id, addressee_id: targetId, status: "pending",
+    });
+    setBusy(false);
+    if (error) toast.error("تعذّر إرسال الطلب");
+    else toast.success("تم إرسال طلب الصداقة");
+  };
+
+  const ignore = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (busy) return;
+    setBusy(true);
+    const { data: existing } = await supabase.from("dm_blocks").select("blocker_id")
+      .eq("blocker_id", user.id).eq("blocked_id", targetId).maybeSingle();
+    if (existing) { toast.info("هذا المستخدم متجاهَل بالفعل"); setBusy(false); return; }
+    const { error } = await supabase.from("dm_blocks").insert({ blocker_id: user.id, blocked_id: targetId });
+    setBusy(false);
+    if (error) toast.error("تعذّر التجاهل");
+    else toast.success("تم تجاهل المستخدم");
+  };
+
+  return (
+    <div className="flex items-center gap-1 shrink-0">
+      <button onClick={openChat} title="فتح دردشة" aria-label="فتح دردشة"
+        className="h-8 w-8 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 flex items-center justify-center transition active:scale-95">
+        <MessageCircle className="h-4 w-4" />
+      </button>
+      <button onClick={addFriend} disabled={busy} title="إضافة صديق" aria-label="إضافة صديق"
+        className="h-8 w-8 rounded-lg bg-sky-500/10 hover:bg-sky-500/20 text-sky-600 flex items-center justify-center transition active:scale-95 disabled:opacity-50">
+        <UserPlus className="h-4 w-4" />
+      </button>
+      <button onClick={ignore} disabled={busy} title="تجاهل" aria-label="تجاهل"
+        className="h-8 w-8 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 flex items-center justify-center transition active:scale-95 disabled:opacity-50">
+        <Ban className="h-4 w-4" />
+      </button>
+    </div>
+  );
+}
+
 function RoomBackground({ url, type }: { url: string | null; type: string | null }) {
   if (!url) return null;
   const isVideo = type === "video";
@@ -1449,6 +1510,7 @@ function SettingsSheet({ roomId, room, canModerate, myRank, isOwner, ownerId, on
                                 <UserBadgesInline userId={m.user_id} size={12} max={3} />
                               </div>
                             </div>
+                            <MemberQuickActions targetId={m.user_id} />
                             {canModerate && m.user_id !== ownerId && (
                               <MemberMenu
                                 myRank={myRank} rank={m.rank}
