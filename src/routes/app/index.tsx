@@ -458,11 +458,11 @@ function RoomCard({ room, accentIndex, isOwner, isMember, isFavorite, onToggleFa
             >
               <Star className="h-4 w-4" fill={isFavorite ? "currentColor" : "none"} />
             </button>
-            {isMember ? (
+            {(isMember || isOwner) ? (
               <button
                 onClick={openInvite}
                 aria-label="دعوة الأصدقاء"
-                title="دعوة الأصدقاء"
+                title={isOwner && isPrivate ? "إدارة الدعوات" : "دعوة الأصدقاء"}
                 className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-sm transition hover:brightness-110 active:scale-90"
               >
                 <UserPlus className="h-4 w-4" />
@@ -474,6 +474,7 @@ function RoomCard({ room, accentIndex, isOwner, isMember, isFavorite, onToggleFa
               >
                 <LogIn className="h-3.5 w-3.5" />
                 انضمام
+
               </button>
             )}
           </div>
