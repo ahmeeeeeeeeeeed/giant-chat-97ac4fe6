@@ -1025,6 +1025,7 @@ function RoomPage() {
                     >
                       {displayName}
                     </button>
+                    {msg.user_id && <EquippedBadgeChip userId={msg.user_id} />}
                     {msg.user_id && <UserBadgesInline userId={msg.user_id} size={12} max={3} />}
                     <span className="text-[10px] text-muted-foreground/70" suppressHydrationWarning>
                       {time}
