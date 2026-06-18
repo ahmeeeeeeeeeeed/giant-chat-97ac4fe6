@@ -13,8 +13,21 @@ export const Route = createFileRoute("/sitemap.xml")({
   server: {
     handlers: {
       GET: async () => {
+        const featureSlugs = [
+          "audio-call", "video-call", "chat", "rooms", "music",
+          "games", "store", "profile", "community", "notifications",
+        ];
         const entries: SitemapEntry[] = [
           { path: "/", changefreq: "weekly", priority: "1.0" },
+          { path: "/features", changefreq: "weekly", priority: "0.9" },
+          { path: "/about", changefreq: "monthly", priority: "0.8" },
+          { path: "/privacy", changefreq: "yearly", priority: "0.5" },
+          { path: "/terms", changefreq: "yearly", priority: "0.5" },
+          ...featureSlugs.map((slug) => ({
+            path: `/features/${slug}`,
+            changefreq: "monthly" as const,
+            priority: "0.7",
+          })),
         ];
 
         const urls = entries.map((e) =>
