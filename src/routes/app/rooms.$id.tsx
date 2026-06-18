@@ -388,6 +388,19 @@ function RoomPage() {
     };
   }, [user?.id, myRank, roomId]);
 
+  // Auto-join the room as soon as we have user + room + clean state.
+  // Removes the manual "Join" step — tapping the room is the join action.
+  const autoJoinTriedRef = useRef(false);
+  useEffect(() => {
+    if (!user?.id || !room || !room.is_active) return;
+    if (myRank || isBanned || joining) return;
+    if (!online) return;
+    if (autoJoinTriedRef.current) return;
+    autoJoinTriedRef.current = true;
+    tryJoin();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, room?.id, room?.is_active, myRank, isBanned, online]);
+
 
 
   const tryJoin = async (_pw?: string) => {
