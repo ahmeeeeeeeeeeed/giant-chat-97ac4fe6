@@ -376,16 +376,13 @@ export function useRoomVoice(roomId: string, myUserId: string | undefined) {
       .eq("room_id", roomId).eq("user_id", myUserId);
   }, [roomId, myUserId]);
 
-  // Cleanup on unmount: leave stage cleanly
+  // Cleanup on unmount: DO NOT auto-leave the stage when navigating inside
+  // the app. We only tear down local peer connections / mic so resources are
+  // released; the user's row in `room_speakers` stays so they remain on stage
+  // and are restored when they return to the room screen. Explicit exit is
+  // handled by `leaveStage`, sign-out, app exit, or going offline.
   useEffect(() => {
     return () => {
-      if (onStageRef.current) {
-        const uid = myUserId;
-        const rid = roomId;
-        if (uid) {
-          supabase.from("room_speakers").delete().eq("room_id", rid).eq("user_id", uid).then(() => {});
-        }
-      }
       for (const [uid] of peersRef.current) closePeer(uid);
       const s = localStreamRef.current;
       if (s) { for (const t of s.getTracks()) try { t.stop(); } catch { /* noop */ } }
