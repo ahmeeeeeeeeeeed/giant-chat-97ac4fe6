@@ -738,7 +738,7 @@ function RoomPage() {
             <button onClick={() => navigate({ to: "/app" })} className="rounded-lg p-2 hover:bg-secondary transition shrink-0">
               <ArrowLeft className="h-5 w-5" />
             </button>
-            <button onClick={() => setShowInfo(true)} className="flex items-center gap-2.5 min-w-0 flex-1 text-start">
+            <button onClick={() => canModerate && setShowInfo(true)} className="flex items-center gap-2.5 min-w-0 flex-1 text-start" disabled={!canModerate}>
               <div className="relative shrink-0">
                 <div className={`flex h-11 w-11 items-center justify-center rounded-2xl text-white font-extrabold text-lg shadow-lg ${
                   room.type === "private"
@@ -761,8 +761,6 @@ function RoomPage() {
                 <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
                   <Users className="h-3 w-3" />
                   <span>{memberCount}/{room.max_members}</span>
-                  <span className="text-muted-foreground/40">•</span>
-                  <span className="truncate">{room.type === "private" ? "خاصة" : "عامة"}</span>
                 </div>
               </div>
             </button>
