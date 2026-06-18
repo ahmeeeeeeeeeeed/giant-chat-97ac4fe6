@@ -28,14 +28,41 @@ export const Route = createFileRoute("/")({
   component: Welcome,
   head: () => ({
     meta: [
-      { title: "Giant — حمّل التطبيق الآن" },
-      { name: "description", content: "Giant — تطبيق دردشة وغرف صوتية وموسيقى وهدايا. حمّل أحدث إصدار APK مباشرة." },
-      { property: "og:title", content: "Giant — الموقع الرسمي" },
-      { property: "og:description", content: "حمّل تطبيق Giant مباشرة من الموقع الرسمي." },
+      { title: "Giant — مكالمات صوتية وفيديو مجانية، دردشة وغرف وألعاب" },
+      { name: "description", content: "Giant: تطبيق عربي للمكالمات الصوتية والفيديو المجانية، دردشة فورية، غرف صوتية حية، ألعاب وتحديات ومكافآت يومية. تواصل مع عائلتك وأصدقائك بجودة عالية واستقرار دائم." },
+      { name: "keywords", content: "تطبيق مكالمات مجانية, مكالمات فيديو مجانية, مكالمات صوتية, تطبيق دردشة عربي, شات عربي, غرف صوتية, غرف دردشة, تطبيق محادثات, ألعاب اونلاين, تحديات ومكافآت, تواصل مع العائلة, تطبيق اتصال مجاني, video call free, voice call app, Arabic chat app, Giant chat, جيانت, تطبيق جيانت" },
+      { name: "robots", content: "index, follow" },
+      { property: "og:title", content: "Giant — مكالمات وفيديو ودردشة مجانية" },
+      { property: "og:description", content: "اتصل مجاناً صوت وفيديو، دردش في غرف حية، العب واربح مكافآت يومية مع عائلتك وأصدقائك." },
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://giant-chat.lovable.app/" },
+      { property: "og:image", content: "https://giant-chat.lovable.app/icons/icon-512.png" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Giant — مكالمات وفيديو ودردشة مجانية" },
+      { name: "twitter:description", content: "مكالمات صوت وفيديو مجانية، غرف دردشة، ألعاب وتحديات ومكافآت." },
+      { name: "twitter:image", content: "https://giant-chat.lovable.app/icons/icon-512.png" },
     ],
     links: [
+      { rel: "canonical", href: "https://giant-chat.lovable.app/" },
       { rel: "preload", as: "video", href: WELCOME_VIDEO, type: "video/mp4" },
       { rel: "preload", as: "image", href: WELCOME_POSTER },
+    ],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "MobileApplication",
+          name: "Giant",
+          operatingSystem: "ANDROID",
+          applicationCategory: "SocialNetworkingApplication",
+          description: "تطبيق عربي للمكالمات الصوتية والفيديو المجانية والدردشة والغرف الصوتية والألعاب والمكافآت.",
+          inLanguage: "ar",
+          offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+          aggregateRating: { "@type": "AggregateRating", ratingValue: "4.9", ratingCount: "120" },
+          keywords: "مكالمات مجانية, مكالمات فيديو, دردشة, غرف صوتية, ألعاب, تحديات, مكافآت",
+        }),
+      },
     ],
   }),
 });
@@ -317,8 +344,80 @@ function PublicWebsite() {
         </div>
       </header>
 
+      {/* App Icon Intro — أول ما يراه الزائر */}
+      <section className="relative overflow-hidden border-b border-border/60 bg-gradient-to-b from-primary/10 via-background to-background">
+        <div className="pointer-events-none absolute -top-24 left-1/2 h-[24rem] w-[24rem] -translate-x-1/2 rounded-full bg-primary/20 blur-3xl" />
+        <div className="relative mx-auto flex max-w-3xl flex-col items-center px-5 pt-14 pb-12 text-center md:pt-20">
+          <h1 className="mb-4 bg-gradient-to-b from-foreground to-primary bg-clip-text text-4xl font-black tracking-tight text-transparent md:text-6xl">
+            Giant — جاينت
+          </h1>
+          <div className="relative">
+            <div className="absolute inset-0 -m-4 animate-pulse rounded-[2.5rem] bg-primary/30 blur-2xl" />
+            <img
+              src="/icons/icon-512.png"
+              alt="أيقونة تطبيق Giant للمكالمات والدردشة"
+              width={160}
+              height={160}
+              className="relative h-32 w-32 rounded-[2rem] border border-border/60 shadow-2xl shadow-primary/40 ring-4 ring-card md:h-40 md:w-40"
+              loading="eager"
+              fetchPriority="high"
+            />
+          </div>
+
+          <p className="mt-7 max-w-2xl text-lg font-bold leading-relaxed text-foreground md:text-2xl">
+            للاتصال — <span className="text-primary">مكالمات صوتية وفيديو مجانية بالكامل</span>
+            <br className="hidden sm:block" />
+            وتواصل مستقر مع العائلة والأصدقاء في أي وقت ومن أي مكان.
+          </p>
+          <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground md:text-base">
+            جودة صوت وصورة عالية، اتصال سريع بدون انقطاع، يعمل حتى على الشبكات الضعيفة — صُمم خصيصاً للمستخدم العربي.
+          </p>
+
+          {/* مميزات سريعة تحت الأيقونة */}
+          <div className="mt-9 grid w-full grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-3">
+            {[
+              { Icon: Phone, title: "مكالمات صوتية", desc: "نقاء عالي بدون تشويش" },
+              { Icon: Video, title: "مكالمات فيديو", desc: "صورة HD واضحة" },
+              { Icon: MessageCircle, title: "دردشة فورية", desc: "خاصة وجماعية" },
+              { Icon: Users, title: "غرف صوتية حية", desc: "تجمع المئات معاً" },
+              { Icon: Sparkles, title: "ألعاب وتحديات", desc: "متعة يومية متجددة" },
+              { Icon: Trophy, title: "مكافآت يومية", desc: "اربح وأنت تستمتع" },
+              { Icon: ShieldCheck, title: "آمن ومشفّر", desc: "خصوصيتك أولاً" },
+              { Icon: Wifi, title: "استقرار دائم", desc: "اتصال 24/7" },
+              { Icon: Globe, title: "بدون حدود", desc: "اتصل لأي مكان" },
+            ].map(({ Icon, title, desc }) => (
+              <div
+                key={title}
+                className="group flex flex-col items-center gap-2 rounded-2xl border border-border bg-card/70 p-4 text-center shadow-sm backdrop-blur transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10"
+              >
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 to-emerald-400/10 text-primary ring-1 ring-primary/20">
+                  <Icon className="h-5 w-5" />
+                </div>
+                <div className="text-sm font-extrabold">{title}</div>
+                <div className="text-[11px] leading-snug text-muted-foreground">{desc}</div>
+              </div>
+            ))}
+          </div>
+
+          <a
+            href="#download"
+            className="mt-10 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-primary to-emerald-500 px-7 py-3.5 text-sm font-extrabold text-primary-foreground shadow-lg shadow-primary/30 transition hover:scale-[1.02] active:scale-[0.98]"
+          >
+            <Download className="h-4 w-4" /> حمّل التطبيق مجاناً
+          </a>
+
+          {/* كلمات مفتاحية مخفية للقراء الآليين والـ SEO */}
+          <p className="sr-only">
+            تطبيق Giant للمكالمات الصوتية والفيديو المجانية، دردشة عربية فورية، غرف صوتية، شات،
+            تواصل مع العائلة والأصدقاء، ألعاب اونلاين، تحديات يومية، مكافآت، voice call,
+            video call, free calls, Arabic chat, جاينت، تطبيق اتصال مجاني، شات عربي، غرف دردشة.
+          </p>
+        </div>
+      </section>
+
       {/* Hero */}
       <section className="relative overflow-hidden">
+
         <div className="pointer-events-none absolute -top-40 right-1/4 h-[28rem] w-[28rem] rounded-full bg-primary/25 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-32 left-1/4 h-[28rem] w-[28rem] rounded-full bg-emerald-400/15 blur-3xl" />
 
