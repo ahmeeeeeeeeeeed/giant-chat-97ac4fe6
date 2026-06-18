@@ -28,7 +28,7 @@ import { getEquipped } from "@/lib/equipped";
 import { markRoomSeen } from "@/lib/notify";
 import { ImageLightbox } from "@/components/ImageLightbox";
 import { ensureMediaLibraryPermission } from "@/lib/app-permissions";
-import { cacheGet, cacheSet, cacheKeys } from "@/lib/offline-cache";
+// offline cache removed for room messages — history is per-join only
 import { getOnline, useOnline } from "@/lib/use-online";
 import { UserBadgesInline } from "@/components/UserBadges";
 import { EquippedBadgeChip, EquippedFrame } from "@/components/EquippedDecor";
@@ -167,10 +167,15 @@ function RoomPage() {
     return banned;
   };
 
+  const [joinedAt, setJoinedAt] = useState<string | null>(null);
+  const joinedAtRef = useRef<string | null>(null);
+  useEffect(() => { joinedAtRef.current = joinedAt; }, [joinedAt]);
+
   const loadMembership = async () => {
     if (!user) return;
-    const { data } = await supabase.from("room_members").select("rank").eq("room_id", roomId).eq("user_id", user.id).maybeSingle();
+    const { data } = await supabase.from("room_members").select("rank, joined_at").eq("room_id", roomId).eq("user_id", user.id).maybeSingle();
     setMyRank((data?.rank as Rank) ?? null);
+    setJoinedAt((data as any)?.joined_at ?? null);
   };
 
   const loadMemberCount = async () => {
@@ -190,19 +195,18 @@ function RoomPage() {
   };
 
   const loadMessages = async () => {
-    // 1) Local-first: render cached messages immediately (works fully offline).
-    const cached = await cacheGet<any[]>(cacheKeys.roomMessages(roomId));
-    if (cached && cached.length) {
-      setMessages(cached);
-      const ids = cached.map((m: any) => m.user_id).filter(Boolean);
-      ensureProfiles(ids);
-      scrollToBottom(didInitialScrollRef.current);
-      didInitialScrollRef.current = true;
-    }
-    // 2) Skip network when offline — avoids browser errors and keeps cached UI.
+    // Only show messages from after the user (re)joined the room.
+    // Previous-session messages must not be visible.
+    const since = joinedAtRef.current;
+    if (!since) { setMessages([]); return; }
     if (!getOnline()) return;
-    // 3) Background sync from cloud.
-    const { data: raw } = await supabase.from("room_messages").select("*").eq("room_id", roomId).order("created_at", { ascending: false }).limit(50);
+    const { data: raw } = await supabase
+      .from("room_messages")
+      .select("*")
+      .eq("room_id", roomId)
+      .gte("created_at", since)
+      .order("created_at", { ascending: false })
+      .limit(50);
     const data = raw ? [...raw].reverse() : null;
     if (data) {
       const visible = data.filter((m: any) => !isPlainSystem(m));
@@ -214,13 +218,13 @@ function RoomPage() {
     }
   };
 
-  // Persist room messages locally on every change (offline-first cache).
+  // Reload messages whenever (re)join time becomes known/changes.
   useEffect(() => {
-    if (!roomId) return;
-    // Don't persist optimistic tmp-* items; keep cache to confirmed messages.
-    const persistable = messages.filter((m: any) => typeof m.id === "string" && !m.id.startsWith("tmp-"));
-    if (persistable.length) void cacheSet(cacheKeys.roomMessages(roomId), persistable);
-  }, [messages, roomId]);
+    if (!user?.id || !roomId) return;
+    if (!joinedAt) { setMessages([]); return; }
+    loadMessages();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [joinedAt, roomId, user?.id]);
 
   useEffect(() => {
     if (!user?.id) return; // wait for auth so RLS allows reads
@@ -228,7 +232,8 @@ function RoomPage() {
     checkBanned();
     loadMembership();
     loadMemberCount();
-    loadMessages();
+    // messages load is driven by joinedAt effect above
+
     ensureProfiles([user.id]);
     markRoomSeen(roomId);
 
