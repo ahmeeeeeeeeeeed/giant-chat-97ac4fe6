@@ -35,6 +35,7 @@ export const Route = createFileRoute("/")({
       { property: "og:title", content: "Giant — مكالمات وفيديو ودردشة مجانية" },
       { property: "og:description", content: "اتصل مجاناً صوت وفيديو، دردش في غرف حية، العب واربح مكافآت يومية مع عائلتك وأصدقائك." },
       { property: "og:type", content: "website" },
+      { property: "og:site_name", content: "Giant" },
       { property: "og:url", content: "https://giant-chat.lovable.app/" },
       { property: "og:image", content: "https://giant-chat.lovable.app/icons/icon-512.png" },
       { name: "twitter:card", content: "summary_large_image" },
