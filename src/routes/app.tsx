@@ -240,23 +240,7 @@ function AppLayout() {
               >
                 <Sparkles className="h-[17px] w-[17px]" />
               </Link>
-              <Link
-                to="/app/activity"
-                aria-label="سجل النشاط"
-                title="سجل النشاط"
-                className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-950/40 border border-indigo-500/30 text-indigo-300 backdrop-blur transition active:scale-95 hover:bg-indigo-900/40"
-              >
-                <Activity className="h-[17px] w-[17px]" />
-              </Link>
-
-              <button
-                onClick={() => setReportOpen(true)}
-                aria-label="الإبلاغ والشكاوى"
-                title="الإبلاغ والشكاوى"
-                className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-rose-950/40 border border-rose-500/30 text-rose-300 backdrop-blur transition active:scale-95 hover:bg-rose-900/40"
-              >
-                <ShieldAlert className="h-[17px] w-[17px]" />
-              </button>
+              {/* سجل النشاط والإبلاغ نُقلا داخل قائمة الثلاث نقاط */}
               {isAdmin && (
                 <Link to="/app/admin" aria-label={t("admin.title")}
                   className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-sky-950/40 border border-sky-500/30 text-sky-300 backdrop-blur transition active:scale-95 hover:bg-sky-900/40">
