@@ -1484,26 +1484,28 @@ function SettingsSheet({ roomId, room, canModerate, myRank, isOwner, ownerId, on
                         const p = userMap[m.user_id];
                         return (
                           <li key={m.user_id} className="flex items-center gap-3 rounded-xl bg-background border border-border/50 p-3 hover:border-emerald-500/30 transition">
-                            <div className="relative">
-                              <StoryRing userId={m.user_id} size="sm">
-                                <EquippedFrame userId={m.user_id} padding={2}>
-                                  <div className="h-10 w-10 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-bold overflow-hidden">
-                                    {p?.avatar_url ? <img src={p.avatar_url} alt="" className="h-full w-full object-cover" /> : (p?.username?.[0] ?? "?")}
-                                  </div>
-                                </EquippedFrame>
-                              </StoryRing>
-                              {m.rank === "owner" && (
-                                <Crown className="absolute -top-1 -end-1 h-4 w-4 text-amber-500 fill-amber-500" />
-                              )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <span className="font-semibold truncate">{p?.username ?? "..."}</span>
-                                <RankBadge rank={m.rank} />
-                                <EquippedBadgeChip userId={m.user_id} />
-                                <UserBadgesInline userId={m.user_id} size={12} max={3} />
+                            <button type="button" onClick={() => openProfile(m.user_id)} className="flex items-center gap-3 flex-1 min-w-0 text-start hover:opacity-90 transition">
+                              <div className="relative">
+                                <StoryRing userId={m.user_id} size="sm">
+                                  <EquippedFrame userId={m.user_id} padding={2}>
+                                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-bold overflow-hidden">
+                                      {p?.avatar_url ? <img src={p.avatar_url} alt="" className="h-full w-full object-cover" /> : (p?.username?.[0] ?? "?")}
+                                    </div>
+                                  </EquippedFrame>
+                                </StoryRing>
+                                {m.rank === "owner" && (
+                                  <Crown className="absolute -top-1 -end-1 h-4 w-4 text-amber-500 fill-amber-500" />
+                                )}
                               </div>
-                            </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-semibold truncate">{p?.username ?? "..."}</span>
+                                  <RankBadge rank={m.rank} />
+                                  <EquippedBadgeChip userId={m.user_id} />
+                                  <UserBadgesInline userId={m.user_id} size={12} max={3} />
+                                </div>
+                              </div>
+                            </button>
                             <MemberQuickActions targetId={m.user_id} />
                             {canModerate && m.user_id !== ownerId && (
                               <MemberMenu
