@@ -276,6 +276,63 @@ function AppLayout() {
                   </span>
                 )}
               </Link>
+
+              {/* زر إنشاء غرفة — يظهر فقط في صفحة الغرف */}
+              {(path === "/app" || path === "/app/") && (
+                <Link
+                  to="/app/create-room"
+                  aria-label="إنشاء غرفة"
+                  title="إنشاء غرفة"
+                  className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 text-white shadow-[0_6px_18px_-6px_rgba(16,185,129,0.8)] ring-1 ring-emerald-300/40 transition active:scale-95 hover:brightness-110"
+                >
+                  <Plus className="h-[18px] w-[18px]" strokeWidth={2.5} />
+                </Link>
+              )}
+
+              {/* قائمة ثلاث نقاط — البروفايل / الإعدادات / خروج / تسجيل خروج */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    aria-label="القائمة"
+                    title="القائمة"
+                    className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 via-fuchsia-500 to-pink-500 text-white shadow-[0_6px_18px_-6px_rgba(217,70,239,0.7)] ring-1 ring-fuchsia-300/40 transition active:scale-95 hover:brightness-110"
+                  >
+                    <MoreVertical className="h-[18px] w-[18px]" strokeWidth={2.5} />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" sideOffset={8} className="w-56 rounded-2xl border-emerald-500/20 bg-slate-950/95 text-emerald-50 shadow-2xl backdrop-blur-xl">
+                  <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-emerald-300/70">الحساب</DropdownMenuLabel>
+                  <DropdownMenuItem
+                    onSelect={() => navigate({ to: "/app/my_profile" })}
+                    className="cursor-pointer rounded-xl gap-2 text-sm font-semibold focus:bg-emerald-500/15 focus:text-emerald-100"
+                  >
+                    <User className="h-4 w-4 text-emerald-300" />
+                    البروفايل
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onSelect={() => navigate({ to: "/app/account" })}
+                    className="cursor-pointer rounded-xl gap-2 text-sm font-semibold focus:bg-emerald-500/15 focus:text-emerald-100"
+                  >
+                    <UserCog className="h-4 w-4 text-sky-300" />
+                    تعديل البروفايل
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onSelect={() => navigate({ to: "/app/settings" })}
+                    className="cursor-pointer rounded-xl gap-2 text-sm font-semibold focus:bg-emerald-500/15 focus:text-emerald-100"
+                  >
+                    <Settings className="h-4 w-4 text-amber-300" />
+                    الإعدادات
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className="bg-emerald-500/15" />
+                  <DropdownMenuItem
+                    onSelect={() => requestExitConfirm()}
+                    className="cursor-pointer rounded-xl gap-2 text-sm font-semibold text-rose-300 focus:bg-rose-500/15 focus:text-rose-200"
+                  >
+                    <DoorOpen className="h-4 w-4" />
+                    خروج / تسجيل خروج
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </header>
