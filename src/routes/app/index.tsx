@@ -166,12 +166,28 @@ function RoomsPage() {
   }
 
   const filtered = useMemo(() => {
+    let list = rooms;
+    // فلترة حسب التصنيف
+    if (category === "public") list = list.filter((r) => (r.type ?? "public") === "public");
+    else if (category === "private") list = list.filter((r) => r.type === "private" && (r.owner_id === user?.id || myRoomIds.has(r.id)));
+    else if (category === "mine") list = list.filter((r) => r.owner_id === user?.id);
+    else if (category === "favorites") list = list.filter((r) => favorites.has(r.id));
+    else if (category === "active") list = list.filter((r) => (r.member_count ?? 0) > 0);
+
     const q = query.trim().toLowerCase();
-    if (!q) return rooms;
-    return rooms.filter(r =>
+    if (!q) return list;
+    return list.filter(r =>
       r.name.toLowerCase().includes(q) || (r.description ?? "").toLowerCase().includes(q)
     );
-  }, [rooms, query]);
+  }, [rooms, query, category, favorites, myRoomIds, user?.id]);
+
+  const CATS: { key: typeof category; label: string; icon: any; cls: string }[] = [
+    { key: "public",    label: "العامة",   icon: Globe,    cls: "from-emerald-500 to-teal-600" },
+    { key: "active",    label: "النشطة",   icon: Activity, cls: "from-sky-500 to-indigo-600" },
+    { key: "favorites", label: "المفضلة",  icon: Star,     cls: "from-amber-400 to-orange-500" },
+    { key: "mine",      label: "غرفي",     icon: Crown,    cls: "from-fuchsia-500 to-pink-600" },
+    { key: "private",   label: "الخاصة",   icon: Lock,     cls: "from-rose-500 to-red-600" },
+  ];
 
   const goToCreateRoom = () => {
     navigate({ to: "/app/create-room" });
