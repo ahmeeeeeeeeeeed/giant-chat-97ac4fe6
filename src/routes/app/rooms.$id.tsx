@@ -899,6 +899,7 @@ function RoomPage() {
         )}
       </header>
 
+      <RoomVoiceStage roomId={roomId} myUserId={user?.id} myRank={myRank} memberCount={memberCount} />
       <MusicPlayer roomId={roomId} />
 
       {/* Messages */}
