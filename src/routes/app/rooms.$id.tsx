@@ -60,8 +60,9 @@ function RoomPage() {
   const [showSettings, setShowSettings] = useState(false);
   const [settingsTab, setSettingsTab] = useState<SettingsTab>("members");
   const [showShare, setShowShare] = useState(false);
-  const [askPassword, setAskPassword] = useState(false);
-  const [joinPw, setJoinPw] = useState("");
+  // password modals removed — private rooms are invite-only
+  const [, setAskPassword] = useState(false);
+  const [, setJoinPw] = useState("");
   const [joining, setJoining] = useState(false);
   const [isBanned, setIsBanned] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
