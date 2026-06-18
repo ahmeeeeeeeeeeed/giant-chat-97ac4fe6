@@ -8,7 +8,7 @@ import {
   ArrowUp, ArrowDown, Crown, FileText, X, KeyRound, MoreVertical, Megaphone,
   UserPlus, AtSign, Edit3, Trash2, Power, Globe, Search, Info, Save, AlertTriangle,
   Image as ImageIcon, Mic, Square, Play, Pause, Share2, Copy, Bot, Gift,
-  LogOut, ShieldCheck, UserCog,
+  LogOut, ShieldCheck, UserCog, MessageCircle,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent,
