@@ -450,11 +450,14 @@ function PublicWebsite() {
                   </div>
                   <h3 className="text-2xl font-extrabold md:text-3xl">{f.title}</h3>
                   <p className="mt-4 max-w-md text-base leading-relaxed text-muted-foreground">{f.desc}</p>
+                  <Link to="/features/$slug" params={{ slug: f.slug }} className="mt-5 inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-4 py-2 text-sm font-bold text-primary transition hover:bg-primary/20">
+                    اعرف المزيد عن مهام هذا الزر <ArrowRight className="h-4 w-4 rtl:rotate-180" />
+                  </Link>
                 </div>
-                <div className="relative mx-auto w-full max-w-xs">
+                <Link to="/features/$slug" params={{ slug: f.slug }} className="relative mx-auto block w-full max-w-xs transition hover:scale-[1.02]">
                   <div className="absolute inset-0 -z-10 rounded-3xl bg-gradient-to-br from-primary/25 to-transparent blur-2xl" />
                   <img src={f.img} alt={f.title} width={832} height={1216} loading="lazy" className="w-full rounded-3xl border border-border/60 shadow-xl" />
-                </div>
+                </Link>
               </div>
             ))}
           </div>
