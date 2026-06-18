@@ -59,7 +59,7 @@ function AchievementsPage() {
   return (
     <main className="flex flex-1 flex-col bg-gradient-to-b from-background to-secondary/30 pb-6">
       {/* Hero */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-amber-500 via-orange-500 to-rose-500 px-5 pb-6 pt-5 text-white shadow-xl">
+      <div className="relative overflow-hidden bg-gradient-to-br from-amber-500 via-orange-500 to-rose-500 px-5 pb-3 pt-4 text-white shadow-xl">
         <div className="absolute -end-10 -top-10 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
         <div className="absolute -start-10 bottom-0 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
         <div className="relative flex items-center gap-3">
@@ -77,7 +77,7 @@ function AchievementsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="-mt-3 px-3">
+      <div className="-mt-5 px-3">
         <div className="flex gap-2 overflow-x-auto rounded-2xl border border-border bg-card p-2 shadow-md">
           {TABS.map((t) => {
             const active = tab === t.key;
