@@ -388,6 +388,19 @@ function RoomPage() {
     };
   }, [user?.id, myRank, roomId]);
 
+  // Auto-join the room as soon as we have user + room + clean state.
+  // Removes the manual "Join" step — tapping the room is the join action.
+  const autoJoinTriedRef = useRef(false);
+  useEffect(() => {
+    if (!user?.id || !room || !room.is_active) return;
+    if (myRank || isBanned || joining) return;
+    if (!online) return;
+    if (autoJoinTriedRef.current) return;
+    autoJoinTriedRef.current = true;
+    tryJoin();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, room?.id, room?.is_active, myRank, isBanned, online]);
+
 
 
   const tryJoin = async (_pw?: string) => {
@@ -643,9 +656,8 @@ function RoomPage() {
 
   const openSettingsAt = (t: SettingsTab) => { setSettingsTab(t); setShowSettings(true); };
 
-  // Pre-join lobby — the user is NOT inside the room until they tap the
-  // join button. Auto-join is intentionally disabled so that going offline
-  // or signing out doesn't silently put them back in the room next time.
+  // Pre-join holding screen — auto-join is in flight. Shows a spinner,
+  // ban notice, or a network-required hint. No manual "join" button.
   if (!isMember) {
     return (
       <div className="flex flex-col min-h-screen bg-gradient-to-b from-emerald-50/40 via-background to-background dark:from-emerald-950/20">
@@ -666,39 +678,19 @@ function RoomPage() {
           }`}>
             {roomInitial}
           </div>
-          <div className="flex items-center gap-2 mb-1">
-            {room.type === "private" ? <Lock className="h-4 w-4 text-amber-500" /> : <Hash className="h-4 w-4 text-emerald-500" />}
-            <h2 className="text-xl font-extrabold">{room.name}</h2>
-          </div>
-          {room.description && (
-            <p className="text-sm text-muted-foreground max-w-md mb-4 whitespace-pre-wrap">{room.description}</p>
-          )}
-          <div className="flex items-center gap-4 text-xs text-muted-foreground mb-6">
-            <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" /> {memberCount}/{room.max_members}</span>
-            <span>•</span>
-            <span>{room.type === "private" ? "غرفة خاصة" : "غرفة عامة"}</span>
-            <span>•</span>
-            <span className={room.is_active ? "text-emerald-600" : "text-red-500"}>
-              {room.is_active ? "نشطة" : "موقوفة"}
-            </span>
-          </div>
+          <h2 className="text-xl font-extrabold mb-4">{room.name}</h2>
 
           {isBanned ? (
             <div className="rounded-2xl border border-red-500/30 bg-red-500/10 px-5 py-4 text-red-500 font-bold flex items-center gap-2">
               <Ban className="h-5 w-5" /> أنت محظور من هذه الغرفة
             </div>
+          ) : !online ? (
+            <p className="text-sm text-amber-600">⚠️ تحتاج إلى اتصال بالإنترنت للدخول</p>
           ) : (
-            <button
-              onClick={() => tryJoin()} disabled={joining || !room.is_active}
-              className="h-14 px-10 rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-extrabold text-base shadow-[0_10px_30px_-10px_rgba(16,185,129,0.7)] disabled:opacity-50 flex items-center justify-center gap-2 transition active:scale-[0.98]"
-            >
-              {joining ? <Loader2 className="h-5 w-5 animate-spin" /> : <UserPlus className="h-5 w-5" />}
-              {joining ? "جارٍ الانضمام..." : "انضمام إلى الغرفة"}
-            </button>
-          )}
-
-          {!online && (
-            <p className="mt-4 text-xs text-amber-600">⚠️ تحتاج إلى اتصال بالإنترنت للانضمام</p>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-5 w-5 animate-spin text-emerald-500" />
+              جارٍ الدخول إلى الغرفة...
+            </div>
           )}
         </div>
       </div>
@@ -1401,6 +1393,8 @@ function SettingsSheet({ roomId, room, canModerate, myRank, isOwner, ownerId, on
   const [members, setMembers] = useState<any[]>([]);
   const [bans, setBans] = useState<any[]>([]);
   const [logs, setLogs] = useState<any[]>([]);
+  const navigate = useNavigate();
+  const openProfile = (uid: string) => { onClose(); navigate({ to: "/app/profile/$id", params: { id: uid } }); };
 
   const load = async () => {
     if (tab === "members") {
@@ -1490,26 +1484,28 @@ function SettingsSheet({ roomId, room, canModerate, myRank, isOwner, ownerId, on
                         const p = userMap[m.user_id];
                         return (
                           <li key={m.user_id} className="flex items-center gap-3 rounded-xl bg-background border border-border/50 p-3 hover:border-emerald-500/30 transition">
-                            <div className="relative">
-                              <StoryRing userId={m.user_id} size="sm">
-                                <EquippedFrame userId={m.user_id} padding={2}>
-                                  <div className="h-10 w-10 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-bold overflow-hidden">
-                                    {p?.avatar_url ? <img src={p.avatar_url} alt="" className="h-full w-full object-cover" /> : (p?.username?.[0] ?? "?")}
-                                  </div>
-                                </EquippedFrame>
-                              </StoryRing>
-                              {m.rank === "owner" && (
-                                <Crown className="absolute -top-1 -end-1 h-4 w-4 text-amber-500 fill-amber-500" />
-                              )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <span className="font-semibold truncate">{p?.username ?? "..."}</span>
-                                <RankBadge rank={m.rank} />
-                                <EquippedBadgeChip userId={m.user_id} />
-                                <UserBadgesInline userId={m.user_id} size={12} max={3} />
+                            <button type="button" onClick={() => openProfile(m.user_id)} className="flex items-center gap-3 flex-1 min-w-0 text-start hover:opacity-90 transition">
+                              <div className="relative">
+                                <StoryRing userId={m.user_id} size="sm">
+                                  <EquippedFrame userId={m.user_id} padding={2}>
+                                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-bold overflow-hidden">
+                                      {p?.avatar_url ? <img src={p.avatar_url} alt="" className="h-full w-full object-cover" /> : (p?.username?.[0] ?? "?")}
+                                    </div>
+                                  </EquippedFrame>
+                                </StoryRing>
+                                {m.rank === "owner" && (
+                                  <Crown className="absolute -top-1 -end-1 h-4 w-4 text-amber-500 fill-amber-500" />
+                                )}
                               </div>
-                            </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-semibold truncate">{p?.username ?? "..."}</span>
+                                  <RankBadge rank={m.rank} />
+                                  <EquippedBadgeChip userId={m.user_id} />
+                                  <UserBadgesInline userId={m.user_id} size={12} max={3} />
+                                </div>
+                              </div>
+                            </button>
                             <MemberQuickActions targetId={m.user_id} />
                             {canModerate && m.user_id !== ownerId && (
                               <MemberMenu
