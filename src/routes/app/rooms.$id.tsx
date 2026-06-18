@@ -32,6 +32,7 @@ import { cacheGet, cacheSet, cacheKeys } from "@/lib/offline-cache";
 import { getOnline, useOnline } from "@/lib/use-online";
 import { UserBadgesInline } from "@/components/UserBadges";
 import { StoryRing } from "@/components/StoryRing";
+import { RoomVoiceStage } from "@/components/RoomVoiceStage";
 
 type Rank = "owner" | "admin" | "moderator" | "member";
 
