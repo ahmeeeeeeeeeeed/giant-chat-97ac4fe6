@@ -389,14 +389,20 @@ const CARD_THEMES = [
 
 function RoomCard({ room, accentIndex, isOwner, isMember, isFavorite, onToggleFav, onJoin }: { room: Room; accentIndex: number; isOwner: boolean; isMember: boolean; isFavorite: boolean; onToggleFav: () => void; onJoin: () => void }) {
   const [inviteOpen, setInviteOpen] = useState(false);
+  const navigate = useNavigate();
   const theme = CARD_THEMES[accentIndex % CARD_THEMES.length];
   const isPrivate = room.type === "private";
   const initial = (room.name?.trim()?.[0] ?? "#").toUpperCase();
 
   const openInvite = (e: React.MouseEvent) => {
     e.preventDefault(); e.stopPropagation();
+    if (isOwner && isPrivate) {
+      navigate({ to: "/app/rooms/$id/invites", params: { id: room.id } });
+      return;
+    }
     setInviteOpen(true);
   };
+
 
   return (
     <>
