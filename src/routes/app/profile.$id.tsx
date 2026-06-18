@@ -203,19 +203,24 @@ function OtherProfilePage() {
           <div className="flex flex-col items-center text-center">
             {/* Avatar */}
             <StoryRing userId={profile.id} size="xl">
-              <EquippedFrame userId={profile.id} padding={4}>
-                <div className="relative h-28 w-28 overflow-hidden rounded-full bg-primary text-4xl font-bold text-primary-foreground ring-4 ring-background shadow-xl">
-                  {profile.avatar_url ? (
-                    <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" />
-                  ) : (
-                    <span className="flex h-full w-full items-center justify-center">
-                      {profile.username.charAt(0).toUpperCase()}
-                    </span>
-                  )}
+              <div className="relative">
+                <EquippedFrame userId={profile.id} padding={4}>
+                  <div className="relative h-28 w-28 overflow-hidden rounded-full bg-primary text-4xl font-bold text-primary-foreground ring-4 ring-background shadow-xl">
+                    {profile.avatar_url ? (
+                      <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <span className="flex h-full w-full items-center justify-center">
+                        {profile.username.charAt(0).toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                </EquippedFrame>
+                <div className="pointer-events-none absolute -inset-6">
                   <EquippedEffectFloat userId={profile.id} />
                 </div>
-              </EquippedFrame>
+              </div>
             </StoryRing>
+
 
             {/* Username */}
             <h1 className="mt-4 flex items-center justify-center gap-2 text-2xl font-extrabold">
