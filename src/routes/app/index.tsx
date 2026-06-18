@@ -441,24 +441,36 @@ function RoomCard({ room, accentIndex, isOwner, isMember, isFavorite, onToggleFa
             </div>
           </div>
 
-          {isMember ? (
+          <div className="flex shrink-0 items-center gap-1.5">
             <button
-              onClick={openInvite}
-              aria-label="دعوة الأصدقاء"
-              title="دعوة الأصدقاء"
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-sm transition hover:brightness-110 active:scale-90"
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleFav(); }}
+              aria-label="إضافة للمفضلة"
+              title={isFavorite ? "إزالة من المفضلة" : "إضافة للمفضلة"}
+              className={`flex h-9 w-9 items-center justify-center rounded-xl transition active:scale-90 ${
+                isFavorite ? "bg-amber-400 text-white shadow-sm" : "bg-secondary text-muted-foreground hover:text-amber-500"
+              }`}
             >
-              <UserPlus className="h-4 w-4" />
+              <Star className="h-4 w-4" fill={isFavorite ? "currentColor" : "none"} />
             </button>
-          ) : (
-            <button
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onJoin(); }}
-              className="flex shrink-0 items-center gap-1 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 px-3 py-2 text-xs font-bold text-white shadow-md transition hover:from-emerald-600 hover:to-emerald-700 active:scale-95"
-            >
-              <LogIn className="h-3.5 w-3.5" />
-              انضمام
-            </button>
-          )}
+            {isMember ? (
+              <button
+                onClick={openInvite}
+                aria-label="دعوة الأصدقاء"
+                title="دعوة الأصدقاء"
+                className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-sm transition hover:brightness-110 active:scale-90"
+              >
+                <UserPlus className="h-4 w-4" />
+              </button>
+            ) : (
+              <button
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); onJoin(); }}
+                className="flex items-center gap-1 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 px-3 py-2 text-xs font-bold text-white shadow-md transition hover:from-emerald-600 hover:to-emerald-700 active:scale-95"
+              >
+                <LogIn className="h-3.5 w-3.5" />
+                انضمام
+              </button>
+            )}
+          </div>
         </Link>
       </div>
 
