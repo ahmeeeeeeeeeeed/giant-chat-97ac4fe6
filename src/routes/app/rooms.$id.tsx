@@ -1193,6 +1193,10 @@ function RoomPage() {
         </AlertDialogContent>
       </AlertDialog>
 
+      <ReportModal open={showReport} onClose={() => setShowReport(false)} />
+
+
+
 
       {showInfo && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 p-0 sm:p-4" onClick={() => setShowInfo(false)}>
