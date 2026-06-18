@@ -28,7 +28,7 @@ import { getEquipped } from "@/lib/equipped";
 import { markRoomSeen } from "@/lib/notify";
 import { ImageLightbox } from "@/components/ImageLightbox";
 import { ensureMediaLibraryPermission } from "@/lib/app-permissions";
-import { cacheGet, cacheSet, cacheKeys } from "@/lib/offline-cache";
+// offline cache removed for room messages — history is per-join only
 import { getOnline, useOnline } from "@/lib/use-online";
 import { UserBadgesInline } from "@/components/UserBadges";
 import { EquippedBadgeChip, EquippedFrame } from "@/components/EquippedDecor";
