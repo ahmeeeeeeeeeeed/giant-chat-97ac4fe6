@@ -31,7 +31,32 @@ export function RoomVoiceStage({
   const v = useRoomVoice(roomId, myUserId);
   const [profiles, setProfiles] = useState<Record<string, Profile>>({});
   const [expanded, setExpanded] = useState(false);
+  const [showInvitePicker, setShowInvitePicker] = useState(false);
+  const [memberList, setMemberList] = useState<{ user_id: string; rank: string }[]>([]);
+  const [pickerSearch, setPickerSearch] = useState("");
   const isMod = myRank === "owner" || myRank === "admin" || myRank === "moderator";
+
+  // Load members for invite picker
+  useEffect(() => {
+    if (!showInvitePicker) return;
+    (async () => {
+      const { data } = await supabase.from("room_members").select("user_id, rank").eq("room_id", roomId);
+      if (!data) return;
+      setMemberList(data as any);
+      const missing = data.map((m: any) => m.user_id).filter((u) => !profiles[u]);
+      if (missing.length) {
+        const { data: prof } = await supabase.from("profiles").select("id, username, avatar_url").in("id", missing);
+        if (prof) {
+          setProfiles((p) => {
+            const next = { ...p };
+            for (const row of prof) next[row.id] = { username: row.username, avatar_url: row.avatar_url };
+            return next;
+          });
+        }
+      }
+    })();
+  }, [showInvitePicker, roomId, profiles]);
+
 
   // Fetch profile info for everyone shown
   useEffect(() => {
