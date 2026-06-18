@@ -406,14 +406,6 @@ function RoomCard({ room, accentIndex, isOwner, isMember, isFavorite, onToggleFa
         <Link
           to="/app/rooms/$id"
           params={{ id: room.id }}
-          onClick={(e) => {
-            // If user is not already a member/owner, run the join flow first
-            // (handles password prompt for private rooms and navigation).
-            if (!isMember && !isOwner) {
-              e.preventDefault();
-              onJoin();
-            }
-          }}
           className="relative flex items-center gap-3 rounded-[calc(1.5rem-1.5px)] bg-card/95 backdrop-blur p-3.5"
         >
           <span className="pointer-events-none absolute -top-6 -end-6 h-20 w-20 rounded-full bg-white/5 blur-2xl" />
