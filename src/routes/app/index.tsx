@@ -32,6 +32,19 @@ function RoomsPage() {
   const [query, setQuery] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [myRoomIds, setMyRoomIds] = useState<Set<string>>(new Set());
+  const [favorites, setFavorites] = useState<Set<string>>(() => {
+    try { return new Set(JSON.parse(localStorage.getItem("fav_rooms") ?? "[]")); } catch { return new Set(); }
+  });
+  const [category, setCategory] = useState<"public" | "active" | "favorites" | "mine" | "private">("public");
+
+  const toggleFav = (id: string) => {
+    setFavorites((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      try { localStorage.setItem("fav_rooms", JSON.stringify([...next])); } catch {}
+      return next;
+    });
+  };
 
 
 
