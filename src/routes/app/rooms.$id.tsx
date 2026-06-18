@@ -844,6 +844,11 @@ function RoomPage() {
 
                 <DropdownMenuSeparator />
 
+                <DropdownMenuItem onClick={() => setShowReport(true)} className="gap-2 cursor-pointer text-orange-600 focus:text-orange-700">
+                  <AlertTriangle className="h-4 w-4" />
+                  <span>إبلاغ عن الغرفة</span>
+                </DropdownMenuItem>
+
                 <DropdownMenuItem onClick={leaveRoom} className="gap-2 cursor-pointer text-amber-600 focus:text-amber-700">
                   <LogOut className="h-4 w-4" />
                   <span>مغادرة الغرفة</span>
@@ -861,12 +866,6 @@ function RoomPage() {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {isMember && (
-              <button onClick={leaveRoom} className="rounded-lg bg-red-500/10 px-2.5 py-1.5 text-xs font-medium text-red-500 hover:bg-red-500/20 transition">
-                مغادرة
-              </button>
-            )}
-
           </div>
         </div>
 
@@ -883,19 +882,13 @@ function RoomPage() {
           </div>
         )}
 
-        {/* Quick action chips */}
+        {/* Quick action chips — non-duplicated actions only */}
         {isMember && (
           <div className="flex gap-1.5 overflow-x-auto px-3 pb-2 scrollbar-thin">
             <ChipBtn icon={<Share2 className="h-3 w-3" />} label="نشر" onClick={() => setShowShare(true)} highlight />
             <ChipBtn icon={<Bot className="h-3 w-3" />} label="البوتات" onClick={() => setShowBots(true)} highlight />
             <ChipBtn icon={<Gift className="h-3 w-3" />} label="هدية" onClick={() => { setGiftPreset(null); setShowGifts(true); }} highlight />
-            <ChipBtn icon={<UserPlus className="h-3 w-3" />} label="دعوة" onClick={() => openSettingsAt("invite")} />
-            <ChipBtn icon={<Users className="h-3 w-3" />} label={`الأعضاء (${memberCount})`} onClick={() => openSettingsAt("members")} />
             {canModerate && <ChipBtn icon={<Megaphone className="h-3 w-3" />} label="إعلان" onClick={() => setShowAnnounce(true)} highlight />}
-            {canModerate && <ChipBtn icon={<Ban className="h-3 w-3" />} label="الحظر" onClick={() => openSettingsAt("bans")} />}
-            {canModerate && <ChipBtn icon={<FileText className="h-3 w-3" />} label="السجل" onClick={() => openSettingsAt("logs")} />}
-            {isOwner && <ChipBtn icon={<ImageIcon className="h-3 w-3" />} label="خلفية" onClick={() => openSettingsAt("background")} />}
-            {isOwner && <ChipBtn icon={<Edit3 className="h-3 w-3" />} label="إعدادات الغرفة" onClick={() => openSettingsAt("manage")} />}
           </div>
         )}
       </header>
