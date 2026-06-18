@@ -240,13 +240,7 @@ function AppLayout() {
               >
                 <Sparkles className="h-[17px] w-[17px]" />
               </Link>
-              {/* سجل النشاط والإبلاغ نُقلا داخل قائمة الثلاث نقاط */}
-              {isAdmin && (
-                <Link to="/app/admin" aria-label={t("admin.title")}
-                  className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-sky-950/40 border border-sky-500/30 text-sky-300 backdrop-blur transition active:scale-95 hover:bg-sky-900/40">
-                  <Shield className="h-[17px] w-[17px]" />
-                </Link>
-              )}
+              {/* سجل النشاط والإبلاغ نُقلا داخل قائمة الثلاث نقاط. زر لوحة الإدارة أصبح داخل الإعدادات للمسؤولين فقط. */}
               <Link
                 to="/app/notifications"
                 aria-label="الإشعارات"
