@@ -77,6 +77,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "description", content: "Giant: غرف دردشة مجتمعات ومحادثات خاصة فورية." },
       { name: "theme-color", content: "#10b981" },
       { name: "color-scheme", content: "dark light" },
+      { name: "application-name", content: "Giant" },
       // iOS PWA / WebView chrome
       { name: "mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
@@ -87,6 +88,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:title", content: "Giant — دردشة مجتمعات وغرف" },
       { property: "og:description", content: "Giant: غرف دردشة مجتمعات ومحادثات خاصة فورية." },
       { property: "og:type", content: "website" },
+      { property: "og:site_name", content: "Giant" },
       { name: "google-site-verification", content: "2vf6z8pDOFFfBBBw-WbJK9a9O33Fst_FFTnhInQOsuQ" },
     ],
     links: [
@@ -100,6 +102,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       // Speed: warm up critical origins before first paint
       { rel: "preconnect", href: "https://gfuusohydgpumgardbyn.supabase.co", crossOrigin: "anonymous" },
       { rel: "dns-prefetch", href: "https://gfuusohydgpumgardbyn.supabase.co" },
+    ],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          name: "Giant",
+          url: "https://giant-chat.lovable.app",
+          inLanguage: "ar",
+        }),
+      },
     ],
   }),
   shellComponent: RootShell,
