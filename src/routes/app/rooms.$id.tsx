@@ -389,23 +389,23 @@ function RoomPage() {
 
 
 
-  const tryJoin = async (pw?: string) => {
+  const tryJoin = async (_pw?: string) => {
     if (!user || !room) return;
     const banned = await checkBanned();
     if (banned) { toast.error("أنت محظور من هذه الغرفة"); return; }
-    if (room.type === "private" && !pw) { setAskPassword(true); return; }
 
     setJoining(true);
-    const { error } = await supabase.rpc("room_join", { _room: roomId, _password: pw ?? "" });
+    // الغرف الخاصة بدون كلمة مرور — الوصول عبر الدعوة فقط
+    const { error } = await supabase.rpc("room_join", { _room: roomId, _password: "" });
     setJoining(false);
 
     if (error) {
       const msg = error.message || "";
-      if (msg.includes("wrong_password")) toast.error("كلمة المرور غير صحيحة");
-      else if (msg.includes("banned")) toast.error("أنت محظور من هذه الغرفة");
+      if (msg.includes("banned")) toast.error("أنت محظور من هذه الغرفة");
       else if (msg.includes("room_full")) toast.error("الغرفة ممتلئة");
       else if (msg.includes("room_inactive")) toast.error("الغرفة موقوفة");
       else if (msg.includes("room_not_found")) toast.error("الغرفة غير موجودة");
+      else if (msg.includes("not_invited") || msg.includes("private")) toast.error("هذه غرفة خاصة — تحتاج دعوة من المالك");
       else toast.error("فشل الانضمام: " + msg);
       return;
     }
