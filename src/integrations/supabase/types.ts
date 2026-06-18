@@ -275,6 +275,128 @@ export type Database = {
         }
         Relationships: []
       }
+      bot_config: {
+        Row: {
+          key: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value: string
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
+      }
+      bot_logs: {
+        Row: {
+          action: string
+          actor_id: string | null
+          args: Json | null
+          created_at: string
+          error: string | null
+          id: string
+          room_id: string | null
+          success: boolean
+          target_id: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          args?: Json | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          room_id?: string | null
+          success?: boolean
+          target_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          args?: Json | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          room_id?: string | null
+          success?: boolean
+          target_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bot_logs_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bot_logs_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bot_logs_target_id_fkey"
+            columns: ["target_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bot_permissions: {
+        Row: {
+          created_at: string
+          granted_by: string
+          id: string
+          room_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          granted_by: string
+          id?: string
+          room_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          granted_by?: string
+          id?: string
+          room_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bot_permissions_granted_by_fkey"
+            columns: ["granted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bot_permissions_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bot_permissions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bot_subagents: {
         Row: {
           created_at: string
@@ -2095,6 +2217,11 @@ export type Database = {
       }
       get_weekly_leaderboards: { Args: { _limit?: number }; Returns: Json }
       get_weekly_user_stats: { Args: { _user: string }; Returns: Json }
+      giant_bot_id: { Args: never; Returns: string }
+      has_bot_admin: {
+        Args: { _room: string; _user: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
