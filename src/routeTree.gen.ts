@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WatchRouteImport } from './routes/watch'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SiteRouteImport } from './routes/site'
 import { Route as ReviewsRouteImport } from './routes/reviews'
@@ -19,7 +20,9 @@ import { Route as RecoveryRouteImport } from './routes/recovery'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as OfflineRouteImport } from './routes/offline'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as FeaturesRouteImport } from './routes/features'
 import { Route as AppRouteImport } from './routes/app'
+import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app/index'
 import { Route as SiteRegisterRouteImport } from './routes/site/register'
@@ -60,6 +63,11 @@ import { Route as AppRoomsIdInvitesRouteImport } from './routes/app/rooms.$id.in
 const WatchRoute = WatchRouteImport.update({
   id: '/watch',
   path: '/watch',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -107,9 +115,19 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FeaturesRoute = FeaturesRouteImport.update({
+  id: '/features',
+  path: '/features',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppRoute = AppRouteImport.update({
   id: '/app',
   path: '/app',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -143,9 +161,9 @@ const ProfileIdRoute = ProfileIdRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const FeaturesSlugRoute = FeaturesSlugRouteImport.update({
-  id: '/features/$slug',
-  path: '/features/$slug',
-  getParentRoute: () => rootRouteImport,
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => FeaturesRoute,
 } as any)
 const AppStoriesRoute = AppStoriesRouteImport.update({
   id: '/stories',
@@ -296,7 +314,9 @@ const AppRoomsIdInvitesRoute = AppRoomsIdInvitesRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/app': typeof AppRouteWithChildren
+  '/features': typeof FeaturesRouteWithChildren
   '/login': typeof LoginRoute
   '/offline': typeof OfflineRoute
   '/privacy': typeof PrivacyRoute
@@ -306,6 +326,7 @@ export interface FileRoutesByFullPath {
   '/reviews': typeof ReviewsRoute
   '/site': typeof SiteRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/terms': typeof TermsRoute
   '/watch': typeof WatchRoute
   '/app/account': typeof AppAccountRoute
   '/app/achievements': typeof AppAchievementsRoute
@@ -345,6 +366,8 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/features': typeof FeaturesRouteWithChildren
   '/login': typeof LoginRoute
   '/offline': typeof OfflineRoute
   '/privacy': typeof PrivacyRoute
@@ -354,6 +377,7 @@ export interface FileRoutesByTo {
   '/reviews': typeof ReviewsRoute
   '/site': typeof SiteRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/terms': typeof TermsRoute
   '/watch': typeof WatchRoute
   '/app/account': typeof AppAccountRoute
   '/app/achievements': typeof AppAchievementsRoute
@@ -393,7 +417,9 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/app': typeof AppRouteWithChildren
+  '/features': typeof FeaturesRouteWithChildren
   '/login': typeof LoginRoute
   '/offline': typeof OfflineRoute
   '/privacy': typeof PrivacyRoute
@@ -403,6 +429,7 @@ export interface FileRoutesById {
   '/reviews': typeof ReviewsRoute
   '/site': typeof SiteRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/terms': typeof TermsRoute
   '/watch': typeof WatchRoute
   '/app/account': typeof AppAccountRoute
   '/app/achievements': typeof AppAchievementsRoute
@@ -444,7 +471,9 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/about'
     | '/app'
+    | '/features'
     | '/login'
     | '/offline'
     | '/privacy'
@@ -454,6 +483,7 @@ export interface FileRouteTypes {
     | '/reviews'
     | '/site'
     | '/sitemap.xml'
+    | '/terms'
     | '/watch'
     | '/app/account'
     | '/app/achievements'
@@ -493,6 +523,8 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/about'
+    | '/features'
     | '/login'
     | '/offline'
     | '/privacy'
@@ -502,6 +534,7 @@ export interface FileRouteTypes {
     | '/reviews'
     | '/site'
     | '/sitemap.xml'
+    | '/terms'
     | '/watch'
     | '/app/account'
     | '/app/achievements'
@@ -540,7 +573,9 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/about'
     | '/app'
+    | '/features'
     | '/login'
     | '/offline'
     | '/privacy'
@@ -550,6 +585,7 @@ export interface FileRouteTypes {
     | '/reviews'
     | '/site'
     | '/sitemap.xml'
+    | '/terms'
     | '/watch'
     | '/app/account'
     | '/app/achievements'
@@ -590,7 +626,9 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AboutRoute: typeof AboutRoute
   AppRoute: typeof AppRouteWithChildren
+  FeaturesRoute: typeof FeaturesRouteWithChildren
   LoginRoute: typeof LoginRoute
   OfflineRoute: typeof OfflineRoute
   PrivacyRoute: typeof PrivacyRoute
@@ -600,8 +638,8 @@ export interface RootRouteChildren {
   ReviewsRoute: typeof ReviewsRoute
   SiteRoute: typeof SiteRouteWithChildren
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  TermsRoute: typeof TermsRoute
   WatchRoute: typeof WatchRoute
-  FeaturesSlugRoute: typeof FeaturesSlugRoute
   ProfileIdRoute: typeof ProfileIdRoute
   ApiPublicGiantBotWebhookRoute: typeof ApiPublicGiantBotWebhookRoute
   ApiPublicOtaPublishRoute: typeof ApiPublicOtaPublishRoute
@@ -615,6 +653,13 @@ declare module '@tanstack/react-router' {
       path: '/watch'
       fullPath: '/watch'
       preLoaderRoute: typeof WatchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sitemap.xml': {
@@ -680,11 +725,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/features': {
+      id: '/features'
+      path: '/features'
+      fullPath: '/features'
+      preLoaderRoute: typeof FeaturesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app': {
       id: '/app'
       path: '/app'
       fullPath: '/app'
       preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -731,10 +790,10 @@ declare module '@tanstack/react-router' {
     }
     '/features/$slug': {
       id: '/features/$slug'
-      path: '/features/$slug'
+      path: '/$slug'
       fullPath: '/features/$slug'
       preLoaderRoute: typeof FeaturesSlugRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof FeaturesRoute
     }
     '/app/stories': {
       id: '/app/stories'
@@ -1024,6 +1083,18 @@ const AppRouteChildren: AppRouteChildren = {
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
+interface FeaturesRouteChildren {
+  FeaturesSlugRoute: typeof FeaturesSlugRoute
+}
+
+const FeaturesRouteChildren: FeaturesRouteChildren = {
+  FeaturesSlugRoute: FeaturesSlugRoute,
+}
+
+const FeaturesRouteWithChildren = FeaturesRoute._addFileChildren(
+  FeaturesRouteChildren,
+)
+
 interface SiteRouteChildren {
   SiteAccountRoute: typeof SiteAccountRoute
   SiteLoginRoute: typeof SiteLoginRoute
@@ -1040,7 +1111,9 @@ const SiteRouteWithChildren = SiteRoute._addFileChildren(SiteRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AboutRoute: AboutRoute,
   AppRoute: AppRouteWithChildren,
+  FeaturesRoute: FeaturesRouteWithChildren,
   LoginRoute: LoginRoute,
   OfflineRoute: OfflineRoute,
   PrivacyRoute: PrivacyRoute,
@@ -1050,8 +1123,8 @@ const rootRouteChildren: RootRouteChildren = {
   ReviewsRoute: ReviewsRoute,
   SiteRoute: SiteRouteWithChildren,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  TermsRoute: TermsRoute,
   WatchRoute: WatchRoute,
-  FeaturesSlugRoute: FeaturesSlugRoute,
   ProfileIdRoute: ProfileIdRoute,
   ApiPublicGiantBotWebhookRoute: ApiPublicGiantBotWebhookRoute,
   ApiPublicOtaPublishRoute: ApiPublicOtaPublishRoute,
