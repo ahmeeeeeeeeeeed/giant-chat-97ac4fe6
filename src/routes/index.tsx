@@ -208,6 +208,8 @@ function PublicWebsite() {
   const [version, setVersion] = useState<string | null>(null);
   const [size, setSize] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [starting, setStarting] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -233,6 +235,22 @@ function PublicWebsite() {
 
   const sizeMb = size && size > 0 ? `${(size / (1024 * 1024)).toFixed(1)} MB` : "";
 
+  const startDownload = () => {
+    if (!downloadUrl) return;
+    setStarting(true);
+    const a = document.createElement("a");
+    a.href = downloadUrl;
+    a.download = "";
+    a.rel = "noopener";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => {
+      setStarting(false);
+      setConfirmOpen(false);
+    }, 1200);
+  };
+
   const DownloadButton = ({ large = false }: { large?: boolean }) => {
     if (loading) {
       return <div className={`animate-pulse rounded-2xl bg-card ${large ? "h-16 w-full max-w-sm" : "h-11 w-32"}`} />;
@@ -242,32 +260,32 @@ function PublicWebsite() {
     }
     if (large) {
       return (
-        <a href={downloadUrl} download className="group relative flex h-16 w-full max-w-sm items-center justify-center gap-3 overflow-hidden rounded-2xl bg-gradient-to-r from-primary via-emerald-500 to-success px-6 text-lg font-extrabold text-primary-foreground shadow-xl shadow-primary/40 transition hover:scale-[1.02] active:scale-[0.98]">
+        <button type="button" onClick={() => setConfirmOpen(true)} className="group relative flex h-16 w-full max-w-sm items-center justify-center gap-3 overflow-hidden rounded-2xl bg-gradient-to-r from-primary via-emerald-500 to-success px-6 text-lg font-extrabold text-primary-foreground shadow-xl shadow-primary/40 transition hover:scale-[1.02] active:scale-[0.98]">
           <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-1000 group-hover:translate-x-full" />
           <Download className="h-6 w-6" />
           <span className="flex flex-col items-start leading-tight">
             <span>تحميل التطبيق مباشرة</span>
             {version && <span className="text-[11px] font-medium opacity-90">آخر إصدار v{version}{sizeMb && ` • ${sizeMb}`}</span>}
           </span>
-        </a>
+        </button>
       );
     }
     return (
-      <a href={downloadUrl} download className="flex h-11 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground shadow-md shadow-primary/30 transition hover:opacity-90">
+      <button type="button" onClick={() => setConfirmOpen(true)} className="flex h-11 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground shadow-md shadow-primary/30 transition hover:opacity-90">
         <Download className="h-4 w-4" /> تحميل
-      </a>
+      </button>
     );
   };
 
   const features = [
-    { Icon: MessageCircle, title: "محادثات فورية", desc: "دردشات خاصة وجماعية لحظية مع صور وفيديو ورسائل صوتية، تجربة سلسة بإشعارات مباشرة.", img: siteChat },
-    { Icon: Users, title: "غرف صوتية حية", desc: "ادخل غرفاً صوتية متعددة المتحدثين، أنشئ غرفتك الخاصة، وتفاعل مع جمهورك مباشرة.", img: siteRooms },
-    { Icon: Music, title: "موسيقى مشتركة", desc: "شغّل الأغاني داخل الغرف ومع أصدقائك، مع مزامنة لحظية ومؤثرات بصرية رائعة.", img: siteMusic },
-    { Icon: Trophy, title: "ملف شخصي وإنجازات", desc: "اصنع هويتك بشارات، إطارات، وإنجازات وارتقِ بالمستوى يومياً.", img: siteProfile },
-    { Icon: Sparkles, title: "ألعاب ومسابقات", desc: "ألعاب ممتعة داخل التطبيق، لوحات شرف، وجوائز يومية للمتفوقين.", img: siteGames },
-    { Icon: Gift, title: "متجر الهدايا الفاخر", desc: "هدايا متحركة بتصميم احترافي، عناصر مميزة، وعروض حصرية بشكل دوري.", img: siteStore },
-    { Icon: Heart, title: "مجتمع نابض", desc: "منشورات، قصص يومية، تعليقات وردود فعل تجمعك مع أصدقائك في تجربة واحدة.", img: siteCommunity },
-    { Icon: Bell, title: "إشعارات ذكية", desc: "تنبيهات لحظية للرسائل، الطلبات، التفاعلات — كل شيء بمكان واحد منظم.", img: siteNotifications },
+    { slug: "chat", Icon: MessageCircle, title: "محادثات فورية", desc: "دردشات خاصة وجماعية لحظية مع صور وفيديو ورسائل صوتية، تجربة سلسة بإشعارات مباشرة.", img: siteChat },
+    { slug: "rooms", Icon: Users, title: "غرف صوتية حية", desc: "ادخل غرفاً صوتية متعددة المتحدثين، أنشئ غرفتك الخاصة، وتفاعل مع جمهورك مباشرة.", img: siteRooms },
+    { slug: "music", Icon: Music, title: "موسيقى مشتركة", desc: "شغّل الأغاني داخل الغرف ومع أصدقائك، مع مزامنة لحظية ومؤثرات بصرية رائعة.", img: siteMusic },
+    { slug: "profile", Icon: Trophy, title: "ملف شخصي وإنجازات", desc: "اصنع هويتك بشارات، إطارات، وإنجازات وارتقِ بالمستوى يومياً.", img: siteProfile },
+    { slug: "games", Icon: Sparkles, title: "ألعاب ومسابقات", desc: "ألعاب ممتعة داخل التطبيق، لوحات شرف، وجوائز يومية للمتفوقين.", img: siteGames },
+    { slug: "store", Icon: Gift, title: "متجر الهدايا الفاخر", desc: "هدايا متحركة بتصميم احترافي، عناصر مميزة، وعروض حصرية بشكل دوري.", img: siteStore },
+    { slug: "community", Icon: Heart, title: "مجتمع نابض", desc: "منشورات، قصص يومية، تعليقات وردود فعل تجمعك مع أصدقائك في تجربة واحدة.", img: siteCommunity },
+    { slug: "notifications", Icon: Bell, title: "إشعارات ذكية", desc: "تنبيهات لحظية للرسائل، الطلبات، التفاعلات — كل شيء بمكان واحد منظم.", img: siteNotifications },
   ];
 
   return (
@@ -292,13 +310,15 @@ function PublicWebsite() {
           <div className="flex items-center gap-2">
             <Link to="/reviews" className="inline-flex rounded-full border border-border bg-card px-3 py-2 text-xs font-bold text-foreground transition hover:bg-accent sm:hidden">التقييمات</Link>
             <Link to="/site/login" className="inline-flex rounded-full border border-primary/40 bg-primary/10 px-3 py-2 text-xs font-bold text-foreground transition hover:bg-primary/20 sm:px-4">دخول الموقع</Link>
-            <DownloadButton />
+            <a href="#download" className="flex h-11 items-center gap-2 rounded-xl border border-primary/40 bg-card px-4 text-sm font-bold text-primary transition hover:bg-primary/10">
+              <Download className="h-4 w-4" /> تحميل
+            </a>
           </div>
         </div>
       </header>
 
       {/* Hero */}
-      <section id="download" className="relative overflow-hidden">
+      <section className="relative overflow-hidden">
         <div className="pointer-events-none absolute -top-40 right-1/4 h-[28rem] w-[28rem] rounded-full bg-primary/25 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-32 left-1/4 h-[28rem] w-[28rem] rounded-full bg-emerald-400/15 blur-3xl" />
 
@@ -318,7 +338,15 @@ function PublicWebsite() {
             </p>
 
             <div className="mt-9 flex flex-col gap-3">
-              <DownloadButton large />
+              <a href="#features" className="group relative flex h-16 w-full max-w-sm items-center justify-center gap-3 overflow-hidden rounded-2xl bg-gradient-to-r from-primary via-emerald-500 to-success px-6 text-lg font-extrabold text-primary-foreground shadow-xl shadow-primary/40 transition hover:scale-[1.02] active:scale-[0.98]">
+                <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-1000 group-hover:translate-x-full" />
+                <Sparkles className="h-6 w-6" />
+                <span className="flex flex-col items-start leading-tight">
+                  <span>اكتشف مميزات Giant</span>
+                  <span className="text-[11px] font-medium opacity-90">تصفّح المميزات ثم حمّل التطبيق</span>
+                </span>
+              </a>
+
 
               <Link to="/reviews" className="inline-flex items-center justify-center gap-2 rounded-full border border-yellow-400/40 bg-yellow-400/10 px-5 py-2.5 text-sm font-bold text-yellow-500 transition hover:bg-yellow-400/20">
                 <span className="flex items-center gap-1" dir="ltr">
@@ -422,11 +450,14 @@ function PublicWebsite() {
                   </div>
                   <h3 className="text-2xl font-extrabold md:text-3xl">{f.title}</h3>
                   <p className="mt-4 max-w-md text-base leading-relaxed text-muted-foreground">{f.desc}</p>
+                  <Link to="/features/$slug" params={{ slug: f.slug }} className="mt-5 inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-4 py-2 text-sm font-bold text-primary transition hover:bg-primary/20">
+                    اعرف المزيد عن مهام هذا الزر <ArrowRight className="h-4 w-4 rtl:rotate-180" />
+                  </Link>
                 </div>
-                <div className="relative mx-auto w-full max-w-xs">
+                <Link to="/features/$slug" params={{ slug: f.slug }} className="relative mx-auto block w-full max-w-xs transition hover:scale-[1.02]">
                   <div className="absolute inset-0 -z-10 rounded-3xl bg-gradient-to-br from-primary/25 to-transparent blur-2xl" />
                   <img src={f.img} alt={f.title} width={832} height={1216} loading="lazy" className="w-full rounded-3xl border border-border/60 shadow-xl" />
-                </div>
+                </Link>
               </div>
             ))}
           </div>
@@ -562,15 +593,21 @@ function PublicWebsite() {
         </div>
       </section>
 
-      {/* Final CTA */}
-      <section className="relative overflow-hidden border-b border-border/60 bg-gradient-to-br from-primary/15 via-background to-emerald-500/10">
+      {/* Final CTA — download lives here at the bottom */}
+      <section id="download" className="relative overflow-hidden border-b border-border/60 bg-gradient-to-br from-primary/15 via-background to-emerald-500/10 scroll-mt-20">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,theme(colors.primary/0.15),transparent_70%)]" />
         <div className="relative mx-auto flex max-w-4xl flex-col items-center px-5 py-20 text-center">
+          <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3.5 py-1.5 text-xs font-bold text-primary">
+            <Download className="h-3.5 w-3.5" /> التحميل الرسمي
+          </span>
           <h2 className="text-3xl font-black md:text-5xl">جاهز لتبدأ؟</h2>
           <p className="mt-4 max-w-lg text-muted-foreground">حمّل Giant الآن واستمتع بتجربة مجتمع كاملة على هاتفك.</p>
           <div className="mt-8 flex justify-center">
             <DownloadButton large />
           </div>
+          {version && (
+            <p className="mt-4 text-xs text-muted-foreground">آخر إصدار v{version}{sizeMb && ` • ${sizeMb}`} • متوافق مع Android 7+</p>
+          )}
         </div>
       </section>
 
@@ -589,6 +626,83 @@ function PublicWebsite() {
           <span>© {new Date().getFullYear()} Giant. جميع الحقوق محفوظة.</span>
         </div>
       </footer>
+
+      {/* Custom download confirmation modal */}
+      {confirmOpen && downloadUrl && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+          onClick={() => !starting && setConfirmOpen(false)}
+        >
+          <div
+            className="relative w-full max-w-md overflow-hidden rounded-3xl border border-primary/30 bg-card shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+            dir="rtl"
+          >
+            <div className="relative h-28 overflow-hidden bg-gradient-to-br from-primary via-emerald-500 to-success">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.25),transparent_60%)]" />
+              <div className="relative flex h-full items-center justify-center">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/15 ring-2 ring-white/40 backdrop-blur">
+                  <Download className="h-8 w-8 text-white" />
+                </div>
+              </div>
+            </div>
+            <div className="px-6 py-6 text-center">
+              <h3 className="text-xl font-black">تحميل تطبيق Giant</h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                أنت على وشك تنزيل أحدث إصدار رسمي من تطبيق Giant مباشرة من خوادمنا الآمنة.
+              </p>
+              <div className="mt-5 grid grid-cols-3 gap-2 text-center">
+                <div className="rounded-xl border border-border bg-background/50 p-2.5">
+                  <div className="text-[10px] font-bold text-muted-foreground">الإصدار</div>
+                  <div className="mt-0.5 text-sm font-extrabold text-primary">v{version ?? "—"}</div>
+                </div>
+                <div className="rounded-xl border border-border bg-background/50 p-2.5">
+                  <div className="text-[10px] font-bold text-muted-foreground">الحجم</div>
+                  <div className="mt-0.5 text-sm font-extrabold text-primary">{sizeMb || "—"}</div>
+                </div>
+                <div className="rounded-xl border border-border bg-background/50 p-2.5">
+                  <div className="text-[10px] font-bold text-muted-foreground">النظام</div>
+                  <div className="mt-0.5 text-sm font-extrabold text-primary">Android 7+</div>
+                </div>
+              </div>
+              <div className="mt-5 flex items-start gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 text-start text-xs text-emerald-600 dark:text-emerald-400">
+                <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>ملف رسمي وآمن — موقّع بمفتاح المطور وخالٍ من أي تعديلات.</span>
+              </div>
+              <div className="mt-6 flex flex-col gap-2">
+                <button
+                  type="button"
+                  onClick={startDownload}
+                  disabled={starting}
+                  className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-primary to-emerald-500 text-base font-extrabold text-primary-foreground shadow-lg shadow-primary/30 transition active:scale-[0.98] disabled:opacity-70"
+                >
+                  {starting ? (
+                    <>
+                      <Loader2 className="h-5 w-5 animate-spin" /> جارٍ بدء التحميل…
+                    </>
+                  ) : (
+                    <>
+                      <Download className="h-5 w-5" /> ابدأ التحميل الآن
+                    </>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => !starting && setConfirmOpen(false)}
+                  className="h-11 w-full rounded-2xl border border-border bg-background text-sm font-bold text-muted-foreground transition hover:bg-accent"
+                >
+                  إلغاء
+                </button>
+              </div>
+              <p className="mt-4 text-[11px] text-muted-foreground">
+                بعد التثبيت، ستصلك التحديثات تلقائياً من داخل التطبيق.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
