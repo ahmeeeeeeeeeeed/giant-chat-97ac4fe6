@@ -103,6 +103,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "preconnect", href: "https://gfuusohydgpumgardbyn.supabase.co", crossOrigin: "anonymous" },
       { rel: "dns-prefetch", href: "https://gfuusohydgpumgardbyn.supabase.co" },
     ],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          name: "Giant",
+          url: "https://giant-chat.lovable.app",
+          inLanguage: "ar",
+        }),
+      },
+    ],
   }),
   shellComponent: RootShell,
   component: RootComponent,
