@@ -686,28 +686,6 @@ function RoomPage() {
             <div className="rounded-2xl border border-red-500/30 bg-red-500/10 px-5 py-4 text-red-500 font-bold flex items-center gap-2">
               <Ban className="h-5 w-5" /> أنت محظور من هذه الغرفة
             </div>
-          ) : askPassword ? (
-            <div className="w-full max-w-sm space-y-3">
-              <p className="text-sm text-muted-foreground">هذه غرفة خاصة — أدخل كلمة المرور:</p>
-              <input
-                type="password" value={joinPw} onChange={(e) => setJoinPw(e.target.value)}
-                autoFocus placeholder="كلمة المرور"
-                className="h-12 w-full rounded-2xl border border-input bg-background px-4 text-center text-sm outline-none focus:border-primary"
-              />
-              <div className="flex gap-2">
-                <button
-                  onClick={() => { setAskPassword(false); setJoinPw(""); }}
-                  className="flex-1 h-12 rounded-2xl border border-border font-semibold"
-                >إلغاء</button>
-                <button
-                  onClick={() => tryJoin(joinPw)} disabled={joining || !joinPw}
-                  className="flex-1 h-12 rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-bold disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  {joining ? <Loader2 className="h-5 w-5 animate-spin" /> : <KeyRound className="h-5 w-5" />}
-                  دخول
-                </button>
-              </div>
-            </div>
           ) : (
             <button
               onClick={() => tryJoin()} disabled={joining || !room.is_active}
