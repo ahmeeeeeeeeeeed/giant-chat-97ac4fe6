@@ -10,6 +10,7 @@ import { RoomEntryEffect, type EntryBurst, type EntryEffectType } from "@/compon
 import { cacheGet, cacheSet, cacheKeys } from "@/lib/offline-cache";
 import { getOnline } from "@/lib/use-online";
 import { StoryRing } from "@/components/StoryRing";
+import { EquippedFrame, EquippedEffectFloat, EquippedBadgeChip } from "@/components/EquippedDecor";
 
 export const Route = createFileRoute("/app/profile/$id")({
   component: OtherProfilePage,
@@ -202,19 +203,25 @@ function OtherProfilePage() {
           <div className="flex flex-col items-center text-center">
             {/* Avatar */}
             <StoryRing userId={profile.id} size="xl">
-              <div className="relative h-28 w-28 overflow-hidden rounded-full bg-primary text-4xl font-bold text-primary-foreground ring-4 ring-background shadow-xl">
-                {profile.avatar_url ? (
-                  <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" />
-                ) : (
-                  <span className="flex h-full w-full items-center justify-center">
-                    {profile.username.charAt(0).toUpperCase()}
-                  </span>
-                )}
-              </div>
+              <EquippedFrame userId={profile.id} padding={4}>
+                <div className="relative h-28 w-28 overflow-hidden rounded-full bg-primary text-4xl font-bold text-primary-foreground ring-4 ring-background shadow-xl">
+                  {profile.avatar_url ? (
+                    <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="flex h-full w-full items-center justify-center">
+                      {profile.username.charAt(0).toUpperCase()}
+                    </span>
+                  )}
+                  <EquippedEffectFloat userId={profile.id} />
+                </div>
+              </EquippedFrame>
             </StoryRing>
 
             {/* Username */}
-            <h1 className="mt-4 text-2xl font-extrabold">{profile.username}</h1>
+            <h1 className="mt-4 flex items-center justify-center gap-2 text-2xl font-extrabold">
+              <span>{profile.username}</span>
+              <EquippedBadgeChip userId={profile.id} />
+            </h1>
             
             {/* Points & Status */}
             <div className="mt-2 flex flex-wrap items-center justify-center gap-2">

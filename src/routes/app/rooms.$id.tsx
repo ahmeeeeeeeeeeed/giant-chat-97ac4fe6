@@ -31,6 +31,7 @@ import { ensureMediaLibraryPermission } from "@/lib/app-permissions";
 import { cacheGet, cacheSet, cacheKeys } from "@/lib/offline-cache";
 import { getOnline, useOnline } from "@/lib/use-online";
 import { UserBadgesInline } from "@/components/UserBadges";
+import { EquippedBadgeChip, EquippedFrame } from "@/components/EquippedDecor";
 import { StoryRing } from "@/components/StoryRing";
 import { RoomVoiceStage } from "@/components/RoomVoiceStage";
 import { ReportModal } from "@/components/ReportModal";
@@ -1024,6 +1025,7 @@ function RoomPage() {
                     >
                       {displayName}
                     </button>
+                    {msg.user_id && <EquippedBadgeChip userId={msg.user_id} />}
                     {msg.user_id && <UserBadgesInline userId={msg.user_id} size={12} max={3} />}
                     <span className="text-[10px] text-muted-foreground/70" suppressHydrationWarning>
                       {time}
@@ -1463,9 +1465,11 @@ function SettingsSheet({ roomId, room, canModerate, myRank, isOwner, ownerId, on
                           <li key={m.user_id} className="flex items-center gap-3 rounded-xl bg-background border border-border/50 p-3 hover:border-emerald-500/30 transition">
                             <div className="relative">
                               <StoryRing userId={m.user_id} size="sm">
-                                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-bold overflow-hidden">
-                                  {p?.avatar_url ? <img src={p.avatar_url} alt="" className="h-full w-full object-cover" /> : (p?.username?.[0] ?? "?")}
-                                </div>
+                                <EquippedFrame userId={m.user_id} padding={2}>
+                                  <div className="h-10 w-10 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-bold overflow-hidden">
+                                    {p?.avatar_url ? <img src={p.avatar_url} alt="" className="h-full w-full object-cover" /> : (p?.username?.[0] ?? "?")}
+                                  </div>
+                                </EquippedFrame>
                               </StoryRing>
                               {m.rank === "owner" && (
                                 <Crown className="absolute -top-1 -end-1 h-4 w-4 text-amber-500 fill-amber-500" />
@@ -1475,6 +1479,7 @@ function SettingsSheet({ roomId, room, canModerate, myRank, isOwner, ownerId, on
                               <div className="flex items-center gap-2">
                                 <span className="font-semibold truncate">{p?.username ?? "..."}</span>
                                 <RankBadge rank={m.rank} />
+                                <EquippedBadgeChip userId={m.user_id} />
                                 <UserBadgesInline userId={m.user_id} size={12} max={3} />
                               </div>
                             </div>
