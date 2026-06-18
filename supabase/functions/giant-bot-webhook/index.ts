@@ -195,9 +195,14 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 204 });
   if (req.method !== "POST") return jsonText("Method Not Allowed", 405);
 
-  const expected = Deno.env.get("GIANT_BOT_WEBHOOK_SECRET") || "";
+  const url = Deno.env.get("SUPABASE_URL");
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!url || !serviceKey) return jsonText("Server configuration error", 500);
+  const authDb = createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
+  const { data: cfg } = await authDb.from("bot_config").select("value").eq("key", "webhook_secret").maybeSingle();
+  const expected = cfg?.value || "";
   const incoming = req.headers.get("x-bot-secret") || "";
-  if (expected && incoming !== expected) return jsonText("Unauthorized", 401);
+  if (!expected || incoming !== expected) return jsonText("Unauthorized", 401);
 
   let payload: Payload;
   try { payload = await req.json(); } catch { return jsonText("Bad Request", 400); }
