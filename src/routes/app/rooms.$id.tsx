@@ -60,8 +60,9 @@ function RoomPage() {
   const [showSettings, setShowSettings] = useState(false);
   const [settingsTab, setSettingsTab] = useState<SettingsTab>("members");
   const [showShare, setShowShare] = useState(false);
-  const [askPassword, setAskPassword] = useState(false);
-  const [joinPw, setJoinPw] = useState("");
+  // password modals removed — private rooms are invite-only
+  const [, setAskPassword] = useState(false);
+  const [, setJoinPw] = useState("");
   const [joining, setJoining] = useState(false);
   const [isBanned, setIsBanned] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
@@ -389,23 +390,23 @@ function RoomPage() {
 
 
 
-  const tryJoin = async (pw?: string) => {
+  const tryJoin = async (_pw?: string) => {
     if (!user || !room) return;
     const banned = await checkBanned();
     if (banned) { toast.error("أنت محظور من هذه الغرفة"); return; }
-    if (room.type === "private" && !pw) { setAskPassword(true); return; }
 
     setJoining(true);
-    const { error } = await supabase.rpc("room_join", { _room: roomId, _password: pw ?? "" });
+    // الغرف الخاصة بدون كلمة مرور — الوصول عبر الدعوة فقط
+    const { error } = await supabase.rpc("room_join", { _room: roomId, _password: "" });
     setJoining(false);
 
     if (error) {
       const msg = error.message || "";
-      if (msg.includes("wrong_password")) toast.error("كلمة المرور غير صحيحة");
-      else if (msg.includes("banned")) toast.error("أنت محظور من هذه الغرفة");
+      if (msg.includes("banned")) toast.error("أنت محظور من هذه الغرفة");
       else if (msg.includes("room_full")) toast.error("الغرفة ممتلئة");
       else if (msg.includes("room_inactive")) toast.error("الغرفة موقوفة");
       else if (msg.includes("room_not_found")) toast.error("الغرفة غير موجودة");
+      else if (msg.includes("not_invited") || msg.includes("private")) toast.error("هذه غرفة خاصة — تحتاج دعوة من المالك");
       else toast.error("فشل الانضمام: " + msg);
       return;
     }
@@ -686,28 +687,6 @@ function RoomPage() {
             <div className="rounded-2xl border border-red-500/30 bg-red-500/10 px-5 py-4 text-red-500 font-bold flex items-center gap-2">
               <Ban className="h-5 w-5" /> أنت محظور من هذه الغرفة
             </div>
-          ) : askPassword ? (
-            <div className="w-full max-w-sm space-y-3">
-              <p className="text-sm text-muted-foreground">هذه غرفة خاصة — أدخل كلمة المرور:</p>
-              <input
-                type="password" value={joinPw} onChange={(e) => setJoinPw(e.target.value)}
-                autoFocus placeholder="كلمة المرور"
-                className="h-12 w-full rounded-2xl border border-input bg-background px-4 text-center text-sm outline-none focus:border-primary"
-              />
-              <div className="flex gap-2">
-                <button
-                  onClick={() => { setAskPassword(false); setJoinPw(""); }}
-                  className="flex-1 h-12 rounded-2xl border border-border font-semibold"
-                >إلغاء</button>
-                <button
-                  onClick={() => tryJoin(joinPw)} disabled={joining || !joinPw}
-                  className="flex-1 h-12 rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-bold disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  {joining ? <Loader2 className="h-5 w-5 animate-spin" /> : <KeyRound className="h-5 w-5" />}
-                  دخول
-                </button>
-              </div>
-            </div>
           ) : (
             <button
               onClick={() => tryJoin()} disabled={joining || !room.is_active}
@@ -738,7 +717,7 @@ function RoomPage() {
             <button onClick={() => navigate({ to: "/app" })} className="rounded-lg p-2 hover:bg-secondary transition shrink-0">
               <ArrowLeft className="h-5 w-5" />
             </button>
-            <button onClick={() => setShowInfo(true)} className="flex items-center gap-2.5 min-w-0 flex-1 text-start">
+            <button onClick={() => canModerate && setShowInfo(true)} className="flex items-center gap-2.5 min-w-0 flex-1 text-start" disabled={!canModerate}>
               <div className="relative shrink-0">
                 <div className={`flex h-11 w-11 items-center justify-center rounded-2xl text-white font-extrabold text-lg shadow-lg ${
                   room.type === "private"
@@ -761,8 +740,6 @@ function RoomPage() {
                 <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
                   <Users className="h-3 w-3" />
                   <span>{memberCount}/{room.max_members}</span>
-                  <span className="text-muted-foreground/40">•</span>
-                  <span className="truncate">{room.type === "private" ? "خاصة" : "عامة"}</span>
                 </div>
               </div>
             </button>
@@ -796,15 +773,19 @@ function RoomPage() {
                   <span className="ms-auto text-[10px] text-muted-foreground">{memberCount}</span>
                 </DropdownMenuItem>
 
-                <DropdownMenuItem onClick={() => openSettingsAt("members")} className="gap-2 cursor-pointer">
-                  <ShieldCheck className="h-4 w-4 text-blue-500" />
-                  <span>المشرفون والمسؤولون</span>
-                </DropdownMenuItem>
+                {canModerate && (
+                  <DropdownMenuItem onClick={() => openSettingsAt("members")} className="gap-2 cursor-pointer">
+                    <ShieldCheck className="h-4 w-4 text-blue-500" />
+                    <span>المشرفون والمسؤولون</span>
+                  </DropdownMenuItem>
+                )}
 
-                <DropdownMenuItem onClick={() => setShowInfo(true)} className="gap-2 cursor-pointer">
-                  <Crown className="h-4 w-4 text-amber-500" />
-                  <span>المالك ومعلومات الغرفة</span>
-                </DropdownMenuItem>
+                {canModerate && (
+                  <DropdownMenuItem onClick={() => setShowInfo(true)} className="gap-2 cursor-pointer">
+                    <Crown className="h-4 w-4 text-amber-500" />
+                    <span>المالك ومعلومات الغرفة</span>
+                  </DropdownMenuItem>
+                )}
 
                 {canModerate && (
                   <DropdownMenuItem onClick={() => openSettingsAt("bans")} className="gap-2 cursor-pointer">
@@ -1137,22 +1118,7 @@ function RoomPage() {
       {showBots && <BotCommandsModal onClose={() => setShowBots(false)} />}
       {showGifts && <GiftPickerModal roomId={roomId} onClose={() => setShowGifts(false)} presetReceiverId={giftPreset} />}
 
-      {askPassword && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setAskPassword(false)}>
-          <div className="w-full max-w-sm rounded-2xl bg-card p-6" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center gap-2 mb-4"><KeyRound className="h-5 w-5 text-amber-500" /><h3 className="font-bold text-lg">كلمة مرور الغرفة</h3></div>
-            <input type="password" value={joinPw} onChange={(e) => setJoinPw(e.target.value)} placeholder="أدخل كلمة المرور" autoFocus
-              className="w-full h-11 rounded-xl border border-input bg-background px-4 text-sm outline-none focus:border-primary mb-4" />
-            <div className="flex gap-2">
-              <button onClick={() => setAskPassword(false)} className="flex-1 h-11 rounded-xl border border-border font-medium">إلغاء</button>
-              <button onClick={() => tryJoin(joinPw)} disabled={joining || !joinPw}
-                className="flex-1 h-11 rounded-xl bg-primary text-primary-foreground font-medium disabled:opacity-50">
-                {joining ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : "دخول"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* تم إلغاء كلمة المرور للغرف الخاصة — الدخول عبر الدعوة فقط */}
 
       {showLeaveConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setShowLeaveConfirm(false)}>
@@ -1439,7 +1405,7 @@ function SettingsSheet({ roomId, room, canModerate, myRank, isOwner, ownerId, on
 
         <div className="flex gap-1 border-b border-border px-2 overflow-x-auto">
           <Tab id="members" icon={<Users className="h-4 w-4" />} label="الأعضاء" />
-          <Tab id="invite" icon={<UserPlus className="h-4 w-4" />} label="دعوة" />
+          <Tab id="invite" icon={<UserPlus className="h-4 w-4" />} label="دعوة" show={canModerate} />
           <Tab id="bans" icon={<Ban className="h-4 w-4" />} label="الحظر" show={canModerate} />
           <Tab id="logs" icon={<FileText className="h-4 w-4" />} label="السجل" show={canModerate} />
           <Tab id="background" icon={<ImageIcon className="h-4 w-4" />} label="خلفية" show={isOwner} />
@@ -1670,13 +1636,8 @@ function ManageTab({ room, roomId, onDeleted }: { room: any; roomId: string; onD
     const { error } = await supabase.from("rooms").update(update).eq("id", roomId);
     if (error) { setSaving(false); toast.error("فشل الحفظ: " + error.message); return; }
 
-    // Password / type changes via secure RPC (owner-only, server-side hashing)
-    if (type === "public") {
-      await supabase.rpc("set_room_password" as never, { _room: roomId, _password: null } as never);
-    } else if (type === "private" && changePw && password.trim()) {
-      const { error: pwErr } = await supabase.rpc("set_room_password" as never, { _room: roomId, _password: password.trim() } as never);
-      if (pwErr) { setSaving(false); toast.error("فشل ضبط كلمة المرور: " + pwErr.message); return; }
-    }
+    // الغرف الخاصة بدون كلمة مرور — نمسح أي كلمة مرور سابقة دائماً
+    await supabase.rpc("set_room_password" as never, { _room: roomId, _password: null } as never);
     setSaving(false);
     toast.success("تم حفظ التغييرات");
     setChangePw(false); setPassword("");
@@ -1716,21 +1677,9 @@ function ManageTab({ room, roomId, onDeleted }: { room: any; roomId: string; onD
       </Field>
 
       {type === "private" && (
-        <Field label="كلمة المرور">
-          {!changePw ? (
-            <button onClick={() => setChangePw(true)}
-              className="w-full h-11 rounded-xl border border-dashed border-amber-500/50 bg-amber-500/5 text-amber-600 text-sm font-bold flex items-center justify-center gap-2">
-              <KeyRound className="h-4 w-4" /> تغيير كلمة المرور
-            </button>
-          ) : (
-            <div className="flex gap-2">
-              <input type="text" value={password} onChange={(e) => setPassword(e.target.value)}
-                placeholder="كلمة مرور جديدة"
-                className="flex-1 h-11 rounded-xl border border-input bg-background px-3 text-sm outline-none focus:border-emerald-500" />
-              <button onClick={() => { setChangePw(false); setPassword(""); }} className="h-11 px-3 rounded-xl border border-border text-xs">إلغاء</button>
-            </div>
-          )}
-        </Field>
+        <div className="text-[12px] text-muted-foreground bg-amber-500/5 border border-amber-500/20 rounded-xl p-3">
+          🔒 الغرف الخاصة لا تستخدم كلمة مرور — الدخول حصرياً عبر الدعوة من المالك أو المسؤولين.
+        </div>
       )}
 
       <Field label={`الحد الأقصى للأعضاء: ${maxMembers}`}>
