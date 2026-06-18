@@ -10,6 +10,7 @@ import { RoomEntryEffect, type EntryBurst, type EntryEffectType } from "@/compon
 import { cacheGet, cacheSet, cacheKeys } from "@/lib/offline-cache";
 import { getOnline } from "@/lib/use-online";
 import { StoryRing } from "@/components/StoryRing";
+import { EquippedFrame, EquippedEffectFloat, EquippedBadgeChip } from "@/components/EquippedDecor";
 
 export const Route = createFileRoute("/app/profile/$id")({
   component: OtherProfilePage,
