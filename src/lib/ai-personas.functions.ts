@@ -708,6 +708,9 @@ async function seedDefaultsInternal() {
     "أنا معجبة 💖", "بُوركت 🌸", "كلام يرفع المعنويات 💕", "🩷",
     "كم هي صادقة ❤️", "أحببت اختيارك للصورة 🌹", "💝", "تذكّرتُ بها أحدًا 🥺",
     "كلام يستحق ❤️", "بسيط وعميق 💖",
+    "this hits 💖", "so soft 🌸", "literally me 🥺", "wow 😍",
+    "saving this ✨", "my heart 💞", "obsessed 🌹", "exactly 💯",
+    "beautifully said ❤️", "tears 🥲💕",
   ];
   const POETRY_COMMENTS = [
     "بيتٌ خالد ✨", "ما أجمل اختيارك 🌿", "📖❤️", "اختيارك راقٍ ⭐",
