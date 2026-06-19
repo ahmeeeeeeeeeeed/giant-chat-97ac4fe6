@@ -2,7 +2,8 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { useOnline } from "@/lib/use-online";
-import { useEvent } from "@/lib/events";
+import { cacheGet, cacheKeys } from "@/lib/offline-cache";
+import { DM_CONVERSATIONS_EVENT, type DMConversation } from "@/lib/dm-delivery";
 
 export function useIsAdmin() {
   const { user } = useAuth();
@@ -38,15 +39,17 @@ export function useUnreadDMCount() {
 
   const load = useCallback(async () => {
     if (!user) return;
+    const cached = await cacheGet<DMConversation[]>(cacheKeys.chatsList(user.id));
+    if (cached) setCount(cached.reduce((sum, c) => sum + c.unread, 0));
     try {
       const { count: c } = await supabase
         .from("direct_messages")
         .select("id", { count: "exact", head: true })
         .eq("receiver_id", user.id)
         .is("read_at", null);
-      setCount(c ?? 0);
+      if (!cached) setCount(c ?? 0);
     } catch {
-      setCount(0);
+      if (!cached) setCount(0);
     }
   }, [user]);
 
@@ -55,15 +58,16 @@ export function useUnreadDMCount() {
     load();
   }, [user, online, load]);
 
-  useEvent("dm_received", (msg) => {
-    if (msg.receiver_id === user?.id && !msg.read_at) {
-      setCount(prev => prev + 1);
-    }
-  });
-
-  useEvent("dm_read", () => {
-    load();
-  });
+  useEffect(() => {
+    if (!user) return;
+    const onConversations = (event: Event) => {
+      const detail = (event as CustomEvent<{ list?: DMConversation[] }>).detail;
+      if (!detail?.list) return;
+      setCount(detail.list.reduce((sum, c) => sum + c.unread, 0));
+    };
+    window.addEventListener(DM_CONVERSATIONS_EVENT, onConversations);
+    return () => window.removeEventListener(DM_CONVERSATIONS_EVENT, onConversations);
+  }, [user?.id]);
 
   return count;
 }
