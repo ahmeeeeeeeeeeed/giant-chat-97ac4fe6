@@ -55,10 +55,12 @@ import { Route as AppAdminUpdatesRouteImport } from './routes/app/admin.updates'
 import { Route as AppAdminStoriesRouteImport } from './routes/app/admin.stories'
 import { Route as AppAdminRoomsRouteImport } from './routes/app/admin.rooms'
 import { Route as AppAdminCommunityRouteImport } from './routes/app/admin.community'
+import { Route as AppAdminAiPersonasRouteImport } from './routes/app/admin.ai-personas'
 import { Route as ApiPublicSearchTrackRouteImport } from './routes/api/public/search-track'
 import { Route as ApiPublicOtaPublishRouteImport } from './routes/api/public/ota-publish'
 import { Route as ApiPublicGiantBotWebhookRouteImport } from './routes/api/public/giant-bot-webhook'
 import { Route as AppRoomsIdInvitesRouteImport } from './routes/app/rooms.$id.invites'
+import { Route as ApiPublicHooksAiPersonasTickRouteImport } from './routes/api/public/hooks/ai-personas-tick'
 
 const WatchRoute = WatchRouteImport.update({
   id: '/watch',
@@ -290,6 +292,11 @@ const AppAdminCommunityRoute = AppAdminCommunityRouteImport.update({
   path: '/community',
   getParentRoute: () => AppAdminRoute,
 } as any)
+const AppAdminAiPersonasRoute = AppAdminAiPersonasRouteImport.update({
+  id: '/ai-personas',
+  path: '/ai-personas',
+  getParentRoute: () => AppAdminRoute,
+} as any)
 const ApiPublicSearchTrackRoute = ApiPublicSearchTrackRouteImport.update({
   id: '/api/public/search-track',
   path: '/api/public/search-track',
@@ -311,6 +318,12 @@ const AppRoomsIdInvitesRoute = AppRoomsIdInvitesRouteImport.update({
   path: '/invites',
   getParentRoute: () => AppRoomsIdRoute,
 } as any)
+const ApiPublicHooksAiPersonasTickRoute =
+  ApiPublicHooksAiPersonasTickRouteImport.update({
+    id: '/api/public/hooks/ai-personas-tick',
+    path: '/api/public/hooks/ai-personas-tick',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -352,6 +365,7 @@ export interface FileRoutesByFullPath {
   '/api/public/giant-bot-webhook': typeof ApiPublicGiantBotWebhookRoute
   '/api/public/ota-publish': typeof ApiPublicOtaPublishRoute
   '/api/public/search-track': typeof ApiPublicSearchTrackRoute
+  '/app/admin/ai-personas': typeof AppAdminAiPersonasRoute
   '/app/admin/community': typeof AppAdminCommunityRoute
   '/app/admin/rooms': typeof AppAdminRoomsRoute
   '/app/admin/stories': typeof AppAdminStoriesRoute
@@ -362,6 +376,7 @@ export interface FileRoutesByFullPath {
   '/app/rooms/$id': typeof AppRoomsIdRouteWithChildren
   '/app/admin/': typeof AppAdminIndexRoute
   '/app/chats/': typeof AppChatsIndexRoute
+  '/api/public/hooks/ai-personas-tick': typeof ApiPublicHooksAiPersonasTickRoute
   '/app/rooms/$id/invites': typeof AppRoomsIdInvitesRoute
 }
 export interface FileRoutesByTo {
@@ -402,6 +417,7 @@ export interface FileRoutesByTo {
   '/api/public/giant-bot-webhook': typeof ApiPublicGiantBotWebhookRoute
   '/api/public/ota-publish': typeof ApiPublicOtaPublishRoute
   '/api/public/search-track': typeof ApiPublicSearchTrackRoute
+  '/app/admin/ai-personas': typeof AppAdminAiPersonasRoute
   '/app/admin/community': typeof AppAdminCommunityRoute
   '/app/admin/rooms': typeof AppAdminRoomsRoute
   '/app/admin/stories': typeof AppAdminStoriesRoute
@@ -412,6 +428,7 @@ export interface FileRoutesByTo {
   '/app/rooms/$id': typeof AppRoomsIdRouteWithChildren
   '/app/admin': typeof AppAdminIndexRoute
   '/app/chats': typeof AppChatsIndexRoute
+  '/api/public/hooks/ai-personas-tick': typeof ApiPublicHooksAiPersonasTickRoute
   '/app/rooms/$id/invites': typeof AppRoomsIdInvitesRoute
 }
 export interface FileRoutesById {
@@ -455,6 +472,7 @@ export interface FileRoutesById {
   '/api/public/giant-bot-webhook': typeof ApiPublicGiantBotWebhookRoute
   '/api/public/ota-publish': typeof ApiPublicOtaPublishRoute
   '/api/public/search-track': typeof ApiPublicSearchTrackRoute
+  '/app/admin/ai-personas': typeof AppAdminAiPersonasRoute
   '/app/admin/community': typeof AppAdminCommunityRoute
   '/app/admin/rooms': typeof AppAdminRoomsRoute
   '/app/admin/stories': typeof AppAdminStoriesRoute
@@ -465,6 +483,7 @@ export interface FileRoutesById {
   '/app/rooms/$id': typeof AppRoomsIdRouteWithChildren
   '/app/admin/': typeof AppAdminIndexRoute
   '/app/chats/': typeof AppChatsIndexRoute
+  '/api/public/hooks/ai-personas-tick': typeof ApiPublicHooksAiPersonasTickRoute
   '/app/rooms/$id/invites': typeof AppRoomsIdInvitesRoute
 }
 export interface FileRouteTypes {
@@ -509,6 +528,7 @@ export interface FileRouteTypes {
     | '/api/public/giant-bot-webhook'
     | '/api/public/ota-publish'
     | '/api/public/search-track'
+    | '/app/admin/ai-personas'
     | '/app/admin/community'
     | '/app/admin/rooms'
     | '/app/admin/stories'
@@ -519,6 +539,7 @@ export interface FileRouteTypes {
     | '/app/rooms/$id'
     | '/app/admin/'
     | '/app/chats/'
+    | '/api/public/hooks/ai-personas-tick'
     | '/app/rooms/$id/invites'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -559,6 +580,7 @@ export interface FileRouteTypes {
     | '/api/public/giant-bot-webhook'
     | '/api/public/ota-publish'
     | '/api/public/search-track'
+    | '/app/admin/ai-personas'
     | '/app/admin/community'
     | '/app/admin/rooms'
     | '/app/admin/stories'
@@ -569,6 +591,7 @@ export interface FileRouteTypes {
     | '/app/rooms/$id'
     | '/app/admin'
     | '/app/chats'
+    | '/api/public/hooks/ai-personas-tick'
     | '/app/rooms/$id/invites'
   id:
     | '__root__'
@@ -611,6 +634,7 @@ export interface FileRouteTypes {
     | '/api/public/giant-bot-webhook'
     | '/api/public/ota-publish'
     | '/api/public/search-track'
+    | '/app/admin/ai-personas'
     | '/app/admin/community'
     | '/app/admin/rooms'
     | '/app/admin/stories'
@@ -621,6 +645,7 @@ export interface FileRouteTypes {
     | '/app/rooms/$id'
     | '/app/admin/'
     | '/app/chats/'
+    | '/api/public/hooks/ai-personas-tick'
     | '/app/rooms/$id/invites'
   fileRoutesById: FileRoutesById
 }
@@ -644,6 +669,7 @@ export interface RootRouteChildren {
   ApiPublicGiantBotWebhookRoute: typeof ApiPublicGiantBotWebhookRoute
   ApiPublicOtaPublishRoute: typeof ApiPublicOtaPublishRoute
   ApiPublicSearchTrackRoute: typeof ApiPublicSearchTrackRoute
+  ApiPublicHooksAiPersonasTickRoute: typeof ApiPublicHooksAiPersonasTickRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -970,6 +996,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminCommunityRouteImport
       parentRoute: typeof AppAdminRoute
     }
+    '/app/admin/ai-personas': {
+      id: '/app/admin/ai-personas'
+      path: '/ai-personas'
+      fullPath: '/app/admin/ai-personas'
+      preLoaderRoute: typeof AppAdminAiPersonasRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
     '/api/public/search-track': {
       id: '/api/public/search-track'
       path: '/api/public/search-track'
@@ -998,10 +1031,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRoomsIdInvitesRouteImport
       parentRoute: typeof AppRoomsIdRoute
     }
+    '/api/public/hooks/ai-personas-tick': {
+      id: '/api/public/hooks/ai-personas-tick'
+      path: '/api/public/hooks/ai-personas-tick'
+      fullPath: '/api/public/hooks/ai-personas-tick'
+      preLoaderRoute: typeof ApiPublicHooksAiPersonasTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 interface AppAdminRouteChildren {
+  AppAdminAiPersonasRoute: typeof AppAdminAiPersonasRoute
   AppAdminCommunityRoute: typeof AppAdminCommunityRoute
   AppAdminRoomsRoute: typeof AppAdminRoomsRoute
   AppAdminStoriesRoute: typeof AppAdminStoriesRoute
@@ -1011,6 +1052,7 @@ interface AppAdminRouteChildren {
 }
 
 const AppAdminRouteChildren: AppAdminRouteChildren = {
+  AppAdminAiPersonasRoute: AppAdminAiPersonasRoute,
   AppAdminCommunityRoute: AppAdminCommunityRoute,
   AppAdminRoomsRoute: AppAdminRoomsRoute,
   AppAdminStoriesRoute: AppAdminStoriesRoute,
@@ -1129,17 +1171,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicGiantBotWebhookRoute: ApiPublicGiantBotWebhookRoute,
   ApiPublicOtaPublishRoute: ApiPublicOtaPublishRoute,
   ApiPublicSearchTrackRoute: ApiPublicSearchTrackRoute,
+  ApiPublicHooksAiPersonasTickRoute: ApiPublicHooksAiPersonasTickRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

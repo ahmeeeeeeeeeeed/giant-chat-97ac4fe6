@@ -104,6 +104,127 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_persona_activity_log: {
+        Row: {
+          action: string
+          created_at: string
+          detail: Json | null
+          id: string
+          persona_id: string
+          target_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          detail?: Json | null
+          id?: string
+          persona_id: string
+          target_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          detail?: Json | null
+          id?: string
+          persona_id?: string
+          target_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_persona_activity_log_persona_id_fkey"
+            columns: ["persona_id"]
+            isOneToOne: false
+            referencedRelation: "ai_personas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_persona_templates: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          kind: string
+          media_url: string | null
+          persona_type: string
+          weight: number
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          kind: string
+          media_url?: string | null
+          persona_type?: string
+          weight?: number
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          media_url?: string | null
+          persona_type?: string
+          weight?: number
+        }
+        Relationships: []
+      }
+      ai_personas: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string
+          display_name: string
+          id: string
+          is_active: boolean
+          last_post_at: string | null
+          last_react_at: string | null
+          persona_type: string
+          post_interval_minutes: number
+          profile_id: string
+          reaction_rate: number
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          display_name: string
+          id?: string
+          is_active?: boolean
+          last_post_at?: string | null
+          last_react_at?: string | null
+          persona_type?: string
+          post_interval_minutes?: number
+          profile_id: string
+          reaction_rate?: number
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          display_name?: string
+          id?: string
+          is_active?: boolean
+          last_post_at?: string | null
+          last_react_at?: string | null
+          persona_type?: string
+          post_interval_minutes?: number
+          profile_id?: string
+          reaction_rate?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_personas_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       announcements: {
         Row: {
           content: string
@@ -1203,6 +1324,7 @@ export type Database = {
           gender: string | null
           hide_last_seen: boolean
           id: string
+          is_ai: boolean
           is_banned: boolean
           is_bot: boolean
           is_premium: boolean
@@ -1232,6 +1354,7 @@ export type Database = {
           gender?: string | null
           hide_last_seen?: boolean
           id: string
+          is_ai?: boolean
           is_banned?: boolean
           is_bot?: boolean
           is_premium?: boolean
@@ -1261,6 +1384,7 @@ export type Database = {
           gender?: string | null
           hide_last_seen?: boolean
           id?: string
+          is_ai?: boolean
           is_banned?: boolean
           is_bot?: boolean
           is_premium?: boolean
