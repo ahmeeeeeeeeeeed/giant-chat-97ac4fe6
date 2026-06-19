@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import {
   ArrowRight, Send, Loader2, ImagePlus, Mic, Square, Play, Pause,
-  MoreVertical, Reply, Copy, Trash2, Share2, BellOff, Bell, Ban, X,
+  MoreVertical, Reply, Copy, Share2, BellOff, Bell, Ban, X,
   Check, CheckCheck, Clock, Phone, Video, PhoneIncoming, PhoneOutgoing, PhoneMissed, History,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -568,19 +568,6 @@ function DMPage() {
     catch { toast.error(t("common.error")); }
     setMenuFor(null);
   };
-  const deleteForMe = async (m: DM) => {
-    setMenuFor(null);
-    const { error } = await supabase.rpc("dm_delete_for_me", { _id: m.id });
-    if (error) { toast.error(t("common.error")); return; }
-    setMessages(old => old.filter(x => x.id !== m.id));
-    toast.success("تم الحذف لديك");
-  };
-  const deleteForAll = async (m: DM) => {
-    setMenuFor(null);
-    const { error } = await supabase.rpc("dm_delete_for_all", { _id: m.id });
-    if (error) { toast.error(t("common.error")); return; }
-    toast.success("تم حذف الرسالة للجميع");
-  };
   const shareMessage = async (m: DM) => {
     setMenuFor(null);
     const txt = m.content || m.media_url || "";
@@ -795,10 +782,6 @@ function DMPage() {
                               <ActionItem icon={<Reply className="h-4 w-4" />} label="رد" onClick={() => { setReplyTo(m); setMenuFor(null); }} />
                               <ActionItem icon={<Copy className="h-4 w-4" />} label="نسخ" onClick={() => copyMessage(m)} />
                               <ActionItem icon={<Share2 className="h-4 w-4" />} label="مشاركة" onClick={() => shareMessage(m)} />
-                              <ActionItem icon={<Trash2 className="h-4 w-4" />} label="حذف لدي فقط" onClick={() => deleteForMe(m)} />
-                              {mine && (
-                                <ActionItem icon={<Trash2 className="h-4 w-4 text-destructive" />} label="حذف لدى الجميع" onClick={() => deleteForAll(m)} destructive />
-                              )}
                             </div>
                           </>
                         )}
