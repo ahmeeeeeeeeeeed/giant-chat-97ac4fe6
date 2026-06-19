@@ -225,94 +225,90 @@ async function runCycleInternal() {
   for (const p of personas) {
     try {
       const lastPost = p.last_post_at ? new Date(p.last_post_at).getTime() : 0;
-      const intervalMs = (p.post_interval_minutes || 180) * 60_000;
+      const intervalMs = (p.post_interval_minutes || 300) * 60_000;
       const dueToPost = now.getTime() - lastPost >= intervalMs;
       console.log(`[ai-personas] ${p.display_name} due=${dueToPost} lastPost=${p.last_post_at || "never"}`);
 
-      if (dueToPost) {
-        const { data: tpls } = await supabaseAdmin
-          .from("ai_persona_templates")
-          .select("*")
-          .eq("persona_type", p.persona_type)
-          .in("kind", ["post", "story"]);
-        const tpl = await pickWeighted((tpls || []) as any);
-        if (!tpl) {
-          console.warn(`[ai-personas] no post/story templates for type=${p.persona_type}`);
-        } else if (tpl.kind === "post") {
-          const { data: post, error } = await supabaseAdmin
-            .from("community_posts")
-            .insert({
-              author_id: p.profile_id,
-              content: tpl.content,
-              media_url: tpl.media_url || null,
-              media_type: tpl.media_url ? "image" : null,
-            } as any).select("id").single();
-          if (error) { stats.errors.push("post:" + error.message); console.error("[ai-personas] post err", error.message); }
-          else {
-            stats.posts++;
-            await supabaseAdmin.from("ai_persona_activity_log").insert({ persona_id: p.id, action: "post", target_id: post?.id || null } as any);
-            await supabaseAdmin.from("ai_personas").update({ last_post_at: now.toISOString() } as any).eq("id", p.id);
-          }
-        } else {
-          const { data: story, error } = await supabaseAdmin
-            .from("stories")
-            .insert({
-              user_id: p.profile_id,
-              content: tpl.content,
-              media_url: tpl.media_url || null,
-              media_type: tpl.media_url ? "image" : null,
-            } as any).select("id").single();
-          if (error) { stats.errors.push("story:" + error.message); console.error("[ai-personas] story err", error.message); }
-          else {
-            stats.stories++;
-            await supabaseAdmin.from("ai_persona_activity_log").insert({ persona_id: p.id, action: "story", target_id: story?.id || null } as any);
-            await supabaseAdmin.from("ai_personas").update({ last_post_at: now.toISOString() } as any).eq("id", p.id);
-          }
+      if (!dueToPost) continue;
+
+      // 1) POST
+      const { data: postTpls } = await supabaseAdmin
+        .from("ai_persona_templates").select("*")
+        .eq("persona_type", p.persona_type).eq("kind", "post");
+      const postTpl = await pickWeighted((postTpls || []) as any);
+      if (postTpl) {
+        const { data: post, error } = await supabaseAdmin
+          .from("community_posts")
+          .insert({
+            author_id: p.profile_id,
+            content: postTpl.content,
+            media_url: postTpl.media_url || null,
+            media_type: postTpl.media_url ? "image" : null,
+          } as any).select("id").single();
+        if (error) { stats.errors.push("post:" + error.message); }
+        else {
+          stats.posts++;
+          await supabaseAdmin.from("ai_persona_activity_log").insert({ persona_id: p.id, action: "post", target_id: post?.id || null } as any);
         }
       }
 
-      // Reactions — first cycle (last_react_at null) always fires to seed visible activity.
-      const firstRun = !p.last_react_at;
-      const shouldReact = firstRun || Math.random() < Number(p.reaction_rate || 0);
-      if (shouldReact) {
-        const since = new Date(now.getTime() - 24 * 60 * 60_000).toISOString();
-        const { data: recent } = await supabaseAdmin
-          .from("community_posts")
-          .select("id, author_id")
-          .gte("created_at", since)
-          .neq("author_id", p.profile_id)
-          .order("created_at", { ascending: false })
-          .limit(20);
-        const pool = (recent || []).slice(0, 10);
-        const likeTargets = [...pool].sort(() => Math.random() - 0.5).slice(0, 3);
-        for (const t of likeTargets) {
-          const { error } = await supabaseAdmin
-            .from("community_reactions")
-            .upsert({ post_id: t.id, user_id: p.profile_id, reaction: "like" } as any);
-          if (!error) {
-            stats.likes++;
-            await supabaseAdmin.from("ai_persona_activity_log").insert({ persona_id: p.id, action: "like", target_id: t.id } as any);
-          }
+      // 2) STORY
+      const { data: storyTpls } = await supabaseAdmin
+        .from("ai_persona_templates").select("*")
+        .eq("persona_type", p.persona_type).eq("kind", "story");
+      const storyTpl = await pickWeighted((storyTpls || []) as any);
+      if (storyTpl) {
+        const { data: story, error } = await supabaseAdmin
+          .from("stories")
+          .insert({
+            user_id: p.profile_id,
+            content: storyTpl.content,
+            media_url: storyTpl.media_url || null,
+            media_type: storyTpl.media_url ? "image" : null,
+          } as any).select("id").single();
+        if (error) { stats.errors.push("story:" + error.message); }
+        else {
+          stats.stories++;
+          await supabaseAdmin.from("ai_persona_activity_log").insert({ persona_id: p.id, action: "story", target_id: story?.id || null } as any);
         }
-        const { data: cTpls } = await supabaseAdmin
-          .from("ai_persona_templates")
-          .select("*")
-          .eq("persona_type", p.persona_type)
-          .eq("kind", "comment");
-        const cTpl = await pickWeighted((cTpls || []) as any);
-        if (cTpl && pool.length) {
-          const target = pool[Math.floor(Math.random() * pool.length)];
-          const { data: comment, error } = await supabaseAdmin
-            .from("community_comments")
-            .insert({ post_id: target.id, author_id: p.profile_id, content: cTpl.content } as any)
-            .select("id").single();
-          if (!error) {
-            stats.comments++;
-            await supabaseAdmin.from("ai_persona_activity_log").insert({ persona_id: p.id, action: "comment", target_id: comment?.id || null } as any);
-          }
-        }
-        await supabaseAdmin.from("ai_personas").update({ last_react_at: now.toISOString() } as any).eq("id", p.id);
       }
+
+      // 3) LIKES + 4) COMMENT
+      const since = new Date(now.getTime() - 24 * 60 * 60_000).toISOString();
+      const { data: recent } = await supabaseAdmin
+        .from("community_posts").select("id, author_id")
+        .gte("created_at", since).neq("author_id", p.profile_id)
+        .order("created_at", { ascending: false }).limit(20);
+      const pool = (recent || []);
+      const likeTargets = [...pool].sort(() => Math.random() - 0.5).slice(0, 2);
+      for (const t of likeTargets) {
+        const { error } = await supabaseAdmin
+          .from("community_reactions")
+          .upsert({ post_id: t.id, user_id: p.profile_id, reaction: "like" } as any);
+        if (!error) {
+          stats.likes++;
+          await supabaseAdmin.from("ai_persona_activity_log").insert({ persona_id: p.id, action: "like", target_id: t.id } as any);
+        }
+      }
+      const { data: cTpls } = await supabaseAdmin
+        .from("ai_persona_templates").select("*")
+        .eq("persona_type", p.persona_type).eq("kind", "comment");
+      const cTpl = await pickWeighted((cTpls || []) as any);
+      if (cTpl && pool.length) {
+        const target = pool[Math.floor(Math.random() * pool.length)];
+        const { data: comment, error } = await supabaseAdmin
+          .from("community_comments")
+          .insert({ post_id: target.id, author_id: p.profile_id, content: cTpl.content } as any)
+          .select("id").single();
+        if (!error) {
+          stats.comments++;
+          await supabaseAdmin.from("ai_persona_activity_log").insert({ persona_id: p.id, action: "comment", target_id: comment?.id || null } as any);
+        }
+      }
+
+      await supabaseAdmin.from("ai_personas")
+        .update({ last_post_at: now.toISOString(), last_react_at: now.toISOString() } as any)
+        .eq("id", p.id);
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       console.error(`[ai-personas] persona ${p.id} failed:`, msg);
@@ -336,32 +332,47 @@ export const runPersonaCycle = createServerFn({ method: "POST" })
 async function seedDefaultsInternal() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-  const defaults = [
-    // friendly (8)
-    { username: "nora_ai", displayName: "نورا", bio: "أحب الحياة والإيجابية ✨", personaType: "friendly", postIntervalMinutes: 180, reactionRate: 0.6 },
-    { username: "sara_ai", displayName: "سارة", bio: "ابتسامة كل يوم 🌸", personaType: "friendly", postIntervalMinutes: 200, reactionRate: 0.55 },
-    { username: "lana_ai", displayName: "لانا", bio: "طاقة إيجابية دائمًا 💫", personaType: "friendly", postIntervalMinutes: 220, reactionRate: 0.5 },
-    { username: "rana_ai", displayName: "رنا", bio: "صديقة الكل 💙", personaType: "friendly", postIntervalMinutes: 240, reactionRate: 0.5 },
-    { username: "huda_ai", displayName: "هدى", bio: "أحب القراءة والهدوء 📖", personaType: "friendly", postIntervalMinutes: 260, reactionRate: 0.45 },
-    { username: "omar_ai", displayName: "عمر", bio: "متفائل دائمًا ☀️", personaType: "friendly", postIntervalMinutes: 200, reactionRate: 0.55 },
-    { username: "ali_ai", displayName: "علي", bio: "محب للسفر والاكتشاف ✈️", personaType: "friendly", postIntervalMinutes: 280, reactionRate: 0.4 },
-    { username: "mona_ai", displayName: "منى", bio: "فنانة وحالمة 🎨", personaType: "friendly", postIntervalMinutes: 240, reactionRate: 0.5 },
-    // news (6)
-    { username: "news_ai", displayName: "أخبار سريعة", bio: "آخر الأخبار والتحديثات", personaType: "news", postIntervalMinutes: 240, reactionRate: 0.4 },
-    { username: "tech_ai", displayName: "تك نيوز", bio: "كل جديد التقنية 💻", personaType: "news", postIntervalMinutes: 300, reactionRate: 0.35 },
-    { username: "sport_ai", displayName: "رياضة اليوم", bio: "نتائج وأخبار الرياضة ⚽", personaType: "news", postIntervalMinutes: 240, reactionRate: 0.4 },
-    { username: "world_ai", displayName: "حول العالم", bio: "أخبار عالمية 🌍", personaType: "news", postIntervalMinutes: 360, reactionRate: 0.3 },
-    { username: "trend_ai", displayName: "ترند", bio: "كل ما هو رائج 🔥", personaType: "news", postIntervalMinutes: 200, reactionRate: 0.5 },
-    { username: "tips_ai", displayName: "نصائح يومية", bio: "نصيحة كل يوم 💡", personaType: "news", postIntervalMinutes: 300, reactionRate: 0.35 },
-    // gamer (6)
-    { username: "gamer_ai", displayName: "اللاعب", bio: "ألعاب ومنافسات 🎮", personaType: "gamer", postIntervalMinutes: 360, reactionRate: 0.5 },
-    { username: "pro_ai", displayName: "برو بلاير", bio: "محترف ألعاب 🏆", personaType: "gamer", postIntervalMinutes: 300, reactionRate: 0.5 },
-    { username: "fps_ai", displayName: "FPS Master", bio: "عشاق التصويب 🎯", personaType: "gamer", postIntervalMinutes: 360, reactionRate: 0.45 },
-    { username: "moba_ai", displayName: "موبا فان", bio: "ألعاب الفرق والاستراتيجية", personaType: "gamer", postIntervalMinutes: 360, reactionRate: 0.4 },
-    { username: "stream_ai", displayName: "ستريمر", bio: "بث مباشر يومي 🎥", personaType: "gamer", postIntervalMinutes: 240, reactionRate: 0.55 },
-    { username: "retro_ai", displayName: "ريترو", bio: "ألعاب الزمن الجميل 👾", personaType: "gamer", postIntervalMinutes: 400, reactionRate: 0.35 },
-  ];
+  // 20 personas: 10 girls + 10 boys, distributed across 4 types (romantic/poetry/hadith/serious).
+  // Each posts every 5 hours (300 min). Staggered start: last_post_at = now - (300 - i*15) min,
+  // so persona i becomes due in i*15 minutes → spread evenly across the 5-hour window.
+  const PRAVATAR = (id: number) => `https://i.pravatar.cc/300?img=${id}`;
+  const girls = [1, 5, 9, 10, 16, 20, 21, 23, 24, 32];
+  const boys  = [3, 7, 8, 11, 12, 13, 14, 15, 17, 18];
+  const types = ["romantic", "poetry", "hadith", "serious"] as const;
+
+  const girlNames = ["نورا", "سارة", "لانا", "رنا", "هدى", "ريم", "مريم", "ليلى", "دانا", "جنى"];
+  const boyNames  = ["عمر", "علي", "أحمد", "محمد", "يوسف", "خالد", "كريم", "زياد", "حسن", "طارق"];
+
+  const defaults: any[] = [];
+  for (let i = 0; i < 10; i++) {
+    defaults.push({
+      username: `girl_${i + 1}_ai`,
+      displayName: girlNames[i],
+      bio: ["قلب حالم 💖", "كلمات وأحاسيس", "بين السطور", "نور وأمل", "أنثى بطبعها 🌸",
+            "روح شاعرة", "هدوء يسبق الكلام", "تفاؤل دائم ☀️", "حُب وحياة", "ابتسامة الصباح"][i],
+      avatarUrl: PRAVATAR(girls[i]),
+      personaType: types[i % 4],
+      postIntervalMinutes: 300,
+      reactionRate: 0.7,
+      staggerIndex: i * 2, // 0,2,4,...18
+    });
+  }
+  for (let i = 0; i < 10; i++) {
+    defaults.push({
+      username: `boy_${i + 1}_ai`,
+      displayName: boyNames[i],
+      bio: ["كلمة حق 🌿", "رجل بكلمته", "بين الجد والمزاح", "أحب الهدوء", "طموح بلا حدود",
+            "قارئ ومفكر 📖", "محب للخير", "صديق وفي", "بسيط وصادق", "متفائل دائمًا"][i],
+      avatarUrl: PRAVATAR(boys[i]),
+      personaType: types[i % 4],
+      postIntervalMinutes: 300,
+      reactionRate: 0.7,
+      staggerIndex: i * 2 + 1, // 1,3,5,...19
+    });
+  }
+
   let createdPersonas = 0;
+  const nowMs = Date.now();
   for (const d of defaults) {
     const email = `ai_${d.username}_${Date.now()}@ai.local`;
     const password = crypto.randomUUID() + crypto.randomUUID();
@@ -371,36 +382,81 @@ async function seedDefaultsInternal() {
     if (ue || !u.user) { console.error("seed user err", ue?.message); continue; }
     const uid = u.user.id;
     await supabaseAdmin.from("profiles").update({
-      is_ai: true, username: d.username, bio: d.bio, dm_locked: true,
+      is_ai: true, username: d.username, bio: d.bio, avatar_url: d.avatarUrl, dm_locked: true,
     }).eq("id", uid);
+    // Staggered last_post_at so first cycle picks up personas at different times
+    const staggerMs = (300 - d.staggerIndex * 15) * 60_000; // shift each by 15 min
+    const lastPostAt = new Date(nowMs - staggerMs).toISOString();
     const { error: ie } = await supabaseAdmin.from("ai_personas").insert({
-      profile_id: uid, display_name: d.displayName, bio: d.bio, persona_type: d.personaType,
+      profile_id: uid, display_name: d.displayName, bio: d.bio, avatar_url: d.avatarUrl,
+      persona_type: d.personaType,
       post_interval_minutes: d.postIntervalMinutes, reaction_rate: d.reactionRate,
+      last_post_at: lastPostAt,
     } as any);
     if (!ie) createdPersonas++;
   }
 
+  // ── Templates: romantic / poetry / hadith / serious — posts (with images), stories, comments
+  const IMG = {
+    rose:    "https://images.unsplash.com/photo-1518895949257-7621c3c786d7?w=800&q=80",
+    sunset:  "https://images.unsplash.com/photo-1495567720989-cebdbdd97913?w=800&q=80",
+    couple:  "https://images.unsplash.com/photo-1518621736915-f3b1c41bfd00?w=800&q=80",
+    heart:   "https://images.unsplash.com/photo-1518895312237-a9e23508077d?w=800&q=80",
+    book:    "https://images.unsplash.com/photo-1455390582262-044cdead277a?w=800&q=80",
+    desert:  "https://images.unsplash.com/photo-1473580044384-7ba9967e16a0?w=800&q=80",
+    pen:     "https://images.unsplash.com/photo-1455390582262-044cdead277a?w=800&q=80",
+    mosque1: "https://images.unsplash.com/photo-1542816417-0983c9c9ad53?w=800&q=80",
+    mosque2: "https://images.unsplash.com/photo-1564769662533-4f00a87b4056?w=800&q=80",
+    quran:   "https://images.unsplash.com/photo-1609599006353-e629aaabfeae?w=800&q=80",
+    light:   "https://images.unsplash.com/photo-1499209974431-9dddcece7f88?w=800&q=80",
+    road:    "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&q=80",
+    mountain:"https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&q=80",
+  };
+
   const templates: any[] = [
-    { persona_type: "friendly", kind: "post", content: "صباح الخير جميعاً ☀️ يوم مليء بالطاقة الإيجابية", weight: 3 },
-    { persona_type: "friendly", kind: "post", content: "ابتسامة بسيطة قد تغيّر يوم شخص ما 🌸", weight: 2 },
-    { persona_type: "friendly", kind: "post", content: "كيف يومكم يا أصدقاء؟ شاركونا 💬", weight: 2 },
-    { persona_type: "friendly", kind: "story", content: "كونوا لطفاء مع أنفسكم اليوم 💙", weight: 1 },
-    { persona_type: "friendly", kind: "comment", content: "كلام جميل 👏", weight: 2 },
-    { persona_type: "friendly", kind: "comment", content: "أتفق معك تماماً", weight: 1 },
-    { persona_type: "friendly", kind: "comment", content: "❤️❤️", weight: 2 },
-    { persona_type: "friendly", kind: "comment", content: "ما شاء الله 🌸", weight: 1 },
-    { persona_type: "news", kind: "post", content: "تحديث: ميزات جديدة قادمة قريباً للتطبيق 🚀", weight: 2 },
-    { persona_type: "news", kind: "post", content: "نصيحة اليوم: استخدم الغرف الصوتية للتعرف على أصدقاء جدد", weight: 2 },
-    { persona_type: "news", kind: "post", content: "هل جربت الميزات الجديدة؟ شاركنا رأيك 📢", weight: 2 },
-    { persona_type: "news", kind: "comment", content: "خبر مهم 👌", weight: 1 },
-    { persona_type: "news", kind: "comment", content: "متابع 👀", weight: 1 },
-    { persona_type: "gamer", kind: "post", content: "من معي للعب الآن؟ 🎮", weight: 2 },
-    { persona_type: "gamer", kind: "post", content: "بطولة جديدة قريباً — جهّزوا أنفسكم!", weight: 1 },
-    { persona_type: "gamer", kind: "post", content: "أفضل لعبة لعبتها هذا الأسبوع 🔥", weight: 2 },
-    { persona_type: "gamer", kind: "story", content: "GG! 🏆", weight: 1 },
-    { persona_type: "gamer", kind: "comment", content: "🔥🔥", weight: 2 },
-    { persona_type: "gamer", kind: "comment", content: "GG WP 🎮", weight: 1 },
+    // ── ROMANTIC posts
+    { persona_type: "romantic", kind: "post", content: "في عينيك وطنٌ لا يُغادر، وفي صوتك أمانٌ لا يُوصف ❤️", media_url: IMG.rose, weight: 3 },
+    { persona_type: "romantic", kind: "post", content: "أحبك حين تكون، وأحبك حين تغيب… أحبك بكل ما في الكلمة من معنى 🌹", media_url: IMG.couple, weight: 3 },
+    { persona_type: "romantic", kind: "post", content: "قلبي بيتٌ صغير، أنتَ ساكنه الوحيد 💖", media_url: IMG.heart, weight: 2 },
+    { persona_type: "romantic", kind: "post", content: "كل غروبٍ يذكّرني بك… يا أجمل ما رأت عيناي 🌅", media_url: IMG.sunset, weight: 2 },
+    { persona_type: "romantic", kind: "story", content: "أحبك… ببساطة 💕", media_url: IMG.rose, weight: 2 },
+    { persona_type: "romantic", kind: "story", content: "أنت تفصيلي الجميل 🌹", media_url: IMG.heart, weight: 1 },
+    { persona_type: "romantic", kind: "comment", content: "كلام يلامس القلب ❤️", weight: 2 },
+    { persona_type: "romantic", kind: "comment", content: "أجمل ما قُرئ اليوم 🌹", weight: 2 },
+    { persona_type: "romantic", kind: "comment", content: "💖💖💖", weight: 1 },
+
+    // ── POETRY posts
+    { persona_type: "poetry", kind: "post", content: "ولي وطنٌ آليتُ ألّا أبيعه\nوألّا أرى غيري له الدهرَ مالكا — أحمد شوقي", media_url: IMG.book, weight: 2 },
+    { persona_type: "poetry", kind: "post", content: "إذا الشعبُ يومًا أرادَ الحياة\nفلا بدَّ أن يستجيبَ القدر — أبو القاسم الشابي", media_url: IMG.desert, weight: 2 },
+    { persona_type: "poetry", kind: "post", content: "ما كلُّ ما يتمنى المرءُ يدركُه\nتجري الرياحُ بما لا تشتهي السفنُ — المتنبي", media_url: IMG.pen, weight: 2 },
+    { persona_type: "poetry", kind: "post", content: "وإذا كانت النفوسُ كبارًا\nتعبت في مرادها الأجسامُ — المتنبي", media_url: IMG.mountain, weight: 2 },
+    { persona_type: "poetry", kind: "story", content: "الشعر ميزانُ القومِ 📖", media_url: IMG.book, weight: 1 },
+    { persona_type: "poetry", kind: "comment", content: "بيتٌ خالد ✨", weight: 2 },
+    { persona_type: "poetry", kind: "comment", content: "ما أجمل اختيارك 🌿", weight: 2 },
+    { persona_type: "poetry", kind: "comment", content: "📖❤️", weight: 1 },
+
+    // ── HADITH posts
+    { persona_type: "hadith", kind: "post", content: "قال ﷺ: «إنما الأعمالُ بالنياتِ، وإنما لكلِّ امرئٍ ما نوى» — متفقٌ عليه", media_url: IMG.mosque1, weight: 3 },
+    { persona_type: "hadith", kind: "post", content: "قال ﷺ: «الكلمةُ الطيبةُ صدقة» — متفقٌ عليه 🌿", media_url: IMG.mosque2, weight: 2 },
+    { persona_type: "hadith", kind: "post", content: "قال ﷺ: «من كان يؤمنُ باللهِ واليومِ الآخرِ فليقل خيرًا أو ليصمت»", media_url: IMG.quran, weight: 2 },
+    { persona_type: "hadith", kind: "post", content: "قال ﷺ: «المسلمُ من سلم المسلمون من لسانه ويده»", media_url: IMG.mosque1, weight: 2 },
+    { persona_type: "hadith", kind: "story", content: "لا تنسَ ذكر الله 🤲", media_url: IMG.quran, weight: 2 },
+    { persona_type: "hadith", kind: "story", content: "اللهم صلِّ على محمد ﷺ", media_url: IMG.mosque2, weight: 1 },
+    { persona_type: "hadith", kind: "comment", content: "جزاك الله خيرًا 🤍", weight: 2 },
+    { persona_type: "hadith", kind: "comment", content: "اللهم آمين 🤲", weight: 2 },
+    { persona_type: "hadith", kind: "comment", content: "بارك الله فيك 🌿", weight: 1 },
+
+    // ── SERIOUS posts
+    { persona_type: "serious", kind: "post", content: "لا تنتظر اللحظة المثالية… اعمل الآن ثم اصنعها مثاليّة.", media_url: IMG.road, weight: 3 },
+    { persona_type: "serious", kind: "post", content: "النجاح ليس صدفة، بل ساعات هادئة من العمل خلف الكواليس.", media_url: IMG.light, weight: 2 },
+    { persona_type: "serious", kind: "post", content: "ركّز على ما تستطيع تغييره، واترك الباقي للوقت.", media_url: IMG.mountain, weight: 2 },
+    { persona_type: "serious", kind: "post", content: "أهم استثمار في حياتك: نفسك. اقرأ، تعلّم، طوّر مهاراتك.", media_url: IMG.book, weight: 2 },
+    { persona_type: "serious", kind: "story", content: "ابدأ اليوم. ولو خطوة واحدة. 🚀", media_url: IMG.road, weight: 2 },
+    { persona_type: "serious", kind: "comment", content: "كلام في الصميم 👌", weight: 2 },
+    { persona_type: "serious", kind: "comment", content: "أتفق تمامًا 💯", weight: 2 },
+    { persona_type: "serious", kind: "comment", content: "نصيحة قيمة 🌿", weight: 1 },
   ];
+
   let createdTemplates = 0;
   for (const t of templates) {
     const { error } = await supabaseAdmin.from("ai_persona_templates").insert(t as any);

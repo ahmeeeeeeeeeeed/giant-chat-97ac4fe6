@@ -80,7 +80,7 @@ function AdminAiPersonas() {
   };
 
   const seed = async () => {
-    if (!confirm("إنشاء 3 شخصيات افتراضية + 12 قالب محتوى؟")) return;
+    if (!confirm("إنشاء 20 شخصية افتراضية (10 بنات + 10 شباب) مع قوالب رومانسية وشعر وأحاديث وجادة؟")) return;
     setBusy(true);
     try {
       const r: any = await seedFn({});
