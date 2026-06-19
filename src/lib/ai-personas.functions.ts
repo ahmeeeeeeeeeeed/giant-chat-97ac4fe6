@@ -763,6 +763,8 @@ async function seedDefaultsInternal() {
     "كلام يضع النقاط على الحروف ✅", "🌟 شكرًا للنشر", "نصيحة عميقة 💡",
     "💯💯", "محفّز جدًا 🔥", "اقتباس يستحق الحفظ 📌", "🤝 متفق",
     "كم هذا صحيح ⭐", "أنا الآن أعمل بها 🚀", "كلام عملي 100% ✅",
+    "facts 💯", "100% true 🙌", "saving this 📌", "needed this 🔥",
+    "agreed 🤝", "well said 👏", "this 👆", "let's go 🚀",
   ];
 
   const buildTemplates = () => {
