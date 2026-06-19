@@ -177,6 +177,9 @@ export const deletePersonaTemplate = createServerFn({ method: "POST" })
 // ────────────────────────────────────────────────────────────────────────────
 // Cycle runner
 // ────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────
+// Cycle runner
+// ────────────────────────────────────────────────────────────────────────────
 async function pickWeighted<T extends Record<string, any>>(rows: T[]): Promise<T | null> {
   if (!rows.length) return null;
   const total = rows.reduce((s, r) => s + Math.max(1, Number(r.weight) || 1), 0);
@@ -187,6 +190,48 @@ async function pickWeighted<T extends Record<string, any>>(rows: T[]): Promise<T
   }
   return rows[0];
 }
+
+// Ambient like/comment: persona isn't due to post but drops light activity for realism.
+async function ambientReact(supabaseAdmin: any, p: any, stats: any, now: Date) {
+  const since = new Date(now.getTime() - 24 * 60 * 60_000).toISOString();
+  const { data: recent } = await supabaseAdmin
+    .from("community_posts").select("id, author_id")
+    .gte("created_at", since).neq("author_id", p.profile_id)
+    .order("created_at", { ascending: false }).limit(30);
+  const pool = recent || [];
+  if (!pool.length) return;
+  // 1 like
+  const t = pool[Math.floor(Math.random() * pool.length)];
+  const { error: le } = await supabaseAdmin
+    .from("community_reactions")
+    .upsert({ post_id: t.id, user_id: p.profile_id, reaction: "like" } as any);
+  if (!le) {
+    stats.likes++;
+    await supabaseAdmin.from("ai_persona_activity_log").insert({ persona_id: p.id, action: "like", target_id: t.id } as any);
+  }
+  // ~50% also a comment
+  if (Math.random() < 0.5) {
+    const { data: cTpls } = await supabaseAdmin
+      .from("ai_persona_templates").select("*")
+      .eq("persona_type", p.persona_type).eq("kind", "comment");
+    const cTpl = await pickWeighted((cTpls || []) as any);
+    if (cTpl) {
+      const t2 = pool[Math.floor(Math.random() * pool.length)];
+      const { data: comment, error } = await supabaseAdmin
+        .from("community_comments")
+        .insert({ post_id: t2.id, author_id: p.profile_id, content: cTpl.content } as any)
+        .select("id").single();
+      if (!error) {
+        stats.comments++;
+        await supabaseAdmin.from("ai_persona_activity_log").insert({ persona_id: p.id, action: "comment", target_id: comment?.id || null } as any);
+      }
+    }
+  }
+  await supabaseAdmin.from("ai_personas")
+    .update({ last_react_at: now.toISOString() } as any)
+    .eq("id", p.id);
+}
+
 
 
 async function runCycleInternal() {
