@@ -465,6 +465,21 @@ function DMPage() {
     if (!user) return;
     if (blocked) { toast.error("لا يمكن المراسلة، لقد قمت بحظر هذا المستخدم"); return; }
     setUploading(true);
+    const tempId = `tmp_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    const optimistic: DM = {
+      id: tempId,
+      sender_id: user.id,
+      receiver_id: otherId,
+      content: "",
+      created_at: new Date().toISOString(),
+      message_type: kind,
+      media_url: pendingMedia?.previewUrl ?? null,
+      media_duration_ms: durationMs ?? null,
+      reply_to_id: replyTo?.id ?? null,
+    };
+    setMessages((old) => mergeDMList(old, optimistic));
+    await appendLocalDM(user.id, optimistic);
+    console.info("[dm-chat] optimistic-saved", { messageId: tempId, peerId: otherId, type: kind });
     try {
       const ext = kind === "image" ? (blob.type.split("/")[1] || "jpg") : "webm";
       const path = `${user.id}/dm/${otherId}/${Date.now()}.${ext}`;
@@ -481,14 +496,17 @@ function DMPage() {
       if (error) throw error;
       if (inserted) {
         const row = inserted as DM;
-        setMessages((old) => (old.some((m) => m.id === row.id) ? old : [...old, row]));
-        await appendLocalDM(user.id, row);
+        await replaceLocalDM(user.id, otherId, tempId, row);
+        setMessages((old) => mergeDMList(old, row, tempId));
+        console.info("[dm-chat] optimistic-confirmed", { tempId, messageId: row.id, peerId: otherId, type: kind });
         setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current!.scrollHeight, behavior: "smooth" }), 30);
       }
       setReplyTo(null);
       
     } catch (err) {
       console.error(err);
+      setMessages((old) => old.filter((m) => m.id !== tempId));
+      await removeLocalDM(user.id, otherId, tempId);
       const msg = (err as { message?: string })?.message ?? "";
       if (msg.includes("dm_blocked")) toast.error("لا يمكن إرسال الرسالة (حظر)");
       else if (msg.includes("recipient_dm_locked")) toast.error("هذا المستخدم قفل الرسائل الخاصة");
