@@ -67,12 +67,27 @@ function AdminAiPersonas() {
   const runCycle = async () => {
     setBusy(true);
     try {
-      const r = await cycleFn({});
-      toast.success(`تم تشغيل دورة (${(r as any)?.processed ?? 0})`);
+      const r: any = await cycleFn({});
+      toast.success(
+        `دورة: ${r?.personas ?? 0} شخصية · ${r?.posts ?? 0} منشور · ${r?.stories ?? 0} قصة · ${r?.likes ?? 0} إعجاب · ${r?.comments ?? 0} تعليق`,
+        { duration: 6000 },
+      );
+      if (r?.errors?.length) toast.error("أخطاء: " + r.errors.slice(0, 2).join(" | "));
       load();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "فشل");
     } finally { setBusy(false); }
+  };
+
+  const seed = async () => {
+    if (!confirm("إنشاء 3 شخصيات افتراضية + 12 قالب محتوى؟")) return;
+    setBusy(true);
+    try {
+      const r: any = await seedFn({});
+      toast.success(`تم: ${r?.personas ?? 0} شخصية، ${r?.templates ?? 0} قالب`);
+      load();
+    } catch (e) { toast.error(e instanceof Error ? e.message : "فشل"); }
+    finally { setBusy(false); }
   };
 
   const toggleActive = async (p: any) => {
