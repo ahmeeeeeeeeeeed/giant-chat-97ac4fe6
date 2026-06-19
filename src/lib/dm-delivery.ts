@@ -119,6 +119,10 @@ async function upsertLocalConversation(
   emitDmEvent(DM_CONVERSATIONS_EVENT, { list: nextList, conversation: updated ?? null, message: msg });
 }
 
+export async function updateChatsListCache(myUserId: string, msg: DMRow): Promise<void> {
+  await upsertLocalConversation(myUserId, msg, { incrementUnread: false });
+}
+
 /** Register this device for the current user and refresh last_seen. */
 export async function registerDevice(userId: string): Promise<void> {
   if (!getOnline()) return;
