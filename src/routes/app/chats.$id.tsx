@@ -209,11 +209,15 @@ function DMPage() {
         if (p) { setOther(p as Profile); await cacheSet(cacheKeys.profile(otherId), p as Profile); }
         const fresh = (msgs ?? []) as DM[];
         console.info("[dm-cache] loaded-cloud", { key: dmKey, count: fresh.length });
-        // Merge: keep any local-only (pending/queued) messages that haven't synced yet.
+        // Merge: keep ALL local history (messages already delivered & purged from server)
+        // and overlay fresh server rows (still-undelivered messages) on top by id.
         setMessages((prev) => {
-          const freshIds = new Set(fresh.map(m => m.id));
-          const localOnly = prev.filter(m => !freshIds.has(m.id) && m.id.startsWith("q_"));
-          return [...fresh, ...localOnly];
+          const byId = new Map<string, DM>();
+          prev.forEach((m) => byId.set(m.id, m));
+          fresh.forEach((m) => byId.set(m.id, m)); // server wins for in-flight rows
+          return Array.from(byId.values()).sort((a, b) =>
+            a.created_at.localeCompare(b.created_at),
+          );
         });
         setBlocked(!!bl);
         setBlockedByOther(!!blMe);
