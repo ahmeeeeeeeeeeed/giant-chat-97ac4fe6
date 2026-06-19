@@ -290,13 +290,18 @@ function DMPage() {
         // Server purged the row after full delivery — keep it locally and
         // upgrade the status to "delivered" so the sender sees ✓✓.
         const r = payload.old as { id: string };
-        setMessages(old => old.map(x => x.id === r.id
-          ? { ...x, delivered_at: x.delivered_at ?? new Date().toISOString() }
-          : x));
+        setMessages(old => {
+          const existing = old.find((x) => x.id === r.id);
+          if (existing) void replaceLocalDM(user.id, otherId, r.id, { ...existing, delivered_at: existing.delivered_at ?? new Date().toISOString() });
+          return old.map(x => x.id === r.id
+            ? { ...x, delivered_at: x.delivered_at ?? new Date().toISOString() }
+            : x);
+        });
       })
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "direct_messages" }, (payload) => {
         const r = payload.new as DM;
-        setMessages(old => old.map(x => x.id === r.id ? r : x));
+        setMessages(old => mergeDMList(old, r));
+        void appendLocalDM(user.id, r);
       })
       .subscribe();
     return () => { supabase.removeChannel(ch); };
