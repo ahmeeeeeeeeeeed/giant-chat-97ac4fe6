@@ -10,7 +10,7 @@ export const events = {
   on<T = any>(event: string, callback: EventCallback<T>) {
     if (!listeners.has(event)) listeners.set(event, new Set());
     listeners.get(event)!.add(callback);
-    return () => listeners.get(event)?.delete(callback);
+    return () => { listeners.get(event)?.delete(callback); };
   },
 };
 
