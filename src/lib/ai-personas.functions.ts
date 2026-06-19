@@ -485,29 +485,29 @@ async function seedDefaultsInternal() {
     username: string; displayName: string; bio: string; avatarUrl: string;
     personaType: typeof types[number]; staggerIndex: number;
   }> = [
-    // GIRLS (10) — unique avatar IDs, distinct names
-    { username: "noor_aldeen",  displayName: "نور الدين",   bio: "قلبٌ يحبّ الكلام الجميل ✨", avatarUrl: PRAVATAR(1),  personaType: "romantic", staggerIndex: 0 },
-    { username: "lamees_q",     displayName: "لميس",         bio: "بين سطورٍ وأحلام 🌸",        avatarUrl: PRAVATAR(5),  personaType: "poetry",   staggerIndex: 2 },
-    { username: "retaj_h",      displayName: "رتاج",         bio: "ذكرٌ ودعاء 🤲",              avatarUrl: PRAVATAR(9),  personaType: "hadith",   staggerIndex: 4 },
-    { username: "jana_w",       displayName: "جنى",          bio: "كل يوم أفضل من سابقه 🌿",   avatarUrl: PRAVATAR(10), personaType: "serious",  staggerIndex: 6 },
-    { username: "salma_r",      displayName: "سلمى",         bio: "تفاصيل صغيرة تُسعدني 💖",   avatarUrl: PRAVATAR(16), personaType: "romantic", staggerIndex: 8 },
-    { username: "hala_v",       displayName: "هلا",          bio: "أحبّ الشعر العتيق 📖",       avatarUrl: PRAVATAR(20), personaType: "poetry",   staggerIndex: 10 },
-    { username: "dina_m",       displayName: "دينا",         bio: "اللهم اهدنا 🤍",             avatarUrl: PRAVATAR(21), personaType: "hadith",   staggerIndex: 12 },
-    { username: "raghd_x",      displayName: "رغد",          bio: "طموحٌ بلا حدود 🚀",          avatarUrl: PRAVATAR(23), personaType: "serious",  staggerIndex: 14 },
-    { username: "malak_a",      displayName: "ملاك",         bio: "أحبّ الناس بهدوء 🌹",        avatarUrl: PRAVATAR(24), personaType: "romantic", staggerIndex: 16 },
-    { username: "shahd_b",      displayName: "شهد",          bio: "كلمة جميلة تكفي 🌿",         avatarUrl: PRAVATAR(32), personaType: "poetry",   staggerIndex: 18 },
+    // GIRLS (10) — decorated, attractive display names
+    { username: "noor_aldeen",  displayName: "❀ نُور ❀",            bio: "قلبٌ يحبّ الكلام الجميل ✨ • soft soul",  avatarUrl: PRAVATAR(1),  personaType: "romantic", staggerIndex: 0 },
+    { username: "lamees_q",     displayName: "✦ لميس ✦",            bio: "بين سطورٍ وأحلام 🌸 • dreamer",          avatarUrl: PRAVATAR(5),  personaType: "poetry",   staggerIndex: 2 },
+    { username: "retaj_h",      displayName: "☾ رتاج ☾",            bio: "ذكرٌ ودعاء 🤲 • peaceful heart",         avatarUrl: PRAVATAR(9),  personaType: "hadith",   staggerIndex: 4 },
+    { username: "jana_w",       displayName: "✧ Jana • جنى ✧",      bio: "كل يوم أفضل من سابقه 🌿 • grow daily",   avatarUrl: PRAVATAR(10), personaType: "serious",  staggerIndex: 6 },
+    { username: "salma_r",      displayName: "♡ سَلمى ♡",           bio: "تفاصيل صغيرة تُسعدني 💖 • little things",avatarUrl: PRAVATAR(16), personaType: "romantic", staggerIndex: 8 },
+    { username: "hala_v",       displayName: "❁ هَلا ❁",            bio: "أحبّ الشعر العتيق 📖 • poetry lover",    avatarUrl: PRAVATAR(20), personaType: "poetry",   staggerIndex: 10 },
+    { username: "dina_m",       displayName: "✿ Dina • دينا ✿",     bio: "اللهم اهدنا 🤍 • be kind",               avatarUrl: PRAVATAR(21), personaType: "hadith",   staggerIndex: 12 },
+    { username: "raghd_x",      displayName: "★ رَغد ★",            bio: "طموحٌ بلا حدود 🚀 • dream big",          avatarUrl: PRAVATAR(23), personaType: "serious",  staggerIndex: 14 },
+    { username: "malak_a",      displayName: "༄ ملاك ༄",            bio: "أحبّ الناس بهدوء 🌹 • quiet love",       avatarUrl: PRAVATAR(24), personaType: "romantic", staggerIndex: 16 },
+    { username: "shahd_b",      displayName: "✩ شَهد ✩",            bio: "كلمة جميلة تكفي 🌿 • gentle words",      avatarUrl: PRAVATAR(32), personaType: "poetry",   staggerIndex: 18 },
 
-    // BOYS (10) — unique avatar IDs, distinct names
-    { username: "yazan_t",      displayName: "يزن",          bio: "بسيطٌ بطبعي 🌿",             avatarUrl: PRAVATAR(3),  personaType: "hadith",   staggerIndex: 1 },
-    { username: "faris_n",      displayName: "فارس",         bio: "أعمل بصمت 💪",               avatarUrl: PRAVATAR(7),  personaType: "serious",  staggerIndex: 3 },
-    { username: "ammar_d",      displayName: "عمار",         bio: "حُبٌّ صادق، لا أكثر ❤️",     avatarUrl: PRAVATAR(8),  personaType: "romantic", staggerIndex: 5 },
-    { username: "sami_k",       displayName: "سامي",         bio: "أُحبّ الكلمة الموزونة 📖",   avatarUrl: PRAVATAR(11), personaType: "poetry",   staggerIndex: 7 },
-    { username: "bilal_e",      displayName: "بلال",         bio: "صلّ على النبي ﷺ",           avatarUrl: PRAVATAR(12), personaType: "hadith",   staggerIndex: 9 },
-    { username: "rakan_y",      displayName: "راكان",        bio: "اصنع الفرق 🚀",             avatarUrl: PRAVATAR(13), personaType: "serious",  staggerIndex: 11 },
-    { username: "jad_p",        displayName: "جاد",          bio: "قلبي بسيط مثلك 💖",         avatarUrl: PRAVATAR(14), personaType: "romantic", staggerIndex: 13 },
-    { username: "sufyan_g",     displayName: "سفيان",        bio: "ولِكلٍّ مما يَهوى رِواية 🌿", avatarUrl: PRAVATAR(15), personaType: "poetry",   staggerIndex: 15 },
-    { username: "ziyad_z",      displayName: "زياد",         bio: "اللهم يسّر ولا تعسّر 🤲",    avatarUrl: PRAVATAR(17), personaType: "hadith",   staggerIndex: 17 },
-    { username: "mazen_o",      displayName: "مازن",         bio: "ركّز على الأهم ✨",         avatarUrl: PRAVATAR(18), personaType: "serious",  staggerIndex: 19 },
+    // BOYS (10) — decorated, attractive display names
+    { username: "yazan_t",      displayName: "⚡ يَزن ⚡",            bio: "بسيطٌ بطبعي 🌿 • simple life",           avatarUrl: PRAVATAR(3),  personaType: "hadith",   staggerIndex: 1 },
+    { username: "faris_n",      displayName: "✦ Faris • فارس ✦",    bio: "أعمل بصمت 💪 • work in silence",         avatarUrl: PRAVATAR(7),  personaType: "serious",  staggerIndex: 3 },
+    { username: "ammar_d",      displayName: "♛ عَمّار ♛",          bio: "حُبٌّ صادق، لا أكثر ❤️ • honest heart", avatarUrl: PRAVATAR(8),  personaType: "romantic", staggerIndex: 5 },
+    { username: "sami_k",       displayName: "✒ سَامي ✒",           bio: "أُحبّ الكلمة الموزونة 📖 • word lover", avatarUrl: PRAVATAR(11), personaType: "poetry",   staggerIndex: 7 },
+    { username: "bilal_e",      displayName: "☪ بِلال ☪",           bio: "صلّ على النبي ﷺ • peace within",         avatarUrl: PRAVATAR(12), personaType: "hadith",   staggerIndex: 9 },
+    { username: "rakan_y",      displayName: "▲ Rakan • راكان ▲",   bio: "اصنع الفرق 🚀 • make it count",          avatarUrl: PRAVATAR(13), personaType: "serious",  staggerIndex: 11 },
+    { username: "jad_p",        displayName: "♥ جاد ♥",             bio: "قلبي بسيط مثلك 💖 • simple heart",       avatarUrl: PRAVATAR(14), personaType: "romantic", staggerIndex: 13 },
+    { username: "sufyan_g",     displayName: "✧ سُفيان ✧",          bio: "ولِكلٍّ مما يَهوى رِواية 🌿 • a story", avatarUrl: PRAVATAR(15), personaType: "poetry",   staggerIndex: 15 },
+    { username: "ziyad_z",      displayName: "☾ زِياد ☾",           bio: "اللهم يسّر ولا تعسّر 🤲 • trust Him",   avatarUrl: PRAVATAR(17), personaType: "hadith",   staggerIndex: 17 },
+    { username: "mazen_o",      displayName: "★ Mazen • مازن ★",    bio: "ركّز على الأهم ✨ • stay focused",       avatarUrl: PRAVATAR(18), personaType: "serious",  staggerIndex: 19 },
   ];
 
   let createdPersonas = 0;
@@ -572,6 +572,15 @@ async function seedDefaultsInternal() {
     "اشتقتُ إليك حتى وأنتَ هنا 🥺",
     "قلبي يعرف الطريق إليك دائمًا ❤️",
     "أنتَ تفصيلٌ لا يُكرَّر في عمري 🌹",
+    "Some people feel like home the moment you meet them 💖",
+    "You're my favorite hello and my hardest goodbye 🌹",
+    "Loved you yesterday, love you still, always have, always will ❤️",
+    "كل ما حولي يهدأ حين أتذكّرك 🌙 — you are my calm",
+    "In a room full of art, I would still stare at you 🎨❤️",
+    "أنتَ الفكرة التي تراودني قبل النوم وبعد الاستيقاظ 💭💕",
+    "I don't need much. Just you, coffee, and a quiet morning ☕🌸",
+    "حين أحببتك… فهمتُ كل الأغاني 🎶❤️",
+    "You're the poem I keep rewriting in my head ✍️🌹",
   ];
   const ROMANTIC_STORIES = [
     "أحبك… ببساطة 💕",
@@ -584,6 +593,11 @@ async function seedDefaultsInternal() {
     "أحبك أكثر 💞",
     "أنت الأجمل دومًا 🌸",
     "بقلبي أنت 💖",
+    "you = home 🏡❤️",
+    "missing you 🥺💭",
+    "my favorite person 🌹",
+    "good morning, love ☕💕",
+    "stay 💖",
   ];
   const POETRY_POSTS = [
     "ولي وطنٌ آليتُ ألّا أبيعه\nوألّا أرى غيري له الدهرَ مالكا — أحمد شوقي",
@@ -598,6 +612,11 @@ async function seedDefaultsInternal() {
     "قُم للمعلِّمِ وفّهِ التبجيلا\nكاد المعلِّمُ أن يكون رسولا — أحمد شوقي",
     "تَعَلَّم فليس المرءُ يُولدُ عالِمًا\nوليس أخو علمٍ كمن هو جاهلُ — الشافعي",
     "إذا كنتَ في كلِّ الأمورِ معاتبًا\nصديقك لم تَلقَ الذي لا تُعاتبه — بشار بن برد",
+    "“And still, I rise.” — Maya Angelou ✨",
+    "“We accept the love we think we deserve.” — Stephen Chbosky 💭",
+    "“Stars can't shine without darkness.” 🌌",
+    "“The wound is the place where the Light enters you.” — Rumi 🌙",
+    "وَأَنتَ بِأَخذِكَ الْأَيّامَ فَخراً\nأَرَدتَ بِأَنْ تُؤَنَّسَكَ النّجوم — verses that never age 📖",
   ];
   const POETRY_STORIES = [
     "الشعر ميزانُ القومِ 📖",
@@ -608,6 +627,9 @@ async function seedDefaultsInternal() {
     "حرفٌ يحيي القلب ✒️",
     "من عيون الشعر 🌹",
     "بيتٌ خالد ⭐",
+    "words > everything 📖✨",
+    "poetry hits different at night 🌙",
+    "a line worth saving 💫",
   ];
   const HADITH_POSTS = [
     "قال ﷺ: «إنما الأعمالُ بالنياتِ، وإنما لكلِّ امرئٍ ما نوى» — متفقٌ عليه",
@@ -622,6 +644,10 @@ async function seedDefaultsInternal() {
     "قال ﷺ: «من لا يَرحم لا يُرحم»",
     "قال ﷺ: «خيركم خيركم لأهله»",
     "قال ﷺ: «إن الله كتب الإحسانَ على كلِّ شيء»",
+    "The Prophet ﷺ said: “The best of you are those who are best to their families.” 🤍",
+    "“Verily, with hardship comes ease.” — Qur'an 94:6 🌙✨",
+    "A kind word is a charity 🌿 — start your day with one.",
+    "“Be in this world as if you were a stranger or a traveler.” — Hadith 🕊️",
   ];
   const HADITH_STORIES = [
     "لا تنسَ ذكر الله 🤲",
@@ -632,6 +658,9 @@ async function seedDefaultsInternal() {
     "لا إله إلا الله 💚",
     "اللهم لك الحمد 🌙",
     "حسبنا الله ونعم الوكيل ✨",
+    "alhamdulillah for everything 🤍",
+    "say SubhanAllah today 🌿",
+    "trust His plan 🌙",
   ];
   const SERIOUS_POSTS = [
     "لا تنتظر اللحظة المثالية… اعمل الآن ثم اصنعها مثاليّة.",
@@ -646,6 +675,12 @@ async function seedDefaultsInternal() {
     "الفشل ليس نهاية الطريق، بل بداية فهم أعمق.",
     "ابتعد عن من يستنزفك، حتى لو كان قريبًا.",
     "صحتك أولًا: نوم جيد، حركة يومية، طعام نظيف.",
+    "Discipline > motivation. Always. 💪",
+    "Small steps every day beat huge leaps once a month. 🚀",
+    "Your future is built in the boring hours nobody sees. 🌱",
+    "Protect your peace. Not every battle deserves your energy. 🕊️",
+    "Read 10 pages a day. In a year, that's 12+ books. 📚",
+    "ابدأ الآن، ولو ناقصًا. Start now, even imperfect. ✨",
   ];
   const SERIOUS_STORIES = [
     "ابدأ اليوم. ولو خطوة واحدة. 🚀",
@@ -673,6 +708,9 @@ async function seedDefaultsInternal() {
     "أنا معجبة 💖", "بُوركت 🌸", "كلام يرفع المعنويات 💕", "🩷",
     "كم هي صادقة ❤️", "أحببت اختيارك للصورة 🌹", "💝", "تذكّرتُ بها أحدًا 🥺",
     "كلام يستحق ❤️", "بسيط وعميق 💖",
+    "this hits 💖", "so soft 🌸", "literally me 🥺", "wow 😍",
+    "saving this ✨", "my heart 💞", "obsessed 🌹", "exactly 💯",
+    "beautifully said ❤️", "tears 🥲💕",
   ];
   const POETRY_COMMENTS = [
     "بيتٌ خالد ✨", "ما أجمل اختيارك 🌿", "📖❤️", "اختيارك راقٍ ⭐",
@@ -688,6 +726,8 @@ async function seedDefaultsInternal() {
     "هذي من جواهر الأدب 💎", "اختيارك أصيل ⭐", "📜❤️", "بيتٌ سهلٌ ممتنع 💫",
     "أعدتُ قراءته 🥲", "بيت يعلّمنا الحياة 📖", "اللغة سفينة الأدب 🌊",
     "حروفٌ تنبض ✒️", "بيت لا يضاهى ⭐", "أحببت الإيقاع ✨", "روعة 🌟",
+    "timeless ⭐", "pure gold 📜✨", "saved 💫", "art 🎨",
+    "this is poetry 📖❤️", "rumi vibes 🌙",
   ];
   const HADITH_COMMENTS = [
     "جزاك الله خيرًا 🤍", "اللهم آمين 🤲", "بارك الله فيك 🌿", "اللهم صلِّ على محمد ﷺ",
@@ -706,6 +746,8 @@ async function seedDefaultsInternal() {
     "🤍🌿", "ذكّرتنا بأنفسنا 💚", "اللهم إنا نستودعك ديننا 🤲",
     "بارك الله فيك ونفع بك 🤍", "اللهم اجعلنا مع الصادقين 🌙", "🤲💚",
     "ربي يجعلك سببًا للخير 🌷", "اللهم اجعلنا من الموحدين 🤍",
+    "Ameen 🤲", "BarakAllahu feek 🤍", "JazakAllah khair 🌿",
+    "much needed 🌙", "Alhamdulillah ✨", "needed this today 🤍",
   ];
   const SERIOUS_COMMENTS = [
     "كلام في الصميم 👌", "أتفق تمامًا 💯", "نصيحة قيمة 🌿", "صحيح جدًا ✅",
@@ -721,6 +763,8 @@ async function seedDefaultsInternal() {
     "كلام يضع النقاط على الحروف ✅", "🌟 شكرًا للنشر", "نصيحة عميقة 💡",
     "💯💯", "محفّز جدًا 🔥", "اقتباس يستحق الحفظ 📌", "🤝 متفق",
     "كم هذا صحيح ⭐", "أنا الآن أعمل بها 🚀", "كلام عملي 100% ✅",
+    "facts 💯", "100% true 🙌", "saving this 📌", "needed this 🔥",
+    "agreed 🤝", "well said 👏", "this 👆", "let's go 🚀",
   ];
 
   const buildTemplates = () => {
