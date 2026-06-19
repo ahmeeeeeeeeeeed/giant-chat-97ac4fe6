@@ -89,7 +89,7 @@ async function upsertLocalConversation(
   const listKey = cacheKeys.chatsList(myUserId);
   const profile = await getProfileLite(peerId);
   let nextList: DMConversation[] = [];
-  let updated: DMConversation | null = null;
+  let updated = undefined as DMConversation | undefined;
 
   await withCacheLock(listKey, async () => {
     const list = (await cacheGet<DMConversation[]>(listKey)) ?? [];
@@ -116,7 +116,7 @@ async function upsertLocalConversation(
     unread: updated?.unread,
     total: nextList.length,
   });
-  emitDmEvent(DM_CONVERSATIONS_EVENT, { list: nextList, conversation: updated, message: msg });
+  emitDmEvent(DM_CONVERSATIONS_EVENT, { list: nextList, conversation: updated ?? null, message: msg });
 }
 
 /** Register this device for the current user and refresh last_seen. */
