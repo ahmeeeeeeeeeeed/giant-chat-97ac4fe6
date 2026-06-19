@@ -316,7 +316,7 @@ export const runPersonaCycle = createServerFn({ method: "POST" })
     return await runCycleInternal();
   });
 
-// Bootstraps 3 demo personas + 12 content templates when the system is empty.
+// Bootstraps 20 demo personas + content templates when the system is empty.
 export const seedDefaultPersonas = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -324,9 +324,29 @@ export const seedDefaultPersonas = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const defaults = [
+      // friendly (8)
       { username: "nora_ai", displayName: "نورا", bio: "أحب الحياة والإيجابية ✨", personaType: "friendly", postIntervalMinutes: 180, reactionRate: 0.6 },
+      { username: "sara_ai", displayName: "سارة", bio: "ابتسامة كل يوم 🌸", personaType: "friendly", postIntervalMinutes: 200, reactionRate: 0.55 },
+      { username: "lana_ai", displayName: "لانا", bio: "طاقة إيجابية دائمًا 💫", personaType: "friendly", postIntervalMinutes: 220, reactionRate: 0.5 },
+      { username: "rana_ai", displayName: "رنا", bio: "صديقة الكل 💙", personaType: "friendly", postIntervalMinutes: 240, reactionRate: 0.5 },
+      { username: "huda_ai", displayName: "هدى", bio: "أحب القراءة والهدوء 📖", personaType: "friendly", postIntervalMinutes: 260, reactionRate: 0.45 },
+      { username: "omar_ai", displayName: "عمر", bio: "متفائل دائمًا ☀️", personaType: "friendly", postIntervalMinutes: 200, reactionRate: 0.55 },
+      { username: "ali_ai", displayName: "علي", bio: "محب للسفر والاكتشاف ✈️", personaType: "friendly", postIntervalMinutes: 280, reactionRate: 0.4 },
+      { username: "mona_ai", displayName: "منى", bio: "فنانة وحالمة 🎨", personaType: "friendly", postIntervalMinutes: 240, reactionRate: 0.5 },
+      // news (6)
       { username: "news_ai", displayName: "أخبار سريعة", bio: "آخر الأخبار والتحديثات", personaType: "news", postIntervalMinutes: 240, reactionRate: 0.4 },
+      { username: "tech_ai", displayName: "تك نيوز", bio: "كل جديد التقنية 💻", personaType: "news", postIntervalMinutes: 300, reactionRate: 0.35 },
+      { username: "sport_ai", displayName: "رياضة اليوم", bio: "نتائج وأخبار الرياضة ⚽", personaType: "news", postIntervalMinutes: 240, reactionRate: 0.4 },
+      { username: "world_ai", displayName: "حول العالم", bio: "أخبار عالمية 🌍", personaType: "news", postIntervalMinutes: 360, reactionRate: 0.3 },
+      { username: "trend_ai", displayName: "ترند", bio: "كل ما هو رائج 🔥", personaType: "news", postIntervalMinutes: 200, reactionRate: 0.5 },
+      { username: "tips_ai", displayName: "نصائح يومية", bio: "نصيحة كل يوم 💡", personaType: "news", postIntervalMinutes: 300, reactionRate: 0.35 },
+      // gamer (6)
       { username: "gamer_ai", displayName: "اللاعب", bio: "ألعاب ومنافسات 🎮", personaType: "gamer", postIntervalMinutes: 360, reactionRate: 0.5 },
+      { username: "pro_ai", displayName: "برو بلاير", bio: "محترف ألعاب 🏆", personaType: "gamer", postIntervalMinutes: 300, reactionRate: 0.5 },
+      { username: "fps_ai", displayName: "FPS Master", bio: "عشاق التصويب 🎯", personaType: "gamer", postIntervalMinutes: 360, reactionRate: 0.45 },
+      { username: "moba_ai", displayName: "موبا فان", bio: "ألعاب الفرق والاستراتيجية", personaType: "gamer", postIntervalMinutes: 360, reactionRate: 0.4 },
+      { username: "stream_ai", displayName: "ستريمر", bio: "بث مباشر يومي 🎥", personaType: "gamer", postIntervalMinutes: 240, reactionRate: 0.55 },
+      { username: "retro_ai", displayName: "ريترو", bio: "ألعاب الزمن الجميل 👾", personaType: "gamer", postIntervalMinutes: 400, reactionRate: 0.35 },
     ];
     let createdPersonas = 0;
     for (const d of defaults) {
