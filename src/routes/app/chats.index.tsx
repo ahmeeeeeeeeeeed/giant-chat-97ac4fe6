@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
-import { MessageSquare, Loader2, Search, X, Trash2, MoreVertical } from "lucide-react";
+import { MessageSquare, Loader2, Search, X, MoreVertical } from "lucide-react";
 import { cacheGet, cacheSet, cacheKeys } from "@/lib/offline-cache";
 import { getOnline } from "@/lib/use-online";
 import { useCachedMediaSource } from "@/lib/use-cached-media";
@@ -249,7 +249,6 @@ function ChatsPage() {
                   <ChatRow
                     convo={c}
                     unreadActive={unreadActive}
-                    onDeleted={(id) => setConvos((prev) => prev.filter((x) => x.otherId !== id))}
                   />
                 </li>
               );
@@ -262,11 +261,9 @@ function ChatsPage() {
   );
 }
 
-function ChatRow({ convo, unreadActive, onDeleted }: { convo: Convo; unreadActive: boolean; onDeleted: (id: string) => void }) {
+function ChatRow({ convo, unreadActive }: { convo: Convo; unreadActive: boolean }) {
   const navigate = useNavigate();
   const [menu, setMenu] = useState(false);
-  const [confirming, setConfirming] = useState(false);
-  const [deleting, setDeleting] = useState(false);
   const timerRef = useRef<number | null>(null);
   const longPressedRef = useRef(false);
 
@@ -284,29 +281,13 @@ function ChatRow({ convo, unreadActive, onDeleted }: { convo: Convo; unreadActiv
   };
 
   const onClick = (e: React.MouseEvent) => {
-    if (longPressedRef.current || menu || confirming) { e.preventDefault(); e.stopPropagation(); return; }
+    if (longPressedRef.current || menu) { e.preventDefault(); e.stopPropagation(); return; }
     navigate({ to: "/app/chats/$id", params: { id: convo.otherId } });
   };
 
   const onContext = (e: React.MouseEvent) => {
     e.preventDefault();
     setMenu(true);
-  };
-
-  const handleDelete = async () => {
-    setDeleting(true);
-    try {
-      const { error } = await (supabase as any).rpc("delete_conversation", { _other: convo.otherId });
-      if (error) throw error;
-      onDeleted(convo.otherId);
-      toast.success("تم حذف المحادثة");
-    } catch (e: any) {
-      toast.error(e.message || "فشل الحذف");
-    } finally {
-      setDeleting(false);
-      setConfirming(false);
-      setMenu(false);
-    }
   };
 
   return (
