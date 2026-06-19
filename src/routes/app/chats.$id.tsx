@@ -254,15 +254,7 @@ function DMPage() {
       const msg = detail?.message;
       if (!msg || detail?.peerId !== otherId) return;
       console.info("[dm-chat] global-message-applied", { messageId: msg.id, peerId: otherId });
-      setMessages((old) => {
-        const replacedId = detail?.replacedId;
-        const base = replacedId ? old.filter((x) => x.id !== replacedId) : old;
-        const idx = base.findIndex((x) => x.id === msg.id);
-        if (idx < 0) return [...base, msg].sort((a, b) => a.created_at.localeCompare(b.created_at));
-        const next = [...base];
-        next[idx] = { ...next[idx], ...msg };
-        return next.sort((a, b) => a.created_at.localeCompare(b.created_at));
-      });
+      setMessages((old) => mergeDMList(old, msg, detail?.replacedId));
       if (msg.receiver_id === user.id) {
         void markRead();
         setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current!.scrollHeight, behavior: "smooth" }), 30);
@@ -284,7 +276,7 @@ function DMPage() {
           (r.sender_id === user.id && r.receiver_id === otherId) ||
           (r.sender_id === otherId && r.receiver_id === user.id)
         ) {
-          setMessages((old) => (old.some(x => x.id === r.id) ? old : [...old, r]));
+          setMessages((old) => mergeDMList(old, r));
           setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current!.scrollHeight, behavior: "smooth" }), 30);
           if (r.receiver_id === user.id) {
             // Save locally first so deletion from the server doesn't lose the message.
