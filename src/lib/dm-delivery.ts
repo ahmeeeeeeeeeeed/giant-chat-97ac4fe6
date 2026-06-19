@@ -337,6 +337,43 @@ export function useDmDeliveryWorker(): void {
           await ackDelivery(myId, [m.id]);
         },
       )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "direct_messages", filter: `sender_id=eq.${myId}` },
+        async (p) => {
+          const m = p.new as DMRow;
+          console.info("[dm-global] realtime-outgoing-insert", { messageId: m.id, receiverId: m.receiver_id, type: m.message_type });
+          await appendLocalDM(myId, m);
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "direct_messages", filter: `sender_id=eq.${myId}` },
+        async (p) => {
+          const m = p.new as DMRow;
+          console.info("[dm-global] realtime-outgoing-update", { messageId: m.id, receiverId: m.receiver_id });
+          await appendLocalDM(myId, m);
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "direct_messages", filter: `receiver_id=eq.${myId}` },
+        async (p) => {
+          const m = p.new as DMRow;
+          console.info("[dm-global] realtime-incoming-update", { messageId: m.id, senderId: m.sender_id });
+          await appendLocalDM(myId, m);
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "direct_messages", filter: `sender_id=eq.${myId}` },
+        async (p) => {
+          const old = p.old as DMRow;
+          if (!old?.id) return;
+          console.info("[dm-global] realtime-outgoing-delete-kept", { messageId: old.id, receiverId: old.receiver_id });
+          await appendLocalDM(myId, { ...old, delivered_at: old.delivered_at ?? new Date().toISOString() });
+        },
+      )
       .subscribe((status) => {
         console.info("[dm-global] realtime-status", { status });
         if (status === "SUBSCRIBED") void drainPending();
