@@ -443,12 +443,18 @@ function DMPage() {
       });
       if (upErr) throw upErr;
       const { data: pub } = supabase.storage.from("room-media").getPublicUrl(path);
-      const { error } = await supabase.from("direct_messages").insert({
+      const { data: inserted, error } = await supabase.from("direct_messages").insert({
         sender_id: user.id, receiver_id: otherId, content: "",
         message_type: kind, media_url: pub.publicUrl, media_duration_ms: durationMs ?? null,
         reply_to_id: replyTo?.id ?? null,
-      });
+      }).select("id, sender_id, receiver_id, content, created_at, message_type, media_url, media_duration_ms, reply_to_id, delivered_at, read_at").single();
       if (error) throw error;
+      if (inserted) {
+        const row = inserted as DM;
+        setMessages((old) => (old.some((m) => m.id === row.id) ? old : [...old, row]));
+        await appendLocalDM(user.id, row);
+        setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current!.scrollHeight, behavior: "smooth" }), 30);
+      }
       setReplyTo(null);
       
     } catch (err) {
