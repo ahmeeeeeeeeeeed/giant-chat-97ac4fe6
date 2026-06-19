@@ -213,7 +213,7 @@ function PersonaCard({ p, onToggle, onDelete, onSave }: any) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
             <div className="font-bold truncate">{p.display_name}</div>
-            <AiBadge />
+            <span className="text-[10px] rounded-full bg-secondary px-1.5 font-bold text-muted-foreground">{p.persona_type}</span>
             {!p.is_active && <span className="text-[10px] rounded-full bg-muted px-1.5 font-bold text-muted-foreground">موقوف</span>}
           </div>
           <div className="text-xs text-muted-foreground truncate">{p.bio || "—"}</div>
