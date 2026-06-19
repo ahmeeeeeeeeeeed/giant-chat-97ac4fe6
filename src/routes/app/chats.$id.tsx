@@ -14,7 +14,7 @@ import { ImageLightbox } from "@/components/ImageLightbox";
 import { cacheGet, cacheSet, cacheKeys } from "@/lib/offline-cache";
 import { enqueueMessage } from "@/lib/offline-queue";
 import { getOnline } from "@/lib/use-online";
-import { ackDelivery, appendLocalDM, DM_MESSAGES_EVENT, markLocalConversationRead, updateChatsListCache } from "@/lib/dm-delivery";
+import { ackDelivery, appendLocalDM, DM_MESSAGES_EVENT, markLocalConversationRead, removeLocalDM, replaceLocalDM } from "@/lib/dm-delivery";
 import { ensureMediaLibraryPermission, ensureMicPermission } from "@/lib/app-permissions";
 import { useCachedMediaSource } from "@/lib/use-cached-media";
 import { StoryRing } from "@/components/StoryRing";
@@ -30,7 +30,7 @@ type DM = {
   receiver_id: string;
   content: string;
   created_at: string;
-  message_type: "text" | "image" | "voice";
+  message_type: "text" | "image" | "voice" | "system";
   media_url: string | null;
   media_duration_ms: number | null;
   reply_to_id: string | null;
@@ -38,9 +38,18 @@ type DM = {
   read_at?: string | null;
 };
 
+function mergeDMList(list: DM[], msg: DM, replacedId?: string): DM[] {
+  const base = replacedId ? list.filter((m) => m.id !== replacedId) : list;
+  const index = base.findIndex((m) => m.id === msg.id);
+  if (index < 0) return [...base, msg].sort((a, b) => a.created_at.localeCompare(b.created_at));
+  const next = [...base];
+  next[index] = { ...next[index], ...msg };
+  return next.sort((a, b) => a.created_at.localeCompare(b.created_at));
+}
+
 type MessageStatus = "pending" | "sent" | "delivered" | "read";
 function statusOf(m: DM): MessageStatus {
-  if (m.id.startsWith("q_")) return "pending";
+  if (m.id.startsWith("q_") || m.id.startsWith("tmp_")) return "pending";
   if (m.read_at) return "read";
   if (m.delivered_at) return "delivered";
   return "sent";
@@ -241,17 +250,11 @@ function DMPage() {
   useEffect(() => {
     if (!user) return;
     const onGlobalMessage = (event: Event) => {
-      const detail = (event as CustomEvent<{ message?: DM; peerId?: string }>).detail;
+      const detail = (event as CustomEvent<{ message?: DM; peerId?: string; replacedId?: string }>).detail;
       const msg = detail?.message;
       if (!msg || detail?.peerId !== otherId) return;
       console.info("[dm-chat] global-message-applied", { messageId: msg.id, peerId: otherId });
-      setMessages((old) => {
-        const idx = old.findIndex((x) => x.id === msg.id);
-        if (idx < 0) return [...old, msg].sort((a, b) => a.created_at.localeCompare(b.created_at));
-        const next = [...old];
-        next[idx] = { ...next[idx], ...msg };
-        return next.sort((a, b) => a.created_at.localeCompare(b.created_at));
-      });
+      setMessages((old) => mergeDMList(old, msg, detail?.replacedId));
       if (msg.receiver_id === user.id) {
         void markRead();
         setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current!.scrollHeight, behavior: "smooth" }), 30);
@@ -259,44 +262,6 @@ function DMPage() {
     };
     window.addEventListener(DM_MESSAGES_EVENT, onGlobalMessage);
     return () => window.removeEventListener(DM_MESSAGES_EVENT, onGlobalMessage);
-  }, [user, otherId]);
-
-  // realtime: messages — only when online (avoids browser network errors offline)
-  useEffect(() => {
-    if (!user) return;
-    if (!getOnline()) return;
-    const ch = supabase
-      .channel(`dm-msg:${[user.id, otherId].sort().join(":")}`)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "direct_messages" }, async (payload) => {
-        const r = payload.new as DM;
-        if (
-          (r.sender_id === user.id && r.receiver_id === otherId) ||
-          (r.sender_id === otherId && r.receiver_id === user.id)
-        ) {
-          setMessages((old) => (old.some(x => x.id === r.id) ? old : [...old, r]));
-          setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current!.scrollHeight, behavior: "smooth" }), 30);
-          if (r.receiver_id === user.id) {
-            // Save locally first so deletion from the server doesn't lose the message.
-            await appendLocalDM(user.id, r);
-            await markDelivered([r.id]);
-            await markRead();
-          }
-        }
-      })
-      .on("postgres_changes", { event: "DELETE", schema: "public", table: "direct_messages" }, (payload) => {
-        // Server purged the row after full delivery — keep it locally and
-        // upgrade the status to "delivered" so the sender sees ✓✓.
-        const r = payload.old as { id: string };
-        setMessages(old => old.map(x => x.id === r.id
-          ? { ...x, delivered_at: x.delivered_at ?? new Date().toISOString() }
-          : x));
-      })
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "direct_messages" }, (payload) => {
-        const r = payload.new as DM;
-        setMessages(old => old.map(x => x.id === r.id ? r : x));
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
   }, [user, otherId]);
 
   // load + subscribe to call history for this pair
@@ -388,15 +353,16 @@ function DMPage() {
     broadcastActivity("idle");
 
     if (!getOnline()) {
-      await enqueueMessage({ kind: "dm", sender_id: user.id, receiver_id: otherId, content });
+      const queuedRow = await enqueueMessage({ kind: "dm", sender_id: user.id, receiver_id: otherId, content });
       const optimistic: DM = {
-        id: `q_${Date.now()}`,
+        id: queuedRow.id,
         sender_id: user.id, receiver_id: otherId, content,
-        created_at: new Date().toISOString(),
+        created_at: new Date(queuedRow.createdAt).toISOString(),
         message_type: "text", media_url: null, media_duration_ms: null,
         reply_to_id: reply?.id ?? null,
       };
       setMessages((old) => [...old, optimistic]);
+      await appendLocalDM(user.id, optimistic);
       setSending(false);
       toast.message("تم حفظ الرسالة — ستُرسل عند عودة الإنترنت");
       return;
@@ -413,6 +379,8 @@ function DMPage() {
       reply_to_id: reply?.id ?? null,
     };
     setMessages((old) => [...old, optimistic]);
+    await appendLocalDM(user.id, optimistic);
+    console.info("[dm-chat] optimistic-saved", { messageId: tempId, peerId: otherId, type: "text" });
     setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current!.scrollHeight, behavior: "smooth" }), 30);
 
     let error: { message?: string } | null = null;
@@ -429,27 +397,24 @@ function DMPage() {
     }
     setSending(false);
     if (inserted) {
-      void updateChatsListCache(user.id, inserted);
+      await replaceLocalDM(user.id, otherId, tempId, inserted);
       // Replace optimistic with real row, dedupe in case realtime arrived first.
-      setMessages((old) => {
-        const withoutTemp = old.filter((m) => m.id !== tempId);
-        if (withoutTemp.some((m) => m.id === inserted!.id)) return withoutTemp;
-        return [...withoutTemp, inserted!];
-      });
-      // Cache locally so server purge after delivery doesn't lose it on sender side.
-      await appendLocalDM(user.id, inserted);
+      setMessages((old) => mergeDMList(old, inserted!, tempId));
+      console.info("[dm-chat] optimistic-confirmed", { tempId, messageId: inserted.id, peerId: otherId });
       return;
     }
     if (error) {
       // Remove failed optimistic row.
       setMessages((old) => old.filter((m) => m.id !== tempId));
       if (!getOnline() || /network|fetch|Failed/i.test(error.message ?? "")) {
-        await enqueueMessage({ kind: "dm", sender_id: user.id, receiver_id: otherId, content });
-        const queued: DM = { ...optimistic, id: `q_${Date.now()}` };
-        setMessages((old) => [...old, queued]);
+        const queuedRow = await enqueueMessage({ kind: "dm", sender_id: user.id, receiver_id: otherId, content });
+        const queued: DM = { ...optimistic, id: queuedRow.id, created_at: new Date(queuedRow.createdAt).toISOString() };
+        await replaceLocalDM(user.id, otherId, tempId, queued);
+        setMessages((old) => mergeDMList(old, queued, tempId));
         toast.message("تم حفظ الرسالة — ستُرسل عند عودة الإنترنت");
         return;
       }
+      await removeLocalDM(user.id, otherId, tempId);
       if (error.message?.includes("recipient_dm_locked")) toast.error("هذا المستخدم قفل الرسائل الخاصة (متاح للأصدقاء فقط)");
       else if (error.message?.includes("dm_blocked")) toast.error("لا يمكن إرسال الرسالة (حظر)");
       else toast.error(t("common.error"));
@@ -462,6 +427,22 @@ function DMPage() {
     if (!user) return;
     if (blocked) { toast.error("لا يمكن المراسلة، لقد قمت بحظر هذا المستخدم"); return; }
     setUploading(true);
+    const tempId = `tmp_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    const optimistic: DM = {
+      id: tempId,
+      sender_id: user.id,
+      receiver_id: otherId,
+      content: "",
+      created_at: new Date().toISOString(),
+      message_type: kind,
+      media_url: pendingMedia?.previewUrl ?? null,
+      media_duration_ms: durationMs ?? null,
+      reply_to_id: replyTo?.id ?? null,
+    };
+    if (optimistic.media_url) await cacheSet(cacheKeys.media(optimistic.media_url), blob);
+    setMessages((old) => mergeDMList(old, optimistic));
+    await appendLocalDM(user.id, optimistic);
+    console.info("[dm-chat] optimistic-saved", { messageId: tempId, peerId: otherId, type: kind });
     try {
       const ext = kind === "image" ? (blob.type.split("/")[1] || "jpg") : "webm";
       const path = `${user.id}/dm/${otherId}/${Date.now()}.${ext}`;
@@ -470,6 +451,7 @@ function DMPage() {
       });
       if (upErr) throw upErr;
       const { data: pub } = supabase.storage.from("room-media").getPublicUrl(path);
+      await cacheSet(cacheKeys.media(pub.publicUrl), blob);
       const { data: inserted, error } = await supabase.from("direct_messages").insert({
         sender_id: user.id, receiver_id: otherId, content: "",
         message_type: kind, media_url: pub.publicUrl, media_duration_ms: durationMs ?? null,
@@ -478,14 +460,17 @@ function DMPage() {
       if (error) throw error;
       if (inserted) {
         const row = inserted as DM;
-        setMessages((old) => (old.some((m) => m.id === row.id) ? old : [...old, row]));
-        await appendLocalDM(user.id, row);
+        await replaceLocalDM(user.id, otherId, tempId, row);
+        setMessages((old) => mergeDMList(old, row, tempId));
+        console.info("[dm-chat] optimistic-confirmed", { tempId, messageId: row.id, peerId: otherId, type: kind });
         setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current!.scrollHeight, behavior: "smooth" }), 30);
       }
       setReplyTo(null);
       
     } catch (err) {
       console.error(err);
+      setMessages((old) => old.filter((m) => m.id !== tempId));
+      await removeLocalDM(user.id, otherId, tempId);
       const msg = (err as { message?: string })?.message ?? "";
       if (msg.includes("dm_blocked")) toast.error("لا يمكن إرسال الرسالة (حظر)");
       else if (msg.includes("recipient_dm_locked")) toast.error("هذا المستخدم قفل الرسائل الخاصة");
