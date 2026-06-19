@@ -14,7 +14,7 @@ import { ImageLightbox } from "@/components/ImageLightbox";
 import { cacheGet, cacheSet, cacheKeys } from "@/lib/offline-cache";
 import { enqueueMessage } from "@/lib/offline-queue";
 import { getOnline } from "@/lib/use-online";
-import { ackDelivery, appendLocalDM, DM_MESSAGES_EVENT, markLocalConversationRead, updateChatsListCache } from "@/lib/dm-delivery";
+import { ackDelivery, appendLocalDM, DM_MESSAGES_EVENT, markLocalConversationRead, removeLocalDM, replaceLocalDM, updateChatsListCache } from "@/lib/dm-delivery";
 import { ensureMediaLibraryPermission, ensureMicPermission } from "@/lib/app-permissions";
 import { useCachedMediaSource } from "@/lib/use-cached-media";
 import { StoryRing } from "@/components/StoryRing";
@@ -40,7 +40,7 @@ type DM = {
 
 type MessageStatus = "pending" | "sent" | "delivered" | "read";
 function statusOf(m: DM): MessageStatus {
-  if (m.id.startsWith("q_")) return "pending";
+  if (m.id.startsWith("q_") || m.id.startsWith("tmp_")) return "pending";
   if (m.read_at) return "read";
   if (m.delivered_at) return "delivered";
   return "sent";
