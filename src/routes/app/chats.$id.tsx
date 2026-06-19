@@ -14,8 +14,7 @@ import { ImageLightbox } from "@/components/ImageLightbox";
 import { cacheGet, cacheSet, cacheKeys } from "@/lib/offline-cache";
 import { enqueueMessage } from "@/lib/offline-queue";
 import { getOnline } from "@/lib/use-online";
-import { ackDelivery, appendLocalDM, updateChatsListCache } from "@/lib/dm-delivery";
-import { events } from "@/lib/events";
+import { ackDelivery, appendLocalDM, markLocalConversationRead, updateChatsListCache } from "@/lib/dm-delivery";
 import { ensureMediaLibraryPermission, ensureMicPermission } from "@/lib/app-permissions";
 import { useCachedMediaSource } from "@/lib/use-cached-media";
 import { StoryRing } from "@/components/StoryRing";
@@ -159,7 +158,7 @@ function DMPage() {
     if (!user) return;
     try {
       await supabase.rpc("dm_mark_read", { _peer: otherId });
-      events.emit("dm_read", { peerId: otherId });
+      await markLocalConversationRead(user.id, otherId);
     } catch { /* ignore */ }
   };
   const markDelivered = async (ids?: string[]) => {
@@ -407,9 +406,7 @@ function DMPage() {
     }
     setSending(false);
     if (inserted) {
-      // Update global cache and emit event so chat list updates instantly
       void updateChatsListCache(user.id, inserted);
-      events.emit("dm_received", inserted);
       // Replace optimistic with real row, dedupe in case realtime arrived first.
       setMessages((old) => {
         const withoutTemp = old.filter((m) => m.id !== tempId);
