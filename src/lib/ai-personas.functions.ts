@@ -485,29 +485,29 @@ async function seedDefaultsInternal() {
     username: string; displayName: string; bio: string; avatarUrl: string;
     personaType: typeof types[number]; staggerIndex: number;
   }> = [
-    // GIRLS (10) — unique avatar IDs, distinct names
-    { username: "noor_aldeen",  displayName: "نور الدين",   bio: "قلبٌ يحبّ الكلام الجميل ✨", avatarUrl: PRAVATAR(1),  personaType: "romantic", staggerIndex: 0 },
-    { username: "lamees_q",     displayName: "لميس",         bio: "بين سطورٍ وأحلام 🌸",        avatarUrl: PRAVATAR(5),  personaType: "poetry",   staggerIndex: 2 },
-    { username: "retaj_h",      displayName: "رتاج",         bio: "ذكرٌ ودعاء 🤲",              avatarUrl: PRAVATAR(9),  personaType: "hadith",   staggerIndex: 4 },
-    { username: "jana_w",       displayName: "جنى",          bio: "كل يوم أفضل من سابقه 🌿",   avatarUrl: PRAVATAR(10), personaType: "serious",  staggerIndex: 6 },
-    { username: "salma_r",      displayName: "سلمى",         bio: "تفاصيل صغيرة تُسعدني 💖",   avatarUrl: PRAVATAR(16), personaType: "romantic", staggerIndex: 8 },
-    { username: "hala_v",       displayName: "هلا",          bio: "أحبّ الشعر العتيق 📖",       avatarUrl: PRAVATAR(20), personaType: "poetry",   staggerIndex: 10 },
-    { username: "dina_m",       displayName: "دينا",         bio: "اللهم اهدنا 🤍",             avatarUrl: PRAVATAR(21), personaType: "hadith",   staggerIndex: 12 },
-    { username: "raghd_x",      displayName: "رغد",          bio: "طموحٌ بلا حدود 🚀",          avatarUrl: PRAVATAR(23), personaType: "serious",  staggerIndex: 14 },
-    { username: "malak_a",      displayName: "ملاك",         bio: "أحبّ الناس بهدوء 🌹",        avatarUrl: PRAVATAR(24), personaType: "romantic", staggerIndex: 16 },
-    { username: "shahd_b",      displayName: "شهد",          bio: "كلمة جميلة تكفي 🌿",         avatarUrl: PRAVATAR(32), personaType: "poetry",   staggerIndex: 18 },
+    // GIRLS (10) — decorated, attractive display names
+    { username: "noor_aldeen",  displayName: "❀ نُور ❀",            bio: "قلبٌ يحبّ الكلام الجميل ✨ • soft soul",  avatarUrl: PRAVATAR(1),  personaType: "romantic", staggerIndex: 0 },
+    { username: "lamees_q",     displayName: "✦ لميس ✦",            bio: "بين سطورٍ وأحلام 🌸 • dreamer",          avatarUrl: PRAVATAR(5),  personaType: "poetry",   staggerIndex: 2 },
+    { username: "retaj_h",      displayName: "☾ رتاج ☾",            bio: "ذكرٌ ودعاء 🤲 • peaceful heart",         avatarUrl: PRAVATAR(9),  personaType: "hadith",   staggerIndex: 4 },
+    { username: "jana_w",       displayName: "✧ Jana • جنى ✧",      bio: "كل يوم أفضل من سابقه 🌿 • grow daily",   avatarUrl: PRAVATAR(10), personaType: "serious",  staggerIndex: 6 },
+    { username: "salma_r",      displayName: "♡ سَلمى ♡",           bio: "تفاصيل صغيرة تُسعدني 💖 • little things",avatarUrl: PRAVATAR(16), personaType: "romantic", staggerIndex: 8 },
+    { username: "hala_v",       displayName: "❁ هَلا ❁",            bio: "أحبّ الشعر العتيق 📖 • poetry lover",    avatarUrl: PRAVATAR(20), personaType: "poetry",   staggerIndex: 10 },
+    { username: "dina_m",       displayName: "✿ Dina • دينا ✿",     bio: "اللهم اهدنا 🤍 • be kind",               avatarUrl: PRAVATAR(21), personaType: "hadith",   staggerIndex: 12 },
+    { username: "raghd_x",      displayName: "★ رَغد ★",            bio: "طموحٌ بلا حدود 🚀 • dream big",          avatarUrl: PRAVATAR(23), personaType: "serious",  staggerIndex: 14 },
+    { username: "malak_a",      displayName: "༄ ملاك ༄",            bio: "أحبّ الناس بهدوء 🌹 • quiet love",       avatarUrl: PRAVATAR(24), personaType: "romantic", staggerIndex: 16 },
+    { username: "shahd_b",      displayName: "✩ شَهد ✩",            bio: "كلمة جميلة تكفي 🌿 • gentle words",      avatarUrl: PRAVATAR(32), personaType: "poetry",   staggerIndex: 18 },
 
-    // BOYS (10) — unique avatar IDs, distinct names
-    { username: "yazan_t",      displayName: "يزن",          bio: "بسيطٌ بطبعي 🌿",             avatarUrl: PRAVATAR(3),  personaType: "hadith",   staggerIndex: 1 },
-    { username: "faris_n",      displayName: "فارس",         bio: "أعمل بصمت 💪",               avatarUrl: PRAVATAR(7),  personaType: "serious",  staggerIndex: 3 },
-    { username: "ammar_d",      displayName: "عمار",         bio: "حُبٌّ صادق، لا أكثر ❤️",     avatarUrl: PRAVATAR(8),  personaType: "romantic", staggerIndex: 5 },
-    { username: "sami_k",       displayName: "سامي",         bio: "أُحبّ الكلمة الموزونة 📖",   avatarUrl: PRAVATAR(11), personaType: "poetry",   staggerIndex: 7 },
-    { username: "bilal_e",      displayName: "بلال",         bio: "صلّ على النبي ﷺ",           avatarUrl: PRAVATAR(12), personaType: "hadith",   staggerIndex: 9 },
-    { username: "rakan_y",      displayName: "راكان",        bio: "اصنع الفرق 🚀",             avatarUrl: PRAVATAR(13), personaType: "serious",  staggerIndex: 11 },
-    { username: "jad_p",        displayName: "جاد",          bio: "قلبي بسيط مثلك 💖",         avatarUrl: PRAVATAR(14), personaType: "romantic", staggerIndex: 13 },
-    { username: "sufyan_g",     displayName: "سفيان",        bio: "ولِكلٍّ مما يَهوى رِواية 🌿", avatarUrl: PRAVATAR(15), personaType: "poetry",   staggerIndex: 15 },
-    { username: "ziyad_z",      displayName: "زياد",         bio: "اللهم يسّر ولا تعسّر 🤲",    avatarUrl: PRAVATAR(17), personaType: "hadith",   staggerIndex: 17 },
-    { username: "mazen_o",      displayName: "مازن",         bio: "ركّز على الأهم ✨",         avatarUrl: PRAVATAR(18), personaType: "serious",  staggerIndex: 19 },
+    // BOYS (10) — decorated, attractive display names
+    { username: "yazan_t",      displayName: "⚡ يَزن ⚡",            bio: "بسيطٌ بطبعي 🌿 • simple life",           avatarUrl: PRAVATAR(3),  personaType: "hadith",   staggerIndex: 1 },
+    { username: "faris_n",      displayName: "✦ Faris • فارس ✦",    bio: "أعمل بصمت 💪 • work in silence",         avatarUrl: PRAVATAR(7),  personaType: "serious",  staggerIndex: 3 },
+    { username: "ammar_d",      displayName: "♛ عَمّار ♛",          bio: "حُبٌّ صادق، لا أكثر ❤️ • honest heart", avatarUrl: PRAVATAR(8),  personaType: "romantic", staggerIndex: 5 },
+    { username: "sami_k",       displayName: "✒ سَامي ✒",           bio: "أُحبّ الكلمة الموزونة 📖 • word lover", avatarUrl: PRAVATAR(11), personaType: "poetry",   staggerIndex: 7 },
+    { username: "bilal_e",      displayName: "☪ بِلال ☪",           bio: "صلّ على النبي ﷺ • peace within",         avatarUrl: PRAVATAR(12), personaType: "hadith",   staggerIndex: 9 },
+    { username: "rakan_y",      displayName: "▲ Rakan • راكان ▲",   bio: "اصنع الفرق 🚀 • make it count",          avatarUrl: PRAVATAR(13), personaType: "serious",  staggerIndex: 11 },
+    { username: "jad_p",        displayName: "♥ جاد ♥",             bio: "قلبي بسيط مثلك 💖 • simple heart",       avatarUrl: PRAVATAR(14), personaType: "romantic", staggerIndex: 13 },
+    { username: "sufyan_g",     displayName: "✧ سُفيان ✧",          bio: "ولِكلٍّ مما يَهوى رِواية 🌿 • a story", avatarUrl: PRAVATAR(15), personaType: "poetry",   staggerIndex: 15 },
+    { username: "ziyad_z",      displayName: "☾ زِياد ☾",           bio: "اللهم يسّر ولا تعسّر 🤲 • trust Him",   avatarUrl: PRAVATAR(17), personaType: "hadith",   staggerIndex: 17 },
+    { username: "mazen_o",      displayName: "★ Mazen • مازن ★",    bio: "ركّز على الأهم ✨ • stay focused",       avatarUrl: PRAVATAR(18), personaType: "serious",  staggerIndex: 19 },
   ];
 
   let createdPersonas = 0;
