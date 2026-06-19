@@ -230,8 +230,8 @@ function OtherProfilePage() {
             {/* Username */}
             <h1 className="mt-4 flex items-center justify-center gap-2 text-2xl font-extrabold">
               <span>{profile.username}</span>
-              {profile.is_ai && <AiBadge size="sm" />}
               <EquippedBadgeChip userId={profile.id} />
+
             </h1>
 
             
