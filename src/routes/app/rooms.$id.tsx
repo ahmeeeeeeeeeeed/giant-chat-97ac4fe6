@@ -329,22 +329,14 @@ function RoomPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomId, user?.id]);
 
-  // Auto-leave the room when the user goes offline OR signs out.
-  // The user must explicitly tap "انضمام للغرفة" again to come back in.
+  // Online status — used for gating auto-join and UI hints. We intentionally
+  // do NOT auto-leave the room on transient offline blips anymore.
   const online = useOnline();
-  useEffect(() => {
-    if (!online && myRank) {
-      setMyRank(null);
-      toast.message("تمت مغادرة الغرفة بسبب فقد الاتصال");
-      navigate({ to: "/app" });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [online]);
 
+  // Auto-leave the room ONLY on hard sign-out or real app exit.
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange(async (event) => {
       if (event === "SIGNED_OUT") {
-        // Best-effort: remove room membership so user must re-join after sign-in.
         try {
           if (user?.id) {
             await supabase.from("room_members").delete().eq("room_id", roomId).eq("user_id", user.id);
@@ -358,15 +350,16 @@ function RoomPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, roomId]);
 
-  // Auto-leave on app close / tab hide / device lock — uses fetch keepalive
-  // so the request survives the unload. User must rejoin manually next time.
+  // Auto-leave on app close / tab close — uses fetch keepalive so the
+  // request survives the unload. NOTE: we intentionally do NOT listen for
+  // `visibilitychange` here, because navigating within the SPA or briefly
+  // backgrounding the app should keep the user inside the room.
   useEffect(() => {
     if (!user?.id || !myRank) return;
     const leaveOnExit = () => {
       try {
         const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/room_members?room_id=eq.${roomId}&user_id=eq.${user.id}`;
         const apikey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
-        // Pull current session token synchronously from storage to attach as bearer.
         let token = apikey;
         try {
           const raw = Object.keys(localStorage).find((k) => k.startsWith("sb-") && k.endsWith("-auth-token"));
@@ -382,14 +375,11 @@ function RoomPage() {
         });
       } catch { /* ignore */ }
     };
-    const onVisibility = () => { if (document.visibilityState === "hidden") leaveOnExit(); };
     window.addEventListener("pagehide", leaveOnExit);
     window.addEventListener("beforeunload", leaveOnExit);
-    document.addEventListener("visibilitychange", onVisibility);
     return () => {
       window.removeEventListener("pagehide", leaveOnExit);
       window.removeEventListener("beforeunload", leaveOnExit);
-      document.removeEventListener("visibilitychange", onVisibility);
     };
   }, [user?.id, myRank, roomId]);
 
