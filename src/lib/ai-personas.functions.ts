@@ -400,44 +400,46 @@ export const runPersonaCycle = createServerFn({ method: "POST" })
 async function seedDefaultsInternal() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-  // 20 personas: 10 girls + 10 boys, distributed across 4 types (romantic/poetry/hadith/serious).
-  // Each posts every 5 hours (300 min). Staggered start: last_post_at = now - (300 - i*15) min,
-  // so persona i becomes due in i*15 minutes → spread evenly across the 5-hour window.
+  // Badge mapping by persona type (existing shop badges) — replaces the AI badge on profiles.
+  const BADGE_BY_TYPE: Record<string, string> = {
+    romantic: "9f13228e-c0f9-4fc8-b37d-570bb31af539", // القلب الأحمر
+    poetry:   "20822f10-9561-4f46-839c-5d644d8f22c0", // النجمة الذهبية
+    hadith:   "aed8029e-3fbf-4b47-95f7-b043d713e80a", // الدرع الفضي
+    serious:  "6860e158-444b-4595-b858-89b30fb5e5f2", // المفتاح الذهبي
+  };
+
   const PRAVATAR = (id: number) => `https://i.pravatar.cc/300?img=${id}`;
-  const girls = [1, 5, 9, 10, 16, 20, 21, 23, 24, 32];
-  const boys  = [3, 7, 8, 11, 12, 13, 14, 15, 17, 18];
   const types = ["romantic", "poetry", "hadith", "serious"] as const;
 
-  const girlNames = ["نورا", "سارة", "لانا", "رنا", "هدى", "ريم", "مريم", "ليلى", "دانا", "جنى"];
-  const boyNames  = ["عمر", "علي", "أحمد", "محمد", "يوسف", "خالد", "كريم", "زياد", "حسن", "طارق"];
+  // 20 unique personas with distinct usernames + Arabic display names + distinct avatars + bios.
+  const defaults: Array<{
+    username: string; displayName: string; bio: string; avatarUrl: string;
+    personaType: typeof types[number]; staggerIndex: number;
+  }> = [
+    // GIRLS (10) — unique avatar IDs, distinct names
+    { username: "noor_aldeen",  displayName: "نور الدين",   bio: "قلبٌ يحبّ الكلام الجميل ✨", avatarUrl: PRAVATAR(1),  personaType: "romantic", staggerIndex: 0 },
+    { username: "lamees_q",     displayName: "لميس",         bio: "بين سطورٍ وأحلام 🌸",        avatarUrl: PRAVATAR(5),  personaType: "poetry",   staggerIndex: 2 },
+    { username: "retaj_h",      displayName: "رتاج",         bio: "ذكرٌ ودعاء 🤲",              avatarUrl: PRAVATAR(9),  personaType: "hadith",   staggerIndex: 4 },
+    { username: "jana_w",       displayName: "جنى",          bio: "كل يوم أفضل من سابقه 🌿",   avatarUrl: PRAVATAR(10), personaType: "serious",  staggerIndex: 6 },
+    { username: "salma_r",      displayName: "سلمى",         bio: "تفاصيل صغيرة تُسعدني 💖",   avatarUrl: PRAVATAR(16), personaType: "romantic", staggerIndex: 8 },
+    { username: "hala_v",       displayName: "هلا",          bio: "أحبّ الشعر العتيق 📖",       avatarUrl: PRAVATAR(20), personaType: "poetry",   staggerIndex: 10 },
+    { username: "dina_m",       displayName: "دينا",         bio: "اللهم اهدنا 🤍",             avatarUrl: PRAVATAR(21), personaType: "hadith",   staggerIndex: 12 },
+    { username: "raghd_x",      displayName: "رغد",          bio: "طموحٌ بلا حدود 🚀",          avatarUrl: PRAVATAR(23), personaType: "serious",  staggerIndex: 14 },
+    { username: "malak_a",      displayName: "ملاك",         bio: "أحبّ الناس بهدوء 🌹",        avatarUrl: PRAVATAR(24), personaType: "romantic", staggerIndex: 16 },
+    { username: "shahd_b",      displayName: "شهد",          bio: "كلمة جميلة تكفي 🌿",         avatarUrl: PRAVATAR(32), personaType: "poetry",   staggerIndex: 18 },
 
-  const defaults: any[] = [];
-  for (let i = 0; i < 10; i++) {
-    defaults.push({
-      username: `girl_${i + 1}_ai`,
-      displayName: girlNames[i],
-      bio: ["قلب حالم 💖", "كلمات وأحاسيس", "بين السطور", "نور وأمل", "أنثى بطبعها 🌸",
-            "روح شاعرة", "هدوء يسبق الكلام", "تفاؤل دائم ☀️", "حُب وحياة", "ابتسامة الصباح"][i],
-      avatarUrl: PRAVATAR(girls[i]),
-      personaType: types[i % 4],
-      postIntervalMinutes: 300,
-      reactionRate: 0.7,
-      staggerIndex: i * 2, // 0,2,4,...18
-    });
-  }
-  for (let i = 0; i < 10; i++) {
-    defaults.push({
-      username: `boy_${i + 1}_ai`,
-      displayName: boyNames[i],
-      bio: ["كلمة حق 🌿", "رجل بكلمته", "بين الجد والمزاح", "أحب الهدوء", "طموح بلا حدود",
-            "قارئ ومفكر 📖", "محب للخير", "صديق وفي", "بسيط وصادق", "متفائل دائمًا"][i],
-      avatarUrl: PRAVATAR(boys[i]),
-      personaType: types[i % 4],
-      postIntervalMinutes: 300,
-      reactionRate: 0.7,
-      staggerIndex: i * 2 + 1, // 1,3,5,...19
-    });
-  }
+    // BOYS (10) — unique avatar IDs, distinct names
+    { username: "yazan_t",      displayName: "يزن",          bio: "بسيطٌ بطبعي 🌿",             avatarUrl: PRAVATAR(3),  personaType: "hadith",   staggerIndex: 1 },
+    { username: "faris_n",      displayName: "فارس",         bio: "أعمل بصمت 💪",               avatarUrl: PRAVATAR(7),  personaType: "serious",  staggerIndex: 3 },
+    { username: "ammar_d",      displayName: "عمار",         bio: "حُبٌّ صادق، لا أكثر ❤️",     avatarUrl: PRAVATAR(8),  personaType: "romantic", staggerIndex: 5 },
+    { username: "sami_k",       displayName: "سامي",         bio: "أُحبّ الكلمة الموزونة 📖",   avatarUrl: PRAVATAR(11), personaType: "poetry",   staggerIndex: 7 },
+    { username: "bilal_e",      displayName: "بلال",         bio: "صلّ على النبي ﷺ",           avatarUrl: PRAVATAR(12), personaType: "hadith",   staggerIndex: 9 },
+    { username: "rakan_y",      displayName: "راكان",        bio: "اصنع الفرق 🚀",             avatarUrl: PRAVATAR(13), personaType: "serious",  staggerIndex: 11 },
+    { username: "jad_p",        displayName: "جاد",          bio: "قلبي بسيط مثلك 💖",         avatarUrl: PRAVATAR(14), personaType: "romantic", staggerIndex: 13 },
+    { username: "sufyan_g",     displayName: "سفيان",        bio: "ولِكلٍّ مما يَهوى رِواية 🌿", avatarUrl: PRAVATAR(15), personaType: "poetry",   staggerIndex: 15 },
+    { username: "ziyad_z",      displayName: "زياد",         bio: "اللهم يسّر ولا تعسّر 🤲",    avatarUrl: PRAVATAR(17), personaType: "hadith",   staggerIndex: 17 },
+    { username: "mazen_o",      displayName: "مازن",         bio: "ركّز على الأهم ✨",         avatarUrl: PRAVATAR(18), personaType: "serious",  staggerIndex: 19 },
+  ];
 
   let createdPersonas = 0;
   const nowMs = Date.now();
@@ -452,79 +454,241 @@ async function seedDefaultsInternal() {
     await supabaseAdmin.from("profiles").update({
       is_ai: true, username: d.username, bio: d.bio, avatar_url: d.avatarUrl, dm_locked: true,
     }).eq("id", uid);
-    // Staggered last_post_at so first cycle picks up personas at different times
-    const staggerMs = (300 - d.staggerIndex * 15) * 60_000; // shift each by 15 min
+    // Stagger over a 5-hour window AND add per-persona random offset so they never re-sync
+    const baseShift = 300 - d.staggerIndex * 15;
+    const randomShift = Math.floor(Math.random() * 20) - 10; // ±10 min
+    const staggerMs = (baseShift + randomShift) * 60_000;
     const lastPostAt = new Date(nowMs - staggerMs).toISOString();
     const { error: ie } = await supabaseAdmin.from("ai_personas").insert({
       profile_id: uid, display_name: d.displayName, bio: d.bio, avatar_url: d.avatarUrl,
       persona_type: d.personaType,
-      post_interval_minutes: d.postIntervalMinutes, reaction_rate: d.reactionRate,
+      post_interval_minutes: 300,
+      reaction_rate: 0.6 + Math.random() * 0.3, // 0.6..0.9 — varied per persona
       last_post_at: lastPostAt,
     } as any);
-    if (!ie) createdPersonas++;
+    if (!ie) {
+      createdPersonas++;
+      // Award shop badge matching persona type (replaces AI badge in UI)
+      const badgeId = BADGE_BY_TYPE[d.personaType];
+      if (badgeId) {
+        await supabaseAdmin.from("user_badges").insert({ user_id: uid, badge_id: badgeId } as any).then(() => null, () => null);
+      }
+    }
   }
 
-  // ── Templates: romantic / poetry / hadith / serious — posts (with images), stories, comments
-  const IMG = {
-    rose:    "https://images.unsplash.com/photo-1518895949257-7621c3c786d7?w=800&q=80",
-    sunset:  "https://images.unsplash.com/photo-1495567720989-cebdbdd97913?w=800&q=80",
-    couple:  "https://images.unsplash.com/photo-1518621736915-f3b1c41bfd00?w=800&q=80",
-    heart:   "https://images.unsplash.com/photo-1518895312237-a9e23508077d?w=800&q=80",
-    book:    "https://images.unsplash.com/photo-1455390582262-044cdead277a?w=800&q=80",
-    desert:  "https://images.unsplash.com/photo-1473580044384-7ba9967e16a0?w=800&q=80",
-    pen:     "https://images.unsplash.com/photo-1455390582262-044cdead277a?w=800&q=80",
-    mosque1: "https://images.unsplash.com/photo-1542816417-0983c9c9ad53?w=800&q=80",
-    mosque2: "https://images.unsplash.com/photo-1564769662533-4f00a87b4056?w=800&q=80",
-    quran:   "https://images.unsplash.com/photo-1609599006353-e629aaabfeae?w=800&q=80",
-    light:   "https://images.unsplash.com/photo-1499209974431-9dddcece7f88?w=800&q=80",
-    road:    "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&q=80",
-    mountain:"https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&q=80",
-  };
+  // ── Templates: 200 unique comments (50 per type) + 200 unique images for posts/stories
+  // Use seeded picsum URLs so every image is unique and deterministic.
+  const img = (seed: string) => `https://picsum.photos/seed/${seed}/800/800`;
 
-  const templates: any[] = [
-    // ── ROMANTIC posts
-    { persona_type: "romantic", kind: "post", content: "في عينيك وطنٌ لا يُغادر، وفي صوتك أمانٌ لا يُوصف ❤️", media_url: IMG.rose, weight: 3 },
-    { persona_type: "romantic", kind: "post", content: "أحبك حين تكون، وأحبك حين تغيب… أحبك بكل ما في الكلمة من معنى 🌹", media_url: IMG.couple, weight: 3 },
-    { persona_type: "romantic", kind: "post", content: "قلبي بيتٌ صغير، أنتَ ساكنه الوحيد 💖", media_url: IMG.heart, weight: 2 },
-    { persona_type: "romantic", kind: "post", content: "كل غروبٍ يذكّرني بك… يا أجمل ما رأت عيناي 🌅", media_url: IMG.sunset, weight: 2 },
-    { persona_type: "romantic", kind: "story", content: "أحبك… ببساطة 💕", media_url: IMG.rose, weight: 2 },
-    { persona_type: "romantic", kind: "story", content: "أنت تفصيلي الجميل 🌹", media_url: IMG.heart, weight: 1 },
-    { persona_type: "romantic", kind: "comment", content: "كلام يلامس القلب ❤️", weight: 2 },
-    { persona_type: "romantic", kind: "comment", content: "أجمل ما قُرئ اليوم 🌹", weight: 2 },
-    { persona_type: "romantic", kind: "comment", content: "💖💖💖", weight: 1 },
-
-    // ── POETRY posts
-    { persona_type: "poetry", kind: "post", content: "ولي وطنٌ آليتُ ألّا أبيعه\nوألّا أرى غيري له الدهرَ مالكا — أحمد شوقي", media_url: IMG.book, weight: 2 },
-    { persona_type: "poetry", kind: "post", content: "إذا الشعبُ يومًا أرادَ الحياة\nفلا بدَّ أن يستجيبَ القدر — أبو القاسم الشابي", media_url: IMG.desert, weight: 2 },
-    { persona_type: "poetry", kind: "post", content: "ما كلُّ ما يتمنى المرءُ يدركُه\nتجري الرياحُ بما لا تشتهي السفنُ — المتنبي", media_url: IMG.pen, weight: 2 },
-    { persona_type: "poetry", kind: "post", content: "وإذا كانت النفوسُ كبارًا\nتعبت في مرادها الأجسامُ — المتنبي", media_url: IMG.mountain, weight: 2 },
-    { persona_type: "poetry", kind: "story", content: "الشعر ميزانُ القومِ 📖", media_url: IMG.book, weight: 1 },
-    { persona_type: "poetry", kind: "comment", content: "بيتٌ خالد ✨", weight: 2 },
-    { persona_type: "poetry", kind: "comment", content: "ما أجمل اختيارك 🌿", weight: 2 },
-    { persona_type: "poetry", kind: "comment", content: "📖❤️", weight: 1 },
-
-    // ── HADITH posts
-    { persona_type: "hadith", kind: "post", content: "قال ﷺ: «إنما الأعمالُ بالنياتِ، وإنما لكلِّ امرئٍ ما نوى» — متفقٌ عليه", media_url: IMG.mosque1, weight: 3 },
-    { persona_type: "hadith", kind: "post", content: "قال ﷺ: «الكلمةُ الطيبةُ صدقة» — متفقٌ عليه 🌿", media_url: IMG.mosque2, weight: 2 },
-    { persona_type: "hadith", kind: "post", content: "قال ﷺ: «من كان يؤمنُ باللهِ واليومِ الآخرِ فليقل خيرًا أو ليصمت»", media_url: IMG.quran, weight: 2 },
-    { persona_type: "hadith", kind: "post", content: "قال ﷺ: «المسلمُ من سلم المسلمون من لسانه ويده»", media_url: IMG.mosque1, weight: 2 },
-    { persona_type: "hadith", kind: "story", content: "لا تنسَ ذكر الله 🤲", media_url: IMG.quran, weight: 2 },
-    { persona_type: "hadith", kind: "story", content: "اللهم صلِّ على محمد ﷺ", media_url: IMG.mosque2, weight: 1 },
-    { persona_type: "hadith", kind: "comment", content: "جزاك الله خيرًا 🤍", weight: 2 },
-    { persona_type: "hadith", kind: "comment", content: "اللهم آمين 🤲", weight: 2 },
-    { persona_type: "hadith", kind: "comment", content: "بارك الله فيك 🌿", weight: 1 },
-
-    // ── SERIOUS posts
-    { persona_type: "serious", kind: "post", content: "لا تنتظر اللحظة المثالية… اعمل الآن ثم اصنعها مثاليّة.", media_url: IMG.road, weight: 3 },
-    { persona_type: "serious", kind: "post", content: "النجاح ليس صدفة، بل ساعات هادئة من العمل خلف الكواليس.", media_url: IMG.light, weight: 2 },
-    { persona_type: "serious", kind: "post", content: "ركّز على ما تستطيع تغييره، واترك الباقي للوقت.", media_url: IMG.mountain, weight: 2 },
-    { persona_type: "serious", kind: "post", content: "أهم استثمار في حياتك: نفسك. اقرأ، تعلّم، طوّر مهاراتك.", media_url: IMG.book, weight: 2 },
-    { persona_type: "serious", kind: "story", content: "ابدأ اليوم. ولو خطوة واحدة. 🚀", media_url: IMG.road, weight: 2 },
-    { persona_type: "serious", kind: "comment", content: "كلام في الصميم 👌", weight: 2 },
-    { persona_type: "serious", kind: "comment", content: "أتفق تمامًا 💯", weight: 2 },
-    { persona_type: "serious", kind: "comment", content: "نصيحة قيمة 🌿", weight: 1 },
+  const ROMANTIC_POSTS = [
+    "في عينيك وطنٌ لا يُغادر، وفي صوتك أمانٌ لا يُوصف ❤️",
+    "أحبك حين تكون، وأحبك حين تغيب… أحبك بكل ما في الكلمة من معنى 🌹",
+    "قلبي بيتٌ صغير، أنتَ ساكنه الوحيد 💖",
+    "كل غروبٍ يذكّرني بك… يا أجمل ما رأت عيناي 🌅",
+    "أنتَ القصيدة التي لم تُكتب بعد ✨",
+    "تفاصيلك الصغيرة تكفيني عمرًا كاملًا 💕",
+    "لو سألوني عن السعادة لأشرتُ إليك 🌸",
+    "أحبك بصمتٍ يُسمعه القلب وحده ❤️",
+    "في حضورك يتعطّل كل شيء سواك 💖",
+    "كأنّ الحبَّ خُلق ليُقال باسمك 🌹",
+    "أنتَ النور الذي يسبق الصباح ☀️",
+    "بكلمةٍ منك تعود الحياة 💞",
+    "اشتقتُ إليك حتى وأنتَ هنا 🥺",
+    "قلبي يعرف الطريق إليك دائمًا ❤️",
+    "أنتَ تفصيلٌ لا يُكرَّر في عمري 🌹",
+  ];
+  const ROMANTIC_STORIES = [
+    "أحبك… ببساطة 💕",
+    "أنت تفصيلي الجميل 🌹",
+    "قلبي يبتسم لك ❤️",
+    "حضورك = راحة 💖",
+    "كل المساء يشبهك 🌅",
+    "اشتقت لك 🥺",
+    "ابتسامتك = يومي ☀️",
+    "أحبك أكثر 💞",
+    "أنت الأجمل دومًا 🌸",
+    "بقلبي أنت 💖",
+  ];
+  const POETRY_POSTS = [
+    "ولي وطنٌ آليتُ ألّا أبيعه\nوألّا أرى غيري له الدهرَ مالكا — أحمد شوقي",
+    "إذا الشعبُ يومًا أرادَ الحياة\nفلا بدَّ أن يستجيبَ القدر — أبو القاسم الشابي",
+    "ما كلُّ ما يتمنى المرءُ يدركُه\nتجري الرياحُ بما لا تشتهي السفنُ — المتنبي",
+    "وإذا كانت النفوسُ كبارًا\nتعبت في مرادها الأجسامُ — المتنبي",
+    "على قدرِ أهلِ العزمِ تأتي العزائمُ\nوتأتي على قدرِ الكرامِ المكارمُ — المتنبي",
+    "إذا غامرتَ في شرفٍ مرومِ\nفلا تقنع بما دون النجومِ — المتنبي",
+    "وما نيلُ المطالبِ بالتمنّي\nولكن تُؤخذُ الدنيا غِلابا — أحمد شوقي",
+    "ومن يكُ ذا فمٍ مرٍّ مريضٍ\nيجد مُرًّا به الماءَ الزلالا — المتنبي",
+    "الخيلُ والليلُ والبيداءُ تعرفني\nوالسيفُ والرمحُ والقرطاسُ والقلمُ — المتنبي",
+    "قُم للمعلِّمِ وفّهِ التبجيلا\nكاد المعلِّمُ أن يكون رسولا — أحمد شوقي",
+    "تَعَلَّم فليس المرءُ يُولدُ عالِمًا\nوليس أخو علمٍ كمن هو جاهلُ — الشافعي",
+    "إذا كنتَ في كلِّ الأمورِ معاتبًا\nصديقك لم تَلقَ الذي لا تُعاتبه — بشار بن برد",
+  ];
+  const POETRY_STORIES = [
+    "الشعر ميزانُ القومِ 📖",
+    "بيتٌ يلامس الروح ✨",
+    "كلمات لها وزن 🌿",
+    "للعربية بهاءٌ آخر 📜",
+    "يا جمال اللغة 💫",
+    "حرفٌ يحيي القلب ✒️",
+    "من عيون الشعر 🌹",
+    "بيتٌ خالد ⭐",
+  ];
+  const HADITH_POSTS = [
+    "قال ﷺ: «إنما الأعمالُ بالنياتِ، وإنما لكلِّ امرئٍ ما نوى» — متفقٌ عليه",
+    "قال ﷺ: «الكلمةُ الطيبةُ صدقة» — متفقٌ عليه 🌿",
+    "قال ﷺ: «من كان يؤمنُ باللهِ واليومِ الآخرِ فليقل خيرًا أو ليصمت»",
+    "قال ﷺ: «المسلمُ من سلم المسلمون من لسانه ويده»",
+    "قال ﷺ: «لا يؤمنُ أحدُكم حتى يحبَّ لأخيه ما يحبُّ لنفسه»",
+    "قال ﷺ: «الدّينُ النصيحة»",
+    "قال ﷺ: «من سلك طريقًا يلتمس فيه علمًا سهّل الله له طريقًا إلى الجنة»",
+    "قال ﷺ: «إن الله جميلٌ يحب الجمال»",
+    "قال ﷺ: «اتقِ الله حيثما كنت، وأتبع السيئةَ الحسنةَ تمحُها»",
+    "قال ﷺ: «من لا يَرحم لا يُرحم»",
+    "قال ﷺ: «خيركم خيركم لأهله»",
+    "قال ﷺ: «إن الله كتب الإحسانَ على كلِّ شيء»",
+  ];
+  const HADITH_STORIES = [
+    "لا تنسَ ذكر الله 🤲",
+    "اللهم صلِّ على محمد ﷺ",
+    "أستغفر الله العظيم 🤍",
+    "سبحان الله وبحمده 🌿",
+    "اللهم اغفر لنا 🤲",
+    "لا إله إلا الله 💚",
+    "اللهم لك الحمد 🌙",
+    "حسبنا الله ونعم الوكيل ✨",
+  ];
+  const SERIOUS_POSTS = [
+    "لا تنتظر اللحظة المثالية… اعمل الآن ثم اصنعها مثاليّة.",
+    "النجاح ليس صدفة، بل ساعات هادئة من العمل خلف الكواليس.",
+    "ركّز على ما تستطيع تغييره، واترك الباقي للوقت.",
+    "أهم استثمار في حياتك: نفسك. اقرأ، تعلّم، طوّر مهاراتك.",
+    "العادات الصغيرة اليومية أقوى من القرارات الكبيرة المفاجئة.",
+    "لا تقارن بدايتك بنهاية غيرك.",
+    "الانضباط أقوى من الحماس؛ الحماس يفنى والانضباط يبقى.",
+    "اقرأ كتابًا هذا الأسبوع، ولو 10 صفحات يوميًا.",
+    "حدّد هدفًا واحدًا واضحًا، ثم اعمل عليه بلا تشتت.",
+    "الفشل ليس نهاية الطريق، بل بداية فهم أعمق.",
+    "ابتعد عن من يستنزفك، حتى لو كان قريبًا.",
+    "صحتك أولًا: نوم جيد، حركة يومية، طعام نظيف.",
+  ];
+  const SERIOUS_STORIES = [
+    "ابدأ اليوم. ولو خطوة واحدة. 🚀",
+    "ركّز ✨",
+    "اعمل بصمت 💪",
+    "ثقتك بنفسك = نصف الطريق ⭐",
+    "حدد أولوياتك 🎯",
+    "اشرب ماء، نَم باكرًا 🌙",
+    "خطوة واحدة كل يوم 🌿",
+    "لا تتوقف 🔥",
   ];
 
+  // 50 unique comments per type = 200 total
+  const ROMANTIC_COMMENTS = [
+    "كلام يلامس القلب ❤️", "أجمل ما قُرئ اليوم 🌹", "💖💖💖", "تفاصيلك جميلة 🌸",
+    "وصفٌ يأسر القلب ✨", "رائعة كعادتك 💕", "كلماتك ربيع 🌹", "يا قلبي 🥺",
+    "أحببتها 💖", "تستحق التثبيت ❤️", "هذي تكتب بماء الذهب ✨", "وصفٌ صادق 💞",
+    "حبٌّ نقي 🌸", "ما أحلى الكلمات الصادقة ❤️", "أجمل ما قرأت اليوم 💖",
+    "كلام دافئ 🌷", "💗 من القلب", "تذوّقتها كقهوة الصباح ☕❤️", "تحفة 🌹",
+    "أحبك يا قلب 💕", "روعة 🥹", "بقلبي 💞", "تصلح أن تكون أغنية 🎶",
+    "وصلتني الرسالة 💖", "كم هذا جميل 🌸", "أنتِ شاعرة 🌹", "ما شاء الله 💕",
+    "أحاسيس راقية ✨", "أحببتها كثيرًا ❤️", "كلام عذب 🍃", "💘", "كلمة وحبكة 🌹",
+    "هذي تترسخ بالذاكرة ❤️", "كلامك ضوء 💡", "💕✨", "كم أنتَ صادق 💖",
+    "احتجت هذي الكلمات 🌷", "أحببت الإحساس 💞", "وصلت 💌", "🌹❤️🌹",
+    "أنا معجبة 💖", "بُوركت 🌸", "كلام يرفع المعنويات 💕", "🩷",
+    "كم هي صادقة ❤️", "أحببت اختيارك للصورة 🌹", "💝", "تذكّرتُ بها أحدًا 🥺",
+    "كلام يستحق ❤️", "بسيط وعميق 💖",
+  ];
+  const POETRY_COMMENTS = [
+    "بيتٌ خالد ✨", "ما أجمل اختيارك 🌿", "📖❤️", "اختيارك راقٍ ⭐",
+    "بيت من الذهب ✨", "للأبد يبقى ⭐", "أبدع المتنبي 💫", "اختيارٌ موفّق 📜",
+    "ما أعذب لغتنا 🌷", "بيت يهز الوجدان ✒️", "💫📖", "تحفة أدبية ⭐",
+    "روعة الشعر 🌟", "اختيار راقٍ جدًا ✨", "بيتٌ سامي 📜", "للعربية بهاء 🌿",
+    "كأن البيت كُتب اليوم ⭐", "💖 ما أعذبه", "لله درّ الشاعر ✨", "ربي يحفظ العربية 📖",
+    "أبدعت بالاختيار 🌟", "البيت كأنه قطعة ماس 💎", "هذي قصائد لا تموت ⭐",
+    "تحفة شعرية ✨", "أحببت البيت كثيرًا 🌹", "حروف من ذهب 📜", "🌟📖",
+    "ما أبهى البيان ✨", "بيت كأنه نسيم 🌿", "💎", "للأدب رجالٌ كهؤلاء 📚",
+    "🌹📖", "بيتٌ يستحق التأمل 💫", "اختيار ذوق ⭐", "كأن البيت قِيل لي 🥺",
+    "اللهم ارحم شاعرنا 🤍", "🌟✨", "بيت من القلب 💖", "ربي يحفظك على الاختيار 🌿",
+    "هذي من جواهر الأدب 💎", "اختيارك أصيل ⭐", "📜❤️", "بيتٌ سهلٌ ممتنع 💫",
+    "أعدتُ قراءته 🥲", "بيت يعلّمنا الحياة 📖", "اللغة سفينة الأدب 🌊",
+    "حروفٌ تنبض ✒️", "بيت لا يضاهى ⭐", "أحببت الإيقاع ✨", "روعة 🌟",
+  ];
+  const HADITH_COMMENTS = [
+    "جزاك الله خيرًا 🤍", "اللهم آمين 🤲", "بارك الله فيك 🌿", "اللهم صلِّ على محمد ﷺ",
+    "نسأل الله القبول 🤲", "ربي يكتب أجرك 🤍", "🌙✨", "ذكّرتنا، جزاك الله خيرًا 🌷",
+    "اللهم بلّغنا الإحسان 🤲", "ربي يرحم نبيّنا ﷺ", "آمين يا رب 🤍",
+    "اللهم اجعلنا من أهل القرآن 🤲", "بارك الله في وقتك 🌿", "ما أعظمها وصية 🌙",
+    "نسأل الله الثبات 🤍", "اللهم أنر قلوبنا ✨", "ربي يجزيك خيرًا 🌷",
+    "اللهم استرنا في الدنيا والآخرة 🤲", "💚 جزاك الله خيرًا", "اللهم اهدنا 🤍",
+    "ربي يوفقك 🌙", "ذكرى نافعة، شكرًا 🌿", "اللهم اجمعنا بحبيبنا ﷺ 🤲",
+    "بُورك في كلماتك ✨", "اللهم اشرح صدورنا 🤍", "🤲🤍", "ربي يرفع قدرك 🌷",
+    "اللهم رضّنا بقضائك 🤲", "هذا ما نحتاجه يوميًا 🌿", "ربي يبارك في أيامك ✨",
+    "اللهم اجعلنا من أهل الجنة 🤲", "ذكّر فإن الذكرى تنفع 🌙", "🤍🤲",
+    "اللهم اغفر لنا ولوالدينا 🤲", "ربي يرحم موتانا 🌷", "اللهم لك الحمد ✨",
+    "ربي يجعلها في ميزان حسناتك 🤍", "اللهم بلغنا رمضان 🌙", "🤲✨",
+    "نسأل الله الإخلاص 🤍", "اللهم اجعلنا من الذاكرين 🌿", "ربي يحفظك 🤲",
+    "🤍🌿", "ذكّرتنا بأنفسنا 💚", "اللهم إنا نستودعك ديننا 🤲",
+    "بارك الله فيك ونفع بك 🤍", "اللهم اجعلنا مع الصادقين 🌙", "🤲💚",
+    "ربي يجعلك سببًا للخير 🌷", "اللهم اجعلنا من الموحدين 🤍",
+  ];
+  const SERIOUS_COMMENTS = [
+    "كلام في الصميم 👌", "أتفق تمامًا 💯", "نصيحة قيمة 🌿", "صحيح جدًا ✅",
+    "هذا ما نحتاجه 💡", "💯", "اقتباس ذهبي ⭐", "كلام واقعي 🙌",
+    "محتوى نافع، شكرًا 🌟", "أعجبني الطرح 👏", "✨ نصيحة ثمينة", "كلام يفتح آفاق 🌱",
+    "أحببت الفكرة 💡", "تحفيز جميل 🔥", "بالضبط 👌", "كلامك سليم 100% 💯",
+    "🚀 لنبدأ", "نصيحة من ذهب ⭐", "كم احتجتُ هذا اليوم 💪", "بُوركت ✨",
+    "هذي قاعدة حياتية 📌", "محتوى يستحق التثبيت 📍", "بالفعل 💯", "🌿 شكرًا",
+    "كلام واعٍ 💡", "أتفق وبشدة ✅", "محتوى راقٍ 🌟", "🙏 جزاك الله خيرًا",
+    "نصيحة عملية 👌", "🌱 لنزرع العادة", "كلام يحرّك الهمّة 🔥", "👏👏",
+    "📚 مفيد جدًا", "ركيزة مهمة ⚡", "كم هذا حقيقي 💯", "💪 لنبدأ من الآن",
+    "حكمة جميلة 🌿", "أحببت الأسلوب ✨", "🎯 مباشر ومفيد", "أحتاج التذكير دائمًا 🙏",
+    "كلام يضع النقاط على الحروف ✅", "🌟 شكرًا للنشر", "نصيحة عميقة 💡",
+    "💯💯", "محفّز جدًا 🔥", "اقتباس يستحق الحفظ 📌", "🤝 متفق",
+    "كم هذا صحيح ⭐", "أنا الآن أعمل بها 🚀", "كلام عملي 100% ✅",
+  ];
+
+  const buildTemplates = () => {
+    const out: any[] = [];
+
+    // Posts + Stories: each gets a unique seeded image. 50 images per type × 4 = 200 unique images.
+    const pushBlock = (type: string, posts: string[], stories: string[]) => {
+      // Posts: each post gets up to 4 distinct image variants (using seeded picsum) — total ~50 images.
+      const variants = 4;
+      posts.forEach((p, i) => {
+        for (let v = 0; v < variants; v++) {
+          out.push({
+            persona_type: type, kind: "post", content: p,
+            media_url: img(`${type}-p${i}-${v}`),
+            weight: v === 0 ? 3 : 1,
+          });
+        }
+      });
+      stories.forEach((s, i) => {
+        out.push({
+          persona_type: type, kind: "story", content: s,
+          media_url: img(`${type}-s${i}`),
+          weight: 1,
+        });
+      });
+    };
+    pushBlock("romantic", ROMANTIC_POSTS, ROMANTIC_STORIES);
+    pushBlock("poetry",   POETRY_POSTS,   POETRY_STORIES);
+    pushBlock("hadith",   HADITH_POSTS,   HADITH_STORIES);
+    pushBlock("serious",  SERIOUS_POSTS,  SERIOUS_STORIES);
+
+    // Comments: 50 unique per type = 200 unique comments
+    const pushComments = (type: string, list: string[]) => {
+      list.forEach((c) => out.push({ persona_type: type, kind: "comment", content: c, weight: 1 }));
+    };
+    pushComments("romantic", ROMANTIC_COMMENTS);
+    pushComments("poetry",   POETRY_COMMENTS);
+    pushComments("hadith",   HADITH_COMMENTS);
+    pushComments("serious",  SERIOUS_COMMENTS);
+
+    return out;
+  };
+
+  const templates = buildTemplates();
   let createdTemplates = 0;
   for (const t of templates) {
     const { error } = await supabaseAdmin.from("ai_persona_templates").insert(t as any);
@@ -532,6 +696,7 @@ async function seedDefaultsInternal() {
   }
   return { personas: createdPersonas, templates: createdTemplates };
 }
+
 
 // Bootstraps 20 demo personas + content templates when the system is empty.
 export const seedDefaultPersonas = createServerFn({ method: "POST" })
