@@ -241,12 +241,12 @@ function DMPage() {
   useEffect(() => {
     if (!user) return;
     const onGlobalMessage = (event: Event) => {
-      const detail = (event as CustomEvent<{ message?: DM; peerId?: string }>).detail;
+      const detail = (event as CustomEvent<{ message?: DM; peerId?: string; replacedId?: string }>).detail;
       const msg = detail?.message;
       if (!msg || detail?.peerId !== otherId) return;
       console.info("[dm-chat] global-message-applied", { messageId: msg.id, peerId: otherId });
       setMessages((old) => {
-        const replacedId = (detail as { replacedId?: string }).replacedId;
+        const replacedId = detail?.replacedId;
         const base = replacedId ? old.filter((x) => x.id !== replacedId) : old;
         const idx = base.findIndex((x) => x.id === msg.id);
         if (idx < 0) return [...base, msg].sort((a, b) => a.created_at.localeCompare(b.created_at));
