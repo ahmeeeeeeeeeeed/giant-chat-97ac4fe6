@@ -1,79 +1,109 @@
-## الهدف
-تحويل الرسائل الخاصة إلى نظام "تسليم وحذف" — الخادم وسيط مؤقت فقط، والمحادثات تُحفظ نهائيًا على جهاز كل مستخدم. مع إصلاح ملاحظات التحديث لتكون مخصصة لكل إصدار.
+# خطة: نظام الحسابات الافتراضية (AI Personas)
 
-## ما يبقى كما هو
-- شكل واجهات الدردشة (`src/routes/app/chats.$id.tsx`, `chats.index.tsx`, `notifications.tsx`) بدون أي تغيير بصري.
-- رسائل الغرف (`room_messages`) — لا تتأثر، تبقى عامة ومشتركة.
-- المكالمات، الإشعارات، الـStories.
+نظام لإنشاء وإدارة حسابات افتراضية يديرها النظام لزيادة التفاعل والمحتوى، مع شفافية كاملة عبر شارة "AI" واضحة.
 
-## التغييرات الأساسية
+## 1. قاعدة البيانات (migration)
 
-### 1) قاعدة بيانات DMs الجديدة
-- جدول `direct_messages` يصبح "صندوق توصيل" فقط: يحوي الرسائل غير المُسلَّمة بعد.
-- إضافة عمود `delivered_at` (يوجد `read_at` حاليًا، لكن نحتاج تمييز التسليم عن القراءة).
-- **trigger**: عند `UPDATE` يضبط `delivered_at` → احذف الصف فورًا (`DELETE`).
-- سياسات RLS: المُرسِل يستطيع `INSERT` فقط، المستقبِل يستطيع `SELECT` و `UPDATE delivered_at` فقط.
-- جدول جديد `dm_devices(user_id, device_id, last_seen)` لتتبع الأجهزة النشطة لكل مستخدم.
-- جدول جديد `dm_deliveries(message_id, device_id)` لتسجيل أي جهاز استلم — الرسالة لا تُحذف إلا بعد استلام كل أجهزة المستلم النشطة (خلال آخر 30 يومًا).
+### جداول جديدة
+- **ai_personas**: الشخصيات الافتراضية
+  - `profile_id` (FK → profiles, unique) — كل شخصية مربوطة ببروفايل حقيقي معلَّم
+  - `display_name`, `bio`, `avatar_url`, `persona_type` (friendly/news/gamer/...)
+  - `is_active` (bool), `post_interval_minutes` (default 180), `reaction_rate` (0-1)
+  - `last_post_at`, `last_react_at`
+- **ai_persona_templates**: قوالب المحتوى
+  - `persona_type`, `kind` (post/story/comment/reply)
+  - `content` (نص)، `media_url` (اختياري)، `weight` (للترشيح العشوائي)
+- **ai_persona_activity_log**: سجل الإجراءات (للمراقبة ومنع التكرار)
+  - `persona_id`, `action` (post/like/comment/story/react_story), `target_id`, `created_at`
 
-### 2) تخزين محلي دائم (IndexedDB)
-- مكتبة جديدة `src/lib/local-dm-store.ts` تعتمد على `idb-keyval` (موجود بالفعل) أو `dexie`.
-- مخطط: `conversations` (peer_id, last_message, unread) + `messages` (id, peer_id, sender_id, content, type, media_blob أو media_url, created_at, status).
-- كل الرسائل المرسَلة والمستلمة تُحفظ هنا فورًا.
-- واجهات الدردشة تقرأ من هذا المخزن أولًا (instant load)، ثم تستمع لـrealtime للجديد.
+### تعديل `profiles`
+- إضافة عمود `is_ai` (bool, default false) — لعرض شارة "AI" في كل واجهة تظهر فيها البروفايل.
 
-### 3) دورة حياة الرسالة
-1. المُرسِل: يكتب الرسالة → تُحفظ محليًا بحالة `sending` → `INSERT` على الخادم → عند نجاح الإدراج تتحول إلى `sent`.
-2. المستقبِل (realtime): يستلم الـINSERT → ينزّل المحتوى/الوسائط → يحفظ محليًا → يستدعي `UPDATE delivered_at` → الخادم يحذف الصف بـtrigger.
-3. المُرسِل (realtime على DELETE): يرى الحذف → يحدّث الحالة محليًا إلى `delivered` (✓✓).
-4. عند فتح المستلم للمحادثة: `read_at` لم يعد على الخادم (الصف محذوف) — تُحفظ القراءة محليًا فقط، وتُرسَل إشارة realtime broadcast (بدون تخزين) للمُرسِل لعرض "تم القراءة".
+### RLS
+- قراءة `ai_personas` و`profiles.is_ai`: للجميع (لإظهار الشارة).
+- كتابة وإدارة الجداول: admin فقط عبر `has_role`.
+- `ai_persona_templates` و`activity_log`: admin only.
 
-### 4) الوسائط (صور/صوت)
-- الرفع يبقى عبر Supabase Storage في bucket `dm-media`.
-- بعد تأكيد التسليم: تنزيل الـblob على جهاز المستلم → حفظ محلي → إشارة `media_delivered` → edge function `delete-dm-media` يحذف الملف من Storage.
-- يبقى المُرسِل محتفظًا بنسخة محلية أيضًا.
+## 2. الواجهة الإدارية
 
-### 5) عدة أجهزة
-- عند تسجيل الدخول: يولّد كل جهاز `device_id` ويسجّل في `dm_devices`.
-- الرسالة تُعتبر "مسلّمة بالكامل" فقط بعد استلام كل أجهزة المستلم النشطة (آخر نشاط < 30 يوم).
-- إذا جهاز خامل >30 يوم يُعتبر مهجورًا ولا يمنع الحذف.
+ملف جديد: `src/routes/app/admin.ai-personas.tsx` (مرتبط في `admin.index.tsx`).
 
-### 6) ترحيل الرسائل الحالية (تصدير محلي)
-- عند أول دخول بعد التحديث: يقرأ التطبيق رسائل المستخدم الموجودة من الخادم، يحفظها كلها في IndexedDB، ثم يستدعي edge function يحذف رسائله من الخادم.
-- شريط تقدم بسيط "جاري تنزيل محادثاتك إلى جهازك..." مرة واحدة فقط.
-- بعد 30 يومًا من النشر: cron job ينظّف أي رسائل قديمة متبقية لمستخدمين لم يعودوا.
+يتيح:
+- إنشاء شخصية جديدة (يولّد user وهمي في `profiles` + سجل في `ai_personas`).
+- تعديل: الاسم، الصورة، Bio، نوع الشخصية، الفاصل الزمني، معدل التفاعل، تفعيل/إيقاف.
+- إدارة قوالب المحتوى (إضافة/حذف/تعديل).
+- عرض سجل النشاط الأخير.
+- زر "تشغيل دورة الآن" لاختبار يدوي.
 
-### 7) موثوقية وعدم الاتصال
-- طابور `offline-queue` الحالي يستمر في العمل للمُرسِل.
-- إذا المستقبِل غير متصل: الرسالة تبقى على الخادم. عند اتصاله: realtime + استعلام `SELECT` لكل ما هو `receiver_id = me` يجلب المتراكم → يحفظ محليًا → يؤكّد التسليم → يُحذف.
-- إعادة المحاولة التلقائية لتأكيد التسليم إذا فشل (exponential backoff).
+## 3. محرك التشغيل (Server Functions + Cron)
 
-### 8) ملاحظات التحديث المخصصة
-حاليًا جدول `app_updates` يحوي 17 عمودًا — على الأرجح فيه عمود ملاحظات لكن غير مستخدم.
-- التحقق من بنية الجدول، وإذا لزم إضافة `release_notes_ar` و `release_notes_en` (نص طويل).
-- في `src/routes/app/admin.updates.tsx`: إضافة حقل textarea لكتابة مميزات هذا التحديث قبل النشر.
-- في `UpdateGate.tsx`: عرض الملاحظات الخاصة بالإصدار الجديد بدل الرسالة الثابتة.
+ملف: `src/lib/ai-personas.functions.ts`
 
-## الملفات المتأثرة (تقريبيًا)
-- migration: `direct_messages` (trigger الحذف، تعديل RLS)، `dm_devices`، `dm_deliveries`، `app_updates.release_notes_*`.
-- جديد: `src/lib/local-dm-store.ts`، `src/lib/dm-delivery.ts`، `src/lib/dm-migration.ts`.
-- تعديل: `src/routes/app/chats.$id.tsx`، `chats.index.tsx`، `notifications.tsx`، `offline-queue.ts`، `use-global-notifications.ts`، `admin.updates.tsx`، `UpdateGate.tsx`.
-- جديد: edge function `delete-dm-media`.
+- `runPersonaCycle()` — server function محمية بـ admin، تستدعى من:
+  1. زر يدوي في صفحة الإدارة.
+  2. cron job كل 15 دقيقة عبر `pg_net` → `/api/public/hooks/ai-personas-tick`.
 
-## مخاطر وقيود يجب أن يعرفها المستخدم
-- **حذف التطبيق = فقدان المحادثات نهائيًا** (مطلوب صراحة).
-- متصفح في وضع التصفح الخاص = لا حفظ.
-- IndexedDB قد يُمسح بواسطة المتصفح تحت ضغط مساحة (نادر، لكن وارد).
-- الصور الكبيرة ستستهلك مساحة الجهاز بدل الخادم.
-- لن تعمل ميزة "مشاركة محادثة عبر أجهزة" بنفس الطريقة.
+### منطق الدورة (لكل شخصية active)
+- إذا `now - last_post_at >= post_interval_minutes`: ينشر منشور/قصة عشوائية من القوالب → `community_posts` أو `stories`.
+- بنسبة `reaction_rate`: يختار منشورات/قصص حديثة من آخر 24 ساعة ويضيف:
+  - إعجاب (`community_reactions`)
+  - تعليق قصير من قوالب `kind=comment`
+  - تفاعل قصة (`story_reactions`)
+- حدود صارمة: مثلاً ≤ 3 إعجابات و≤ 1 تعليق لكل شخصية في الدورة، لمنع الإزعاج.
+- تسجيل كل إجراء في `ai_persona_activity_log`.
 
-## خطوات التنفيذ (بالترتيب)
-1. Migration: جداول التتبع + trigger الحذف + أعمدة ملاحظات التحديث.
-2. مكتبة التخزين المحلي + اختبار قراءة/كتابة.
-3. تعديل صفحة محادثة واحدة لاستخدام النظام الجديد + اختبار التسليم بين جهازين.
-4. تعميم على كل واجهات DM + الإشعارات.
-5. سكربت الترحيل + edge function حذف الوسائط.
-6. تحديث `admin.updates` و `UpdateGate`.
-7. اختبار شامل: offline، multi-device، وسائط.
+### Route عام للـ cron
+`src/routes/api/public/hooks/ai-personas-tick.ts` — يستدعي `runPersonaCycle` بمفتاح آمن (apikey header).
 
-هل تريد التنفيذ بهذا الشكل؟
+## 4. الشفافية البصرية (Badge)
+
+مكوّن: `src/components/AiBadge.tsx` — شارة صغيرة "AI" بلون مميز (أزرق/سماوي) مع أيقونة Bot.
+
+يُعرض بجانب اسم المستخدم في:
+- `profile.$id.tsx` و`my_profile.tsx`
+- بطاقات منشورات `community.tsx`
+- قائمة الدردشات (إن وُجد بوت يتحدث)
+- بطاقات القصص `StoriesBar.tsx` / `StoryViewer.tsx`
+- نتائج البحث/قائمة الأصدقاء
+
+التحقق عبر `profile.is_ai === true`.
+
+## 5. منع إساءة الاستخدام
+
+- لا يمكن لمستخدم حقيقي إرسال طلب صداقة/رسالة خاصة لحسابات AI (تحقق في `friend_request` و`send_dm`)، أو نسمح بذلك لكن بدون رد — قابل للنقاش لاحقاً. **الافتراضي: السماح بالمشاهدة فقط، لا رسائل خاصة.**
+- لا تُحسب حسابات AI ضمن إحصائيات المستخدمين النشطين.
+
+## 6. مصدر المحتوى
+
+- قوالب جاهزة يدخلها الأدمن (الأبسط، يبدأ هنا).
+- لاحقاً (مرحلة 2 — ليست ضمن هذه الخطة): توليد محتوى تلقائي عبر Lovable AI Gateway باستخدام `google/gemini-3-flash-preview` لإنتاج منشورات وتعليقات سياقية.
+
+## التفاصيل التقنية المختصرة
+
+```
+migration:
+  + profiles.is_ai
+  + ai_personas, ai_persona_templates, ai_persona_activity_log
+  + RLS + GRANTs
+  + cron job (pg_cron) كل 15 دقيقة
+
+new files:
+  src/components/AiBadge.tsx
+  src/lib/ai-personas.functions.ts
+  src/routes/app/admin.ai-personas.tsx
+  src/routes/api/public/hooks/ai-personas-tick.ts
+
+edited files:
+  src/routes/app/admin.index.tsx       (رابط للوحة Personas)
+  src/routes/app/profile.$id.tsx        (شارة AI)
+  src/routes/app/my_profile.tsx         (شارة AI)
+  src/routes/app/community.tsx          (شارة AI على المنشورات)
+  src/components/StoriesBar.tsx         (شارة AI)
+```
+
+## أسئلة قبل التنفيذ
+
+1. **التعليقات والإعجابات**: هل تريد أن تعلّق وتعجب حسابات AI على منشورات المستخدمين الحقيقيين؟ (الخطة تقول نعم بحدود.)
+2. **الرسائل الخاصة**: هل تسمح للمستخدم بمراسلة حساب AI؟ (الافتراضي: لا.)
+3. **توليد المحتوى**: نبدأ بالقوالب فقط، ونضيف توليد AI لاحقاً — موافق؟
+
