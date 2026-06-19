@@ -264,49 +264,6 @@ function DMPage() {
     return () => window.removeEventListener(DM_MESSAGES_EVENT, onGlobalMessage);
   }, [user, otherId]);
 
-  // realtime: messages — only when online (avoids browser network errors offline)
-  useEffect(() => {
-    if (!user) return;
-    if (!getOnline()) return;
-    const ch = supabase
-      .channel(`dm-msg:${[user.id, otherId].sort().join(":")}`)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "direct_messages", filter: `sender_id=eq.${user.id}` }, async (payload) => {
-        const r = payload.new as DM;
-        if (
-          (r.sender_id === user.id && r.receiver_id === otherId) ||
-          (r.sender_id === otherId && r.receiver_id === user.id)
-        ) {
-          setMessages((old) => mergeDMList(old, r));
-          setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current!.scrollHeight, behavior: "smooth" }), 30);
-          if (r.receiver_id === user.id) {
-            // Save locally first so deletion from the server doesn't lose the message.
-            await appendLocalDM(user.id, r);
-            await markDelivered([r.id]);
-            await markRead();
-          }
-        }
-      })
-      .on("postgres_changes", { event: "DELETE", schema: "public", table: "direct_messages", filter: `sender_id=eq.${user.id}` }, (payload) => {
-        // Server purged the row after full delivery — keep it locally and
-        // upgrade the status to "delivered" so the sender sees ✓✓.
-        const r = payload.old as { id: string };
-        setMessages(old => {
-          const existing = old.find((x) => x.id === r.id);
-          if (existing) void replaceLocalDM(user.id, otherId, r.id, { ...existing, delivered_at: existing.delivered_at ?? new Date().toISOString() });
-          return old.map(x => x.id === r.id
-            ? { ...x, delivered_at: x.delivered_at ?? new Date().toISOString() }
-            : x);
-        });
-      })
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "direct_messages", filter: `sender_id=eq.${user.id}` }, (payload) => {
-        const r = payload.new as DM;
-        setMessages(old => mergeDMList(old, r));
-        void appendLocalDM(user.id, r);
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
-  }, [user, otherId]);
-
   // load + subscribe to call history for this pair
   useEffect(() => {
     if (!user) return;
