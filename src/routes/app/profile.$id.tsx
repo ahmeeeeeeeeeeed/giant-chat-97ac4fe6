@@ -28,6 +28,7 @@ type Profile = {
   dm_locked: boolean;
   last_seen_at: string | null;
   cover_url: string | null;
+
   cover_type: string | null;
 };
 
