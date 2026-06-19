@@ -45,8 +45,10 @@ function ChatsPage() {
 
   const load = async () => {
     if (!user) return;
+    let cachedList: Convo[] = [];
     const cached = await cacheGet<Convo[]>(cacheKeys.chatsList(user.id));
     if (cached) {
+      cachedList = cached;
       console.info("[dm-cache] loaded-local-list", { key: cacheKeys.chatsList(user.id), count: cached.length, online: getOnline() });
       setConvos(cached); setLoading(false);
       convoCacheReadyRef.current = true;
@@ -75,14 +77,22 @@ function ChatsPage() {
           existing.unread += 1;
         }
       });
-      const ids = Array.from(map.keys());
+      const ids = Array.from(new Set([...cachedList.map((c) => c.otherId), ...Array.from(map.keys())]));
       if (ids.length === 0) { convoCacheReadyRef.current = true; setConvos([]); await cacheSet(cacheKeys.chatsList(user.id), []); setLoading(false); return; }
       const { data: profs } = await supabase.from("profiles").select("id, username, avatar_url").in("id", ids);
       const out: Convo[] = ids.map(id => {
         const p = profs?.find(x => x.id === id);
-        const last = map.get(id)!;
-        return { otherId: id, username: p?.username ?? "?", avatar_url: p?.avatar_url ?? null, last: last.last, created_at: last.created_at, unread: last.unread };
-      });
+        const fresh = map.get(id);
+        const cachedConvo = cachedList.find((c) => c.otherId === id);
+        return {
+          otherId: id,
+          username: p?.username ?? cachedConvo?.username ?? "?",
+          avatar_url: p?.avatar_url ?? cachedConvo?.avatar_url ?? null,
+          last: fresh?.last ?? cachedConvo?.last ?? "",
+          created_at: fresh?.created_at ?? cachedConvo?.created_at ?? new Date(0).toISOString(),
+          unread: Math.max(fresh?.unread ?? 0, cachedConvo?.unread ?? 0),
+        };
+      }).filter((c) => c.last).sort((a, b) => b.created_at.localeCompare(a.created_at));
       convoCacheReadyRef.current = true;
       setConvos(out);
       console.info("[dm-cache] loaded-cloud-list", { key: cacheKeys.chatsList(user.id), count: out.length });
