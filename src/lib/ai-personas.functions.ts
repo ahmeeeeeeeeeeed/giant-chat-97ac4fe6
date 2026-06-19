@@ -612,6 +612,11 @@ async function seedDefaultsInternal() {
     "قُم للمعلِّمِ وفّهِ التبجيلا\nكاد المعلِّمُ أن يكون رسولا — أحمد شوقي",
     "تَعَلَّم فليس المرءُ يُولدُ عالِمًا\nوليس أخو علمٍ كمن هو جاهلُ — الشافعي",
     "إذا كنتَ في كلِّ الأمورِ معاتبًا\nصديقك لم تَلقَ الذي لا تُعاتبه — بشار بن برد",
+    "“And still, I rise.” — Maya Angelou ✨",
+    "“We accept the love we think we deserve.” — Stephen Chbosky 💭",
+    "“Stars can't shine without darkness.” 🌌",
+    "“The wound is the place where the Light enters you.” — Rumi 🌙",
+    "وَأَنتَ بِأَخذِكَ الْأَيّامَ فَخراً\nأَرَدتَ بِأَنْ تُؤَنَّسَكَ النّجوم — verses that never age 📖",
   ];
   const POETRY_STORIES = [
     "الشعر ميزانُ القومِ 📖",
@@ -622,6 +627,9 @@ async function seedDefaultsInternal() {
     "حرفٌ يحيي القلب ✒️",
     "من عيون الشعر 🌹",
     "بيتٌ خالد ⭐",
+    "words > everything 📖✨",
+    "poetry hits different at night 🌙",
+    "a line worth saving 💫",
   ];
   const HADITH_POSTS = [
     "قال ﷺ: «إنما الأعمالُ بالنياتِ، وإنما لكلِّ امرئٍ ما نوى» — متفقٌ عليه",
@@ -636,6 +644,10 @@ async function seedDefaultsInternal() {
     "قال ﷺ: «من لا يَرحم لا يُرحم»",
     "قال ﷺ: «خيركم خيركم لأهله»",
     "قال ﷺ: «إن الله كتب الإحسانَ على كلِّ شيء»",
+    "The Prophet ﷺ said: “The best of you are those who are best to their families.” 🤍",
+    "“Verily, with hardship comes ease.” — Qur'an 94:6 🌙✨",
+    "A kind word is a charity 🌿 — start your day with one.",
+    "“Be in this world as if you were a stranger or a traveler.” — Hadith 🕊️",
   ];
   const HADITH_STORIES = [
     "لا تنسَ ذكر الله 🤲",
@@ -646,6 +658,9 @@ async function seedDefaultsInternal() {
     "لا إله إلا الله 💚",
     "اللهم لك الحمد 🌙",
     "حسبنا الله ونعم الوكيل ✨",
+    "alhamdulillah for everything 🤍",
+    "say SubhanAllah today 🌿",
+    "trust His plan 🌙",
   ];
   const SERIOUS_POSTS = [
     "لا تنتظر اللحظة المثالية… اعمل الآن ثم اصنعها مثاليّة.",
@@ -660,6 +675,12 @@ async function seedDefaultsInternal() {
     "الفشل ليس نهاية الطريق، بل بداية فهم أعمق.",
     "ابتعد عن من يستنزفك، حتى لو كان قريبًا.",
     "صحتك أولًا: نوم جيد، حركة يومية، طعام نظيف.",
+    "Discipline > motivation. Always. 💪",
+    "Small steps every day beat huge leaps once a month. 🚀",
+    "Your future is built in the boring hours nobody sees. 🌱",
+    "Protect your peace. Not every battle deserves your energy. 🕊️",
+    "Read 10 pages a day. In a year, that's 12+ books. 📚",
+    "ابدأ الآن، ولو ناقصًا. Start now, even imperfect. ✨",
   ];
   const SERIOUS_STORIES = [
     "ابدأ اليوم. ولو خطوة واحدة. 🚀",
