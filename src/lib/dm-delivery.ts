@@ -73,7 +73,6 @@ async function getProfileLite(peerId: string): Promise<ProfileLite | null> {
       .eq("id", peerId)
       .maybeSingle();
     if (error || !data) return null;
-    await cacheSet(cacheKeys.profile(peerId), data as ProfileLite);
     return data as ProfileLite;
   } catch (error) {
     console.warn("[dm-global] profile-load-failed", { peerId, error });
