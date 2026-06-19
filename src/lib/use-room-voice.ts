@@ -340,15 +340,18 @@ export function useRoomVoice(roomId: string, myUserId: string | undefined) {
     for (const [, entry] of peersRef.current) {
       for (const t of stream.getTracks()) entry.pc.addTrack(t, stream);
     }
+    // Attach VAD for my own mic so my tile lights up too
+    if (myUserId) attachAnalyser(myUserId, stream);
     return stream;
-  }, []);
+  }, [myUserId, attachAnalyser]);
 
   const stopMic = useCallback(() => {
     const s = localStreamRef.current;
     if (!s) return;
     for (const t of s.getTracks()) { try { t.stop(); } catch { /* noop */ } }
     localStreamRef.current = null;
-  }, []);
+    if (myUserId) detachAnalyser(myUserId);
+  }, [myUserId, detachAnalyser]);
 
   const joinStage = useCallback(async () => {
     if (!myUserId || isJoining) return;
