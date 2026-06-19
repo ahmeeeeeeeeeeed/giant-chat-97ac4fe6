@@ -14,7 +14,7 @@ import { ImageLightbox } from "@/components/ImageLightbox";
 import { cacheGet, cacheSet, cacheKeys } from "@/lib/offline-cache";
 import { enqueueMessage } from "@/lib/offline-queue";
 import { getOnline } from "@/lib/use-online";
-import { ackDelivery, appendLocalDM, markLocalConversationRead, updateChatsListCache } from "@/lib/dm-delivery";
+import { ackDelivery, appendLocalDM, DM_MESSAGES_EVENT, markLocalConversationRead, updateChatsListCache } from "@/lib/dm-delivery";
 import { ensureMediaLibraryPermission, ensureMicPermission } from "@/lib/app-permissions";
 import { useCachedMediaSource } from "@/lib/use-cached-media";
 import { StoryRing } from "@/components/StoryRing";
@@ -237,6 +237,29 @@ function DMPage() {
       }
     })();
   }, [otherId, user]);
+
+  useEffect(() => {
+    if (!user) return;
+    const onGlobalMessage = (event: Event) => {
+      const detail = (event as CustomEvent<{ message?: DM; peerId?: string }>).detail;
+      const msg = detail?.message;
+      if (!msg || detail?.peerId !== otherId) return;
+      console.info("[dm-chat] global-message-applied", { messageId: msg.id, peerId: otherId });
+      setMessages((old) => {
+        const idx = old.findIndex((x) => x.id === msg.id);
+        if (idx < 0) return [...old, msg].sort((a, b) => a.created_at.localeCompare(b.created_at));
+        const next = [...old];
+        next[idx] = { ...next[idx], ...msg };
+        return next.sort((a, b) => a.created_at.localeCompare(b.created_at));
+      });
+      if (msg.receiver_id === user.id) {
+        void markRead();
+        setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current!.scrollHeight, behavior: "smooth" }), 30);
+      }
+    };
+    window.addEventListener(DM_MESSAGES_EVENT, onGlobalMessage);
+    return () => window.removeEventListener(DM_MESSAGES_EVENT, onGlobalMessage);
+  }, [user, otherId]);
 
   // realtime: messages — only when online (avoids browser network errors offline)
   useEffect(() => {
