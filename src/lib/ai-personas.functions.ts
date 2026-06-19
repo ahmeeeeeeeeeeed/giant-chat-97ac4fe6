@@ -383,11 +383,80 @@ async function runCycleInternal() {
     }
   }
 
+  // ── Daily room invites: 3 designated bots each send 1 invite per day to a random user.
+  try {
+    const inviteStats = await runDailyRoomInvites(supabaseAdmin, now);
+    (stats as any).invites = inviteStats.sent;
+    if (inviteStats.errors.length) stats.errors.push(...inviteStats.errors);
+  } catch (e) {
+    stats.errors.push("invites:" + (e instanceof Error ? e.message : String(e)));
+  }
 
-  const processed = stats.posts + stats.stories + stats.likes + stats.comments;
+  const processed = stats.posts + stats.stories + stats.likes + stats.comments + ((stats as any).invites || 0);
   console.log("[ai-personas] cycle done", { processed, ...stats });
   return { processed, ...stats };
 }
+
+// ────────────────────────────────────────────────────────────────────────────
+// Daily room invites — 3 bots, 1 invite/day each, random user + random room
+// ────────────────────────────────────────────────────────────────────────────
+async function runDailyRoomInvites(supabaseAdmin: any, now: Date) {
+  const out = { sent: 0, errors: [] as string[] };
+
+  // Pick the 3 oldest active personas as inviters (deterministic).
+  const { data: inviters } = await supabaseAdmin
+    .from("ai_personas")
+    .select("id, profile_id, display_name")
+    .eq("is_active", true)
+    .order("created_at", { ascending: true })
+    .limit(3);
+  if (!inviters?.length) return out;
+
+  // Fetch all rooms once.
+  const { data: rooms } = await supabaseAdmin.from("rooms").select("id").limit(200);
+  if (!rooms?.length) return out;
+
+  // Fetch human users (new + old): exclude AI profiles. Cap to 500 for fairness.
+  const { data: users } = await supabaseAdmin
+    .from("profiles")
+    .select("id")
+    .or("is_ai.is.null,is_ai.eq.false")
+    .order("created_at", { ascending: false })
+    .limit(500);
+  if (!users?.length) return out;
+
+  const dayAgo = new Date(now.getTime() - 24 * 60 * 60_000).toISOString();
+
+  for (const bot of inviters) {
+    try {
+      // Skip if this bot already sent an invite in the last 24h.
+      const { count: sentToday } = await supabaseAdmin
+        .from("ai_persona_activity_log")
+        .select("id", { count: "exact", head: true })
+        .eq("persona_id", bot.id).eq("action", "invite")
+        .gte("created_at", dayAgo);
+      if ((sentToday ?? 0) > 0) continue;
+
+      const room = rooms[Math.floor(Math.random() * rooms.length)];
+      // Mix new (top) + old (bottom) — random pick across the full window.
+      const target = users[Math.floor(Math.random() * users.length)];
+      if (!room || !target || target.id === bot.profile_id) continue;
+
+      const { error } = await supabaseAdmin.from("room_invites").insert({
+        room_id: room.id, user_id: target.id, invited_by: bot.profile_id,
+      } as any);
+      if (error) { out.errors.push("invite:" + error.message); continue; }
+      out.sent++;
+      await supabaseAdmin.from("ai_persona_activity_log").insert({
+        persona_id: bot.id, action: "invite", target_id: room.id,
+      } as any);
+    } catch (e) {
+      out.errors.push("invite:" + (e instanceof Error ? e.message : String(e)));
+    }
+  }
+  return out;
+}
+
 
 export const runPersonaCycle = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
