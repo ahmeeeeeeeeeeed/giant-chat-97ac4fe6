@@ -192,7 +192,23 @@ async function pickWeighted<T extends Record<string, any>>(rows: T[]): Promise<T
 async function runCycleInternal() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const now = new Date();
-  const stats = { personas: 0, posts: 0, stories: 0, likes: 0, comments: 0, errors: [] as string[] };
+  const stats = { personas: 0, posts: 0, stories: 0, likes: 0, comments: 0, errors: [] as string[], seeded: false };
+
+  // Auto-bootstrap: if DB is empty, seed defaults so the system is fully self-starting.
+  const { count: existing } = await supabaseAdmin
+    .from("ai_personas")
+    .select("id", { count: "exact", head: true });
+  if (!existing || existing === 0) {
+    console.log("[ai-personas] empty DB — auto-seeding defaults");
+    try {
+      const r = await seedDefaultsInternal();
+      stats.seeded = true;
+      console.log("[ai-personas] auto-seed result", r);
+    } catch (e) {
+      console.error("[ai-personas] auto-seed failed", e);
+      stats.errors.push("autoseed:" + (e instanceof Error ? e.message : String(e)));
+    }
+  }
 
   const { data: personas, error: pErr } = await supabaseAdmin
     .from("ai_personas")
