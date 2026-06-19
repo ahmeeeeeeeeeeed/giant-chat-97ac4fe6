@@ -241,7 +241,8 @@ export function useRoomVoice(roomId: string, myUserId: string | undefined) {
     try { entry.pc.close(); } catch { /* noop */ }
     if (entry.audio) { try { entry.audio.remove(); } catch { /* noop */ } }
     peersRef.current.delete(remoteUid);
-  }, []);
+    detachAnalyser(remoteUid);
+  }, [detachAnalyser]);
 
   // ============== SIGNALING LISTENER ==============
   useEffect(() => {
