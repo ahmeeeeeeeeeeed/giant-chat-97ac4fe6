@@ -172,6 +172,7 @@ export function RoomVoiceStage({
             sp={s}
             profile={profiles[s.user_id]}
             isMe={s.user_id === myUserId}
+            isSpeaking={!s.is_muted && !!v.speakingMap[s.user_id]}
             canManage={isMod && s.user_id !== myUserId}
             onMute={(m) => v.muteSpeaker(s.user_id, m)}
             onRemove={() => v.removeSpeaker(s.user_id)}
