@@ -8,6 +8,7 @@ import { cacheGet, cacheSet, cacheKeys } from "@/lib/offline-cache";
 import { getOnline } from "@/lib/use-online";
 import { useCachedMediaSource } from "@/lib/use-cached-media";
 import { StoryRing } from "@/components/StoryRing";
+import { DM_CONVERSATIONS_EVENT, previewDMMessage, type DMConversation } from "@/lib/dm-delivery";
 import { toast } from "sonner";
 
 
@@ -44,8 +45,10 @@ function ChatsPage() {
 
   const load = async () => {
     if (!user) return;
+    let cachedList: Convo[] = [];
     const cached = await cacheGet<Convo[]>(cacheKeys.chatsList(user.id));
     if (cached) {
+      cachedList = cached;
       console.info("[dm-cache] loaded-local-list", { key: cacheKeys.chatsList(user.id), count: cached.length, online: getOnline() });
       setConvos(cached); setLoading(false);
       convoCacheReadyRef.current = true;
@@ -58,7 +61,7 @@ function ChatsPage() {
     try {
       const { data, error } = await supabase
         .from("direct_messages")
-        .select("sender_id, receiver_id, content, created_at, read_at")
+        .select("sender_id, receiver_id, content, created_at, read_at, message_type")
         .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
         .order("created_at", { ascending: false })
         .limit(300);
@@ -69,19 +72,27 @@ function ChatsPage() {
         const existing = map.get(otherId);
         const isUnreadForMe = m.receiver_id === user.id && !m.read_at;
         if (!existing) {
-          map.set(otherId, { last: m.content, created_at: m.created_at, unread: isUnreadForMe ? 1 : 0 });
+          map.set(otherId, { last: previewDMMessage(m), created_at: m.created_at, unread: isUnreadForMe ? 1 : 0 });
         } else if (isUnreadForMe) {
           existing.unread += 1;
         }
       });
-      const ids = Array.from(map.keys());
+      const ids = Array.from(new Set([...cachedList.map((c) => c.otherId), ...Array.from(map.keys())]));
       if (ids.length === 0) { convoCacheReadyRef.current = true; setConvos([]); await cacheSet(cacheKeys.chatsList(user.id), []); setLoading(false); return; }
       const { data: profs } = await supabase.from("profiles").select("id, username, avatar_url").in("id", ids);
       const out: Convo[] = ids.map(id => {
         const p = profs?.find(x => x.id === id);
-        const last = map.get(id)!;
-        return { otherId: id, username: p?.username ?? "?", avatar_url: p?.avatar_url ?? null, last: last.last, created_at: last.created_at, unread: last.unread };
-      });
+        const fresh = map.get(id);
+        const cachedConvo = cachedList.find((c) => c.otherId === id);
+        return {
+          otherId: id,
+          username: p?.username ?? cachedConvo?.username ?? "?",
+          avatar_url: p?.avatar_url ?? cachedConvo?.avatar_url ?? null,
+          last: fresh?.last ?? cachedConvo?.last ?? "",
+          created_at: fresh?.created_at ?? cachedConvo?.created_at ?? new Date(0).toISOString(),
+          unread: Math.max(fresh?.unread ?? 0, cachedConvo?.unread ?? 0),
+        };
+      }).filter((c) => c.last).sort((a, b) => b.created_at.localeCompare(a.created_at));
       convoCacheReadyRef.current = true;
       setConvos(out);
       console.info("[dm-cache] loaded-cloud-list", { key: cacheKeys.chatsList(user.id), count: out.length });
@@ -93,18 +104,23 @@ function ChatsPage() {
     }
   };
 
-
   useEffect(() => {
     load();
+  }, [user?.id]);
+
+  useEffect(() => {
     if (!user) return;
-    if (!getOnline()) return;
-    const ch = supabase
-      .channel("dm-list")
-      .on("postgres_changes", { event: "*", schema: "public", table: "direct_messages" }, () => load())
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+    const onConversations = (event: Event) => {
+      const detail = (event as CustomEvent<{ list?: DMConversation[] }>).detail;
+      if (!detail?.list) return;
+      console.info("[dm-list] realtime-list-applied", { count: detail.list.length });
+      convoCacheReadyRef.current = true;
+      setConvos(detail.list);
+      setLoading(false);
+    };
+    window.addEventListener(DM_CONVERSATIONS_EVENT, onConversations);
+    return () => window.removeEventListener(DM_CONVERSATIONS_EVENT, onConversations);
+  }, [user?.id]);
 
   // Keep local cache in sync with the latest convo list state.
   useEffect(() => {

@@ -5,8 +5,9 @@
 // can render those pages without a network round trip — even pages the user
 // has never visited.
 import { supabase } from "@/integrations/supabase/client";
-import { cacheSet, cacheKeys } from "./offline-cache";
+import { cacheGet, cacheSet, cacheKeys } from "./offline-cache";
 import { getOnline } from "./use-online";
+import { previewDMMessage, type DMConversation } from "./dm-delivery";
 
 async function cacheMedia(url: string | null | undefined) {
   if (!url || !getOnline()) return;
@@ -99,9 +100,10 @@ async function warmRooms() {
 }
 
 async function warmChatsAndRecentMessages(userId: string) {
+  const cachedList = (await cacheGet<DMConversation[]>(cacheKeys.chatsList(userId))) ?? [];
   const { data: msgs } = await supabase
     .from("direct_messages")
-    .select("sender_id, receiver_id, content, created_at, read_at")
+    .select("sender_id, receiver_id, content, created_at, read_at, message_type")
     .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
     .order("created_at", { ascending: false })
     .limit(300);
@@ -112,7 +114,7 @@ async function warmChatsAndRecentMessages(userId: string) {
     const isUnreadForMe = m.receiver_id === userId && !m.read_at;
     if (!existing) {
       map.set(otherId, {
-        last: m.content,
+        last: previewDMMessage(m),
         created_at: m.created_at,
         unread: isUnreadForMe ? 1 : 0,
       });
@@ -120,7 +122,7 @@ async function warmChatsAndRecentMessages(userId: string) {
       existing.unread += 1;
     }
   });
-  const ids = Array.from(map.keys());
+  const ids = Array.from(new Set([...cachedList.map((c) => c.otherId), ...Array.from(map.keys())]));
   if (!ids.length) {
     await cacheSet(cacheKeys.chatsList(userId), []);
     return;
@@ -131,16 +133,17 @@ async function warmChatsAndRecentMessages(userId: string) {
     .in("id", ids);
   const out = ids.map((id) => {
     const p = profs?.find((x) => x.id === id);
-    const last = map.get(id)!;
+    const fresh = map.get(id);
+    const cached = cachedList.find((c) => c.otherId === id);
     return {
       otherId: id,
-      username: p?.username ?? "?",
-      avatar_url: p?.avatar_url ?? null,
-      last: last.last,
-      created_at: last.created_at,
-      unread: last.unread,
+      username: p?.username ?? cached?.username ?? "?",
+      avatar_url: p?.avatar_url ?? cached?.avatar_url ?? null,
+      last: fresh?.last ?? cached?.last ?? "",
+      created_at: fresh?.created_at ?? cached?.created_at ?? new Date(0).toISOString(),
+      unread: Math.max(fresh?.unread ?? 0, cached?.unread ?? 0),
     };
-  });
+  }).filter((c) => c.last).sort((a, b) => b.created_at.localeCompare(a.created_at));
   await cacheSet(cacheKeys.chatsList(userId), out);
 
   // Pre-cache last N messages for the top recent peers + their profile.
