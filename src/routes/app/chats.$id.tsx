@@ -477,6 +477,7 @@ function DMPage() {
       media_duration_ms: durationMs ?? null,
       reply_to_id: replyTo?.id ?? null,
     };
+    if (optimistic.media_url) await cacheSet(cacheKeys.media(optimistic.media_url), blob);
     setMessages((old) => mergeDMList(old, optimistic));
     await appendLocalDM(user.id, optimistic);
     console.info("[dm-chat] optimistic-saved", { messageId: tempId, peerId: otherId, type: kind });
@@ -488,6 +489,7 @@ function DMPage() {
       });
       if (upErr) throw upErr;
       const { data: pub } = supabase.storage.from("room-media").getPublicUrl(path);
+      await cacheSet(cacheKeys.media(pub.publicUrl), blob);
       const { data: inserted, error } = await supabase.from("direct_messages").insert({
         sender_id: user.id, receiver_id: otherId, content: "",
         message_type: kind, media_url: pub.publicUrl, media_duration_ms: durationMs ?? null,
