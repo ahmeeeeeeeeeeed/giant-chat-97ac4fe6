@@ -10,6 +10,7 @@ import {
   addPersonaTemplate,
   deletePersonaTemplate,
   runPersonaCycle,
+  seedDefaultPersonas,
 } from "@/lib/ai-personas.functions";
 import { Bot, Loader2, Plus, Trash2, Play, Power, PowerOff } from "lucide-react";
 import { toast } from "sonner";
