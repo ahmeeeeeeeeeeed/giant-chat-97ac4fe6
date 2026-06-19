@@ -30,7 +30,9 @@ type Profile = {
   cover_url: string | null;
 
   cover_type: string | null;
+  is_ai?: boolean;
 };
+
 
 function OtherProfilePage() {
   const { id: otherId } = Route.useParams();
@@ -81,7 +83,7 @@ function OtherProfilePage() {
         return;
       }
 
-      const selectCols = "id, username, avatar_url, bio, points, gender, country, hide_last_seen, dm_locked, last_seen_at, cover_url, cover_type";
+      const selectCols = "id, username, avatar_url, bio, points, gender, country, hide_last_seen, dm_locked, last_seen_at, cover_url, cover_type, is_ai";
       let p: any = null;
       let lastErr: any = null;
       for (let i = 0; i < 2; i++) {
@@ -226,8 +228,10 @@ function OtherProfilePage() {
             {/* Username */}
             <h1 className="mt-4 flex items-center justify-center gap-2 text-2xl font-extrabold">
               <span>{profile.username}</span>
+              {profile.is_ai && <AiBadge size="sm" />}
               <EquippedBadgeChip userId={profile.id} />
             </h1>
+
             
             {/* Points & Status */}
             <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
