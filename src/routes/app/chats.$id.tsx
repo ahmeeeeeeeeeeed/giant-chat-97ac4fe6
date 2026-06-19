@@ -418,6 +418,7 @@ function DMPage() {
     };
     setMessages((old) => [...old, optimistic]);
     await appendLocalDM(user.id, optimistic);
+    console.info("[dm-chat] optimistic-saved", { messageId: tempId, peerId: otherId, type: "text" });
     setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current!.scrollHeight, behavior: "smooth" }), 30);
 
     let error: { message?: string } | null = null;
@@ -436,11 +437,8 @@ function DMPage() {
     if (inserted) {
       await replaceLocalDM(user.id, otherId, tempId, inserted);
       // Replace optimistic with real row, dedupe in case realtime arrived first.
-      setMessages((old) => {
-        const withoutTemp = old.filter((m) => m.id !== tempId);
-        if (withoutTemp.some((m) => m.id === inserted!.id)) return withoutTemp;
-        return [...withoutTemp, inserted!];
-      });
+      setMessages((old) => mergeDMList(old, inserted!, tempId));
+      console.info("[dm-chat] optimistic-confirmed", { tempId, messageId: inserted.id, peerId: otherId });
       return;
     }
     if (error) {
@@ -450,7 +448,7 @@ function DMPage() {
         const queuedRow = await enqueueMessage({ kind: "dm", sender_id: user.id, receiver_id: otherId, content });
         const queued: DM = { ...optimistic, id: queuedRow.id, created_at: new Date(queuedRow.createdAt).toISOString() };
         await replaceLocalDM(user.id, otherId, tempId, queued);
-        setMessages((old) => [...old, queued]);
+        setMessages((old) => mergeDMList(old, queued, tempId));
         toast.message("تم حفظ الرسالة — ستُرسل عند عودة الإنترنت");
         return;
       }
