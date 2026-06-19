@@ -39,6 +39,7 @@ function AdminAiPersonas() {
   const addTplFn = useServerFn(addPersonaTemplate);
   const delTplFn = useServerFn(deletePersonaTemplate);
   const cycleFn = useServerFn(runPersonaCycle);
+  const seedFn = useServerFn(seedDefaultPersonas);
 
   useEffect(() => {
     if (loaded && !isAdmin) {
