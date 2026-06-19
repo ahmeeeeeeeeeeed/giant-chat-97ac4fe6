@@ -207,6 +207,8 @@ export function useRoomVoice(roomId: string, myUserId: string | undefined) {
         window.addEventListener("click", unlock, { once: true });
       });
       tryPlay();
+      // Attach VAD for this remote speaker
+      attachAnalyser(remoteUid, stream);
     };
 
 
