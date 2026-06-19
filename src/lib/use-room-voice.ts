@@ -48,11 +48,90 @@ export function useRoomVoice(roomId: string, myUserId: string | undefined) {
   const [allInvites, setAllInvites] = useState<SpeakerInvite[]>([]);
   const [isJoining, setIsJoining] = useState(false);
   const [localMuted, setLocalMuted] = useState(false);
+  const [speakingMap, setSpeakingMap] = useState<Record<string, boolean>>({});
 
   const localStreamRef = useRef<MediaStream | null>(null);
   const peersRef = useRef<Map<string, PeerEntry>>(new Map());
   const onStageRef = useRef(false);
   const speakersRef = useRef<Speaker[]>([]);
+
+  // --- Voice activity detection ---
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const analysersRef = useRef<Map<string, { analyser: AnalyserNode; data: Uint8Array; lastSpoke: number }>>(new Map());
+  const rafRef = useRef<number | null>(null);
+  const speakingRef = useRef<Record<string, boolean>>({});
+
+  const ensureAudioCtx = useCallback(() => {
+    if (audioCtxRef.current) return audioCtxRef.current;
+    try {
+      const Ctx = (window.AudioContext || (window as any).webkitAudioContext) as typeof AudioContext;
+      audioCtxRef.current = new Ctx();
+    } catch { /* noop */ }
+    return audioCtxRef.current;
+  }, []);
+
+  const startVadLoop = useCallback(() => {
+    if (rafRef.current != null) return;
+    const SPEAK_THRESHOLD = 14; // RMS over 0..128
+    const HOLD_MS = 500;
+    const tick = () => {
+      const now = performance.now();
+      const next: Record<string, boolean> = { ...speakingRef.current };
+      let changed = false;
+      const liveUids = new Set<string>();
+      for (const [uid, a] of analysersRef.current) {
+        liveUids.add(uid);
+        a.analyser.getByteTimeDomainData(a.data as any);
+        let sum = 0;
+        for (let i = 0; i < a.data.length; i++) {
+          const v = a.data[i] - 128;
+          sum += v * v;
+        }
+        const rms = Math.sqrt(sum / a.data.length);
+        if (rms > SPEAK_THRESHOLD) a.lastSpoke = now;
+        const speaking = now - a.lastSpoke < HOLD_MS;
+        if (!!next[uid] !== speaking) {
+          next[uid] = speaking;
+          changed = true;
+        }
+      }
+      // prune stale uids
+      for (const uid of Object.keys(next)) {
+        if (!liveUids.has(uid)) { delete next[uid]; changed = true; }
+      }
+      if (changed) {
+        speakingRef.current = next;
+        setSpeakingMap(next);
+      }
+      rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+  }, []);
+
+  const attachAnalyser = useCallback((uid: string, stream: MediaStream) => {
+    const ctx = ensureAudioCtx();
+    if (!ctx) return;
+    if (ctx.state === "suspended") ctx.resume().catch(() => {});
+    try {
+      const src = ctx.createMediaStreamSource(stream);
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 512;
+      analyser.smoothingTimeConstant = 0.6;
+      src.connect(analyser);
+      analysersRef.current.set(uid, {
+        analyser,
+        data: new Uint8Array(analyser.fftSize),
+        lastSpoke: 0,
+      });
+      startVadLoop();
+    } catch (e) {
+      console.warn("[vad] attach failed", e);
+    }
+  }, [ensureAudioCtx, startVadLoop]);
+
+  const detachAnalyser = useCallback((uid: string) => {
+    analysersRef.current.delete(uid);
+  }, []);
 
   const amSpeaker = !!myUserId && speakers.some((s) => s.user_id === myUserId);
   onStageRef.current = amSpeaker;
