@@ -11,6 +11,8 @@ import { cacheGet, cacheSet, cacheKeys } from "@/lib/offline-cache";
 import { getOnline } from "@/lib/use-online";
 import { StoryRing } from "@/components/StoryRing";
 import { EquippedFrame, EquippedEffectFloat, EquippedBadgeChip } from "@/components/EquippedDecor";
+import { AiBadge } from "@/components/AiBadge";
+
 
 export const Route = createFileRoute("/app/profile/$id")({
   component: OtherProfilePage,
