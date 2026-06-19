@@ -341,37 +341,6 @@ function ChatRow({ convo, unreadActive }: { convo: Convo; unreadActive: boolean 
             >
               فتح المحادثة
             </button>
-            <button
-              onClick={() => { setMenu(false); setConfirming(true); }}
-              className="w-full text-right rounded-xl px-3 py-2.5 text-sm text-rose-300 hover:bg-rose-500/10 flex items-center gap-2 justify-end"
-            >
-              حذف المحادثة <Trash2 className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-      )}
-
-      {confirming && (
-        <div className="fixed inset-0 z-[95] grid place-items-center bg-black/70 backdrop-blur-sm p-4" onClick={() => !deleting && setConfirming(false)}>
-          <div className="w-full max-w-sm rounded-2xl bg-slate-900 border border-white/10 p-5" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-base font-extrabold text-white">حذف المحادثة؟</h3>
-            <p className="mt-2 text-sm text-white/70">
-              سيتم حذف جميع الرسائل بينك وبين <span className="font-bold text-white">{convo.username}</span> نهائياً. لا يمكن التراجع.
-            </p>
-            <div className="mt-4 flex items-center gap-2 justify-end">
-              <button
-                onClick={() => setConfirming(false)}
-                disabled={deleting}
-                className="rounded-xl px-4 py-2 text-sm font-bold text-white/80 hover:bg-white/5 disabled:opacity-50"
-              >إلغاء</button>
-              <button
-                onClick={handleDelete}
-                disabled={deleting}
-                className="rounded-xl bg-gradient-to-br from-rose-500 to-red-600 px-4 py-2 text-sm font-bold text-white shadow-lg shadow-rose-600/30 disabled:opacity-60 flex items-center gap-2"
-              >
-                {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />} حذف
-              </button>
-            </div>
           </div>
         </div>
       )}
