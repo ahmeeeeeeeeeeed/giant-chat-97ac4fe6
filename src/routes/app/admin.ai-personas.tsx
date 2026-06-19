@@ -125,7 +125,7 @@ function AdminAiPersonas() {
               key={p.id} p={p}
               onToggle={() => toggleActive(p)}
               onDelete={() => removePersona(p.id)}
-              onSave={async (patch) => {
+              onSave={async (patch: any) => {
                 try { await updateFn({ data: { id: p.id, patch } }); toast.success("تم الحفظ"); load(); }
                 catch (e) { toast.error(e instanceof Error ? e.message : "فشل"); }
               }}
@@ -134,7 +134,7 @@ function AdminAiPersonas() {
           {showNew && (
             <NewPersonaModal
               onClose={() => setShowNew(false)}
-              onCreate={async (input) => {
+              onCreate={async (input: any) => {
                 try {
                   await createFn({ data: input });
                   toast.success("تم الإنشاء");
@@ -148,15 +148,16 @@ function AdminAiPersonas() {
       ) : tab === "templates" ? (
         <TemplatesPanel
           templates={templates}
-          onAdd={async (data) => {
+          onAdd={async (data: any) => {
             try { await addTplFn({ data }); toast.success("تمت الإضافة"); load(); }
             catch (e) { toast.error(e instanceof Error ? e.message : "فشل"); }
           }}
-          onDelete={async (id) => {
+          onDelete={async (id: string) => {
             try { await delTplFn({ data: { id } }); load(); }
             catch (e) { toast.error(e instanceof Error ? e.message : "فشل"); }
           }}
         />
+
       ) : (
         <div className="space-y-1">
           {log.length === 0 && <p className="text-center text-sm text-muted-foreground py-8">لا يوجد نشاط</p>}

@@ -177,16 +177,17 @@ export const deletePersonaTemplate = createServerFn({ method: "POST" })
 // ────────────────────────────────────────────────────────────────────────────
 // Cycle runner
 // ────────────────────────────────────────────────────────────────────────────
-async function pickWeighted<T extends { weight: number }>(rows: T[]): Promise<T | null> {
+async function pickWeighted<T extends Record<string, any>>(rows: T[]): Promise<T | null> {
   if (!rows.length) return null;
-  const total = rows.reduce((s, r) => s + Math.max(1, r.weight || 1), 0);
+  const total = rows.reduce((s, r) => s + Math.max(1, Number(r.weight) || 1), 0);
   let n = Math.random() * total;
   for (const r of rows) {
-    n -= Math.max(1, r.weight || 1);
+    n -= Math.max(1, Number(r.weight) || 1);
     if (n <= 0) return r;
   }
   return rows[0];
 }
+
 
 async function runCycleInternal() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
