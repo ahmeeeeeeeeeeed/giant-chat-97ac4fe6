@@ -225,94 +225,90 @@ async function runCycleInternal() {
   for (const p of personas) {
     try {
       const lastPost = p.last_post_at ? new Date(p.last_post_at).getTime() : 0;
-      const intervalMs = (p.post_interval_minutes || 180) * 60_000;
+      const intervalMs = (p.post_interval_minutes || 300) * 60_000;
       const dueToPost = now.getTime() - lastPost >= intervalMs;
       console.log(`[ai-personas] ${p.display_name} due=${dueToPost} lastPost=${p.last_post_at || "never"}`);
 
-      if (dueToPost) {
-        const { data: tpls } = await supabaseAdmin
-          .from("ai_persona_templates")
-          .select("*")
-          .eq("persona_type", p.persona_type)
-          .in("kind", ["post", "story"]);
-        const tpl = await pickWeighted((tpls || []) as any);
-        if (!tpl) {
-          console.warn(`[ai-personas] no post/story templates for type=${p.persona_type}`);
-        } else if (tpl.kind === "post") {
-          const { data: post, error } = await supabaseAdmin
-            .from("community_posts")
-            .insert({
-              author_id: p.profile_id,
-              content: tpl.content,
-              media_url: tpl.media_url || null,
-              media_type: tpl.media_url ? "image" : null,
-            } as any).select("id").single();
-          if (error) { stats.errors.push("post:" + error.message); console.error("[ai-personas] post err", error.message); }
-          else {
-            stats.posts++;
-            await supabaseAdmin.from("ai_persona_activity_log").insert({ persona_id: p.id, action: "post", target_id: post?.id || null } as any);
-            await supabaseAdmin.from("ai_personas").update({ last_post_at: now.toISOString() } as any).eq("id", p.id);
-          }
-        } else {
-          const { data: story, error } = await supabaseAdmin
-            .from("stories")
-            .insert({
-              user_id: p.profile_id,
-              content: tpl.content,
-              media_url: tpl.media_url || null,
-              media_type: tpl.media_url ? "image" : null,
-            } as any).select("id").single();
-          if (error) { stats.errors.push("story:" + error.message); console.error("[ai-personas] story err", error.message); }
-          else {
-            stats.stories++;
-            await supabaseAdmin.from("ai_persona_activity_log").insert({ persona_id: p.id, action: "story", target_id: story?.id || null } as any);
-            await supabaseAdmin.from("ai_personas").update({ last_post_at: now.toISOString() } as any).eq("id", p.id);
-          }
+      if (!dueToPost) continue;
+
+      // 1) POST
+      const { data: postTpls } = await supabaseAdmin
+        .from("ai_persona_templates").select("*")
+        .eq("persona_type", p.persona_type).eq("kind", "post");
+      const postTpl = await pickWeighted((postTpls || []) as any);
+      if (postTpl) {
+        const { data: post, error } = await supabaseAdmin
+          .from("community_posts")
+          .insert({
+            author_id: p.profile_id,
+            content: postTpl.content,
+            media_url: postTpl.media_url || null,
+            media_type: postTpl.media_url ? "image" : null,
+          } as any).select("id").single();
+        if (error) { stats.errors.push("post:" + error.message); }
+        else {
+          stats.posts++;
+          await supabaseAdmin.from("ai_persona_activity_log").insert({ persona_id: p.id, action: "post", target_id: post?.id || null } as any);
         }
       }
 
-      // Reactions — first cycle (last_react_at null) always fires to seed visible activity.
-      const firstRun = !p.last_react_at;
-      const shouldReact = firstRun || Math.random() < Number(p.reaction_rate || 0);
-      if (shouldReact) {
-        const since = new Date(now.getTime() - 24 * 60 * 60_000).toISOString();
-        const { data: recent } = await supabaseAdmin
-          .from("community_posts")
-          .select("id, author_id")
-          .gte("created_at", since)
-          .neq("author_id", p.profile_id)
-          .order("created_at", { ascending: false })
-          .limit(20);
-        const pool = (recent || []).slice(0, 10);
-        const likeTargets = [...pool].sort(() => Math.random() - 0.5).slice(0, 3);
-        for (const t of likeTargets) {
-          const { error } = await supabaseAdmin
-            .from("community_reactions")
-            .upsert({ post_id: t.id, user_id: p.profile_id, reaction: "like" } as any);
-          if (!error) {
-            stats.likes++;
-            await supabaseAdmin.from("ai_persona_activity_log").insert({ persona_id: p.id, action: "like", target_id: t.id } as any);
-          }
+      // 2) STORY
+      const { data: storyTpls } = await supabaseAdmin
+        .from("ai_persona_templates").select("*")
+        .eq("persona_type", p.persona_type).eq("kind", "story");
+      const storyTpl = await pickWeighted((storyTpls || []) as any);
+      if (storyTpl) {
+        const { data: story, error } = await supabaseAdmin
+          .from("stories")
+          .insert({
+            user_id: p.profile_id,
+            content: storyTpl.content,
+            media_url: storyTpl.media_url || null,
+            media_type: storyTpl.media_url ? "image" : null,
+          } as any).select("id").single();
+        if (error) { stats.errors.push("story:" + error.message); }
+        else {
+          stats.stories++;
+          await supabaseAdmin.from("ai_persona_activity_log").insert({ persona_id: p.id, action: "story", target_id: story?.id || null } as any);
         }
-        const { data: cTpls } = await supabaseAdmin
-          .from("ai_persona_templates")
-          .select("*")
-          .eq("persona_type", p.persona_type)
-          .eq("kind", "comment");
-        const cTpl = await pickWeighted((cTpls || []) as any);
-        if (cTpl && pool.length) {
-          const target = pool[Math.floor(Math.random() * pool.length)];
-          const { data: comment, error } = await supabaseAdmin
-            .from("community_comments")
-            .insert({ post_id: target.id, author_id: p.profile_id, content: cTpl.content } as any)
-            .select("id").single();
-          if (!error) {
-            stats.comments++;
-            await supabaseAdmin.from("ai_persona_activity_log").insert({ persona_id: p.id, action: "comment", target_id: comment?.id || null } as any);
-          }
-        }
-        await supabaseAdmin.from("ai_personas").update({ last_react_at: now.toISOString() } as any).eq("id", p.id);
       }
+
+      // 3) LIKES + 4) COMMENT
+      const since = new Date(now.getTime() - 24 * 60 * 60_000).toISOString();
+      const { data: recent } = await supabaseAdmin
+        .from("community_posts").select("id, author_id")
+        .gte("created_at", since).neq("author_id", p.profile_id)
+        .order("created_at", { ascending: false }).limit(20);
+      const pool = (recent || []);
+      const likeTargets = [...pool].sort(() => Math.random() - 0.5).slice(0, 2);
+      for (const t of likeTargets) {
+        const { error } = await supabaseAdmin
+          .from("community_reactions")
+          .upsert({ post_id: t.id, user_id: p.profile_id, reaction: "like" } as any);
+        if (!error) {
+          stats.likes++;
+          await supabaseAdmin.from("ai_persona_activity_log").insert({ persona_id: p.id, action: "like", target_id: t.id } as any);
+        }
+      }
+      const { data: cTpls } = await supabaseAdmin
+        .from("ai_persona_templates").select("*")
+        .eq("persona_type", p.persona_type).eq("kind", "comment");
+      const cTpl = await pickWeighted((cTpls || []) as any);
+      if (cTpl && pool.length) {
+        const target = pool[Math.floor(Math.random() * pool.length)];
+        const { data: comment, error } = await supabaseAdmin
+          .from("community_comments")
+          .insert({ post_id: target.id, author_id: p.profile_id, content: cTpl.content } as any)
+          .select("id").single();
+        if (!error) {
+          stats.comments++;
+          await supabaseAdmin.from("ai_persona_activity_log").insert({ persona_id: p.id, action: "comment", target_id: comment?.id || null } as any);
+        }
+      }
+
+      await supabaseAdmin.from("ai_personas")
+        .update({ last_post_at: now.toISOString(), last_react_at: now.toISOString() } as any)
+        .eq("id", p.id);
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       console.error(`[ai-personas] persona ${p.id} failed:`, msg);
