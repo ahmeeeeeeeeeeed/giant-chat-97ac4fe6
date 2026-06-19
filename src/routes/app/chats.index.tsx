@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -8,6 +8,8 @@ import { cacheGet, cacheSet, cacheKeys } from "@/lib/offline-cache";
 import { getOnline } from "@/lib/use-online";
 import { useCachedMediaSource } from "@/lib/use-cached-media";
 import { StoryRing } from "@/components/StoryRing";
+import { useEvent } from "@/lib/events";
+import type { DMRow } from "@/lib/dm-delivery";
 import { toast } from "sonner";
 
 
@@ -94,17 +96,36 @@ function ChatsPage() {
   };
 
 
+  const onDmReceived = useCallback((msg: DMRow) => {
+    const otherId = msg.sender_id === user?.id ? msg.receiver_id : msg.sender_id;
+    setConvos(prev => {
+      const idx = prev.findIndex(c => c.otherId === otherId);
+      const preview = msg.message_type === "image" ? "🖼️ صورة" : msg.message_type === "voice" ? "🎙️ رسالة صوتية" : msg.content;
+      if (idx !== -1) {
+        const existing = prev[idx];
+        const updated = {
+          ...existing,
+          last: preview,
+          created_at: msg.created_at,
+          unread: (msg.receiver_id === user?.id && !msg.read_at) ? existing.unread + 1 : existing.unread
+        };
+        const next = [...prev];
+        next.splice(idx, 1);
+        next.unshift(updated);
+        return next;
+      } else {
+        // For new convos, just trigger a full load to get profile etc.
+        load();
+        return prev;
+      }
+    });
+  }, [user?.id]);
+
+  useEvent("dm_received", onDmReceived);
+
   useEffect(() => {
     load();
-    if (!user) return;
-    if (!getOnline()) return;
-    const ch = supabase
-      .channel("dm-list")
-      .on("postgres_changes", { event: "*", schema: "public", table: "direct_messages" }, () => load())
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [user?.id]);
 
   // Keep local cache in sync with the latest convo list state.
   useEffect(() => {

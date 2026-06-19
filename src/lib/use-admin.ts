@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { useOnline } from "@/lib/use-online";
+import { useEvent } from "@/lib/events";
 
 export function useIsAdmin() {
   const { user } = useAuth();
@@ -34,28 +35,35 @@ export function useUnreadDMCount() {
   const { user } = useAuth();
   const online = useOnline();
   const [count, setCount] = useState(0);
+
+  const load = useCallback(async () => {
+    if (!user) return;
+    try {
+      const { count: c } = await supabase
+        .from("direct_messages")
+        .select("id", { count: "exact", head: true })
+        .eq("receiver_id", user.id)
+        .is("read_at", null);
+      setCount(c ?? 0);
+    } catch {
+      setCount(0);
+    }
+  }, [user]);
+
   useEffect(() => {
-    if (!user) { setCount(0); return; }
-    if (!online) { setCount(0); return; }
-    let mounted = true;
-    const load = async () => {
-      try {
-        const { count: c } = await supabase
-          .from("direct_messages")
-          .select("id", { count: "exact", head: true })
-          .eq("receiver_id", user.id)
-          .is("read_at", null);
-        if (mounted) setCount(c ?? 0);
-      } catch {
-        if (mounted) setCount(0);
-      }
-    };
+    if (!user || !online) { setCount(0); return; }
     load();
-    const ch = supabase
-      .channel(`dm-unread:${user.id}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "direct_messages", filter: `receiver_id=eq.${user.id}` }, load)
-      .subscribe();
-    return () => { mounted = false; supabase.removeChannel(ch); };
-  }, [user, online]);
+  }, [user, online, load]);
+
+  useEvent("dm_received", (msg) => {
+    if (msg.receiver_id === user?.id && !msg.read_at) {
+      setCount(prev => prev + 1);
+    }
+  });
+
+  useEvent("dm_read", () => {
+    load();
+  });
+
   return count;
 }

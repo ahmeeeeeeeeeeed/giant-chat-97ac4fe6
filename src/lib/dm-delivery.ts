@@ -7,8 +7,9 @@ import { useAuth } from "@/lib/auth";
 import { useOnline, getOnline } from "@/lib/use-online";
 import { getDeviceId } from "@/lib/dm-device";
 import { cacheGet, cacheSet, cacheKeys } from "@/lib/offline-cache";
+import { events } from "@/lib/events";
 
-type DMRow = {
+export type DMRow = {
   id: string;
   sender_id: string;
   receiver_id: string;
@@ -20,6 +21,15 @@ type DMRow = {
   reply_to_id: string | null;
   delivered_at?: string | null;
   read_at?: string | null;
+};
+
+type Convo = { 
+  otherId: string; 
+  username: string; 
+  avatar_url: string | null; 
+  last: string; 
+  created_at: string; 
+  unread: number 
 };
 
 /** Register this device for the current user and refresh last_seen. */
@@ -46,6 +56,47 @@ export async function appendLocalDM(myUserId: string, msg: DMRow): Promise<void>
   // Cap at 2000 most-recent per conversation to bound storage.
   const trimmed = list.length > 2000 ? list.slice(list.length - 2000) : list;
   await cacheSet(key, trimmed);
+}
+
+/** Update the global chat list cache with the latest message. */
+export async function updateChatsListCache(myUserId: string, msg: DMRow): Promise<void> {
+  const otherId = msg.sender_id === myUserId ? msg.receiver_id : msg.sender_id;
+  const key = cacheKeys.chatsList(myUserId);
+  const convos = (await cacheGet<Convo[]>(key)) ?? [];
+  
+  let existingIdx = convos.findIndex(c => c.otherId === otherId);
+  const isIncoming = msg.receiver_id === myUserId && !msg.read_at;
+  const preview = msg.message_type === "image" ? "🖼️ صورة" : msg.message_type === "voice" ? "🎙️ رسالة صوتية" : msg.content;
+
+  if (existingIdx !== -1) {
+    const existing = convos[existingIdx];
+    const updated: Convo = {
+      ...existing,
+      last: preview,
+      created_at: msg.created_at,
+      unread: isIncoming ? existing.unread + 1 : existing.unread
+    };
+    convos.splice(existingIdx, 1);
+    convos.unshift(updated);
+  } else {
+    // New conversation - fetch profile
+    try {
+      const { data: p } = await supabase.from("profiles").select("username, avatar_url").eq("id", otherId).maybeSingle();
+      const newConvo: Convo = {
+        otherId,
+        username: p?.username ?? "مستخدم",
+        avatar_url: p?.avatar_url ?? null,
+        last: preview,
+        created_at: msg.created_at,
+        unread: isIncoming ? 1 : 0
+      };
+      convos.unshift(newConvo);
+    } catch {
+      // ignore if fetch fails, will be caught by full refresh later
+      return;
+    }
+  }
+  await cacheSet(key, convos);
 }
 
 /** Mark a previously-saved message as delivered in the local cache. */
@@ -93,30 +144,33 @@ export function useDmDeliveryWorker(): void {
     const myId = user.id;
 
     const drainPending = async () => {
+      console.info("[dm-delivery] draining pending messages...");
       try {
-        // Pull every message the server still holds for me as receiver.
         const { data } = await supabase
           .from("direct_messages")
           .select("id, sender_id, receiver_id, content, created_at, message_type, media_url, media_duration_ms, reply_to_id, delivered_at, read_at")
           .eq("receiver_id", myId)
           .order("created_at", { ascending: true })
           .limit(1000);
+        
         if (!mounted || !data?.length) return;
+        
+        console.info(`[dm-delivery] found ${data.length} pending messages`);
         for (const m of data as DMRow[]) {
           await appendLocalDM(myId, m);
+          await updateChatsListCache(myId, m);
+          events.emit("dm_received", m);
         }
         await ackDelivery(myId, (data as DMRow[]).map((m) => m.id));
-      } catch {
-        /* ignore */
+      } catch (err) {
+        console.error("[dm-delivery] drain failed", err);
       }
     };
 
-    // Periodic heartbeat so the device stays "active" (< 30 days).
     void registerDevice(myId);
     void drainPending();
     const beat = setInterval(() => { void registerDevice(myId); }, 6 * 60 * 60 * 1000);
 
-    // Realtime: pick up new messages anywhere in the app.
     const ch = supabase
       .channel(`dm-delivery:${myId}`)
       .on(
@@ -124,11 +178,19 @@ export function useDmDeliveryWorker(): void {
         { event: "INSERT", schema: "public", table: "direct_messages", filter: `receiver_id=eq.${myId}` },
         async (p) => {
           const m = p.new as DMRow;
+          console.info("[dm-delivery] realtime message received", m.id);
           await appendLocalDM(myId, m);
+          await updateChatsListCache(myId, m);
           await ackDelivery(myId, [m.id]);
+          events.emit("dm_received", m);
         },
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.info(`[dm-delivery] realtime status: ${status}`);
+        if (status === "SUBSCRIBED") {
+          void drainPending(); // check again on reconnect
+        }
+      });
 
     return () => {
       mounted = false;
