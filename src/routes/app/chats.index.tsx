@@ -3,13 +3,12 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
-import { MessageSquare, Loader2, Search, X, Trash2, MoreVertical } from "lucide-react";
+import { MessageSquare, Loader2, Search, X, MoreVertical } from "lucide-react";
 import { cacheGet, cacheSet, cacheKeys } from "@/lib/offline-cache";
 import { getOnline } from "@/lib/use-online";
 import { useCachedMediaSource } from "@/lib/use-cached-media";
 import { StoryRing } from "@/components/StoryRing";
 import { DM_CONVERSATIONS_EVENT, previewDMMessage, type DMConversation } from "@/lib/dm-delivery";
-import { toast } from "sonner";
 
 
 export const Route = createFileRoute("/app/chats/")({
@@ -249,7 +248,6 @@ function ChatsPage() {
                   <ChatRow
                     convo={c}
                     unreadActive={unreadActive}
-                    onDeleted={(id) => setConvos((prev) => prev.filter((x) => x.otherId !== id))}
                   />
                 </li>
               );
@@ -262,11 +260,9 @@ function ChatsPage() {
   );
 }
 
-function ChatRow({ convo, unreadActive, onDeleted }: { convo: Convo; unreadActive: boolean; onDeleted: (id: string) => void }) {
+function ChatRow({ convo, unreadActive }: { convo: Convo; unreadActive: boolean }) {
   const navigate = useNavigate();
   const [menu, setMenu] = useState(false);
-  const [confirming, setConfirming] = useState(false);
-  const [deleting, setDeleting] = useState(false);
   const timerRef = useRef<number | null>(null);
   const longPressedRef = useRef(false);
 
@@ -284,29 +280,13 @@ function ChatRow({ convo, unreadActive, onDeleted }: { convo: Convo; unreadActiv
   };
 
   const onClick = (e: React.MouseEvent) => {
-    if (longPressedRef.current || menu || confirming) { e.preventDefault(); e.stopPropagation(); return; }
+    if (longPressedRef.current || menu) { e.preventDefault(); e.stopPropagation(); return; }
     navigate({ to: "/app/chats/$id", params: { id: convo.otherId } });
   };
 
   const onContext = (e: React.MouseEvent) => {
     e.preventDefault();
     setMenu(true);
-  };
-
-  const handleDelete = async () => {
-    setDeleting(true);
-    try {
-      const { error } = await (supabase as any).rpc("delete_conversation", { _other: convo.otherId });
-      if (error) throw error;
-      onDeleted(convo.otherId);
-      toast.success("تم حذف المحادثة");
-    } catch (e: any) {
-      toast.error(e.message || "فشل الحذف");
-    } finally {
-      setDeleting(false);
-      setConfirming(false);
-      setMenu(false);
-    }
   };
 
   return (
@@ -360,37 +340,6 @@ function ChatRow({ convo, unreadActive, onDeleted }: { convo: Convo; unreadActiv
             >
               فتح المحادثة
             </button>
-            <button
-              onClick={() => { setMenu(false); setConfirming(true); }}
-              className="w-full text-right rounded-xl px-3 py-2.5 text-sm text-rose-300 hover:bg-rose-500/10 flex items-center gap-2 justify-end"
-            >
-              حذف المحادثة <Trash2 className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-      )}
-
-      {confirming && (
-        <div className="fixed inset-0 z-[95] grid place-items-center bg-black/70 backdrop-blur-sm p-4" onClick={() => !deleting && setConfirming(false)}>
-          <div className="w-full max-w-sm rounded-2xl bg-slate-900 border border-white/10 p-5" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-base font-extrabold text-white">حذف المحادثة؟</h3>
-            <p className="mt-2 text-sm text-white/70">
-              سيتم حذف جميع الرسائل بينك وبين <span className="font-bold text-white">{convo.username}</span> نهائياً. لا يمكن التراجع.
-            </p>
-            <div className="mt-4 flex items-center gap-2 justify-end">
-              <button
-                onClick={() => setConfirming(false)}
-                disabled={deleting}
-                className="rounded-xl px-4 py-2 text-sm font-bold text-white/80 hover:bg-white/5 disabled:opacity-50"
-              >إلغاء</button>
-              <button
-                onClick={handleDelete}
-                disabled={deleting}
-                className="rounded-xl bg-gradient-to-br from-rose-500 to-red-600 px-4 py-2 text-sm font-bold text-white shadow-lg shadow-rose-600/30 disabled:opacity-60 flex items-center gap-2"
-              >
-                {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />} حذف
-              </button>
-            </div>
           </div>
         </div>
       )}
