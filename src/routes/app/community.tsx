@@ -30,7 +30,7 @@ type Post = {
   kind: "text" | "image" | "video" | "mixed";
   created_at: string;
   edited: boolean;
-  author?: { username: string | null; avatar_url: string | null };
+  author?: { username: string | null; avatar_url: string | null; is_ai?: boolean };
   reactions_count?: number;
 };
 
@@ -71,11 +71,12 @@ function CommunityPage() {
     if (error) { toast.error(error.message); setLoading(false); return; }
     const list: Post[] = data ?? [];
     const ids: string[] = Array.from(new Set(list.map((p) => p.author_id as string)));
-    let map = new Map<string, { username: string | null; avatar_url: string | null }>();
+    let map = new Map<string, { username: string | null; avatar_url: string | null; is_ai?: boolean }>();
     if (ids.length) {
-      const { data: profs } = await supabase.from("profiles").select("id,username,avatar_url").in("id", ids);
-      profs?.forEach((p: any) => map.set(p.id, { username: p.username, avatar_url: p.avatar_url }));
+      const { data: profs } = await supabase.from("profiles").select("id,username,avatar_url,is_ai").in("id", ids);
+      profs?.forEach((p: any) => map.set(p.id, { username: p.username, avatar_url: p.avatar_url, is_ai: !!p.is_ai }));
     }
+
     // reaction counts
     const postIds = list.map(p => p.id);
     let rcounts = new Map<string, number>();
@@ -485,8 +486,10 @@ function PostCard({ post, currentUserId, saved, onToggleSaved, onChanged }: {
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
               <div className="truncate text-sm font-bold">{post.author?.username || "مستخدم"}</div>
+              {post.author?.is_ai && <AiBadge />}
               <UserBadgesInline userId={post.author_id} max={2} />
             </div>
+
             <div className="text-[11px] text-muted-foreground">
               {timeAgo(post.created_at)}{post.edited ? " · معدّل" : ""}
             </div>
