@@ -30,7 +30,7 @@ type DM = {
   receiver_id: string;
   content: string;
   created_at: string;
-  message_type: "text" | "image" | "voice";
+  message_type: "text" | "image" | "voice" | "system";
   media_url: string | null;
   media_duration_ms: number | null;
   reply_to_id: string | null;
