@@ -383,11 +383,80 @@ async function runCycleInternal() {
     }
   }
 
+  // ── Daily room invites: 3 designated bots each send 1 invite per day to a random user.
+  try {
+    const inviteStats = await runDailyRoomInvites(supabaseAdmin, now);
+    (stats as any).invites = inviteStats.sent;
+    if (inviteStats.errors.length) stats.errors.push(...inviteStats.errors);
+  } catch (e) {
+    stats.errors.push("invites:" + (e instanceof Error ? e.message : String(e)));
+  }
 
-  const processed = stats.posts + stats.stories + stats.likes + stats.comments;
+  const processed = stats.posts + stats.stories + stats.likes + stats.comments + ((stats as any).invites || 0);
   console.log("[ai-personas] cycle done", { processed, ...stats });
   return { processed, ...stats };
 }
+
+// ────────────────────────────────────────────────────────────────────────────
+// Daily room invites — 3 bots, 1 invite/day each, random user + random room
+// ────────────────────────────────────────────────────────────────────────────
+async function runDailyRoomInvites(supabaseAdmin: any, now: Date) {
+  const out = { sent: 0, errors: [] as string[] };
+
+  // Pick the 3 oldest active personas as inviters (deterministic).
+  const { data: inviters } = await supabaseAdmin
+    .from("ai_personas")
+    .select("id, profile_id, display_name")
+    .eq("is_active", true)
+    .order("created_at", { ascending: true })
+    .limit(3);
+  if (!inviters?.length) return out;
+
+  // Fetch all rooms once.
+  const { data: rooms } = await supabaseAdmin.from("rooms").select("id").limit(200);
+  if (!rooms?.length) return out;
+
+  // Fetch human users (new + old): exclude AI profiles. Cap to 500 for fairness.
+  const { data: users } = await supabaseAdmin
+    .from("profiles")
+    .select("id")
+    .or("is_ai.is.null,is_ai.eq.false")
+    .order("created_at", { ascending: false })
+    .limit(500);
+  if (!users?.length) return out;
+
+  const dayAgo = new Date(now.getTime() - 24 * 60 * 60_000).toISOString();
+
+  for (const bot of inviters) {
+    try {
+      // Skip if this bot already sent an invite in the last 24h.
+      const { count: sentToday } = await supabaseAdmin
+        .from("ai_persona_activity_log")
+        .select("id", { count: "exact", head: true })
+        .eq("persona_id", bot.id).eq("action", "invite")
+        .gte("created_at", dayAgo);
+      if ((sentToday ?? 0) > 0) continue;
+
+      const room = rooms[Math.floor(Math.random() * rooms.length)];
+      // Mix new (top) + old (bottom) — random pick across the full window.
+      const target = users[Math.floor(Math.random() * users.length)];
+      if (!room || !target || target.id === bot.profile_id) continue;
+
+      const { error } = await supabaseAdmin.from("room_invites").insert({
+        room_id: room.id, user_id: target.id, invited_by: bot.profile_id,
+      } as any);
+      if (error) { out.errors.push("invite:" + error.message); continue; }
+      out.sent++;
+      await supabaseAdmin.from("ai_persona_activity_log").insert({
+        persona_id: bot.id, action: "invite", target_id: room.id,
+      } as any);
+    } catch (e) {
+      out.errors.push("invite:" + (e instanceof Error ? e.message : String(e)));
+    }
+  }
+  return out;
+}
+
 
 export const runPersonaCycle = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -443,7 +512,12 @@ async function seedDefaultsInternal() {
 
   let createdPersonas = 0;
   const nowMs = Date.now();
-  for (const d of defaults) {
+  // Varied gaps between posts (in minutes): 30m, 1h, 2h, 3h — distributed so
+  // consecutive personas' "next due" times are spaced naturally.
+  const gapPool = [30, 60, 120, 180];
+  let phaseAcc = 0;
+  for (let i = 0; i < defaults.length; i++) {
+    const d = defaults[i];
     const email = `ai_${d.username}_${Date.now()}@ai.local`;
     const password = crypto.randomUUID() + crypto.randomUUID();
     const { data: u, error: ue } = await supabaseAdmin.auth.admin.createUser({
@@ -454,27 +528,29 @@ async function seedDefaultsInternal() {
     await supabaseAdmin.from("profiles").update({
       is_ai: true, username: d.username, bio: d.bio, avatar_url: d.avatarUrl, dm_locked: true,
     }).eq("id", uid);
-    // Stagger over a 5-hour window AND add per-persona random offset so they never re-sync
-    const baseShift = 300 - d.staggerIndex * 15;
-    const randomShift = Math.floor(Math.random() * 20) - 10; // ±10 min
-    const staggerMs = (baseShift + randomShift) * 60_000;
-    const lastPostAt = new Date(nowMs - staggerMs).toISOString();
+    // Each persona still posts once every 5h, but their phase within the 5h cycle
+    // is offset by a random gap from {30m, 1h, 2h, 3h} — so the feed shows posts
+    // spaced naturally instead of bursts.
+    const gap = gapPool[Math.floor(Math.random() * gapPool.length)];
+    phaseAcc = (phaseAcc + gap) % 300; // 0..299 minutes within the 5h cycle
+    // Persona will become due in `phaseAcc` minutes from now.
+    const lastPostAt = new Date(nowMs - (300 - phaseAcc) * 60_000).toISOString();
     const { error: ie } = await supabaseAdmin.from("ai_personas").insert({
       profile_id: uid, display_name: d.displayName, bio: d.bio, avatar_url: d.avatarUrl,
       persona_type: d.personaType,
-      post_interval_minutes: 300,
-      reaction_rate: 0.6 + Math.random() * 0.3, // 0.6..0.9 — varied per persona
+      post_interval_minutes: 300, // 5 hours per bot
+      reaction_rate: 0.6 + Math.random() * 0.3,
       last_post_at: lastPostAt,
     } as any);
     if (!ie) {
       createdPersonas++;
-      // Award shop badge matching persona type (replaces AI badge in UI)
       const badgeId = BADGE_BY_TYPE[d.personaType];
       if (badgeId) {
         await supabaseAdmin.from("user_badges").insert({ user_id: uid, badge_id: badgeId } as any).then(() => null, () => null);
       }
     }
   }
+
 
   // ── Templates: 200 unique comments (50 per type) + 200 unique images for posts/stories
   // Use seeded picsum URLs so every image is unique and deterministic.
