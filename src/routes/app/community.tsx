@@ -488,8 +488,8 @@ function PostCard({ post, currentUserId, saved, onToggleSaved, onChanged }: {
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
               <div className="truncate text-sm font-bold">{post.author?.username || "مستخدم"}</div>
-              {post.author?.is_ai && <AiBadge />}
-              <UserBadgesInline userId={post.author_id} max={2} />
+              <UserBadgesInline userId={post.author_id} max={3} />
+
             </div>
 
             <div className="text-[11px] text-muted-foreground">
