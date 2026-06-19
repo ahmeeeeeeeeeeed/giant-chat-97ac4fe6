@@ -123,6 +123,51 @@ export async function updateChatsListCache(myUserId: string, msg: DMRow): Promis
   await upsertLocalConversation(myUserId, msg, { incrementUnread: false });
 }
 
+export async function replaceLocalDM(myUserId: string, peerId: string, tempId: string, msg: DMRow): Promise<void> {
+  const key = cacheKeys.dmMessages(myUserId, peerId);
+  try {
+    await withCacheLock(key, async () => {
+      const list = (await cacheGet<DMRow[]>(key)) ?? [];
+      const withoutTempOrReal = list.filter((m) => m.id !== tempId && m.id !== msg.id);
+      const next = [...withoutTempOrReal, msg].sort((a, b) => a.created_at.localeCompare(b.created_at));
+      await cacheSet(key, next);
+    });
+    console.info("[dm-global] replaced-local-message", { key, tempId, messageId: msg.id });
+    await upsertLocalConversation(myUserId, msg, { incrementUnread: false });
+    emitDmEvent(DM_MESSAGES_EVENT, { message: msg, peerId, wasNew: false, replacedId: tempId });
+  } catch (error) {
+    console.error("[dm-global] replace-local-message-failed", { key, tempId, messageId: msg.id, error });
+  }
+}
+
+export async function removeLocalDM(myUserId: string, peerId: string, messageId: string): Promise<void> {
+  const key = cacheKeys.dmMessages(myUserId, peerId);
+  const listKey = cacheKeys.chatsList(myUserId);
+  let remaining: DMRow[] = [];
+  try {
+    await withCacheLock(key, async () => {
+      const list = (await cacheGet<DMRow[]>(key)) ?? [];
+      remaining = list.filter((m) => m.id !== messageId);
+      await cacheSet(key, remaining);
+    });
+    const latest = remaining.slice().sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
+    if (latest) {
+      await upsertLocalConversation(myUserId, latest, { incrementUnread: false });
+    } else {
+      let nextList: DMConversation[] = [];
+      await withCacheLock(listKey, async () => {
+        const list = (await cacheGet<DMConversation[]>(listKey)) ?? [];
+        nextList = list.filter((c) => c.otherId !== peerId);
+        await cacheSet(listKey, nextList);
+      });
+      emitDmEvent(DM_CONVERSATIONS_EVENT, { list: nextList, peerId, removed: true });
+    }
+    console.info("[dm-global] removed-local-message", { key, messageId, remaining: remaining.length });
+  } catch (error) {
+    console.error("[dm-global] remove-local-message-failed", { key, messageId, error });
+  }
+}
+
 /** Register this device for the current user and refresh last_seen. */
 export async function registerDevice(userId: string): Promise<void> {
   if (!getOnline()) return;
