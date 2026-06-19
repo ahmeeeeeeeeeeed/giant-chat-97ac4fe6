@@ -14,6 +14,7 @@ import { ImageLightbox } from "@/components/ImageLightbox";
 import { cacheGet, cacheSet, cacheKeys } from "@/lib/offline-cache";
 import { enqueueMessage } from "@/lib/offline-queue";
 import { getOnline } from "@/lib/use-online";
+import { ackDelivery, appendLocalDM } from "@/lib/dm-delivery";
 import { ensureMediaLibraryPermission, ensureMicPermission } from "@/lib/app-permissions";
 import { useCachedMediaSource } from "@/lib/use-cached-media";
 import { StoryRing } from "@/components/StoryRing";
@@ -157,9 +158,14 @@ function DMPage() {
     if (!user) return;
     await supabase.rpc("dm_mark_read", { _peer: otherId });
   };
-  const markDelivered = async () => {
+  const markDelivered = async (ids?: string[]) => {
     if (!user || !getOnline()) return;
-    try { await supabase.rpc("dm_mark_delivered" as never, { _peer: otherId } as never); } catch { /* ignore */ }
+    // Collect unacked incoming message ids that still exist on server.
+    const targets = ids ?? messages
+      .filter((m) => m.receiver_id === user.id && !m.delivered_at && !m.id.startsWith("q_"))
+      .map((m) => m.id);
+    if (!targets.length) return;
+    await ackDelivery(user.id, targets);
   };
 
   // load profile + messages + block/mute state — local-first
@@ -231,7 +237,7 @@ function DMPage() {
     if (!getOnline()) return;
     const ch = supabase
       .channel(`dm-msg:${[user.id, otherId].sort().join(":")}`)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "direct_messages" }, (payload) => {
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "direct_messages" }, async (payload) => {
         const r = payload.new as DM;
         if (
           (r.sender_id === user.id && r.receiver_id === otherId) ||
@@ -239,12 +245,21 @@ function DMPage() {
         ) {
           setMessages((old) => (old.some(x => x.id === r.id) ? old : [...old, r]));
           setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current!.scrollHeight, behavior: "smooth" }), 30);
-          if (r.receiver_id === user.id) { markDelivered(); markRead(); }
+          if (r.receiver_id === user.id) {
+            // Save locally first so deletion from the server doesn't lose the message.
+            await appendLocalDM(user.id, r);
+            await markDelivered([r.id]);
+            await markRead();
+          }
         }
       })
       .on("postgres_changes", { event: "DELETE", schema: "public", table: "direct_messages" }, (payload) => {
+        // Server purged the row after full delivery — keep it locally and
+        // upgrade the status to "delivered" so the sender sees ✓✓.
         const r = payload.old as { id: string };
-        setMessages(old => old.filter(x => x.id !== r.id));
+        setMessages(old => old.map(x => x.id === r.id
+          ? { ...x, delivered_at: x.delivered_at ?? new Date().toISOString() }
+          : x));
       })
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "direct_messages" }, (payload) => {
         const r = payload.new as DM;
