@@ -329,9 +329,11 @@ function RoomPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomId, user?.id]);
 
+  // Online status — used for gating auto-join and UI hints. We intentionally
+  // do NOT auto-leave the room on transient offline blips anymore.
+  const online = useOnline();
+
   // Auto-leave the room ONLY on hard sign-out or real app exit.
-  // We do NOT leave on transient offline blips or in-app navigation — the
-  // user stays in the room and re-enters seamlessly.
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange(async (event) => {
       if (event === "SIGNED_OUT") {
