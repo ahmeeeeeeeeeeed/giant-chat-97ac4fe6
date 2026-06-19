@@ -246,9 +246,11 @@ function DMPage() {
       if (!msg || detail?.peerId !== otherId) return;
       console.info("[dm-chat] global-message-applied", { messageId: msg.id, peerId: otherId });
       setMessages((old) => {
-        const idx = old.findIndex((x) => x.id === msg.id);
-        if (idx < 0) return [...old, msg].sort((a, b) => a.created_at.localeCompare(b.created_at));
-        const next = [...old];
+        const replacedId = (detail as { replacedId?: string }).replacedId;
+        const base = replacedId ? old.filter((x) => x.id !== replacedId) : old;
+        const idx = base.findIndex((x) => x.id === msg.id);
+        if (idx < 0) return [...base, msg].sort((a, b) => a.created_at.localeCompare(b.created_at));
+        const next = [...base];
         next[idx] = { ...next[idx], ...msg };
         return next.sort((a, b) => a.created_at.localeCompare(b.created_at));
       });
