@@ -191,6 +191,8 @@ export type Database = {
           minimum_required_version: string
           previous_web_bundle_url: string | null
           previous_web_bundle_version: string | null
+          release_notes_ar: string | null
+          release_notes_en: string | null
           update_message: string
           update_type: string
           updated_at: string
@@ -210,6 +212,8 @@ export type Database = {
           minimum_required_version?: string
           previous_web_bundle_url?: string | null
           previous_web_bundle_version?: string | null
+          release_notes_ar?: string | null
+          release_notes_en?: string | null
           update_message?: string
           update_type?: string
           updated_at?: string
@@ -229,6 +233,8 @@ export type Database = {
           minimum_required_version?: string
           previous_web_bundle_url?: string | null
           previous_web_bundle_version?: string | null
+          release_notes_ar?: string | null
+          release_notes_en?: string | null
           update_message?: string
           update_type?: string
           updated_at?: string
@@ -710,6 +716,59 @@ export type Database = {
           blocked_id?: string
           blocker_id?: string
           created_at?: string
+        }
+        Relationships: []
+      }
+      dm_deliveries: {
+        Row: {
+          delivered_at: string
+          device_id: string
+          message_id: string
+          user_id: string
+        }
+        Insert: {
+          delivered_at?: string
+          device_id: string
+          message_id: string
+          user_id: string
+        }
+        Update: {
+          delivered_at?: string
+          device_id?: string
+          message_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dm_deliveries_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "direct_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dm_devices: {
+        Row: {
+          created_at: string
+          device_id: string
+          id: string
+          last_seen: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          device_id: string
+          id?: string
+          last_seen?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          device_id?: string
+          id?: string
+          last_seen?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -2334,6 +2393,8 @@ export type Database = {
               minimum_required_version: string
               previous_web_bundle_url: string | null
               previous_web_bundle_version: string | null
+              release_notes_ar: string | null
+              release_notes_en: string | null
               update_message: string
               update_type: string
               updated_at: string
@@ -2375,6 +2436,8 @@ export type Database = {
           minimum_required_version: string
           previous_web_bundle_url: string | null
           previous_web_bundle_version: string | null
+          release_notes_ar: string | null
+          release_notes_en: string | null
           update_message: string
           update_type: string
           updated_at: string

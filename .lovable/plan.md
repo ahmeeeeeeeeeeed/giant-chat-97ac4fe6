@@ -1,81 +1,79 @@
-## نظام المكالمات الصوتية والفيديو (WebRTC + Supabase Realtime)
+## الهدف
+تحويل الرسائل الخاصة إلى نظام "تسليم وحذف" — الخادم وسيط مؤقت فقط، والمحادثات تُحفظ نهائيًا على جهاز كل مستخدم. مع إصلاح ملاحظات التحديث لتكون مخصصة لكل إصدار.
 
-سأبني نظام مكالمات حقيقي داخل Giant Chat باستخدام WebRTC peer-to-peer مع Supabase Realtime كـ Signaling Server (مجاني بالكامل، بدون Agora/Twilio).
+## ما يبقى كما هو
+- شكل واجهات الدردشة (`src/routes/app/chats.$id.tsx`, `chats.index.tsx`, `notifications.tsx`) بدون أي تغيير بصري.
+- رسائل الغرف (`room_messages`) — لا تتأثر، تبقى عامة ومشتركة.
+- المكالمات، الإشعارات، الـStories.
 
-### 1. قاعدة البيانات (migration واحدة)
+## التغييرات الأساسية
 
-**جدول `calls`** — سجل المكالمات والـ signaling:
-- `caller_id`, `callee_id`, `call_type` ('audio' | 'video')
-- `status` ('ringing' | 'accepted' | 'rejected' | 'missed' | 'ended' | 'busy')
-- `started_at`, `answered_at`, `ended_at`, `duration_seconds`
-- `end_reason` ('hangup' | 'rejected' | 'missed' | 'failed')
+### 1) قاعدة بيانات DMs الجديدة
+- جدول `direct_messages` يصبح "صندوق توصيل" فقط: يحوي الرسائل غير المُسلَّمة بعد.
+- إضافة عمود `delivered_at` (يوجد `read_at` حاليًا، لكن نحتاج تمييز التسليم عن القراءة).
+- **trigger**: عند `UPDATE` يضبط `delivered_at` → احذف الصف فورًا (`DELETE`).
+- سياسات RLS: المُرسِل يستطيع `INSERT` فقط، المستقبِل يستطيع `SELECT` و `UPDATE delivered_at` فقط.
+- جدول جديد `dm_devices(user_id, device_id, last_seen)` لتتبع الأجهزة النشطة لكل مستخدم.
+- جدول جديد `dm_deliveries(message_id, device_id)` لتسجيل أي جهاز استلم — الرسالة لا تُحذف إلا بعد استلام كل أجهزة المستلم النشطة (خلال آخر 30 يومًا).
 
-**جدول `call_signals`** — تبادل SDP/ICE بين الطرفين عبر Realtime:
-- `call_id`, `from_user`, `to_user`, `signal_type` ('offer'|'answer'|'ice'|'hangup'|'ringing'), `payload` (jsonb)
+### 2) تخزين محلي دائم (IndexedDB)
+- مكتبة جديدة `src/lib/local-dm-store.ts` تعتمد على `idb-keyval` (موجود بالفعل) أو `dexie`.
+- مخطط: `conversations` (peer_id, last_message, unread) + `messages` (id, peer_id, sender_id, content, type, media_blob أو media_url, created_at, status).
+- كل الرسائل المرسَلة والمستلمة تُحفظ هنا فورًا.
+- واجهات الدردشة تقرأ من هذا المخزن أولًا (instant load)، ثم تستمع لـrealtime للجديد.
 
-- RLS صارمة: المستخدم يرى فقط مكالماته (caller أو callee).
-- تفعيل Realtime على الجدولين.
-- GRANT للأدوار المطلوبة.
+### 3) دورة حياة الرسالة
+1. المُرسِل: يكتب الرسالة → تُحفظ محليًا بحالة `sending` → `INSERT` على الخادم → عند نجاح الإدراج تتحول إلى `sent`.
+2. المستقبِل (realtime): يستلم الـINSERT → ينزّل المحتوى/الوسائط → يحفظ محليًا → يستدعي `UPDATE delivered_at` → الخادم يحذف الصف بـtrigger.
+3. المُرسِل (realtime على DELETE): يرى الحذف → يحدّث الحالة محليًا إلى `delivered` (✓✓).
+4. عند فتح المستلم للمحادثة: `read_at` لم يعد على الخادم (الصف محذوف) — تُحفظ القراءة محليًا فقط، وتُرسَل إشارة realtime broadcast (بدون تخزين) للمُرسِل لعرض "تم القراءة".
 
-### 2. STUN/TURN (مجاني)
+### 4) الوسائط (صور/صوت)
+- الرفع يبقى عبر Supabase Storage في bucket `dm-media`.
+- بعد تأكيد التسليم: تنزيل الـblob على جهاز المستلم → حفظ محلي → إشارة `media_delivered` → edge function `delete-dm-media` يحذف الملف من Storage.
+- يبقى المُرسِل محتفظًا بنسخة محلية أيضًا.
 
-- STUN: خوادم Google المجانية (`stun:stun.l.google.com:19302` + احتياطية).
-- TURN: استخدام **Open Relay Project** المجاني (`openrelay.metered.ca`) كـ fallback للشبكات المقيدة — صفر تكلفة. يمكن للمستخدم لاحقاً استبداله بـ coturn ذاتي الاستضافة عبر متغير بيئة `VITE_TURN_URL/USERNAME/CREDENTIAL`.
+### 5) عدة أجهزة
+- عند تسجيل الدخول: يولّد كل جهاز `device_id` ويسجّل في `dm_devices`.
+- الرسالة تُعتبر "مسلّمة بالكامل" فقط بعد استلام كل أجهزة المستلم النشطة (آخر نشاط < 30 يوم).
+- إذا جهاز خامل >30 يوم يُعتبر مهجورًا ولا يمنع الحذف.
 
-### 3. الواجهة
+### 6) ترحيل الرسائل الحالية (تصدير محلي)
+- عند أول دخول بعد التحديث: يقرأ التطبيق رسائل المستخدم الموجودة من الخادم، يحفظها كلها في IndexedDB، ثم يستدعي edge function يحذف رسائله من الخادم.
+- شريط تقدم بسيط "جاري تنزيل محادثاتك إلى جهازك..." مرة واحدة فقط.
+- بعد 30 يومًا من النشر: cron job ينظّف أي رسائل قديمة متبقية لمستخدمين لم يعودوا.
 
-**في `src/routes/app/chats.$id.tsx`** (أعلى المحادثة):
-- زر اتصال صوتي 📞 + زر اتصال فيديو 🎥 بتصميم أنيق دائري بجانب اسم المستخدم.
+### 7) موثوقية وعدم الاتصال
+- طابور `offline-queue` الحالي يستمر في العمل للمُرسِل.
+- إذا المستقبِل غير متصل: الرسالة تبقى على الخادم. عند اتصاله: realtime + استعلام `SELECT` لكل ما هو `receiver_id = me` يجلب المتراكم → يحفظ محليًا → يؤكّد التسليم → يُحذف.
+- إعادة المحاولة التلقائية لتأكيد التسليم إذا فشل (exponential backoff).
 
-**شاشة المكالمة `src/components/CallScreen.tsx`** (Dialog ملء الشاشة بأسلوب Telegram):
-- خلفية متدرجة داكنة + صورة المستخدم الكبيرة + الاسم + حالة الاتصال (يرن/متصل/...).
-- مؤقت مدة المكالمة.
-- فيديو محلي صغير (PiP) + فيديو الطرف الآخر بملء الشاشة (لمكالمات الفيديو).
-- أزرار: كتم مايك، تشغيل/إيقاف كاميرا، تبديل أمامية/خلفية، مكبر صوت، إنهاء (أحمر دائري كبير).
-- شاشة مكالمة واردة منفصلة: قبول (أخضر) / رفض (أحمر) + رنين صوتي + اهتزاز.
+### 8) ملاحظات التحديث المخصصة
+حاليًا جدول `app_updates` يحوي 17 عمودًا — على الأرجح فيه عمود ملاحظات لكن غير مستخدم.
+- التحقق من بنية الجدول، وإذا لزم إضافة `release_notes_ar` و `release_notes_en` (نص طويل).
+- في `src/routes/app/admin.updates.tsx`: إضافة حقل textarea لكتابة مميزات هذا التحديث قبل النشر.
+- في `UpdateGate.tsx`: عرض الملاحظات الخاصة بالإصدار الجديد بدل الرسالة الثابتة.
 
-**مزود عام `CallProvider`** يُركّب في `__root.tsx`:
-- يستمع لإشارات `call_signals` عبر Realtime على مستوى التطبيق كله.
-- يعرض شاشة المكالمة الواردة من أي صفحة.
-- يدير حالة WebRTC PeerConnection.
+## الملفات المتأثرة (تقريبيًا)
+- migration: `direct_messages` (trigger الحذف، تعديل RLS)، `dm_devices`، `dm_deliveries`، `app_updates.release_notes_*`.
+- جديد: `src/lib/local-dm-store.ts`، `src/lib/dm-delivery.ts`، `src/lib/dm-migration.ts`.
+- تعديل: `src/routes/app/chats.$id.tsx`، `chats.index.tsx`، `notifications.tsx`، `offline-queue.ts`، `use-global-notifications.ts`، `admin.updates.tsx`، `UpdateGate.tsx`.
+- جديد: edge function `delete-dm-media`.
 
-### 4. منطق WebRTC (`src/lib/webrtc/`)
+## مخاطر وقيود يجب أن يعرفها المستخدم
+- **حذف التطبيق = فقدان المحادثات نهائيًا** (مطلوب صراحة).
+- متصفح في وضع التصفح الخاص = لا حفظ.
+- IndexedDB قد يُمسح بواسطة المتصفح تحت ضغط مساحة (نادر، لكن وارد).
+- الصور الكبيرة ستستهلك مساحة الجهاز بدل الخادم.
+- لن تعمل ميزة "مشاركة محادثة عبر أجهزة" بنفس الطريقة.
 
-- `call-manager.ts`: إنشاء/إدارة RTCPeerConnection، تبادل SDP/ICE عبر Supabase channel، معالجة إعادة الاتصال (ICE restart عند الانقطاع).
-- جودة تكيفية: قيود فيديو 1280×720 افتراضياً مع `degradationPreference: 'maintain-framerate'`.
-- معالجة الصوت: `echoCancellation`, `noiseSuppression`, `autoGainControl`.
-- نغمات: ملف رنين قصير + نغمة اتصال (تولّد عبر Web Audio API لتجنب assets جديدة).
+## خطوات التنفيذ (بالترتيب)
+1. Migration: جداول التتبع + trigger الحذف + أعمدة ملاحظات التحديث.
+2. مكتبة التخزين المحلي + اختبار قراءة/كتابة.
+3. تعديل صفحة محادثة واحدة لاستخدام النظام الجديد + اختبار التسليم بين جهازين.
+4. تعميم على كل واجهات DM + الإشعارات.
+5. سكربت الترحيل + edge function حذف الوسائط.
+6. تحديث `admin.updates` و `UpdateGate`.
+7. اختبار شامل: offline، multi-device، وسائط.
 
-### 5. سجل المكالمات
-
-- صفحة `src/routes/app/calls.tsx`: قائمة جميع المكالمات (واردة/صادرة/فائتة) بأيقونات ملوّنة، اضغط لإعادة الاتصال.
-- شارة المكالمات الفائتة في التبويب السفلي.
-
-### 6. صلاحيات + Capacitor
-
-- توسيع `src/lib/app-permissions.ts` لطلب الميك+الكاميرا قبل بدء/قبول المكالمة.
-- إضافة `RECORD_AUDIO`, `CAMERA`, `MODIFY_AUDIO_SETTINGS`, `BLUETOOTH_CONNECT` في `AndroidManifest.xml` (عبر سكربت patch موجود).
-- WebView يدعم WebRTC افتراضياً على Android 5+.
-
-### 7. الأمان
-
-- RLS تمنع أي مستخدم من رؤية signals لا تخصه.
-- المكالمات end-to-end عبر DTLS-SRTP (مدمج بـ WebRTC).
-- لا يمر الصوت/الفيديو بسيرفرنا — فقط الـ signaling.
-
-### ملفات سيتم إنشاؤها/تعديلها
-- migration جديدة (calls + call_signals + RLS + realtime).
-- `src/lib/webrtc/call-manager.ts`, `src/lib/webrtc/ice-servers.ts`, `src/lib/webrtc/ringtones.ts`
-- `src/lib/use-calls.tsx` (CallProvider + hooks)
-- `src/components/CallScreen.tsx`, `src/components/IncomingCallDialog.tsx`
-- `src/routes/app/calls.tsx` (سجل)
-- تعديل `src/routes/app/chats.$id.tsx` (الزرّان)
-- تعديل `src/routes/__root.tsx` (تركيب CallProvider)
-- تعديل `src/lib/app-permissions.ts`
-- تعديل `scripts/patch-android-permissions.mjs`
-
-### ملاحظات تشغيلية
-- TURN المجاني (Open Relay) كافٍ للاستخدام الخفيف والاختبار؛ للإنتاج الكثيف يُنصح بإعداد coturn على VPS لاحقاً (السكربت سيقرأ من `VITE_TURN_*` تلقائياً عند توفرها).
-- لا توجد أي رسوم خدمات خارجية.
-
-هل أبدأ التنفيذ؟
+هل تريد التنفيذ بهذا الشكل؟

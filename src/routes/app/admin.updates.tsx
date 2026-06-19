@@ -107,6 +107,7 @@ function AdminUpdates() {
   const handleUpload = async () => {
     if (!/^\d+\.\d+\.\d+$/.test(version)) { toast.error("صيغة الإصدار: 1.2.3"); return; }
     if (!/^\d+\.\d+\.\d+$/.test(minVersion)) { toast.error("صيغة الحد الأدنى: 1.2.3"); return; }
+    if (!message.trim() || message.trim().length < 5) { toast.error("اكتب مميزات هذا التحديث (لا يجب أن تكون فارغة)"); return; }
     if (updateKind === "apk" && !file) { toast.error("اختر ملف APK"); return; }
     if (updateKind === "bundle" && !bundleFile) { toast.error("اختر ملف Web Bundle (.zip)"); return; }
     setBusy(true);
@@ -216,9 +217,14 @@ function AdminUpdates() {
         </div>
 
         <div>
-          <label className="text-xs text-muted-foreground">رسالة التحديث</label>
-          <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={3}
-            placeholder="ما الجديد في هذا الإصدار..."
+          <label className="text-xs font-bold text-foreground">
+            مميزات هذا التحديث <span className="text-red-500">*</span>
+          </label>
+          <p className="mt-0.5 mb-1 text-[10px] text-muted-foreground">
+            اكتب ما هو جديد في هذا الإصدار بالتحديد — سيظهر للمستخدم في نافذة التحديث. لا تترك الحقل فارغًا ولا تكرر نص الإصدار السابق.
+          </p>
+          <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={4}
+            placeholder={"مثال:\n• إصلاح مشكلة الخروج من الغرفة عند التنقل\n• تحسين سرعة المحادثات\n• إضافة أيقونة الموقع في جوجل"}
             className="mt-1 w-full rounded-xl border border-input bg-background p-3 text-sm outline-none focus:border-primary" />
         </div>
 
