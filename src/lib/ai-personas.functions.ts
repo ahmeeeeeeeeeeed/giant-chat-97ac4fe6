@@ -192,119 +192,121 @@ async function pickWeighted<T extends Record<string, any>>(rows: T[]): Promise<T
 async function runCycleInternal() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const now = new Date();
-  const { data: personas } = await supabaseAdmin
+  const stats = { personas: 0, posts: 0, stories: 0, likes: 0, comments: 0, errors: [] as string[] };
+
+  const { data: personas, error: pErr } = await supabaseAdmin
     .from("ai_personas")
     .select("*")
     .eq("is_active", true);
-  if (!personas || personas.length === 0) return { processed: 0 };
+  if (pErr) {
+    console.error("[ai-personas] fetch personas failed:", pErr.message);
+    return { processed: 0, ...stats, errors: ["fetch:" + pErr.message] };
+  }
+  stats.personas = personas?.length || 0;
+  console.log(`[ai-personas] cycle start — active personas: ${stats.personas}`);
+  if (!personas || personas.length === 0) return { processed: 0, ...stats };
 
-  let processed = 0;
   for (const p of personas) {
-    const lastPost = p.last_post_at ? new Date(p.last_post_at).getTime() : 0;
-    const intervalMs = (p.post_interval_minutes || 180) * 60_000;
+    try {
+      const lastPost = p.last_post_at ? new Date(p.last_post_at).getTime() : 0;
+      const intervalMs = (p.post_interval_minutes || 180) * 60_000;
+      const dueToPost = now.getTime() - lastPost >= intervalMs;
+      console.log(`[ai-personas] ${p.display_name} due=${dueToPost} lastPost=${p.last_post_at || "never"}`);
 
-    // --- 1) Maybe publish a new post or story
-    if (now.getTime() - lastPost >= intervalMs) {
-      const { data: tpls } = await supabaseAdmin
-        .from("ai_persona_templates")
-        .select("*")
-        .eq("persona_type", p.persona_type)
-        .in("kind", ["post", "story"]);
-      const tpl = await pickWeighted((tpls || []) as any);
-      if (tpl) {
-        if (tpl.kind === "post") {
-          const { data: post } = await supabaseAdmin
+      if (dueToPost) {
+        const { data: tpls } = await supabaseAdmin
+          .from("ai_persona_templates")
+          .select("*")
+          .eq("persona_type", p.persona_type)
+          .in("kind", ["post", "story"]);
+        const tpl = await pickWeighted((tpls || []) as any);
+        if (!tpl) {
+          console.warn(`[ai-personas] no post/story templates for type=${p.persona_type}`);
+        } else if (tpl.kind === "post") {
+          const { data: post, error } = await supabaseAdmin
             .from("community_posts")
             .insert({
               author_id: p.profile_id,
               content: tpl.content,
               media_url: tpl.media_url || null,
               media_type: tpl.media_url ? "image" : null,
-            } as any)
-            .select("id")
-            .single();
-          await supabaseAdmin.from("ai_persona_activity_log").insert({
-            persona_id: p.id,
-            action: "post",
-            target_id: post?.id || null,
-          } as any);
+            } as any).select("id").single();
+          if (error) { stats.errors.push("post:" + error.message); console.error("[ai-personas] post err", error.message); }
+          else {
+            stats.posts++;
+            await supabaseAdmin.from("ai_persona_activity_log").insert({ persona_id: p.id, action: "post", target_id: post?.id || null } as any);
+            await supabaseAdmin.from("ai_personas").update({ last_post_at: now.toISOString() } as any).eq("id", p.id);
+          }
         } else {
-          const { data: story } = await supabaseAdmin
+          const { data: story, error } = await supabaseAdmin
             .from("stories")
             .insert({
               user_id: p.profile_id,
               content: tpl.content,
               media_url: tpl.media_url || null,
               media_type: tpl.media_url ? "image" : null,
-            } as any)
-            .select("id")
-            .single();
-          await supabaseAdmin.from("ai_persona_activity_log").insert({
-            persona_id: p.id,
-            action: "story",
-            target_id: story?.id || null,
-          } as any);
+            } as any).select("id").single();
+          if (error) { stats.errors.push("story:" + error.message); console.error("[ai-personas] story err", error.message); }
+          else {
+            stats.stories++;
+            await supabaseAdmin.from("ai_persona_activity_log").insert({ persona_id: p.id, action: "story", target_id: story?.id || null } as any);
+            await supabaseAdmin.from("ai_personas").update({ last_post_at: now.toISOString() } as any).eq("id", p.id);
+          }
         }
-        await supabaseAdmin
-          .from("ai_personas")
-          .update({ last_post_at: now.toISOString() } as any)
-          .eq("id", p.id);
-        processed++;
       }
-    }
 
-    // --- 2) Maybe react/comment on recent real posts
-    if (Math.random() < Number(p.reaction_rate || 0)) {
-      const since = new Date(now.getTime() - 24 * 60 * 60_000).toISOString();
-      const { data: recent } = await supabaseAdmin
-        .from("community_posts")
-        .select("id, author_id")
-        .gte("created_at", since)
-        .neq("author_id", p.profile_id)
-        .order("created_at", { ascending: false })
-        .limit(20);
-      const pool = (recent || []).slice(0, 10);
-      // up to 3 likes
-      const likeTargets = pool.sort(() => Math.random() - 0.5).slice(0, 3);
-      for (const t of likeTargets) {
-        const { error } = await supabaseAdmin
-          .from("community_reactions")
-          .upsert({ post_id: t.id, user_id: p.profile_id, reaction: "like" } as any);
-        if (!error) {
-          await supabaseAdmin.from("ai_persona_activity_log").insert({
-            persona_id: p.id,
-            action: "like",
-            target_id: t.id,
-          } as any);
+      // Reactions — first cycle (last_react_at null) always fires to seed visible activity.
+      const firstRun = !p.last_react_at;
+      const shouldReact = firstRun || Math.random() < Number(p.reaction_rate || 0);
+      if (shouldReact) {
+        const since = new Date(now.getTime() - 24 * 60 * 60_000).toISOString();
+        const { data: recent } = await supabaseAdmin
+          .from("community_posts")
+          .select("id, author_id")
+          .gte("created_at", since)
+          .neq("author_id", p.profile_id)
+          .order("created_at", { ascending: false })
+          .limit(20);
+        const pool = (recent || []).slice(0, 10);
+        const likeTargets = [...pool].sort(() => Math.random() - 0.5).slice(0, 3);
+        for (const t of likeTargets) {
+          const { error } = await supabaseAdmin
+            .from("community_reactions")
+            .upsert({ post_id: t.id, user_id: p.profile_id, reaction: "like" } as any);
+          if (!error) {
+            stats.likes++;
+            await supabaseAdmin.from("ai_persona_activity_log").insert({ persona_id: p.id, action: "like", target_id: t.id } as any);
+          }
         }
+        const { data: cTpls } = await supabaseAdmin
+          .from("ai_persona_templates")
+          .select("*")
+          .eq("persona_type", p.persona_type)
+          .eq("kind", "comment");
+        const cTpl = await pickWeighted((cTpls || []) as any);
+        if (cTpl && pool.length) {
+          const target = pool[Math.floor(Math.random() * pool.length)];
+          const { data: comment, error } = await supabaseAdmin
+            .from("community_comments")
+            .insert({ post_id: target.id, author_id: p.profile_id, content: cTpl.content } as any)
+            .select("id").single();
+          if (!error) {
+            stats.comments++;
+            await supabaseAdmin.from("ai_persona_activity_log").insert({ persona_id: p.id, action: "comment", target_id: comment?.id || null } as any);
+          }
+        }
+        await supabaseAdmin.from("ai_personas").update({ last_react_at: now.toISOString() } as any).eq("id", p.id);
       }
-      // up to 1 comment from templates
-      const { data: cTpls } = await supabaseAdmin
-        .from("ai_persona_templates")
-        .select("*")
-        .eq("persona_type", p.persona_type)
-        .eq("kind", "comment");
-      const cTpl = await pickWeighted((cTpls || []) as any);
-      if (cTpl && pool.length) {
-        const target = pool[Math.floor(Math.random() * pool.length)];
-        const { data: comment } = await supabaseAdmin
-          .from("community_comments")
-          .insert({ post_id: target.id, author_id: p.profile_id, content: cTpl.content } as any)
-          .select("id")
-          .single();
-        await supabaseAdmin.from("ai_persona_activity_log").insert({
-          persona_id: p.id,
-          action: "comment",
-          target_id: comment?.id || null,
-        } as any);
-      }
-      await supabaseAdmin
-        .from("ai_personas")
-        .update({ last_react_at: now.toISOString() } as any)
-        .eq("id", p.id);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error(`[ai-personas] persona ${p.id} failed:`, msg);
+      stats.errors.push("persona:" + msg);
     }
   }
-  return { processed };
+
+  const processed = stats.posts + stats.stories + stats.likes + stats.comments;
+  console.log("[ai-personas] cycle done", { processed, ...stats });
+  return { processed, ...stats };
 }
 
 export const runPersonaCycle = createServerFn({ method: "POST" })
@@ -312,6 +314,59 @@ export const runPersonaCycle = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     await assertAdmin(context);
     return await runCycleInternal();
+  });
+
+// Bootstraps 3 demo personas + 12 content templates when the system is empty.
+export const seedDefaultPersonas = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const defaults = [
+      { username: "nora_ai", displayName: "نورا", bio: "أحب الحياة والإيجابية ✨", personaType: "friendly", postIntervalMinutes: 180, reactionRate: 0.6 },
+      { username: "news_ai", displayName: "أخبار سريعة", bio: "آخر الأخبار والتحديثات", personaType: "news", postIntervalMinutes: 240, reactionRate: 0.4 },
+      { username: "gamer_ai", displayName: "اللاعب", bio: "ألعاب ومنافسات 🎮", personaType: "gamer", postIntervalMinutes: 360, reactionRate: 0.5 },
+    ];
+    let createdPersonas = 0;
+    for (const d of defaults) {
+      const email = `ai_${d.username}_${Date.now()}@ai.local`;
+      const password = crypto.randomUUID() + crypto.randomUUID();
+      const { data: u, error: ue } = await supabaseAdmin.auth.admin.createUser({
+        email, password, email_confirm: true, user_metadata: { username: d.username },
+      });
+      if (ue || !u.user) { console.error("seed user err", ue?.message); continue; }
+      const uid = u.user.id;
+      await supabaseAdmin.from("profiles").update({
+        is_ai: true, username: d.username, bio: d.bio, dm_locked: true,
+      }).eq("id", uid);
+      const { error: ie } = await supabaseAdmin.from("ai_personas").insert({
+        profile_id: uid, display_name: d.displayName, bio: d.bio, persona_type: d.personaType,
+        post_interval_minutes: d.postIntervalMinutes, reaction_rate: d.reactionRate,
+      } as any);
+      if (!ie) createdPersonas++;
+    }
+
+    const templates: any[] = [
+      { persona_type: "friendly", kind: "post", content: "صباح الخير جميعاً ☀️ يوم مليء بالطاقة الإيجابية", weight: 3 },
+      { persona_type: "friendly", kind: "post", content: "ابتسامة بسيطة قد تغيّر يوم شخص ما 🌸", weight: 2 },
+      { persona_type: "friendly", kind: "story", content: "كونوا لطفاء مع أنفسكم اليوم 💙", weight: 1 },
+      { persona_type: "friendly", kind: "comment", content: "كلام جميل 👏", weight: 2 },
+      { persona_type: "friendly", kind: "comment", content: "أتفق معك تماماً", weight: 1 },
+      { persona_type: "news", kind: "post", content: "تحديث: ميزات جديدة قادمة قريباً للتطبيق 🚀", weight: 2 },
+      { persona_type: "news", kind: "post", content: "نصيحة اليوم: استخدم الغرف الصوتية للتعرف على أصدقاء جدد", weight: 2 },
+      { persona_type: "news", kind: "comment", content: "خبر مهم 👌", weight: 1 },
+      { persona_type: "gamer", kind: "post", content: "من معي للعب الآن؟ 🎮", weight: 2 },
+      { persona_type: "gamer", kind: "post", content: "بطولة جديدة قريباً — جهّزوا أنفسكم!", weight: 1 },
+      { persona_type: "gamer", kind: "story", content: "GG! 🏆", weight: 1 },
+      { persona_type: "gamer", kind: "comment", content: "🔥🔥", weight: 2 },
+    ];
+    let createdTemplates = 0;
+    for (const t of templates) {
+      const { error } = await supabaseAdmin.from("ai_persona_templates").insert(t as any);
+      if (!error) createdTemplates++;
+    }
+    return { personas: createdPersonas, templates: createdTemplates };
   });
 
 export { runCycleInternal as __runCycleInternal };
