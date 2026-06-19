@@ -270,7 +270,7 @@ function DMPage() {
     if (!getOnline()) return;
     const ch = supabase
       .channel(`dm-msg:${[user.id, otherId].sort().join(":")}`)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "direct_messages" }, async (payload) => {
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "direct_messages", filter: `sender_id=eq.${user.id}` }, async (payload) => {
         const r = payload.new as DM;
         if (
           (r.sender_id === user.id && r.receiver_id === otherId) ||
@@ -286,7 +286,7 @@ function DMPage() {
           }
         }
       })
-      .on("postgres_changes", { event: "DELETE", schema: "public", table: "direct_messages" }, (payload) => {
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "direct_messages", filter: `sender_id=eq.${user.id}` }, (payload) => {
         // Server purged the row after full delivery — keep it locally and
         // upgrade the status to "delivered" so the sender sees ✓✓.
         const r = payload.old as { id: string };
@@ -298,7 +298,7 @@ function DMPage() {
             : x);
         });
       })
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "direct_messages" }, (payload) => {
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "direct_messages", filter: `sender_id=eq.${user.id}` }, (payload) => {
         const r = payload.new as DM;
         setMessages(old => mergeDMList(old, r));
         void appendLocalDM(user.id, r);
