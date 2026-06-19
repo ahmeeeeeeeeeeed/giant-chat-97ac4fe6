@@ -14,7 +14,7 @@ import { ImageLightbox } from "@/components/ImageLightbox";
 import { cacheGet, cacheSet, cacheKeys } from "@/lib/offline-cache";
 import { enqueueMessage } from "@/lib/offline-queue";
 import { getOnline } from "@/lib/use-online";
-import { ackDelivery, appendLocalDM, DM_MESSAGES_EVENT, markLocalConversationRead, removeLocalDM, replaceLocalDM, updateChatsListCache } from "@/lib/dm-delivery";
+import { ackDelivery, appendLocalDM, DM_MESSAGES_EVENT, markLocalConversationRead, removeLocalDM, replaceLocalDM } from "@/lib/dm-delivery";
 import { ensureMediaLibraryPermission, ensureMicPermission } from "@/lib/app-permissions";
 import { useCachedMediaSource } from "@/lib/use-cached-media";
 import { StoryRing } from "@/components/StoryRing";
@@ -37,6 +37,15 @@ type DM = {
   delivered_at?: string | null;
   read_at?: string | null;
 };
+
+function mergeDMList(list: DM[], msg: DM, replacedId?: string): DM[] {
+  const base = replacedId ? list.filter((m) => m.id !== replacedId) : list;
+  const index = base.findIndex((m) => m.id === msg.id);
+  if (index < 0) return [...base, msg].sort((a, b) => a.created_at.localeCompare(b.created_at));
+  const next = [...base];
+  next[index] = { ...next[index], ...msg };
+  return next.sort((a, b) => a.created_at.localeCompare(b.created_at));
+}
 
 type MessageStatus = "pending" | "sent" | "delivered" | "read";
 function statusOf(m: DM): MessageStatus {
