@@ -14,7 +14,7 @@ import {
 } from "@/lib/ai-personas.functions";
 import { Bot, Loader2, Plus, Trash2, Play, Power, PowerOff } from "lucide-react";
 import { toast } from "sonner";
-import { AiBadge } from "@/components/AiBadge";
+
 
 export const Route = createFileRoute("/app/admin/ai-personas")({
   component: AdminAiPersonas,
