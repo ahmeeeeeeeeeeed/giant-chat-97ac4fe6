@@ -113,11 +113,17 @@ function AdminAiPersonas() {
             <p className="text-xs text-muted-foreground">إدارة الشخصيات والقوالب وسجل النشاط</p>
           </div>
         </div>
-        <button onClick={runCycle} disabled={busy}
-          className="flex items-center gap-1 rounded-xl bg-primary px-3 py-2 text-xs font-bold text-primary-foreground disabled:opacity-50">
-          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-          تشغيل دورة الآن
-        </button>
+        <div className="flex gap-1">
+          <button onClick={seed} disabled={busy}
+            className="flex items-center gap-1 rounded-xl bg-secondary px-3 py-2 text-xs font-bold disabled:opacity-50">
+            <Plus className="h-4 w-4" /> بذر افتراضي
+          </button>
+          <button onClick={runCycle} disabled={busy}
+            className="flex items-center gap-1 rounded-xl bg-primary px-3 py-2 text-xs font-bold text-primary-foreground disabled:opacity-50">
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+            تشغيل
+          </button>
+        </div>
       </header>
 
       <div className="flex gap-2">
