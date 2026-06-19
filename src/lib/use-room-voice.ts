@@ -472,6 +472,10 @@ export function useRoomVoice(roomId: string, myUserId: string | undefined) {
       const s = localStreamRef.current;
       if (s) { for (const t of s.getTracks()) try { t.stop(); } catch { /* noop */ } }
       localStreamRef.current = null;
+      if (rafRef.current != null) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
+      analysersRef.current.clear();
+      try { audioCtxRef.current?.close(); } catch { /* noop */ }
+      audioCtxRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -480,7 +484,7 @@ export function useRoomVoice(roomId: string, myUserId: string | undefined) {
 
   return {
     speakers, raisedHands, allInvites, myInvite, myHandRaised,
-    amSpeaker, localMuted, isJoining,
+    amSpeaker, localMuted, isJoining, speakingMap,
     joinStage, leaveStage, toggleMute,
     raiseHand, lowerHand,
     inviteToSpeak, revokeInvite, muteSpeaker, removeSpeaker,
