@@ -16,6 +16,7 @@ import { scheduleDataPrewarm } from "@/lib/data-prewarm";
 import { recordDailyAction } from "@/lib/daily-tasks";
 import { usePresenceHeartbeat } from "@/lib/use-presence-heartbeat";
 import { ensurePersistentOfflineStorage } from "@/lib/offline-cache";
+import { useDmDeliveryWorker } from "@/lib/dm-delivery";
 
 
 export const Route = createFileRoute("/app")({
@@ -33,6 +34,7 @@ function AppLayout() {
   void unreadRooms;
   const bellCount = useBellCount();
   useGlobalNotificationListener((url) => navigate({ to: url as any }));
+  useDmDeliveryWorker();
   useAnnouncementsListener(!!session?.user?.id);
   const router = useRouter();
   const [reportOpen, setReportOpen] = useState(false);
