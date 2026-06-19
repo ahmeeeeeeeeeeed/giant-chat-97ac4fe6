@@ -7,6 +7,8 @@ import { toast } from "sonner";
 import { recordDailyAction } from "@/lib/daily-tasks";
 import { AvatarFrame } from "@/components/AvatarFrame";
 import { UserBadgesInline } from "@/components/UserBadges";
+import { AiBadge } from "@/components/AiBadge";
+
 import {
   ImagePlus, Video, X, Loader2, Send, MoreVertical, Trash2, Pencil,
   Flag, MessageCircle, Smile, Users, Sparkles, Bookmark, Share2, Link2,
