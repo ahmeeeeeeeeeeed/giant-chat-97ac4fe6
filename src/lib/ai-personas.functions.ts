@@ -512,7 +512,12 @@ async function seedDefaultsInternal() {
 
   let createdPersonas = 0;
   const nowMs = Date.now();
-  for (const d of defaults) {
+  // Varied gaps between posts (in minutes): 30m, 1h, 2h, 3h — distributed so
+  // consecutive personas' "next due" times are spaced naturally.
+  const gapPool = [30, 60, 120, 180];
+  let phaseAcc = 0;
+  for (let i = 0; i < defaults.length; i++) {
+    const d = defaults[i];
     const email = `ai_${d.username}_${Date.now()}@ai.local`;
     const password = crypto.randomUUID() + crypto.randomUUID();
     const { data: u, error: ue } = await supabaseAdmin.auth.admin.createUser({
@@ -523,27 +528,29 @@ async function seedDefaultsInternal() {
     await supabaseAdmin.from("profiles").update({
       is_ai: true, username: d.username, bio: d.bio, avatar_url: d.avatarUrl, dm_locked: true,
     }).eq("id", uid);
-    // Stagger over a 5-hour window AND add per-persona random offset so they never re-sync
-    const baseShift = 300 - d.staggerIndex * 15;
-    const randomShift = Math.floor(Math.random() * 20) - 10; // ±10 min
-    const staggerMs = (baseShift + randomShift) * 60_000;
-    const lastPostAt = new Date(nowMs - staggerMs).toISOString();
+    // Each persona still posts once every 5h, but their phase within the 5h cycle
+    // is offset by a random gap from {30m, 1h, 2h, 3h} — so the feed shows posts
+    // spaced naturally instead of bursts.
+    const gap = gapPool[Math.floor(Math.random() * gapPool.length)];
+    phaseAcc = (phaseAcc + gap) % 300; // 0..299 minutes within the 5h cycle
+    // Persona will become due in `phaseAcc` minutes from now.
+    const lastPostAt = new Date(nowMs - (300 - phaseAcc) * 60_000).toISOString();
     const { error: ie } = await supabaseAdmin.from("ai_personas").insert({
       profile_id: uid, display_name: d.displayName, bio: d.bio, avatar_url: d.avatarUrl,
       persona_type: d.personaType,
-      post_interval_minutes: 300,
-      reaction_rate: 0.6 + Math.random() * 0.3, // 0.6..0.9 — varied per persona
+      post_interval_minutes: 300, // 5 hours per bot
+      reaction_rate: 0.6 + Math.random() * 0.3,
       last_post_at: lastPostAt,
     } as any);
     if (!ie) {
       createdPersonas++;
-      // Award shop badge matching persona type (replaces AI badge in UI)
       const badgeId = BADGE_BY_TYPE[d.personaType];
       if (badgeId) {
         await supabaseAdmin.from("user_badges").insert({ user_id: uid, badge_id: badgeId } as any).then(() => null, () => null);
       }
     }
   }
+
 
   // ── Templates: 200 unique comments (50 per type) + 200 unique images for posts/stories
   // Use seeded picsum URLs so every image is unique and deterministic.
