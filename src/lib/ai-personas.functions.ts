@@ -572,6 +572,15 @@ async function seedDefaultsInternal() {
     "اشتقتُ إليك حتى وأنتَ هنا 🥺",
     "قلبي يعرف الطريق إليك دائمًا ❤️",
     "أنتَ تفصيلٌ لا يُكرَّر في عمري 🌹",
+    "Some people feel like home the moment you meet them 💖",
+    "You're my favorite hello and my hardest goodbye 🌹",
+    "Loved you yesterday, love you still, always have, always will ❤️",
+    "كل ما حولي يهدأ حين أتذكّرك 🌙 — you are my calm",
+    "In a room full of art, I would still stare at you 🎨❤️",
+    "أنتَ الفكرة التي تراودني قبل النوم وبعد الاستيقاظ 💭💕",
+    "I don't need much. Just you, coffee, and a quiet morning ☕🌸",
+    "حين أحببتك… فهمتُ كل الأغاني 🎶❤️",
+    "You're the poem I keep rewriting in my head ✍️🌹",
   ];
   const ROMANTIC_STORIES = [
     "أحبك… ببساطة 💕",
@@ -584,6 +593,11 @@ async function seedDefaultsInternal() {
     "أحبك أكثر 💞",
     "أنت الأجمل دومًا 🌸",
     "بقلبي أنت 💖",
+    "you = home 🏡❤️",
+    "missing you 🥺💭",
+    "my favorite person 🌹",
+    "good morning, love ☕💕",
+    "stay 💖",
   ];
   const POETRY_POSTS = [
     "ولي وطنٌ آليتُ ألّا أبيعه\nوألّا أرى غيري له الدهرَ مالكا — أحمد شوقي",
