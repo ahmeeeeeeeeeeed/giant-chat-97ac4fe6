@@ -3,6 +3,7 @@
 import { get, set, createStore } from "idb-keyval";
 import { supabase } from "@/integrations/supabase/client";
 import { onConnectivityChange, getOnline } from "./use-online";
+import { replaceLocalDM, type DMRow } from "./dm-delivery";
 
 const isBrowser = typeof window !== "undefined" && typeof indexedDB !== "undefined";
 const store = isBrowser ? createStore("giant-offline", "queue") : null;
@@ -79,12 +80,14 @@ export async function flushQueue(): Promise<{ sent: number; failed: number }> {
     for (const item of queue) {
       try {
         if (item.kind === "dm") {
-          const { error } = await supabase.from("direct_messages").insert({
+          const { data, error } = await supabase.from("direct_messages").insert({
             sender_id: item.sender_id,
             receiver_id: item.receiver_id,
             content: item.content,
-          });
+            message_type: "text",
+          }).select("id, sender_id, receiver_id, content, created_at, message_type, media_url, media_duration_ms, reply_to_id, delivered_at, read_at").single();
           if (error) throw error;
+          if (data) await replaceLocalDM(item.sender_id, item.receiver_id, item.id, data as DMRow);
         } else {
           const { error } = await supabase.from("room_messages").insert({
             room_id: item.room_id,
