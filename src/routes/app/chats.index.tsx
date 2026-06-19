@@ -9,7 +9,6 @@ import { getOnline } from "@/lib/use-online";
 import { useCachedMediaSource } from "@/lib/use-cached-media";
 import { StoryRing } from "@/components/StoryRing";
 import { DM_CONVERSATIONS_EVENT, previewDMMessage, type DMConversation } from "@/lib/dm-delivery";
-import { toast } from "sonner";
 
 
 export const Route = createFileRoute("/app/chats/")({
