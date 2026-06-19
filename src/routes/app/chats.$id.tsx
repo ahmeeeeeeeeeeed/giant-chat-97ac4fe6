@@ -390,15 +390,16 @@ function DMPage() {
     broadcastActivity("idle");
 
     if (!getOnline()) {
-      await enqueueMessage({ kind: "dm", sender_id: user.id, receiver_id: otherId, content });
+      const queuedRow = await enqueueMessage({ kind: "dm", sender_id: user.id, receiver_id: otherId, content });
       const optimistic: DM = {
-        id: `q_${Date.now()}`,
+        id: queuedRow.id,
         sender_id: user.id, receiver_id: otherId, content,
-        created_at: new Date().toISOString(),
+        created_at: new Date(queuedRow.createdAt).toISOString(),
         message_type: "text", media_url: null, media_duration_ms: null,
         reply_to_id: reply?.id ?? null,
       };
       setMessages((old) => [...old, optimistic]);
+      await appendLocalDM(user.id, optimistic);
       setSending(false);
       toast.message("تم حفظ الرسالة — ستُرسل عند عودة الإنترنت");
       return;
@@ -415,6 +416,7 @@ function DMPage() {
       reply_to_id: reply?.id ?? null,
     };
     setMessages((old) => [...old, optimistic]);
+    await appendLocalDM(user.id, optimistic);
     setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current!.scrollHeight, behavior: "smooth" }), 30);
 
     let error: { message?: string } | null = null;
@@ -431,27 +433,27 @@ function DMPage() {
     }
     setSending(false);
     if (inserted) {
-      void updateChatsListCache(user.id, inserted);
+      await replaceLocalDM(user.id, otherId, tempId, inserted);
       // Replace optimistic with real row, dedupe in case realtime arrived first.
       setMessages((old) => {
         const withoutTemp = old.filter((m) => m.id !== tempId);
         if (withoutTemp.some((m) => m.id === inserted!.id)) return withoutTemp;
         return [...withoutTemp, inserted!];
       });
-      // Cache locally so server purge after delivery doesn't lose it on sender side.
-      await appendLocalDM(user.id, inserted);
       return;
     }
     if (error) {
       // Remove failed optimistic row.
       setMessages((old) => old.filter((m) => m.id !== tempId));
       if (!getOnline() || /network|fetch|Failed/i.test(error.message ?? "")) {
-        await enqueueMessage({ kind: "dm", sender_id: user.id, receiver_id: otherId, content });
-        const queued: DM = { ...optimistic, id: `q_${Date.now()}` };
+        const queuedRow = await enqueueMessage({ kind: "dm", sender_id: user.id, receiver_id: otherId, content });
+        const queued: DM = { ...optimistic, id: queuedRow.id, created_at: new Date(queuedRow.createdAt).toISOString() };
+        await replaceLocalDM(user.id, otherId, tempId, queued);
         setMessages((old) => [...old, queued]);
         toast.message("تم حفظ الرسالة — ستُرسل عند عودة الإنترنت");
         return;
       }
+      await removeLocalDM(user.id, otherId, tempId);
       if (error.message?.includes("recipient_dm_locked")) toast.error("هذا المستخدم قفل الرسائل الخاصة (متاح للأصدقاء فقط)");
       else if (error.message?.includes("dm_blocked")) toast.error("لا يمكن إرسال الرسالة (حظر)");
       else toast.error(t("common.error"));
