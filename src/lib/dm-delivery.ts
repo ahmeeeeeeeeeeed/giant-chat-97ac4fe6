@@ -46,11 +46,12 @@ function emitDmEvent(name: string, detail: unknown): void {
 async function withCacheLock(key: string, task: () => Promise<void>): Promise<void> {
   const previous = cacheLocks.get(key) ?? Promise.resolve();
   const next = previous.catch(() => undefined).then(task);
-  cacheLocks.set(key, next.catch(() => undefined));
+  const stored = next.catch(() => undefined);
+  cacheLocks.set(key, stored);
   try {
     await next;
   } finally {
-    if (cacheLocks.get(key) === next) cacheLocks.delete(key);
+    if (cacheLocks.get(key) === stored) cacheLocks.delete(key);
   }
 }
 
