@@ -376,28 +376,50 @@ function DMPage() {
       return;
     }
 
+    // Optimistic add — sender sees their message instantly and it survives
+    // even if the server purges the row after fast delivery+ack.
+    const tempId = `tmp_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    const optimistic: DM = {
+      id: tempId,
+      sender_id: user.id, receiver_id: otherId, content,
+      created_at: new Date().toISOString(),
+      message_type: "text", media_url: null, media_duration_ms: null,
+      reply_to_id: reply?.id ?? null,
+    };
+    setMessages((old) => [...old, optimistic]);
+    setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current!.scrollHeight, behavior: "smooth" }), 30);
+
     let error: { message?: string } | null = null;
+    let inserted: DM | null = null;
     try {
       const res = await supabase.from("direct_messages").insert({
         sender_id: user.id, receiver_id: otherId, content, message_type: "text",
         reply_to_id: reply?.id ?? null,
-      });
-      error = res.error;
+      }).select("id, sender_id, receiver_id, content, created_at, message_type, media_url, media_duration_ms, reply_to_id, delivered_at, read_at").single();
+      error = res.error as { message?: string } | null;
+      inserted = (res.data as DM) ?? null;
     } catch (err) {
       error = err as { message?: string };
     }
     setSending(false);
+    if (inserted) {
+      // Replace optimistic with real row, dedupe in case realtime arrived first.
+      setMessages((old) => {
+        const withoutTemp = old.filter((m) => m.id !== tempId);
+        if (withoutTemp.some((m) => m.id === inserted!.id)) return withoutTemp;
+        return [...withoutTemp, inserted!];
+      });
+      // Cache locally so server purge after delivery doesn't lose it on sender side.
+      await appendLocalDM(user.id, inserted);
+      return;
+    }
     if (error) {
+      // Remove failed optimistic row.
+      setMessages((old) => old.filter((m) => m.id !== tempId));
       if (!getOnline() || /network|fetch|Failed/i.test(error.message ?? "")) {
         await enqueueMessage({ kind: "dm", sender_id: user.id, receiver_id: otherId, content });
-        const optimistic: DM = {
-          id: `q_${Date.now()}`,
-          sender_id: user.id, receiver_id: otherId, content,
-          created_at: new Date().toISOString(),
-          message_type: "text", media_url: null, media_duration_ms: null,
-          reply_to_id: reply?.id ?? null,
-        };
-        setMessages((old) => [...old, optimistic]);
+        const queued: DM = { ...optimistic, id: `q_${Date.now()}` };
+        setMessages((old) => [...old, queued]);
         toast.message("تم حفظ الرسالة — ستُرسل عند عودة الإنترنت");
         return;
       }
