@@ -746,6 +746,8 @@ async function seedDefaultsInternal() {
     "🤍🌿", "ذكّرتنا بأنفسنا 💚", "اللهم إنا نستودعك ديننا 🤲",
     "بارك الله فيك ونفع بك 🤍", "اللهم اجعلنا مع الصادقين 🌙", "🤲💚",
     "ربي يجعلك سببًا للخير 🌷", "اللهم اجعلنا من الموحدين 🤍",
+    "Ameen 🤲", "BarakAllahu feek 🤍", "JazakAllah khair 🌿",
+    "much needed 🌙", "Alhamdulillah ✨", "needed this today 🤍",
   ];
   const SERIOUS_COMMENTS = [
     "كلام في الصميم 👌", "أتفق تمامًا 💯", "نصيحة قيمة 🌿", "صحيح جدًا ✅",
