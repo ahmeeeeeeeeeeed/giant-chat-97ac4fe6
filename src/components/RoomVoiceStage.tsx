@@ -390,30 +390,38 @@ export function RoomVoiceStage({
 
 
 function SpeakerTile({
-  sp, profile, isMe, canManage, onMute, onRemove,
+  sp, profile, isMe, isSpeaking, canManage, onMute, onRemove,
 }: {
   sp: Speaker;
   profile?: Profile;
   isMe: boolean;
+  isSpeaking: boolean;
   canManage: boolean;
   onMute: (m: boolean) => void;
   onRemove: () => void;
 }) {
   const [open, setOpen] = useState(false);
+  const ringClass = sp.is_muted
+    ? "ring-red-500/60"
+    : isSpeaking
+      ? "ring-emerald-400 shadow-[0_0_0_4px_rgba(16,185,129,0.35),0_0_18px_rgba(16,185,129,0.55)]"
+      : "ring-emerald-500/40";
   return (
     <div className="relative flex flex-col items-center gap-1 w-16">
       <button
         onClick={() => canManage && setOpen((o) => !o)}
-        className={`relative rounded-full ring-2 transition ${
-          sp.is_muted ? "ring-red-500/60" : "ring-emerald-500/60"
-        } ${!sp.is_muted ? "animate-pulse-ring" : ""}`}
+        className={`relative rounded-full ring-2 transition-all duration-200 ${ringClass} ${isSpeaking ? "scale-105" : ""}`}
       >
+        {/* Animated speaking halo */}
+        {isSpeaking && (
+          <span className="pointer-events-none absolute inset-0 rounded-full ring-2 ring-emerald-400/70 animate-ping" />
+        )}
         <Avatar className="h-12 w-12">
           <AvatarImage src={profile?.avatar_url ?? undefined} />
           <AvatarFallback className="text-sm">{(profile?.username ?? "?").charAt(0).toUpperCase()}</AvatarFallback>
         </Avatar>
         <span className={`absolute -bottom-0.5 -end-0.5 rounded-full p-0.5 ${
-          sp.is_muted ? "bg-red-500" : "bg-emerald-500"
+          sp.is_muted ? "bg-red-500" : isSpeaking ? "bg-emerald-400" : "bg-emerald-500"
         }`}>
           {sp.is_muted ? <MicOff className="h-3 w-3 text-white" /> : <Mic className="h-3 w-3 text-white" />}
         </span>
@@ -423,7 +431,18 @@ function SpeakerTile({
           </span>
         )}
       </button>
-      <span className="text-[10px] font-bold truncate max-w-full text-center">
+      {/* Waveform under name */}
+      <div className="h-2 flex items-end gap-[2px]">
+        {isSpeaking ? (
+          <>
+            <span className="w-[2px] bg-emerald-500 rounded-full animate-[wave_0.9s_ease-in-out_infinite] h-1" />
+            <span className="w-[2px] bg-emerald-500 rounded-full animate-[wave_0.7s_ease-in-out_infinite] h-2" style={{ animationDelay: "0.1s" }} />
+            <span className="w-[2px] bg-emerald-500 rounded-full animate-[wave_0.8s_ease-in-out_infinite] h-1.5" style={{ animationDelay: "0.2s" }} />
+            <span className="w-[2px] bg-emerald-500 rounded-full animate-[wave_0.6s_ease-in-out_infinite] h-2" style={{ animationDelay: "0.05s" }} />
+          </>
+        ) : null}
+      </div>
+      <span className={`text-[10px] font-bold truncate max-w-full text-center ${isSpeaking ? "text-emerald-600 dark:text-emerald-400" : ""}`}>
         {profile?.username ?? "..."}
       </span>
 
