@@ -192,7 +192,23 @@ async function pickWeighted<T extends Record<string, any>>(rows: T[]): Promise<T
 async function runCycleInternal() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const now = new Date();
-  const stats = { personas: 0, posts: 0, stories: 0, likes: 0, comments: 0, errors: [] as string[] };
+  const stats = { personas: 0, posts: 0, stories: 0, likes: 0, comments: 0, errors: [] as string[], seeded: false };
+
+  // Auto-bootstrap: if DB is empty, seed defaults so the system is fully self-starting.
+  const { count: existing } = await supabaseAdmin
+    .from("ai_personas")
+    .select("id", { count: "exact", head: true });
+  if (!existing || existing === 0) {
+    console.log("[ai-personas] empty DB — auto-seeding defaults");
+    try {
+      const r = await seedDefaultsInternal();
+      stats.seeded = true;
+      console.log("[ai-personas] auto-seed result", r);
+    } catch (e) {
+      console.error("[ai-personas] auto-seed failed", e);
+      stats.errors.push("autoseed:" + (e instanceof Error ? e.message : String(e)));
+    }
+  }
 
   const { data: personas, error: pErr } = await supabaseAdmin
     .from("ai_personas")
@@ -316,77 +332,90 @@ export const runPersonaCycle = createServerFn({ method: "POST" })
     return await runCycleInternal();
   });
 
+// Shared internal seed body — called by the public server fn AND by the auto-bootstrap in runCycleInternal.
+async function seedDefaultsInternal() {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+  const defaults = [
+    // friendly (8)
+    { username: "nora_ai", displayName: "نورا", bio: "أحب الحياة والإيجابية ✨", personaType: "friendly", postIntervalMinutes: 180, reactionRate: 0.6 },
+    { username: "sara_ai", displayName: "سارة", bio: "ابتسامة كل يوم 🌸", personaType: "friendly", postIntervalMinutes: 200, reactionRate: 0.55 },
+    { username: "lana_ai", displayName: "لانا", bio: "طاقة إيجابية دائمًا 💫", personaType: "friendly", postIntervalMinutes: 220, reactionRate: 0.5 },
+    { username: "rana_ai", displayName: "رنا", bio: "صديقة الكل 💙", personaType: "friendly", postIntervalMinutes: 240, reactionRate: 0.5 },
+    { username: "huda_ai", displayName: "هدى", bio: "أحب القراءة والهدوء 📖", personaType: "friendly", postIntervalMinutes: 260, reactionRate: 0.45 },
+    { username: "omar_ai", displayName: "عمر", bio: "متفائل دائمًا ☀️", personaType: "friendly", postIntervalMinutes: 200, reactionRate: 0.55 },
+    { username: "ali_ai", displayName: "علي", bio: "محب للسفر والاكتشاف ✈️", personaType: "friendly", postIntervalMinutes: 280, reactionRate: 0.4 },
+    { username: "mona_ai", displayName: "منى", bio: "فنانة وحالمة 🎨", personaType: "friendly", postIntervalMinutes: 240, reactionRate: 0.5 },
+    // news (6)
+    { username: "news_ai", displayName: "أخبار سريعة", bio: "آخر الأخبار والتحديثات", personaType: "news", postIntervalMinutes: 240, reactionRate: 0.4 },
+    { username: "tech_ai", displayName: "تك نيوز", bio: "كل جديد التقنية 💻", personaType: "news", postIntervalMinutes: 300, reactionRate: 0.35 },
+    { username: "sport_ai", displayName: "رياضة اليوم", bio: "نتائج وأخبار الرياضة ⚽", personaType: "news", postIntervalMinutes: 240, reactionRate: 0.4 },
+    { username: "world_ai", displayName: "حول العالم", bio: "أخبار عالمية 🌍", personaType: "news", postIntervalMinutes: 360, reactionRate: 0.3 },
+    { username: "trend_ai", displayName: "ترند", bio: "كل ما هو رائج 🔥", personaType: "news", postIntervalMinutes: 200, reactionRate: 0.5 },
+    { username: "tips_ai", displayName: "نصائح يومية", bio: "نصيحة كل يوم 💡", personaType: "news", postIntervalMinutes: 300, reactionRate: 0.35 },
+    // gamer (6)
+    { username: "gamer_ai", displayName: "اللاعب", bio: "ألعاب ومنافسات 🎮", personaType: "gamer", postIntervalMinutes: 360, reactionRate: 0.5 },
+    { username: "pro_ai", displayName: "برو بلاير", bio: "محترف ألعاب 🏆", personaType: "gamer", postIntervalMinutes: 300, reactionRate: 0.5 },
+    { username: "fps_ai", displayName: "FPS Master", bio: "عشاق التصويب 🎯", personaType: "gamer", postIntervalMinutes: 360, reactionRate: 0.45 },
+    { username: "moba_ai", displayName: "موبا فان", bio: "ألعاب الفرق والاستراتيجية", personaType: "gamer", postIntervalMinutes: 360, reactionRate: 0.4 },
+    { username: "stream_ai", displayName: "ستريمر", bio: "بث مباشر يومي 🎥", personaType: "gamer", postIntervalMinutes: 240, reactionRate: 0.55 },
+    { username: "retro_ai", displayName: "ريترو", bio: "ألعاب الزمن الجميل 👾", personaType: "gamer", postIntervalMinutes: 400, reactionRate: 0.35 },
+  ];
+  let createdPersonas = 0;
+  for (const d of defaults) {
+    const email = `ai_${d.username}_${Date.now()}@ai.local`;
+    const password = crypto.randomUUID() + crypto.randomUUID();
+    const { data: u, error: ue } = await supabaseAdmin.auth.admin.createUser({
+      email, password, email_confirm: true, user_metadata: { username: d.username },
+    });
+    if (ue || !u.user) { console.error("seed user err", ue?.message); continue; }
+    const uid = u.user.id;
+    await supabaseAdmin.from("profiles").update({
+      is_ai: true, username: d.username, bio: d.bio, dm_locked: true,
+    }).eq("id", uid);
+    const { error: ie } = await supabaseAdmin.from("ai_personas").insert({
+      profile_id: uid, display_name: d.displayName, bio: d.bio, persona_type: d.personaType,
+      post_interval_minutes: d.postIntervalMinutes, reaction_rate: d.reactionRate,
+    } as any);
+    if (!ie) createdPersonas++;
+  }
+
+  const templates: any[] = [
+    { persona_type: "friendly", kind: "post", content: "صباح الخير جميعاً ☀️ يوم مليء بالطاقة الإيجابية", weight: 3 },
+    { persona_type: "friendly", kind: "post", content: "ابتسامة بسيطة قد تغيّر يوم شخص ما 🌸", weight: 2 },
+    { persona_type: "friendly", kind: "post", content: "كيف يومكم يا أصدقاء؟ شاركونا 💬", weight: 2 },
+    { persona_type: "friendly", kind: "story", content: "كونوا لطفاء مع أنفسكم اليوم 💙", weight: 1 },
+    { persona_type: "friendly", kind: "comment", content: "كلام جميل 👏", weight: 2 },
+    { persona_type: "friendly", kind: "comment", content: "أتفق معك تماماً", weight: 1 },
+    { persona_type: "friendly", kind: "comment", content: "❤️❤️", weight: 2 },
+    { persona_type: "friendly", kind: "comment", content: "ما شاء الله 🌸", weight: 1 },
+    { persona_type: "news", kind: "post", content: "تحديث: ميزات جديدة قادمة قريباً للتطبيق 🚀", weight: 2 },
+    { persona_type: "news", kind: "post", content: "نصيحة اليوم: استخدم الغرف الصوتية للتعرف على أصدقاء جدد", weight: 2 },
+    { persona_type: "news", kind: "post", content: "هل جربت الميزات الجديدة؟ شاركنا رأيك 📢", weight: 2 },
+    { persona_type: "news", kind: "comment", content: "خبر مهم 👌", weight: 1 },
+    { persona_type: "news", kind: "comment", content: "متابع 👀", weight: 1 },
+    { persona_type: "gamer", kind: "post", content: "من معي للعب الآن؟ 🎮", weight: 2 },
+    { persona_type: "gamer", kind: "post", content: "بطولة جديدة قريباً — جهّزوا أنفسكم!", weight: 1 },
+    { persona_type: "gamer", kind: "post", content: "أفضل لعبة لعبتها هذا الأسبوع 🔥", weight: 2 },
+    { persona_type: "gamer", kind: "story", content: "GG! 🏆", weight: 1 },
+    { persona_type: "gamer", kind: "comment", content: "🔥🔥", weight: 2 },
+    { persona_type: "gamer", kind: "comment", content: "GG WP 🎮", weight: 1 },
+  ];
+  let createdTemplates = 0;
+  for (const t of templates) {
+    const { error } = await supabaseAdmin.from("ai_persona_templates").insert(t as any);
+    if (!error) createdTemplates++;
+  }
+  return { personas: createdPersonas, templates: createdTemplates };
+}
+
 // Bootstraps 20 demo personas + content templates when the system is empty.
 export const seedDefaultPersonas = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertAdmin(context);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-    const defaults = [
-      // friendly (8)
-      { username: "nora_ai", displayName: "نورا", bio: "أحب الحياة والإيجابية ✨", personaType: "friendly", postIntervalMinutes: 180, reactionRate: 0.6 },
-      { username: "sara_ai", displayName: "سارة", bio: "ابتسامة كل يوم 🌸", personaType: "friendly", postIntervalMinutes: 200, reactionRate: 0.55 },
-      { username: "lana_ai", displayName: "لانا", bio: "طاقة إيجابية دائمًا 💫", personaType: "friendly", postIntervalMinutes: 220, reactionRate: 0.5 },
-      { username: "rana_ai", displayName: "رنا", bio: "صديقة الكل 💙", personaType: "friendly", postIntervalMinutes: 240, reactionRate: 0.5 },
-      { username: "huda_ai", displayName: "هدى", bio: "أحب القراءة والهدوء 📖", personaType: "friendly", postIntervalMinutes: 260, reactionRate: 0.45 },
-      { username: "omar_ai", displayName: "عمر", bio: "متفائل دائمًا ☀️", personaType: "friendly", postIntervalMinutes: 200, reactionRate: 0.55 },
-      { username: "ali_ai", displayName: "علي", bio: "محب للسفر والاكتشاف ✈️", personaType: "friendly", postIntervalMinutes: 280, reactionRate: 0.4 },
-      { username: "mona_ai", displayName: "منى", bio: "فنانة وحالمة 🎨", personaType: "friendly", postIntervalMinutes: 240, reactionRate: 0.5 },
-      // news (6)
-      { username: "news_ai", displayName: "أخبار سريعة", bio: "آخر الأخبار والتحديثات", personaType: "news", postIntervalMinutes: 240, reactionRate: 0.4 },
-      { username: "tech_ai", displayName: "تك نيوز", bio: "كل جديد التقنية 💻", personaType: "news", postIntervalMinutes: 300, reactionRate: 0.35 },
-      { username: "sport_ai", displayName: "رياضة اليوم", bio: "نتائج وأخبار الرياضة ⚽", personaType: "news", postIntervalMinutes: 240, reactionRate: 0.4 },
-      { username: "world_ai", displayName: "حول العالم", bio: "أخبار عالمية 🌍", personaType: "news", postIntervalMinutes: 360, reactionRate: 0.3 },
-      { username: "trend_ai", displayName: "ترند", bio: "كل ما هو رائج 🔥", personaType: "news", postIntervalMinutes: 200, reactionRate: 0.5 },
-      { username: "tips_ai", displayName: "نصائح يومية", bio: "نصيحة كل يوم 💡", personaType: "news", postIntervalMinutes: 300, reactionRate: 0.35 },
-      // gamer (6)
-      { username: "gamer_ai", displayName: "اللاعب", bio: "ألعاب ومنافسات 🎮", personaType: "gamer", postIntervalMinutes: 360, reactionRate: 0.5 },
-      { username: "pro_ai", displayName: "برو بلاير", bio: "محترف ألعاب 🏆", personaType: "gamer", postIntervalMinutes: 300, reactionRate: 0.5 },
-      { username: "fps_ai", displayName: "FPS Master", bio: "عشاق التصويب 🎯", personaType: "gamer", postIntervalMinutes: 360, reactionRate: 0.45 },
-      { username: "moba_ai", displayName: "موبا فان", bio: "ألعاب الفرق والاستراتيجية", personaType: "gamer", postIntervalMinutes: 360, reactionRate: 0.4 },
-      { username: "stream_ai", displayName: "ستريمر", bio: "بث مباشر يومي 🎥", personaType: "gamer", postIntervalMinutes: 240, reactionRate: 0.55 },
-      { username: "retro_ai", displayName: "ريترو", bio: "ألعاب الزمن الجميل 👾", personaType: "gamer", postIntervalMinutes: 400, reactionRate: 0.35 },
-    ];
-    let createdPersonas = 0;
-    for (const d of defaults) {
-      const email = `ai_${d.username}_${Date.now()}@ai.local`;
-      const password = crypto.randomUUID() + crypto.randomUUID();
-      const { data: u, error: ue } = await supabaseAdmin.auth.admin.createUser({
-        email, password, email_confirm: true, user_metadata: { username: d.username },
-      });
-      if (ue || !u.user) { console.error("seed user err", ue?.message); continue; }
-      const uid = u.user.id;
-      await supabaseAdmin.from("profiles").update({
-        is_ai: true, username: d.username, bio: d.bio, dm_locked: true,
-      }).eq("id", uid);
-      const { error: ie } = await supabaseAdmin.from("ai_personas").insert({
-        profile_id: uid, display_name: d.displayName, bio: d.bio, persona_type: d.personaType,
-        post_interval_minutes: d.postIntervalMinutes, reaction_rate: d.reactionRate,
-      } as any);
-      if (!ie) createdPersonas++;
-    }
-
-    const templates: any[] = [
-      { persona_type: "friendly", kind: "post", content: "صباح الخير جميعاً ☀️ يوم مليء بالطاقة الإيجابية", weight: 3 },
-      { persona_type: "friendly", kind: "post", content: "ابتسامة بسيطة قد تغيّر يوم شخص ما 🌸", weight: 2 },
-      { persona_type: "friendly", kind: "story", content: "كونوا لطفاء مع أنفسكم اليوم 💙", weight: 1 },
-      { persona_type: "friendly", kind: "comment", content: "كلام جميل 👏", weight: 2 },
-      { persona_type: "friendly", kind: "comment", content: "أتفق معك تماماً", weight: 1 },
-      { persona_type: "news", kind: "post", content: "تحديث: ميزات جديدة قادمة قريباً للتطبيق 🚀", weight: 2 },
-      { persona_type: "news", kind: "post", content: "نصيحة اليوم: استخدم الغرف الصوتية للتعرف على أصدقاء جدد", weight: 2 },
-      { persona_type: "news", kind: "comment", content: "خبر مهم 👌", weight: 1 },
-      { persona_type: "gamer", kind: "post", content: "من معي للعب الآن؟ 🎮", weight: 2 },
-      { persona_type: "gamer", kind: "post", content: "بطولة جديدة قريباً — جهّزوا أنفسكم!", weight: 1 },
-      { persona_type: "gamer", kind: "story", content: "GG! 🏆", weight: 1 },
-      { persona_type: "gamer", kind: "comment", content: "🔥🔥", weight: 2 },
-    ];
-    let createdTemplates = 0;
-    for (const t of templates) {
-      const { error } = await supabaseAdmin.from("ai_persona_templates").insert(t as any);
-      if (!error) createdTemplates++;
-    }
-    return { personas: createdPersonas, templates: createdTemplates };
+    return await seedDefaultsInternal();
   });
 
 export { runCycleInternal as __runCycleInternal };
+
