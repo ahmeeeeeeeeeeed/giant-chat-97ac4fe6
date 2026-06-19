@@ -47,7 +47,8 @@ export function useUnreadDMCount() {
         .select("id", { count: "exact", head: true })
         .eq("receiver_id", user.id)
         .is("read_at", null);
-      if (!cached) setCount(c ?? 0);
+      if (cached) setCount((prev) => Math.max(prev, c ?? 0));
+      else setCount(c ?? 0);
     } catch {
       if (!cached) setCount(0);
     }
