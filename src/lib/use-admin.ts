@@ -54,8 +54,9 @@ export function useUnreadDMCount() {
   }, [user]);
 
   useEffect(() => {
-    if (!user || !online) { setCount(0); return; }
-    load();
+    if (!user) { setCount(0); return; }
+    if (!online) { void load(); return; }
+    void load();
   }, [user, online, load]);
 
   useEffect(() => {
