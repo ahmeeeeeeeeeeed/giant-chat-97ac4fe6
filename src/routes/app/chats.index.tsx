@@ -83,12 +83,13 @@ function ChatsPage() {
         const p = profs?.find(x => x.id === id);
         const fresh = map.get(id);
         const cachedConvo = cachedList.find((c) => c.otherId === id);
+        const useFreshLast = !!fresh && (!cachedConvo || fresh.created_at >= cachedConvo.created_at);
         return {
           otherId: id,
           username: p?.username ?? cachedConvo?.username ?? "?",
           avatar_url: p?.avatar_url ?? cachedConvo?.avatar_url ?? null,
-          last: fresh?.last ?? cachedConvo?.last ?? "",
-          created_at: fresh?.created_at ?? cachedConvo?.created_at ?? new Date(0).toISOString(),
+          last: useFreshLast ? fresh.last : cachedConvo?.last ?? fresh?.last ?? "",
+          created_at: useFreshLast ? fresh.created_at : cachedConvo?.created_at ?? fresh?.created_at ?? new Date(0).toISOString(),
           unread: Math.max(fresh?.unread ?? 0, cachedConvo?.unread ?? 0),
         };
       }).filter((c) => c.last).sort((a, b) => b.created_at.localeCompare(a.created_at));
