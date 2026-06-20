@@ -11,10 +11,18 @@ const PREMIUM_COST = 50_000;
 const premiumInputSchema = z.object({
   username: z
     .string()
-    .min(2, "اسم المستخدم يجب أن يكون بين 2 و 30 حرفاً")
-    .max(30, "اسم المستخدم يجب أن يكون بين 2 و 30 حرفاً")
-    // Disallow whitespace, '@', and control characters.
-    .regex(/^[^\s@\u0000-\u001F\u007F]+$/, "اسم المستخدم يحتوي على رموز غير مسموحة"),
+    // Trim outer whitespace, then collapse internal runs of spaces.
+    .transform((s) => (s ?? "").trim().replace(/\s+/g, " "))
+    .pipe(
+      z
+        .string()
+        .min(2, "اسم المستخدم يجب أن يكون بين 2 و 30 حرفاً")
+        .max(30, "اسم المستخدم يجب أن يكون بين 2 و 30 حرفاً")
+        // Allow Arabic letters, Latin letters, digits, single spaces, and
+        // decorative symbols (★ ♛ ✦ ❀ ✧ etc.). Only reject '@' and ASCII
+        // control characters which break the synthetic email mapping.
+        .regex(/^[^@\u0000-\u001F\u007F]+$/, "اسم المستخدم يحتوي على رموز غير مسموحة"),
+    ),
   password: z
     .string()
     .min(6, "كلمة المرور 6 أحرف على الأقل")
@@ -23,7 +31,7 @@ const premiumInputSchema = z.object({
 
 function validateUsername(u: string): string {
   // Defence-in-depth — also called from inside createPremiumUser.
-  return premiumInputSchema.shape.username.parse((u ?? "").trim());
+  return premiumInputSchema.shape.username.parse(u ?? "");
 }
 
 function syntheticEmail(): string {
