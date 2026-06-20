@@ -180,6 +180,7 @@ export async function appendLocalDM(myUserId: string, msg: DMRow): Promise<boole
   const key = cacheKeys.dmMessages(myUserId, peerId);
   let wasNew = false;
   let saved: DMRow = msg;
+  let replacedId: string | undefined;
   try {
     await withCacheLock(key, async () => {
       const list = (await cacheGet<DMRow[]>(key)) ?? [];
@@ -191,14 +192,32 @@ export async function appendLocalDM(myUserId: string, msg: DMRow): Promise<boole
         await cacheSet(key, sortDMRows(copy));
         return;
       }
+      const optimisticIndex = list.findIndex((x) =>
+        msg.sender_id === myUserId &&
+        (x.id.startsWith("tmp_") || x.id.startsWith("q_")) &&
+        x.sender_id === msg.sender_id &&
+        x.receiver_id === msg.receiver_id &&
+        x.content === msg.content &&
+        x.message_type === msg.message_type &&
+        (x.reply_to_id ?? null) === (msg.reply_to_id ?? null) &&
+        Math.abs(new Date(msg.created_at).getTime() - new Date(x.created_at).getTime()) < 5 * 60 * 1000
+      );
+      if (optimisticIndex >= 0) {
+        const copy = [...list];
+        replacedId = copy[optimisticIndex].id;
+        saved = { ...msg, created_at: copy[optimisticIndex].created_at };
+        copy[optimisticIndex] = saved;
+        await cacheSet(key, sortDMRows(copy));
+        return;
+      }
       wasNew = true;
       const next = sortDMRows([...list, msg]);
       const trimmed = next.length > 2000 ? next.slice(next.length - 2000) : next;
       await cacheSet(key, trimmed);
     });
-    console.info("[dm-global] saved-local-message", { key, messageId: msg.id, peerId, wasNew });
+    console.info("[dm-global] saved-local-message", { key, messageId: saved.id, peerId, wasNew, replacedId });
     await upsertLocalConversation(myUserId, saved, { incrementUnread: wasNew });
-    emitDmEvent(DM_MESSAGES_EVENT, { message: saved, peerId, wasNew });
+    emitDmEvent(DM_MESSAGES_EVENT, { message: saved, peerId, wasNew, replacedId });
     return wasNew;
   } catch (error) {
     console.error("[dm-global] save-local-message-failed", { key, messageId: msg.id, error });
