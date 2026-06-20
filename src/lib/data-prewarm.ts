@@ -7,7 +7,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { cacheGet, cacheSet, cacheKeys } from "./offline-cache";
 import { getOnline } from "./use-online";
-import { previewDMMessage, type DMConversation } from "./dm-delivery";
+import { previewDMMessage, type DMConversation, type DMRow } from "./dm-delivery";
 
 async function cacheMedia(url: string | null | undefined) {
   if (!url || !getOnline()) return;
@@ -175,10 +175,11 @@ async function warmChatsAndRecentMessages(userId: string) {
         ]);
         if (dm) {
           const key = cacheKeys.dmMessages(userId, peer.otherId);
-          const local = (await cacheGet<typeof dm>(key)) ?? [];
-          const byId = new Map<string, (typeof dm)[number]>();
+          const freshRows = dm as DMRow[];
+          const local = (await cacheGet<DMRow[]>(key)) ?? [];
+          const byId = new Map<string, DMRow>();
           local.forEach((m) => byId.set(m.id, m));
-          dm.slice().reverse().forEach((m) => {
+          freshRows.slice().reverse().forEach((m) => {
             const existing = byId.get(m.id);
             byId.set(m.id, existing ? { ...existing, ...m, created_at: existing.created_at || m.created_at } : m);
           });
@@ -186,7 +187,7 @@ async function warmChatsAndRecentMessages(userId: string) {
             key,
             Array.from(byId.values()).sort((a, b) => a.created_at.localeCompare(b.created_at)),
           );
-          await Promise.all((dm as CachedMessageMedia[]).map((m) => cacheMedia(m.media_url)));
+          await Promise.all((freshRows as CachedMessageMedia[]).map((m) => cacheMedia(m.media_url)));
         }
         if (prof) {
           await cacheSet(cacheKeys.profile(peer.otherId), prof);
