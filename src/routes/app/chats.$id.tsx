@@ -365,8 +365,8 @@ function DMPage() {
         message_type: "text", media_url: null, media_duration_ms: null,
         reply_to_id: reply?.id ?? null,
       };
-      setMessages((old) => [...old, optimistic]);
       await appendLocalDM(user.id, optimistic);
+      scrollToBottom(true);
       setSending(false);
       toast.message("تم حفظ الرسالة — ستُرسل عند عودة الإنترنت");
       return;
@@ -382,10 +382,9 @@ function DMPage() {
       message_type: "text", media_url: null, media_duration_ms: null,
       reply_to_id: reply?.id ?? null,
     };
-    setMessages((old) => [...old, optimistic]);
     await appendLocalDM(user.id, optimistic);
     console.info("[dm-chat] optimistic-saved", { messageId: tempId, peerId: otherId, type: "text" });
-    setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current!.scrollHeight, behavior: "smooth" }), 30);
+    scrollToBottom(true);
 
     let error: { message?: string } | null = null;
     let inserted: DM | null = null;
@@ -402,8 +401,6 @@ function DMPage() {
     setSending(false);
     if (inserted) {
       await replaceLocalDM(user.id, otherId, tempId, inserted);
-      // Replace optimistic with real row, dedupe in case realtime arrived first.
-      setMessages((old) => mergeDMList(old, inserted!, tempId));
       console.info("[dm-chat] optimistic-confirmed", { tempId, messageId: inserted.id, peerId: otherId });
       return;
     }
@@ -412,7 +409,6 @@ function DMPage() {
         const queuedRow = await enqueueMessage({ kind: "dm", sender_id: user.id, receiver_id: otherId, content });
         const queued: DM = { ...optimistic, id: queuedRow.id, created_at: new Date(queuedRow.createdAt).toISOString() };
         await replaceLocalDM(user.id, otherId, tempId, queued);
-        setMessages((old) => mergeDMList(old, queued, tempId));
         toast.message("تم حفظ الرسالة — ستُرسل عند عودة الإنترنت");
         return;
       }
@@ -442,9 +438,9 @@ function DMPage() {
       reply_to_id: replyTo?.id ?? null,
     };
     if (optimistic.media_url) await cacheSet(cacheKeys.media(optimistic.media_url), blob);
-    setMessages((old) => mergeDMList(old, optimistic));
     await appendLocalDM(user.id, optimistic);
     console.info("[dm-chat] optimistic-saved", { messageId: tempId, peerId: otherId, type: kind });
+    scrollToBottom(true);
     try {
       const ext = kind === "image" ? (blob.type.split("/")[1] || "jpg") : "webm";
       const path = `${user.id}/dm/${otherId}/${Date.now()}.${ext}`;
@@ -463,9 +459,8 @@ function DMPage() {
       if (inserted) {
         const row = inserted as DM;
         await replaceLocalDM(user.id, otherId, tempId, row);
-        setMessages((old) => mergeDMList(old, row, tempId));
         console.info("[dm-chat] optimistic-confirmed", { tempId, messageId: row.id, peerId: otherId, type: kind });
-        setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current!.scrollHeight, behavior: "smooth" }), 30);
+        scrollToBottom(true);
       }
       setReplyTo(null);
       
