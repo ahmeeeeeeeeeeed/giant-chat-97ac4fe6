@@ -135,12 +135,13 @@ async function warmChatsAndRecentMessages(userId: string) {
     const p = profs?.find((x) => x.id === id);
     const fresh = map.get(id);
     const cached = cachedList.find((c) => c.otherId === id);
+    const useFreshLast = !!fresh && (!cached || fresh.created_at >= cached.created_at);
     return {
       otherId: id,
       username: p?.username ?? cached?.username ?? "?",
       avatar_url: p?.avatar_url ?? cached?.avatar_url ?? null,
-      last: fresh?.last ?? cached?.last ?? "",
-      created_at: fresh?.created_at ?? cached?.created_at ?? new Date(0).toISOString(),
+      last: useFreshLast ? fresh.last : cached?.last ?? fresh?.last ?? "",
+      created_at: useFreshLast ? fresh.created_at : cached?.created_at ?? fresh?.created_at ?? new Date(0).toISOString(),
       unread: Math.max(fresh?.unread ?? 0, cached?.unread ?? 0),
     };
   }).filter((c) => c.last).sort((a, b) => b.created_at.localeCompare(a.created_at));
