@@ -186,13 +186,13 @@ export async function appendLocalDM(myUserId: string, msg: DMRow): Promise<boole
       const index = list.findIndex((x) => x.id === msg.id);
       if (index >= 0) {
         const copy = [...list];
-        copy[index] = { ...copy[index], ...msg };
+        copy[index] = mergeStableLocalMessage(copy[index], msg);
         saved = copy[index];
-        await cacheSet(key, copy.sort((a, b) => a.created_at.localeCompare(b.created_at)));
+        await cacheSet(key, sortDMRows(copy));
         return;
       }
       wasNew = true;
-      const next = [...list, msg].sort((a, b) => a.created_at.localeCompare(b.created_at));
+      const next = sortDMRows([...list, msg]);
       const trimmed = next.length > 2000 ? next.slice(next.length - 2000) : next;
       await cacheSet(key, trimmed);
     });
@@ -246,7 +246,7 @@ export async function markLocalConversationRead(myUserId: string, peerId: string
   emitDmEvent(DM_CONVERSATIONS_EVENT, { list: nextList, peerId, read: true });
 }
 
-/** Acknowledge a list of received messages → server trigger may delete them. */
+/** Acknowledge a list of received messages without deleting the saved message. */
 export async function ackDelivery(userId: string, messageIds: string[]): Promise<void> {
   if (!messageIds.length || !getOnline()) return;
   const device_id = getDeviceId();
