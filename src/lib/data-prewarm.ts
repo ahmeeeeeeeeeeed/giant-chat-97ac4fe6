@@ -7,7 +7,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { cacheGet, cacheSet, cacheKeys } from "./offline-cache";
 import { getOnline } from "./use-online";
-import { previewDMMessage, type DMConversation } from "./dm-delivery";
+import { previewDMMessage, type DMConversation, type DMRow } from "./dm-delivery";
 
 async function cacheMedia(url: string | null | undefined) {
   if (!url || !getOnline()) return;
@@ -135,12 +135,13 @@ async function warmChatsAndRecentMessages(userId: string) {
     const p = profs?.find((x) => x.id === id);
     const fresh = map.get(id);
     const cached = cachedList.find((c) => c.otherId === id);
+    const useFreshLast = !!fresh && (!cached || fresh.created_at >= cached.created_at);
     return {
       otherId: id,
       username: p?.username ?? cached?.username ?? "?",
       avatar_url: p?.avatar_url ?? cached?.avatar_url ?? null,
-      last: fresh?.last ?? cached?.last ?? "",
-      created_at: fresh?.created_at ?? cached?.created_at ?? new Date(0).toISOString(),
+      last: useFreshLast ? fresh.last : cached?.last ?? fresh?.last ?? "",
+      created_at: useFreshLast ? fresh.created_at : cached?.created_at ?? fresh?.created_at ?? new Date(0).toISOString(),
       unread: Math.max(fresh?.unread ?? 0, cached?.unread ?? 0),
     };
   }).filter((c) => c.last).sort((a, b) => b.created_at.localeCompare(a.created_at));
@@ -173,8 +174,20 @@ async function warmChatsAndRecentMessages(userId: string) {
             .maybeSingle(),
         ]);
         if (dm) {
-          await cacheSet(cacheKeys.dmMessages(userId, peer.otherId), dm.slice().reverse());
-          await Promise.all((dm as CachedMessageMedia[]).map((m) => cacheMedia(m.media_url)));
+          const key = cacheKeys.dmMessages(userId, peer.otherId);
+          const freshRows = dm as DMRow[];
+          const local = (await cacheGet<DMRow[]>(key)) ?? [];
+          const byId = new Map<string, DMRow>();
+          local.forEach((m) => byId.set(m.id, m));
+          freshRows.slice().reverse().forEach((m) => {
+            const existing = byId.get(m.id);
+            byId.set(m.id, existing ? { ...existing, ...m, created_at: existing.created_at || m.created_at } : m);
+          });
+          await cacheSet(
+            key,
+            Array.from(byId.values()).sort((a, b) => a.created_at.localeCompare(b.created_at)),
+          );
+          await Promise.all((freshRows as CachedMessageMedia[]).map((m) => cacheMedia(m.media_url)));
         }
         if (prof) {
           await cacheSet(cacheKeys.profile(peer.otherId), prof);

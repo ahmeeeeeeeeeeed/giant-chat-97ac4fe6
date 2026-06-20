@@ -14,7 +14,7 @@ import { ImageLightbox } from "@/components/ImageLightbox";
 import { cacheGet, cacheSet, cacheKeys } from "@/lib/offline-cache";
 import { enqueueMessage } from "@/lib/offline-queue";
 import { getOnline } from "@/lib/use-online";
-import { ackDelivery, appendLocalDM, DM_MESSAGES_EVENT, markLocalConversationRead, removeLocalDM, replaceLocalDM } from "@/lib/dm-delivery";
+import { ackDelivery, appendLocalDM, DM_MESSAGES_EVENT, markLocalConversationRead, replaceLocalDM, updateChatsListCache } from "@/lib/dm-delivery";
 import { ensureMediaLibraryPermission, ensureMicPermission } from "@/lib/app-permissions";
 import { useCachedMediaSource } from "@/lib/use-cached-media";
 import { StoryRing } from "@/components/StoryRing";
@@ -41,10 +41,14 @@ type DM = {
 function mergeDMList(list: DM[], msg: DM, replacedId?: string): DM[] {
   const base = replacedId ? list.filter((m) => m.id !== replacedId) : list;
   const index = base.findIndex((m) => m.id === msg.id);
-  if (index < 0) return [...base, msg].sort((a, b) => a.created_at.localeCompare(b.created_at));
+  const sort = (rows: DM[]) => rows.slice().sort((a, b) => {
+    const byTime = a.created_at.localeCompare(b.created_at);
+    return byTime !== 0 ? byTime : a.id.localeCompare(b.id);
+  });
+  if (index < 0) return sort([...base, msg]);
   const next = [...base];
-  next[index] = { ...next[index], ...msg };
-  return next.sort((a, b) => a.created_at.localeCompare(b.created_at));
+  next[index] = { ...next[index], ...msg, created_at: next[index].created_at || msg.created_at };
+  return sort(next);
 }
 
 type MessageStatus = "pending" | "sent" | "delivered" | "read";
@@ -194,6 +198,7 @@ function DMPage() {
         setMessages(cachedMsgs);
       } else {
         console.info("[dm-cache] miss-local", { key: dmKey, online: getOnline() });
+        setMessages([]);
       }
       if (cachedProfile) setOther(cachedProfile);
       if (typeof cachedFriend === "boolean") setIsFriend(cachedFriend);
@@ -221,6 +226,7 @@ function DMPage() {
         if (p) { setOther(p as Profile); await cacheSet(cacheKeys.profile(otherId), p as Profile); }
         const fresh = (msgs ?? []) as DM[];
         console.info("[dm-cache] loaded-cloud", { key: dmKey, count: fresh.length });
+        if (fresh.length) await updateChatsListCache(user.id, fresh[fresh.length - 1]);
         // Merge: keep ALL local history (messages already delivered & purged from server)
         // and overlay fresh server rows (still-undelivered messages) on top by id.
         setMessages((prev) => {
@@ -361,8 +367,8 @@ function DMPage() {
         message_type: "text", media_url: null, media_duration_ms: null,
         reply_to_id: reply?.id ?? null,
       };
-      setMessages((old) => [...old, optimistic]);
       await appendLocalDM(user.id, optimistic);
+      scrollToBottom(true);
       setSending(false);
       toast.message("تم حفظ الرسالة — ستُرسل عند عودة الإنترنت");
       return;
@@ -378,10 +384,9 @@ function DMPage() {
       message_type: "text", media_url: null, media_duration_ms: null,
       reply_to_id: reply?.id ?? null,
     };
-    setMessages((old) => [...old, optimistic]);
     await appendLocalDM(user.id, optimistic);
     console.info("[dm-chat] optimistic-saved", { messageId: tempId, peerId: otherId, type: "text" });
-    setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current!.scrollHeight, behavior: "smooth" }), 30);
+    scrollToBottom(true);
 
     let error: { message?: string } | null = null;
     let inserted: DM | null = null;
@@ -398,23 +403,18 @@ function DMPage() {
     setSending(false);
     if (inserted) {
       await replaceLocalDM(user.id, otherId, tempId, inserted);
-      // Replace optimistic with real row, dedupe in case realtime arrived first.
-      setMessages((old) => mergeDMList(old, inserted!, tempId));
       console.info("[dm-chat] optimistic-confirmed", { tempId, messageId: inserted.id, peerId: otherId });
       return;
     }
     if (error) {
-      // Remove failed optimistic row.
-      setMessages((old) => old.filter((m) => m.id !== tempId));
       if (!getOnline() || /network|fetch|Failed/i.test(error.message ?? "")) {
         const queuedRow = await enqueueMessage({ kind: "dm", sender_id: user.id, receiver_id: otherId, content });
         const queued: DM = { ...optimistic, id: queuedRow.id, created_at: new Date(queuedRow.createdAt).toISOString() };
         await replaceLocalDM(user.id, otherId, tempId, queued);
-        setMessages((old) => mergeDMList(old, queued, tempId));
         toast.message("تم حفظ الرسالة — ستُرسل عند عودة الإنترنت");
         return;
       }
-      await removeLocalDM(user.id, otherId, tempId);
+      console.warn("[dm-chat] send-failed-optimistic-kept", { tempId, peerId: otherId, error: error.message });
       if (error.message?.includes("recipient_dm_locked")) toast.error("هذا المستخدم قفل الرسائل الخاصة (متاح للأصدقاء فقط)");
       else if (error.message?.includes("dm_blocked")) toast.error("لا يمكن إرسال الرسالة (حظر)");
       else toast.error(t("common.error"));
@@ -440,9 +440,9 @@ function DMPage() {
       reply_to_id: replyTo?.id ?? null,
     };
     if (optimistic.media_url) await cacheSet(cacheKeys.media(optimistic.media_url), blob);
-    setMessages((old) => mergeDMList(old, optimistic));
     await appendLocalDM(user.id, optimistic);
     console.info("[dm-chat] optimistic-saved", { messageId: tempId, peerId: otherId, type: kind });
+    scrollToBottom(true);
     try {
       const ext = kind === "image" ? (blob.type.split("/")[1] || "jpg") : "webm";
       const path = `${user.id}/dm/${otherId}/${Date.now()}.${ext}`;
@@ -461,16 +461,14 @@ function DMPage() {
       if (inserted) {
         const row = inserted as DM;
         await replaceLocalDM(user.id, otherId, tempId, row);
-        setMessages((old) => mergeDMList(old, row, tempId));
         console.info("[dm-chat] optimistic-confirmed", { tempId, messageId: row.id, peerId: otherId, type: kind });
-        setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current!.scrollHeight, behavior: "smooth" }), 30);
+        scrollToBottom(true);
       }
       setReplyTo(null);
       
     } catch (err) {
       console.error(err);
-      setMessages((old) => old.filter((m) => m.id !== tempId));
-      await removeLocalDM(user.id, otherId, tempId);
+      console.warn("[dm-chat] media-send-failed-optimistic-kept", { tempId, peerId: otherId });
       const msg = (err as { message?: string })?.message ?? "";
       if (msg.includes("dm_blocked")) toast.error("لا يمكن إرسال الرسالة (حظر)");
       else if (msg.includes("recipient_dm_locked")) toast.error("هذا المستخدم قفل الرسائل الخاصة");

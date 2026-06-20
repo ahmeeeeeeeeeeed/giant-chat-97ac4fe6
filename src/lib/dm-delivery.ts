@@ -1,6 +1,5 @@
-// Ephemeral DM delivery: on receiving a message we save it locally, update the
-// conversation list cache immediately, then acknowledge delivery. A DB trigger
-// may delete the server row after all active recipient devices acknowledge.
+// Durable DM delivery: every message is saved locally first, mirrored in the
+// conversation list cache, and acknowledged without deleting the server row.
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -37,6 +36,18 @@ export type DMConversation = {
 type ProfileLite = { id: string; username: string | null; avatar_url: string | null };
 
 const cacheLocks = new Map<string, Promise<void>>();
+
+function sortDMRows<T extends DMRow>(rows: T[]): T[] {
+  return rows.slice().sort((a, b) => {
+    const byTime = a.created_at.localeCompare(b.created_at);
+    return byTime !== 0 ? byTime : a.id.localeCompare(b.id);
+  });
+}
+
+function mergeStableLocalMessage(existing: DMRow | undefined, incoming: DMRow): DMRow {
+  if (!existing) return incoming;
+  return { ...existing, ...incoming, created_at: existing.created_at || incoming.created_at };
+}
 
 function emitDmEvent(name: string, detail: unknown): void {
   if (typeof window === "undefined") return;
@@ -125,47 +136,27 @@ export async function updateChatsListCache(myUserId: string, msg: DMRow): Promis
 
 export async function replaceLocalDM(myUserId: string, peerId: string, tempId: string, msg: DMRow): Promise<void> {
   const key = cacheKeys.dmMessages(myUserId, peerId);
+  let saved: DMRow = msg;
   try {
     await withCacheLock(key, async () => {
       const list = (await cacheGet<DMRow[]>(key)) ?? [];
+      const temp = list.find((m) => m.id === tempId);
+      const real = list.find((m) => m.id === msg.id);
+      saved = { ...(real ?? {}), ...msg, created_at: temp?.created_at ?? real?.created_at ?? msg.created_at } as DMRow;
       const withoutTempOrReal = list.filter((m) => m.id !== tempId && m.id !== msg.id);
-      const next = [...withoutTempOrReal, msg].sort((a, b) => a.created_at.localeCompare(b.created_at));
+      const next = sortDMRows([...withoutTempOrReal, saved]);
       await cacheSet(key, next);
     });
-    console.info("[dm-global] replaced-local-message", { key, tempId, messageId: msg.id });
-    await upsertLocalConversation(myUserId, msg, { incrementUnread: false });
-    emitDmEvent(DM_MESSAGES_EVENT, { message: msg, peerId, wasNew: false, replacedId: tempId });
+    console.info("[dm-global] replaced-local-message", { key, tempId, messageId: saved.id, stableCreatedAt: saved.created_at });
+    await upsertLocalConversation(myUserId, saved, { incrementUnread: false });
+    emitDmEvent(DM_MESSAGES_EVENT, { message: saved, peerId, wasNew: false, replacedId: tempId });
   } catch (error) {
     console.error("[dm-global] replace-local-message-failed", { key, tempId, messageId: msg.id, error });
   }
 }
 
 export async function removeLocalDM(myUserId: string, peerId: string, messageId: string): Promise<void> {
-  const key = cacheKeys.dmMessages(myUserId, peerId);
-  const listKey = cacheKeys.chatsList(myUserId);
-  let remaining: DMRow[] = [];
-  try {
-    await withCacheLock(key, async () => {
-      const list = (await cacheGet<DMRow[]>(key)) ?? [];
-      remaining = list.filter((m) => m.id !== messageId);
-      await cacheSet(key, remaining);
-    });
-    const latest = remaining.slice().sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
-    if (latest) {
-      await upsertLocalConversation(myUserId, latest, { incrementUnread: false });
-    } else {
-      let nextList: DMConversation[] = [];
-      await withCacheLock(listKey, async () => {
-        const list = (await cacheGet<DMConversation[]>(listKey)) ?? [];
-        nextList = list.filter((c) => c.otherId !== peerId);
-        await cacheSet(listKey, nextList);
-      });
-      emitDmEvent(DM_CONVERSATIONS_EVENT, { list: nextList, peerId, removed: true });
-    }
-    console.info("[dm-global] removed-local-message", { key, messageId, remaining: remaining.length });
-  } catch (error) {
-    console.error("[dm-global] remove-local-message-failed", { key, messageId, error });
-  }
+  console.warn("[dm-global] local-delete-blocked", { myUserId, peerId, messageId });
 }
 
 /** Register this device for the current user and refresh last_seen. */
@@ -189,25 +180,44 @@ export async function appendLocalDM(myUserId: string, msg: DMRow): Promise<boole
   const key = cacheKeys.dmMessages(myUserId, peerId);
   let wasNew = false;
   let saved: DMRow = msg;
+  let replacedId: string | undefined;
   try {
     await withCacheLock(key, async () => {
       const list = (await cacheGet<DMRow[]>(key)) ?? [];
       const index = list.findIndex((x) => x.id === msg.id);
       if (index >= 0) {
         const copy = [...list];
-        copy[index] = { ...copy[index], ...msg };
+        copy[index] = mergeStableLocalMessage(copy[index], msg);
         saved = copy[index];
-        await cacheSet(key, copy.sort((a, b) => a.created_at.localeCompare(b.created_at)));
+        await cacheSet(key, sortDMRows(copy));
+        return;
+      }
+      const optimisticIndex = list.findIndex((x) =>
+        msg.sender_id === myUserId &&
+        (x.id.startsWith("tmp_") || x.id.startsWith("q_")) &&
+        x.sender_id === msg.sender_id &&
+        x.receiver_id === msg.receiver_id &&
+        x.content === msg.content &&
+        x.message_type === msg.message_type &&
+        (x.reply_to_id ?? null) === (msg.reply_to_id ?? null) &&
+        Math.abs(new Date(msg.created_at).getTime() - new Date(x.created_at).getTime()) < 5 * 60 * 1000
+      );
+      if (optimisticIndex >= 0) {
+        const copy = [...list];
+        replacedId = copy[optimisticIndex].id;
+        saved = { ...msg, created_at: copy[optimisticIndex].created_at };
+        copy[optimisticIndex] = saved;
+        await cacheSet(key, sortDMRows(copy));
         return;
       }
       wasNew = true;
-      const next = [...list, msg].sort((a, b) => a.created_at.localeCompare(b.created_at));
+      const next = sortDMRows([...list, msg]);
       const trimmed = next.length > 2000 ? next.slice(next.length - 2000) : next;
       await cacheSet(key, trimmed);
     });
-    console.info("[dm-global] saved-local-message", { key, messageId: msg.id, peerId, wasNew });
+    console.info("[dm-global] saved-local-message", { key, messageId: saved.id, peerId, wasNew, replacedId });
     await upsertLocalConversation(myUserId, saved, { incrementUnread: wasNew });
-    emitDmEvent(DM_MESSAGES_EVENT, { message: saved, peerId, wasNew });
+    emitDmEvent(DM_MESSAGES_EVENT, { message: saved, peerId, wasNew, replacedId });
     return wasNew;
   } catch (error) {
     console.error("[dm-global] save-local-message-failed", { key, messageId: msg.id, error });
@@ -255,7 +265,7 @@ export async function markLocalConversationRead(myUserId: string, peerId: string
   emitDmEvent(DM_CONVERSATIONS_EVENT, { list: nextList, peerId, read: true });
 }
 
-/** Acknowledge a list of received messages → server trigger may delete them. */
+/** Acknowledge a list of received messages without deleting the saved message. */
 export async function ackDelivery(userId: string, messageIds: string[]): Promise<void> {
   if (!messageIds.length || !getOnline()) return;
   const device_id = getDeviceId();
