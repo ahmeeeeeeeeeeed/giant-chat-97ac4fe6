@@ -408,8 +408,6 @@ function DMPage() {
       return;
     }
     if (error) {
-      // Remove failed optimistic row.
-      setMessages((old) => old.filter((m) => m.id !== tempId));
       if (!getOnline() || /network|fetch|Failed/i.test(error.message ?? "")) {
         const queuedRow = await enqueueMessage({ kind: "dm", sender_id: user.id, receiver_id: otherId, content });
         const queued: DM = { ...optimistic, id: queuedRow.id, created_at: new Date(queuedRow.createdAt).toISOString() };
@@ -418,7 +416,7 @@ function DMPage() {
         toast.message("تم حفظ الرسالة — ستُرسل عند عودة الإنترنت");
         return;
       }
-      await removeLocalDM(user.id, otherId, tempId);
+      console.warn("[dm-chat] send-failed-optimistic-kept", { tempId, peerId: otherId, error: error.message });
       if (error.message?.includes("recipient_dm_locked")) toast.error("هذا المستخدم قفل الرسائل الخاصة (متاح للأصدقاء فقط)");
       else if (error.message?.includes("dm_blocked")) toast.error("لا يمكن إرسال الرسالة (حظر)");
       else toast.error(t("common.error"));
@@ -473,8 +471,7 @@ function DMPage() {
       
     } catch (err) {
       console.error(err);
-      setMessages((old) => old.filter((m) => m.id !== tempId));
-      await removeLocalDM(user.id, otherId, tempId);
+      console.warn("[dm-chat] media-send-failed-optimistic-kept", { tempId, peerId: otherId });
       const msg = (err as { message?: string })?.message ?? "";
       if (msg.includes("dm_blocked")) toast.error("لا يمكن إرسال الرسالة (حظر)");
       else if (msg.includes("recipient_dm_locked")) toast.error("هذا المستخدم قفل الرسائل الخاصة");
