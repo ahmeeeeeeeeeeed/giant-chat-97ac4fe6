@@ -198,6 +198,7 @@ function DMPage() {
         setMessages(cachedMsgs);
       } else {
         console.info("[dm-cache] miss-local", { key: dmKey, online: getOnline() });
+        setMessages([]);
       }
       if (cachedProfile) setOther(cachedProfile);
       if (typeof cachedFriend === "boolean") setIsFriend(cachedFriend);
@@ -225,6 +226,7 @@ function DMPage() {
         if (p) { setOther(p as Profile); await cacheSet(cacheKeys.profile(otherId), p as Profile); }
         const fresh = (msgs ?? []) as DM[];
         console.info("[dm-cache] loaded-cloud", { key: dmKey, count: fresh.length });
+        if (fresh.length) await updateChatsListCache(user.id, fresh[fresh.length - 1]);
         // Merge: keep ALL local history (messages already delivered & purged from server)
         // and overlay fresh server rows (still-undelivered messages) on top by id.
         setMessages((prev) => {
